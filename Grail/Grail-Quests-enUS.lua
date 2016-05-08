@@ -17848,6 +17848,12 @@ if release >= 20779 then
 G[40792]='A Shattered Path Through Time'
 end
 
+if release >= 21463 then
+G[34610]='The Iron of Winter'
+G[35700]='A City Full of Light'
+G[37042]='UNUSED'
+end
+
 if release >= 21531 then
 G[38376]='The Search for the Highlord'
 G[40077]='The Invasion Begins'
@@ -21354,7 +21360,83 @@ G[44073]='Help from Within'
 G[44074]='Essence of Tenacity'
 G[44078]='Supporting Cast'
 G[44079]='Druids of the Scythe - 1'
+end
 
+if release >= 21655 then
+G[36939]='[UNUSED]Blood of the Annihilan'
+G[40975]='Arluin Bribe Tracking'
+G[42175]='Growing Power'
+G[44029]='WANTED: Hertha Grimdottir'
+G[44035]='Torrentius'
+G[44036]='Assassination Chosen'
+G[44037]='Combat Chosen'
+G[44039]='Sea King Tidross'
+G[44045]='Beastmaster Chosen'
+G[44047]='Survival Chosen'
+G[44051]='Wasted Potential'
+G[44055]='They Have A Pitlord'
+G[44057]='A "Noble" Event'
+G[44059]='Legion Attacks'
+G[44061]="Val'sharah Teleport Learned"
+G[44064]='Holy Chosen'
+G[44065]='Protection Chosen'
+G[44068]='Shaman Has Given Doomhammer to Oracle'
+G[44069]="Shaman Has Given Sharas'dal to Oracle"
+G[44071]='Vignette: Maia the White Wolf'
+G[44072]='Vignette: Maia the White'
+G[44073]='Help from Within'
+G[44075]='Essence of Ferocity'
+G[44077]='Essence of Balance'
+G[44079]='Druids of the Scythe - 1'
+G[44080]='Friend of the Animals'
+G[44081]='Treacherous Leyrunners'
+G[44084]='Vengeance for Margaux'
+G[44085]='Affliction Chosen'
+G[44087]='Return to the Fel Hammer'
+G[44088]='Demonology Chosen'
+G[44091]='Needs of the Many'
+G[44093]='Head 1 Looted'
+G[44095]='Head 3 Looted'
+G[44096]='Head 4 Looted'
+G[44097]='Head 5 Looted'
+G[44099]='A Mutual Friend'
+G[44100]='Proper Introductions'
+G[44103]='Azsuna - Treasure 044 - Felblaze Underwater'
+G[44104]='Azsuna - Treasure 045 - Ley Ruins 02'
+G[44105]='Azsuna - Treasure 046 - Temple of a Thousand Lights'
+G[44106]='Archdruid of Lore'
+G[44108]='Ragemaw'
+G[44112]='Trading for Dreams'
+G[44123]='Druids of the Scythe - First Freed'
+G[44124]="Vignette: Mar'tura"
+G[44125]='Tracking Quest'
+G[44126]='Tracking Quest'
+G[44127]='Tracking Quest'
+G[44128]='Tracking Quest'
+G[44129]='Druids of the Scythe - 2'
+G[44130]='Druids of the Scythe - 3'
+G[44131]='Druids of the Scythe - 4'
+G[44132]='Druids of the Scythe - 5'
+G[44133]='Druids of the Scythe - 6'
+G[44134]='DEPRECATED'
+G[44135]="7.0 Val'sharah - Treasure 055 - Sundersong Glade - zto"
+G[44136]="7.0 Val'sharah - Treasure 056 - The Undergorge - zto"
+G[44137]='Into the Fray'
+G[44139]="7.0 Val'sharah - Treasure 058 - Dreadroot - zto"
+G[44140]='From Within'
+G[44141]='Tracking Quest'
+G[44143]='Tracking Quest'
+G[44144]='Tracking Quest'
+G[44145]='Tracking Quest'
+G[44147]='Tracking Quest'
+G[44148]='Tracking Quest'
+G[44149]='Tracking Quest'
+G[44151]='Tracking Quest'
+G[44161]='Things Gaardoun Needs'
+G[44176]='The Conveniences of Home'
+G[44179]='REUSE ME'
+G[44184]='In the Blink of an Eye'
+G[44188]='Special Army of the Dead Summoned'
 end
 
 --	End of localized quest names

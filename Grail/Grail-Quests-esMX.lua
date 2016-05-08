@@ -16576,4 +16576,10 @@ G[9404]='Recientemente vivo'
 G[37751]='Recompensas activas'
 end
 
+if release >= 21463 then
+G[11058]='Una reliquia de ápices'
+G[34610]='El Hierro de Invierno'
+G[35700]='Una ciudad llena de luz'
+end
+
 --	End of localized quest names
