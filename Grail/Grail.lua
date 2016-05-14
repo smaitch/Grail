@@ -2418,6 +2418,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			[950] = true,
 			[951] = true,
 			[1028] = true,
+			[1032] = true,
 			},
 
 		---
@@ -7430,6 +7431,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 --			[442] = 38585,	-- Throne of Kil'jaeden (Tanaan) Alliance 37887 38583
 			-- 2015-07-19 available on Alleria were 441 442
 			-- 2015-07-21 Alleria -> 441 442
+			[478] = 39517,	-- Demon Hunter choosing Havoc
 			},
 
 		--	Internal Use.
