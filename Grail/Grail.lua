@@ -382,6 +382,7 @@
 --			Corrects the problem where the map location is lost on UI reload.
 --		077	Updates some quest/NPC information.
 --			Adds the ability to support required NPCs working in garrison buildings.
+--		078	Updates some quest/NPC information, especially for Legion.
 --
 --	Known Issues
 --
@@ -953,7 +954,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					if self.inLegion then
 						self.classMapping['E'] = 'DEMONHUNTER'
 						self.classToBitMapping['E'] = 0x10000000
-						self.classToMapAreaMapping['E'] = 200005
+						self.classToMapAreaMapping['CE'] = 200005
 					end
 
 					-- Create some convenience tables
@@ -1579,6 +1580,9 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					end
 
 					-- Ask Blizzard API to get all the other reward information we record
+--	local currentSpec = GetSpecialization()		-- nil if no spec chosen, otherwise 1 or more depending on spec
+--	select(2, GetSpecializationInfo(currentSpec))	-- is the name of the current spec
+--	specID = GetLootSpecialization()
 					if self.questRewards then
 						SelectQuestLogEntry(questIndex)
 						local rewardString = ""
@@ -7432,6 +7436,10 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			-- 2015-07-19 available on Alleria were 441 442
 			-- 2015-07-21 Alleria -> 441 442
 			[478] = 39517,	-- Demon Hunter choosing Havoc
+			[479] = 39518,	-- Demon Hunter choosing Vengeance
+			[486] = 40374,	-- Demon Hunter choosing Kayn Sunfury
+			[487] = 40375,	-- Demon Hunter choosing Atruis
+			[547] = 40818,	-- Demon Hunter choosing Vengeance artifact
 			},
 
 		--	Internal Use.
