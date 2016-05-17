@@ -2421,6 +2421,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			[949] = true,
 			[950] = true,
 			[951] = true,
+			[1015] = true,
 			[1028] = true,
 			[1032] = true,
 			},
