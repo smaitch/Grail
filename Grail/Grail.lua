@@ -1,4 +1,4 @@
---
+﻿--
 --	Grail
 --	Written by scott@mithrandir.com
 --
@@ -1075,7 +1075,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					if self.continents[751] then self.continents[751].dungeons = { 768, } end
 					if self.continents[862] then self.continents[862].dungeons = { 876, 877, 885, 875, 867, } end	-- self.blizzardRelease >= 15640
 					if self.continents[962] then self.continents[962].dungeons = {  } end	-- self.blizzardRelease >= 18505
-					if self.continents[1007] then self.continents[1007].dungeons = {  } end	-- self.blizzardRelease >= 21531
+					if self.continents[1007] then self.continents[1007].dungeons = { 1046 } end	-- self.blizzardRelease >= 21531
 
 					--	Now compute the dungeonMapping master list based on all the dungeons for each continent
 					local mapName
@@ -2421,9 +2421,14 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			[949] = true,
 			[950] = true,
 			[951] = true,
-			[1015] = true,
+			[1015] = true, -- Azsuna
+			[1018] = true, -- Val'sharah
+			[1021] = true, -- Broken Shore
+			[1024] = true, -- Highmountain
 			[1028] = true,
 			[1032] = true,
+			[1033] = true, -- Suramar
+			[1080] = true, -- Thunder Totem village in HighMountain
 			},
 
 		---
