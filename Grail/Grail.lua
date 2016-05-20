@@ -383,6 +383,7 @@
 --		077	Updates some quest/NPC information.
 --			Adds the ability to support required NPCs working in garrison buildings.
 --		078	Updates some quest/NPC information, especially for Legion.
+--			Corrects Legion detection since release version is inadequate with the latest update Blizzard made to WoD live.
 --
 --	Known Issues
 --
@@ -791,7 +792,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					--
 					--	First pull some information about the player and environment so it can be recorded for easier access
 					--
-					local _, release
+					local _
 					self.playerRealm = GetRealmName()
 					self.playerName = UnitName('player')
 					_, self.playerClass = UnitClass('player')
@@ -800,8 +801,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.playerGender = UnitSex('player')
 					self.playerLocale = GetLocale()
 					self.levelingLevel = UnitLevel('player')
-					_, release = GetBuildInfo()
+					local version, release, date, tocVersion = GetBuildInfo()
 					self.blizzardRelease = tonumber(release)
+					self.blizzardVersion = version
 					self.portal = GetCVar("portal")
 
 					--
@@ -948,7 +950,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end
 
 					self.inWoD = (self.blizzardRelease >= 18505)
-					self.inLegion = (self.blizzardRelease >= 21531)
+					self.inLegion = (self.blizzardRelease >= 21531 and strsub(self.blizzardVersion, 1, 2) == "7.")
 
 					-- Deal with the Demon Hunter introduced in Legion
 					if self.inLegion then
