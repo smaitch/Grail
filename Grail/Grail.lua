@@ -2430,6 +2430,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			[950] = true,
 			[951] = true,
 			[1015] = true, -- Azsuna
+			[1017] = true, -- Sturmheim
 			[1018] = true, -- Val'sharah
 			[1021] = true, -- Broken Shore
 			[1024] = true, -- Highmountain
