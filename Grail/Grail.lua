@@ -7448,6 +7448,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[486] = 40374,	-- Demon Hunter choosing Kayn Sunfury
 			[487] = 40375,	-- Demon Hunter choosing Atruis
 			[547] = 40818,	-- Demon Hunter choosing Vengeance artifact
+			[645] = 44380,	-- Demon Hunter chossing Havoc artifact
 			},
 
 		--	Internal Use.
