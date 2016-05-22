@@ -6855,6 +6855,23 @@ G[37421]={509674}
 G[37422]={509674}
 end
 
+if Grail.inLegion then
+Grail.loremasterAchievements['Alliance'][8] = { 510698, 510763, }
+Grail.loremasterAchievements['Horde'][8] = { 510698, 510763, }
+G[37449]={510763}	-- needed for Behind Legion Lines part of Azsuna Matata
+G[37470]={510763}	-- needed for Azsuna vs Azshara part of Azsuna Matata
+G[37566]={510763}	-- needed for Against the Giants part of Azsuna Matata
+G[38147]={510698}	-- needed for Archdruid of the Claw part of That's 'Val'sharah Folks!
+G[38225]={510698}	-- needed for Archdruid of Lore part of That's 'Val'sharah Folks!
+G[38235]={510698}	-- needed for Archdruid of Lore part of That's 'Val'sharah Folks!
+G[38691]={510698}	-- needed for Bradensbrook part of That's 'Val'sharah Folks!
+G[38721]={510698}	-- needed for Black Rook Hold part of That's 'Val'sharah Folks!
+G[38743]={510698}	-- needed for All Nightmare Long part of That's 'Val'sharah Folks!
+G[38753]={510698}	-- needed for Into the Nightmare part of That's 'Val'sharah Folks!
+G[40573]={510698}	-- needed for Archdruid of the Vale part of That's 'Val'sharah Folks!
+G[42756]={510763}	-- needed for Defending Azurewing Repose part of Azsuna Matata
+end
+
 Grail.questsLoremaster = {}
 
 -- TODO: Need to delay this until after combat
@@ -6900,10 +6917,13 @@ Grail.timings.AchievementsInternalConversion = debugprofilestop() - debugStartTi
 -- that are required and add all the quests that are prerequisites for those.
 debugStartTime = debugprofilestop()
 local achievementsDone = {}
-local achievementsToZoneMapping = { [506300] = 806, [506301] = 807, [506534] = 806, [506535] = 857, [506536] = 857, [506537] = 809, [506538] = 809, [506539] = 810, [506540] = 858, [508671] = 941, [508845] = 947, [508919] = 946, [508920] = 946, [508923] = 949, [508924] = 949, [508925] = 948, [508926] = 948, [508927] = 950, [508928] = 950, [509528] = 947, [509529] = 941, [509602] = 947, [509605] = 948, [509606] = 941, [509607] = 949, [509615] = 950, [509618] = 19, [509674] = 946 }
+local achievementsToZoneMapping = { [506300] = 806, [506301] = 807, [506534] = 806, [506535] = 857, [506536] = 857, [506537] = 809, [506538] = 809, [506539] = 810, [506540] = 858, [508671] = 941, [508845] = 947, [508919] = 946, [508920] = 946, [508923] = 949, [508924] = 949, [508925] = 948, [508926] = 948, [508927] = 950, [508928] = 950, [509528] = 947, [509529] = 941, [509602] = 947, [509605] = 948, [509606] = 941, [509607] = 949, [509615] = 950, [509618] = 19, [509674] = 946, [510698] = 1018, [510763] = 1015, }
 local expansions = { 6 }
 if release >= 18505 then
 	tinsert(expansions, 7)
+end
+if Grail.inLegion then
+	tinsert(expansions, 8)
 end
 for _, faction in pairs({'Alliance', 'Horde'}) do
 	for _, expansion in pairs(expansions) do
