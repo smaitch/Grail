@@ -1,4 +1,4 @@
-﻿--
+--
 --	Grail
 --	Written by scott@mithrandir.com
 --
@@ -1421,8 +1421,14 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			['LOOT_OPENED'] = function(self, frame, ...)
 				local currentMapAreaId = GetCurrentMapAreaID()
 				if self.zonesForLootingTreasure[currentMapAreaId] then
-					self:_ProcessServerBackup(true)
-					frame:UnregisterEvent("LOOT_OPENED")
+					self.lootingGUID = GetLootSourceInfo(1)
+					local text = GameTooltipTextLeft1
+					self.lootingName = text and text:GetText() or "No name gotten"
+					if not self.doneProcessingBackup then
+						self:_ProcessServerBackup(true)
+						self.doneProcessingBackup = true
+--						frame:UnregisterEvent("LOOT_OPENED")
+					end
 				end
 			end,
 
@@ -4654,6 +4660,13 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 			QueryQuestsCompleted()
 			local newlyCompleted = {}
 			self:_ProcessServerCompare(newlyCompleted)
+			if #newlyCompleted > 0 then
+				if GrailDatabase.debug then
+					local message = "Looting from " .. self.lootingGUID .. " locale: " .. GetLocale() .. " name: " .. self.lootingName
+					print(message)
+					self:_AddTrackingMessage(message)
+				end
+			end
 			for _, questId in pairs(newlyCompleted) do
 				self:_MarkQuestComplete(questId, true)
 			end
@@ -7447,6 +7460,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[479] = 39518,	-- Demon Hunter choosing Vengeance
 			[486] = 40374,	-- Demon Hunter choosing Kayn Sunfury
 			[487] = 40375,	-- Demon Hunter choosing Atruis
+			[546] = 40817,	-- Demon Hunter choosing Havoc artifact (Kayn, Night Elf)
 			[547] = 40818,	-- Demon Hunter choosing Vengeance artifact
 			[645] = 44380,	-- Demon Hunter chossing Havoc artifact
 			},
