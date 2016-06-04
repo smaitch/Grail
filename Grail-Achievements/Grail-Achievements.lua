@@ -6865,6 +6865,7 @@ G[38060]={510790}	-- needed for The Aftermath of Vrykul Story, Bro
 G[38147]={510698}	-- needed for Archdruid of the Claw part of That's 'Val'sharah Folks!
 G[38225]={510698}	-- needed for Archdruid of Lore part of That's 'Val'sharah Folks!
 G[38235]={510698}	-- needed for Archdruid of Lore part of That's 'Val'sharah Folks!
+G[38624]={510790}	-- needed for The Trial of Will part of Vrykul Story, Bro
 G[38691]={510698}	-- needed for Bradensbrook part of That's 'Val'sharah Folks!
 G[38721]={510698}	-- needed for Black Rook Hold part of That's 'Val'sharah Folks!
 G[38743]={510698}	-- needed for All Nightmare Long part of That's 'Val'sharah Folks!

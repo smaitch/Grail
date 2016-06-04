@@ -384,6 +384,9 @@
 --			Adds the ability to support required NPCs working in garrison buildings.
 --		078	Updates some quest/NPC information, especially for Legion.
 --			Corrects Legion detection since release version is inadequate with the latest update Blizzard made to WoD live.
+--		079	Updates some quest/NPC information, especially for Legion.
+--			Corrects use of C_Garrison.GetGarrisonInfo() for Legion as it has changed.
+--			Provides for prerequisites to require a specific player class.
 --
 --	Known Issues
 --
@@ -967,9 +970,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end
 					self.classNameToBitMapping = {}
 					self.classBitToCodeMapping = {}
+					self.classNameToCodeMapping = {}
 					for code,className in pairs(self.classMapping) do
 						self.classNameToBitMapping[className] = self.classToBitMapping[code]
 						self.classBitToCodeMapping[self.classToBitMapping[code]] = code
+						self.classNameToCodeMapping[className] = code
 					end
 					self.holidayBitToCodeMapping = {}
 					for code,bitValue in pairs(self.holidayToBitMapping) do
@@ -1747,9 +1752,11 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 			['QUEST_REMOVED'] = function(self, frame, questId)
 			-- this happens for both abandon and turn-in
+if GrailDatabase.debug then print("*** QUEST_REMOVED",questId) end
 			end,
 
 			['QUEST_TURNED_IN'] = function(self, frame, questId, xp, money)
+if GrailDatabase.debug then print("*** QUEST_TURNED_IN",questId, xp, money) end
 				self:_QuestCompleteProcess(questId)
 			end,
 
@@ -2881,8 +2888,10 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					retval = (self.levelingLevel < numeric) and 'C' or 'P'
 				elseif 'M' == code then
 					retval = self:HasQuestEverBeenAbandoned(numeric) and 'C' or 'P'
-				elseif 'N' == code then
+				elseif 'm' == code then
 					retval = self:HasQuestEverBeenAbandoned(numeric) and 'P' or 'C'
+				elseif 'N' == code then
+					retval = (self.classNameToCodeMapping[self.playerClass] == subcode) and 'C' or 'P'
 				elseif 'P' == code then
 					retval = self:ProfessionExceeds(subcode, numeric) and 'C' or 'P'
 				elseif 'R' == code then
@@ -3685,7 +3694,7 @@ self.totalFixedTime = self.totalFixedTime + (debugprofilestop() - start2Time)
 				elseif 'V' == code or 'W' == code or 'w' == code then
 					subcode = tonumber(strsub(questCode, 2, 4))
 					numeric = tonumber(strsub(questCode, 5))
-				elseif 'F' == code then
+				elseif 'F' == code or 'N' == code then
 					subcode = strsub(questCode, 2, 2)
 					numeric = ''
 				elseif 'G' == code then
@@ -4054,8 +4063,8 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 			if nil ~= codeString then
 				local questId = p and p.q or nil
 				local dangerous = p and p.d or false
-				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local code, value, position, subcode
 				local forcingProfessionOnly, forcingReputationOnly = false, false
 
@@ -4121,6 +4130,8 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 				elseif code == 'B' then checkLog = true
 				elseif code == 'C' then	shouldCheckTurnin = true
 										checkLog = true
+				elseif code == 'c' then checkNotTurnin = true
+										checkNotLog = true
 				elseif code == 'D' then	checkStatusComplete = true
 				elseif code == 'E' then	shouldCheckTurnin = true
 										checkStatusComplete = true
@@ -4138,7 +4149,8 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 				elseif code == 'L' then checkLevelMeetsOrExceeds = true
 				elseif code == 'L' then checkLevelLessThan = true
 				elseif code == 'M' then	checkEverAbandoned = true
-				elseif code == 'N' then	checkNeverAbandoned = true
+				elseif code == 'm' then	checkNeverAbandoned = true
+				elseif code == 'N' then checkClass = true
 				elseif code == 'O' then	checkEverAccepted = true
 				elseif code == 'P' then	checkProfession = true
 				elseif code == 'R' then checkEverExperiencedSpell = true
@@ -4162,8 +4174,8 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 				else print("|cffff0000Grail|r _EvaluateCodeAsPrerequisite cannot process code", codeString)
 				end
 
-				if shouldCheckTurnin or checkNotCompleted then questCompleted = Grail:IsQuestCompleted(value) end
-				if checkLog or checkStatusComplete or checkStatusNotComplete then questInLog, questStatus = Grail:IsQuestInQuestLog(value) end
+				if shouldCheckTurnin or checkNotCompleted or checkNotTurnin then questCompleted = Grail:IsQuestCompleted(value) end
+				if checkLog or checkStatusComplete or checkStatusNotComplete or checkNotLog then questInLog, questStatus = Grail:IsQuestInQuestLog(value) end
 				if checkEver then questEverCompleted = Grail:HasQuestEverBeenCompleted(value) end
 				if (shouldCheckTurnin and questCompleted) or (checkEver and questEverCompleted) then
 --	TODO:	Solve this issue:
@@ -4228,6 +4240,9 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 				if checkLevelLessThan then
 					levelLessThan = (Grail.levelingLevel < value)
 				end
+				if checkClass then
+					classMatches = (Grail.classNameToCodeMapping[Grail.playerClass] == subcode)
+				end
 
 				good =
 					(code == ' ') or
@@ -4265,7 +4280,9 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 					(checkGarrisonBuildingNPC and garrisonBuildingNPCMatches) or
 					(checkLevelMeetsOrExceeds and levelMeetsOrExceeds) or
 					(checkLevelLessThan and levelLessThan) or
-					(checkGroupDoneOrComplete and groupDoneOrComplete)
+					(checkGroupDoneOrComplete and groupDoneOrComplete) or
+					(checkNotLog and checkNotTurnin and not questCompleted and not questInLog) or
+					(checkClass and classMatches)
 				if not good then tinsert(failures, codeString) end
 			end
 
@@ -4319,6 +4336,7 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 					and 'K' ~= code
 					and 'k' ~= code
 					and 'M' ~= code
+					and 'm' ~= code
 					and 'N' ~= code
 					and 'P' ~= code
 					and 'R' ~= code
@@ -5940,7 +5958,11 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 					currentPhase = C_MapBar.GetPhaseIndex() + 1	-- it starts with 0 for phase 1 (just like C)
 				end
 			elseif 971 == phaseCode or 976 == phaseCode then
-				currentPhase = C_Garrison.GetGarrisonInfo() or 0	-- the API returns nil when there is no garrison
+				if self.inLegion then
+					currentPhase = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0	-- the API returns nil when there is no garrison
+				else
+					currentPhase = C_Garrison.GetGarrisonInfo() or 0	-- the API returns nil when there is no garrison
+				end
 			end
 			if nil ~= currentPhase then
 				if ('=' == typeOfMatch and currentPhase == phaseNumber) or
@@ -6220,7 +6242,7 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			self._ProcessCodeTable(tableOrString, controlTable)
 		end,
 
-		_ProcessQuestsForHandlersMapping = { ["B"] = 'D', ["D"] = 'D', ["e"] = 'D', ["I"] = 'B', ["J"] = 'A', ["K"] = 'C', ["L"] = 'E', ["M"] = 'F', ["N"] = 'F', ["R"] = 'R', ["S"] = 'Y', ["V"] = 'X', ["W"] = 'W', ["w"] = 'W', ["Y"] = 'B', ["Z"] = 'Z' },
+		_ProcessQuestsForHandlersMapping = { ["B"] = 'D', ["D"] = 'D', ["e"] = 'D', ["I"] = 'B', ["J"] = 'A', ["K"] = 'C', ["L"] = 'E', ["M"] = 'F', ['m'] = 'F', ["R"] = 'R', ["S"] = 'Y', ["V"] = 'X', ["W"] = 'W', ["w"] = 'W', ["Y"] = 'B', ["Z"] = 'Z' },
 
 		-- This gets called when prerequisite codes are processed to determine what caches should contain the quests in question.
 		_ProcessQuestsForHandlersSupport = function(controlTable)
@@ -7462,9 +7484,12 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[479] = 39518,	-- Demon Hunter choosing Vengeance
 			[486] = 40374,	-- Demon Hunter choosing Kayn Sunfury
 			[487] = 40375,	-- Demon Hunter choosing Atruis
+			[504] = 40621,	-- Night Elf Hunter choosing beast master artifact
 			[531] = 40702,	-- Druid choosing guardian artifact
+			[533] = 40707,	-- Priest choosing Shadow artifact
 			[546] = 40817,	-- Demon Hunter choosing Havoc artifact (Kayn, Night Elf)
 			[547] = 40818,	-- Demon Hunter choosing Vengeance artifact
+			[585] = 41080,	-- Mage choosing Fire artifact
 			[645] = 44380,	-- Demon Hunter chossing Havoc artifact
 			},
 
