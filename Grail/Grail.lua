@@ -770,9 +770,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		currentMortalIssues = {},
 		currentQuestIndex = nil,
 		debug = false,
+		defaultUnfoundLootingName = "No name gotten",
 		delayBagUpdate = 0.5,
 		delayedEvents = {},
 		delayedEventsCount = 0,
+		delayQuestRemoved = 4.5,
 		emergencyOutlet = 0,
 		eventDispatch = {			-- table of functions whose keys are the events
 
@@ -815,6 +817,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.tooltip = CreateFrame("GameTooltip", "com_mithrandir_grailTooltip", UIParent, "GameTooltipTemplate")
 					self.tooltip:SetFrameStrata("TOOLTIP")
 					self.tooltip:Hide()
+
+					self.tooltipNPC = CreateFrame("GameTooltip", "com_mithrandir_grailTooltipNPC", UIParent, "GameTooltipTemplate")
+					self.tooltipNPC:SetFrameStrata("TOOLTIP")
+					self.tooltipNPC:Hide()
 
 					--
 					--	Set up the slash command
@@ -1149,9 +1155,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					for zoneName, mapId in pairs(self.zoneNameMapping) do
 						if nil == self.mapAreaMapping[mapId] then self.mapAreaMapping[mapId] = zoneName end
 						-- Also create the "self" NPCs that are specific to each zone
-						if nil == self.npcIndex[0 - mapId] then
-							self.npcIndex[0 - mapId] = 0
-							self.npcCodes[0 - mapId] = strformat("Z%d",mapId)
+						if nil == self.npc.nameIndex[0 - mapId] then
+							self.npc.nameIndex[0 - mapId] = 0
+							local t = {}
+							t.mapArea = mapId
+							self.npc.locations[0 - mapId] = { t }
 						end
 					end
 
@@ -1263,28 +1271,6 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							end
 						end)
 					end
-					self:RegisterSlashOption("verifynpcs", "|cFF00FF00verifynpcs|r => starts a verification of every NPC name against those seen in play", function()
-						if Grail.currentlyVerifying then print("Already verifying...please wait until completed") return end
-						Grail.currentlyVerifying = true
-						Grail.currentQuestIndex = nil
-						Grail.timeSinceLastUpdate = 0
-						Grail.verifyTable = {}
-						Grail.verifyTableCount = 0
-						Grail.verifyTable2 = {}
-						Grail.verifyTableCount2 = 0
-						Grail.verifyTable3 = {}
-						Grail.verifyTableCount3 = 0
-						Grail.npcCountForVerification = 0
-						Grail.doneProcessingList = false
-						GrailDatabase.NPC_ISSUES = GrailDatabase.NPC_ISSUES or {}
-						GrailDatabase.NPC_ISSUES[Grail.playerLocale] = {
-														release = Grail.blizzardRelease,
-														version = self.versionNumber
-														}		-- clear out the current values for this locale since we are about to write over them
-						Grail.npcNotificationFrame = Grail.npcNotificationFrame or CreateFrame("Frame")
-						Grail.npcNotificationFrame:SetScript("OnUpdate", function(myself, elapsed) Grail:_VerifyNPCList(elapsed) end)
-						print("Starting total NPC verification")
-					end)
 					self:RegisterSlashOption("clearstatuses", "|cFF00FF00clearstatuses|r => clears the status of all quests allowing them to be recomputed", function()
 						wipe(self.questStatuses)
 						self.questStatuses = {}
@@ -1428,7 +1414,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				if self.zonesForLootingTreasure[currentMapAreaId] then
 					self.lootingGUID = GetLootSourceInfo(1)
 					local text = GameTooltipTextLeft1
-					self.lootingName = text and text:GetText() or "No name gotten"
+					self.lootingName = text and text:GetText() or self.defaultUnfoundLootingName
 					if not self.doneProcessingBackup then
 						self:_ProcessServerBackup(true)
 						self.doneProcessingBackup = true
@@ -1555,7 +1541,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					npcId = self.questAcceptingNpcId
 					coordinates = self.questAcceptingCoordinates
 				end
-				self:_UpdateTargetDatabase(targetName, npcId, coordinates, version)
+				npcId = self:_UpdateTargetDatabase(targetName, npcId, coordinates, version)
 
 				--	If this quest is not in our internal database attempt to record some information about it so we have a chance the
 				--	user can provide this to us to update the database.
@@ -1565,6 +1551,9 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					if isWeekly then baseValue = baseValue + 4 end
 					if suggestedGroup and suggestedGroup > 1 then baseValue = baseValue + 512 end
 					-- at the moment we ignore questTag since it is localized
+					-- With Legion there are issues because the level of the quests
+					-- match the level of the player.  So, we force the level to 0.
+					level = 0
 					local kCode = strformat("K%03d%d", level, baseValue)
 					self:_UpdateQuestDatabase(questId, questTitle, npcId, isDaily, 'A', version, kCode)
 
@@ -1751,12 +1740,16 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			end,
 
 			['QUEST_REMOVED'] = function(self, frame, questId)
-			-- this happens for both abandon and turn-in
-if GrailDatabase.debug then print("*** QUEST_REMOVED",questId) end
+				-- this happens for both abandon and turn-in
+				-- and turn-in is first, so we can know we are abandoning or not
+				if nil == self.questTurningIn then
+					self:_StatusCodeInvalidate({ tonumber(questId) }, self.delayQuestRemoved)
+				end
+				self.questTurningIn = nil
 			end,
 
 			['QUEST_TURNED_IN'] = function(self, frame, questId, xp, money)
-if GrailDatabase.debug then print("*** QUEST_TURNED_IN",questId, xp, money) end
+				self.questTurningIn = questId
 				self:_QuestCompleteProcess(questId)
 			end,
 
@@ -1966,6 +1959,63 @@ if GrailDatabase.debug then print("*** QUEST_TURNED_IN",questId, xp, money) end
 		mapAreaMaximumReputation = 499999,
 		mapAreaMaximumReputationChange = 699999,
 		nonPatternExperiment = true,
+
+		--	The NPC database contains all we need to know about NPCs with data in specifc tables based on need.
+		--	The index into each table is a numeric value of our internal representation of NPC ID.  For the most
+		--	part this matches the Blizzard NPC ID, but we have alias NPCs, as well as mapping game objects and
+		--	items into our NPC IDs as well.  The convenience APIs allow using Blizzard IDs for game object and
+		--	items which will access the internal data structure using our modified NPC IDs.
+		npc = {
+
+			-- Possible list of quests that are aliases of the key.
+			aliases = {},
+
+			-- The localized comment for the NPC.
+			-- This is sparsely populated, as most NPCs will not have a comment.
+			comment = {},
+
+			-- Possible list of NPCs that can drop this item.
+			droppedBy = {},
+
+			-- Possible faction affiliation for the NPC.
+			-- This is sparsely populated, and the values are the internal representations of factions.
+			faction = {},
+
+			-- Possible list of items that the NPC has (basically the reverse of the droppedBy in other NPCs).
+			has = {},
+
+			-- Possible indication that NPC is only available in heroic mode.
+			heroic = {},
+
+			-- Possible indication that NPC is only available on holidays.  Value
+			-- is a string of characters representing holidays, usually only 1 long.
+			holiday = {},
+
+			-- Possible indication that the NPC is to be killed.
+			kill = {},
+
+			-- Each value contains a table of locations for the NPC.
+			locations = {},
+
+			-- The localized name of the NPC.
+			-- The only names that get prepopulated from loading files are those of game objects because there is
+			-- no Blizzard API that we seem to be able to use to get the localized name of the game object at any
+			-- time we want, unlike normal NPCs and items whose name we scrape from a game tooltip.
+			name = {},
+
+			-- The actual index value to use when accessing the name table if non-nil is returned.
+			-- Normally the actual NPC ID is used because a lookup of most NPC IDs in this table will return nil.
+			-- However, there are some alias NPCs, and others that use names of other NPCs which return a non-nil
+			-- value which is used by the internal routines to get the proper localized name.
+			nameIndex = {},
+
+			-- This is a special table for items that are associated with quests for use with tooltips.
+			-- This is sparsely populated.  It does not reflect the quests most NPCs are associated with.  Each
+			-- value contains a table of quest IDs.
+			questAssociations = {},
+
+			},
+
 		npcNames = {},
 		observers = { },
 		origAbandonQuestFunction = nil,
@@ -2999,7 +3049,68 @@ if GrailDatabase.debug then print("*** QUEST_TURNED_IN",questId, xp, money) end
 		--	This routine attempts to remove items from the special tables that are stored in the GrailDatabase table
 		--	when they have been added to the internal database.  These special tables are populated when Grail discovers
 		--	something lacking in its internal database as game play proceeds.  This routine is called upon startup.
+-- TODO: *** Major transformation ***
+--	Basically we should record into a "learned" structure those pieces of information like quest information, NPC location
+--	and NPC name.  We should be smart about NPCs by looking at location and seeing if it differs a lot from what we would
+--	want to record.  When this information is present in the "learned" structure we should them update the running database
+--	to include this information so the game experience will benefit from this.  Of course for things like names we can only
+--	update English and the running locale.  It will be quite difficult doing this properly if, for example, there is a value
+--	and an English value because we do not really know from what source we have a value based on how we load the data.
+--	Therefore, I think we should run the "learned" data through processing before we load the other data if we can.  I have
+--	no idea whether we can, but if we turn the quest names and NPC names into loadable objects perhaps we can.  So we would
+--	load the base English, then we would patch that.  Then we could load the localization on top of that.  Then we could do
+--	the patch again for the locale.  If we switch to loadable objects then we could have the code load only the localization
+--	files that are needed based on the locale at runtime.  This may make startup a little faster.  However, I am having my
+--	doubts as I think the loadable is for an addon only, and perhaps a file cannot be done in this way.  Therefore, perhaps
+--	it would be a good idea to make all the quest names into loadable addons for each locale.
 		_CleanDatabase = function(self)
+
+			local locale = GetLocale()
+
+			if nil ~= GrailDatabase.learned and not self.processedLearned then
+
+				--	If the object name is for our locale we process it.  If it is the
+				--	same that we have, we remove it from the saved variables, else we
+				--	update our internal database so it need not be recorded again.
+				if nil ~= GrailDatabase.learned.OBJECT_NAME then
+					local newObjectNames = {}
+					for _, objectLine in pairs(GrailDatabase.learned.OBJECT_NAME) do
+						local shouldAdd = true
+						local ver, loc, objId, objName = strsplit('|', objectLine)
+						if loc == locale then
+							if self:ObjectName(objId) == objName then
+								shouldAdd = false
+							else
+								self.npc.name[1000000 + tonumber(objId)] = objName
+							end
+						end
+						if shouldAdd then
+							tinsert(newObjectNames, objectLine)
+						end
+					end
+					GrailDatabase.learned.OBJECT_NAME = newObjectNames
+				end
+
+				if nil ~= GrailDatabase.learned.NPC_LOCATION then
+					local newNPCLocations = {}
+					for _, npcLine in pairs(GrailDatabase.learned.NPC_LOCATION) do
+						local shouldAdd = true
+						local ver, loc, npcId, npcLoc, aliasId = strsplit('|', npcLine)
+						if self:_LocationKnown(npcId, npcLoc) then
+							shouldAdd = false
+						else
+							self:_AddNPCLocation(npcId, npcLoc, aliasId)
+						end
+						if shouldAdd then
+							tinsert(newNPCLocations, npcLine)
+						end
+					end
+					GrailDatabase.learned.NPC_LOCATION = newNPCLocations
+				end
+
+				self.processedLearned = true
+
+			end
 
 			-- Remove quests from SpecialQuests that have been marked as special in our internal database.
 			if nil ~= GrailDatabase["SpecialQuests"] then
@@ -3077,6 +3188,9 @@ if GrailDatabase.debug then print("*** QUEST_TURNED_IN",questId, xp, money) end
 						end
 					end
 				end
+				if self.inLegion then
+					GrailDatabase.NewNPCs = nil
+				end
 			end
 
 			-- BadNPCData is processed like BadQuestData (which follows)
@@ -3127,6 +3241,9 @@ if GrailDatabase.debug then print("*** QUEST_TURNED_IN",questId, xp, money) end
 					end
 				end
 				GrailDatabase["BadNPCData"] = newBadNPCData
+				if self.inLegion then
+					GrailDatabase.BadNPCData = nil
+				end
 			end
 
 			-- The BadQuestData will be analyzed against the current database and things that have been fixed
@@ -3752,20 +3869,10 @@ self.totalFixedTime = self.totalFixedTime + (debugprofilestop() - start2Time)
 			return retval
 		end,
 
-		---
-		--	Internal Use.
-		--	Returns a table of codes from the NPC that match the sought prefix.
-		--	@param npcId The standard numeric npcId representing an NPC.
-		--	@param soughtPrefix The prefix of the desired matching codes.
-		--	@return A table of the matching codes or nil if there are none.
-		CodesWithPrefixNPC = function(self, npcId, soughtPrefix)
+		AssociatedQuestsForNPC = function(self, npcId)
 			local retval = nil
-			if nil == npcId or not tonumber(npcId) then return nil end
 			npcId = tonumber(npcId)
-			if nil ~= self.npcIndex[npcId] then
-				retval = self:CodesWithPrefix(self.npcCodes[npcId], soughtPrefix)
-			end
-			return retval
+			return npcId and self.npc.questAssociations[npcId] or nil
 		end,
 
 		---
@@ -4023,7 +4130,7 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 		--	@return true if the NPC is known to the internal database, false otherwise
 		DoesNPCExist = function(self, npcId)
 			npcId = tonumber(npcId)
-			return nil ~= npcId and nil ~= self.npcIndex[npcId] and true or false
+			return nil ~= npcId and nil ~= self.npc.locations[npcId] and true or false
 		end,
 
 		---
@@ -4642,7 +4749,7 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 				isDaily = (LE_QUEST_FREQUENCY_DAILY == frequency)
 				isWeekly = (LE_QUEST_FREQUENCY_WEEKLY == frequency)
 			end
-			return questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID, isWeekly
+			return questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID, isWeekly, isTask
 		end,
 
 		_HandleEventGarrisonBuildingActivated = function(self, buildingId)
@@ -4681,6 +4788,13 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 			local newlyCompleted = {}
 			self:_ProcessServerCompare(newlyCompleted)
 			if #newlyCompleted > 0 then
+				local guidParts = { strsplit('-', self.lootingGUID) }
+				if nil ~= guidParts and guidParts[1] == "GameObject" and self.lootingName ~= self.defaultUnfoundLootingName then
+					local internalName = self:ObjectName(guidParts[6])
+					if self.lootingName ~= internalName then
+						self:LearnObjectName(guidParts[6], self.lootingName)
+					end
+				end
 				if GrailDatabase.debug then
 					local message = "Looting from " .. self.lootingGUID .. " locale: " .. GetLocale() .. " name: " .. self.lootingName
 					print(message)
@@ -4993,9 +5107,9 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 		--	@return True if the NPC is only found in heroic instances, false otherwise.
 		IsHeroicNPC = function(self, npcId)
 			local retval = false
-			local codes = self:CodesWithPrefixNPC(npcId, 'X')
-			if nil ~= codes and 0 < #(codes) then
-				retval = true
+			npcId = tonumber(npcId)
+			if nil ~= npcId then
+				retval = self.npc.heroic[npcId]
 			end
 			return retval
 		end,
@@ -5115,21 +5229,22 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 		--	@param npcId The standard numeric npcId representing an NPC.
 		--	@return True if the NPC is available based on holidays currently celebrated and presence in a heroic instance, false otherwise.
 		IsNPCAvailable = function(self, npcId)
-			if nil == npcId or not tonumber(npcId) then return false end
+			local retval = false
 			npcId = tonumber(npcId)
-			local retval = true
-			local codes = self:CodesWithPrefixNPC(npcId, 'H')
-			if nil ~= codes then
-				local holidayGood = true
-				for i = 1, #(codes), 1 do
-					if holidayGood then
-						holidayGood = self:CelebratingHoliday(self.holidayMapping[strsub(codes[i], 2, 2)])
+			if nil ~= npcId then
+				retval = true
+				local codes = self.npc.holiday
+				if nil ~= codes then
+					retval = false	-- Assume we fail all holidays unless proven otherwise
+					for i = 1, strlen(codes) do
+						if not retval then
+							retval = self:CelebratingHoliday(self.holidayMapping[strsub(codes, i, i)])
+						end
 					end
 				end
-				retval = holidayGood
-			end
-			if retval and self:IsHeroicNPC(npcId) then
-				retval = self:InWithHeroicNPC(npcId)
+				if retval and self:IsHeroicNPC(npcId) then
+					retval = self:InWithHeroicNPC(npcId)
+				end
 			end
 			return retval
 		end,
@@ -5262,36 +5377,24 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 		--	@return Table data containing tables of NPC type and associated ID.
 		IsTooltipNPC = function(self, npcId)
 			local retval = {}
-			local dropCodes = self:CodesWithPrefixNPC(npcId, 'D:')
-			if nil ~= dropCodes then
-				for i = 1, #(dropCodes), 1 do
-					local npcs = { strsplit(",", strsub(dropCodes[i], 3)) }
-					if nil ~= npcs then
-						for j = 1, #(npcs), 1 do
-							tinsert(retval, { self.NPC_TYPE_BY, npcs[j] } )
-						end
+			npcId = tonumber(npcId)
+			if nil ~= npcId then
+				local droppedBy = self.npc.droppedBy[npcId]
+				if nil ~= droppedBy then
+					for _, anotherNPCId in pairs(droppedBy) do
+						tinsert(retval, { self.NPC_TYPE_BY, anotherNPCId } )
 					end
 				end
-			end
-			local killCodes = self:CodesWithPrefixNPC(npcId, 'K:')
-			if nil ~= killCodes then
-				for i = 1, #(killCodes), 1 do
-					local quests = { strsplit(",", strsub(killCodes[i], 3)) }
-					if nil ~= quests then
-						for j = 1, #(quests), 1 do
-							tinsert(retval, { self.NPC_TYPE_KILL, quests[j] } )
-						end
+				local killQuests = self.npc.kill[npcId]
+				if nil ~= killQuests then
+					for _, questId in pairs(killQuests) do
+						tinsert(retval, { self.NPC_TYPE_KILL, questId } )
 					end
 				end
-			end
-			local hasCodes = self:CodesWithPrefixNPC(npcId, 'H:')
-			if nil ~= hasCodes then
-				for i = 1, #(hasCodes), 1 do
-					local items = { strsplit(",", strsub(hasCodes[i], 3)) }
-					if nil ~= items then
-						for j = 1, #(items), 1 do
-							tinsert(retval, { self.NPC_TYPE_DROP, items[j] } )
-						end
+				local has = self.npc.has[npcid]
+				if nil ~= has then
+					for _, anotherNPCId in pairs(has) do
+						tinsert(retval, { self.NPC_TYPE_DROP, anotherNPCId } )
 					end
 				end
 			end
@@ -5361,6 +5464,92 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 			end
 
 			retval = tContains(self.cachedBagItems, itemId)
+			return retval
+		end,
+
+		_AddNPCLocation = function(self, npcId, npcLocation, aliasNPCId)
+			npcId = tonumber(npcId)
+			self.npc.locations[npcId] = self.npc.locations[npcId] or {}
+			tinsert(self.npc.locations[npcId], Grail:_LocationStructure(npcLocation))
+			aliasNPCId = tonumber(aliasNPCId)
+			if nil ~= aliasNPCId then
+				self.npc.aliases[aliasNPCId] = self.npc.aliases[aliasNPCId] or {}
+				tinsert(self.npc.aliases[aliasNPCId], npcId)
+			end
+		end,
+
+		LearnNPCLocation = function(self, npcId, npcLocation, aliasNPCId)
+			GrailDatabase.learned = GrailDatabase.learned or {}
+			GrailDatabase.learned.NPC_LOCATION = GrailDatabase.learned.NPC_LOCATION or {}
+			local aliasString = aliasNPCId and ('|' .. aliasNPCId) or ''
+			tinsert(GrailDatabase.learned.NPC_LOCATION, self.blizzardRelease .. '|' .. GetLocale() .. '|' .. npcId .. '|' .. npcLocation .. aliasString)
+			self:_AddNPCLocation(npcId, npcLocation, aliasNPCId)
+		end,
+
+		LearnObjectName = function(self, objectId, objectName)
+			GrailDatabase.learned = GrailDatabase.learned or {}
+			GrailDatabase.learned.OBJECT_NAME = GrailDatabase.learned.OBJECT_NAME or {}
+			tinsert(GrailDatabase.learned.OBJECT_NAME, self.blizzardRelease .. '|' .. GetLocale() .. '|' .. objectId .. '|' .. objectName)
+			self.npc.name[1000000 + tonumber(objectId)] = objectName
+		end,
+
+		--	Check the internal npc.locations structure for a location close to
+		--	the one derived from the locationString provided.
+		_LocationKnown = function(self, npcId, locationString)
+			local retval = false
+			npcId = tonumber(npcId)
+			local t = self.npc.locations[npcId]
+			if nil ~= t then
+				local locationStructure = self:_LocationStructure(locationString)
+				for _, t1 in pairs(t) do
+					if self:_LocationsCloseStructures(t1, locationStructure) then
+						retval = true
+					end
+				end
+			end
+			return retval
+		end,
+
+		_LocationStructure = function(self, locationString)
+			local mapId, rest = strsplit(':', locationString)
+			local mapLevel = 0
+			local mapLevelString
+			mapId, mapLevelString = strsplit('[', mapId)
+			local t1 = { ["mapArea"] = tonumber(mapId) }
+			if nil ~= mapLevelString then
+				mapLevel = tonumber(strsub(mapLevelString, 1, strlen(mapLevelString) - 1))
+			end
+			t1.mapLevel = mapLevel
+			local coord, realArea = nil, nil
+			if nil ~= rest then
+				coord, realArea = strsplit('>', rest)
+				local coordinates = { strsplit(',', coord) }
+				t1.x = tonumber(coordinates[1])
+				t1.y = tonumber(coordinates[2])
+				if nil ~= realArea then
+					t1.realArea = tonumber(realArea)
+				end
+			end
+			return t1
+		end,
+
+		_LocationsClose = function(self, locationString1, locationString2)
+			local l1 = self:_LocationStructure(locationString1)
+			local l2 = self:_LocationStructure(locationString2)
+			return self:_LocationsCloseStructures(l1, l2)
+		end,
+
+		_LocationsCloseStructures = function(self, locationStructure1, locationStructure2)
+			local retval = false
+			local l1 = locationStructure1 or {}
+			local l2 = locationStructure2 or {}
+			if (l1.near or l2.near) and l1.mapArea == l2.mapArea then
+				retval = true
+			elseif l1.mapArea == l2.mapArea and l1.mapLevel == l2.mapLevel then
+				if sqrt((l1.x - l2.x)^2 + (l1.y - l2.y)^2) < 1.55 then
+					retval = true
+				end
+			end
 			return retval
 		end,
 
@@ -5455,7 +5644,7 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 				-- Get the target information to ensure the target exists in the database of NPCs
 				local version = self.versionNumber.."/"..self.questsVersionNumber.."/"..self.npcsVersionNumber.."/"..self.zonesVersionNumber
 				local targetName, npcId, coordinates = self:TargetInformation()
-				self:_UpdateTargetDatabase(targetName, npcId, coordinates, version)
+				npcId = self:_UpdateTargetDatabase(targetName, npcId, coordinates, version)
 				if GrailDatabase.debug then
 					if nil ~= targetName then
 						npcId = npcId or -1
@@ -5847,7 +6036,18 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 
 		_NPCFaction = function(self, npcId)
 			npcId = tonumber(npcId)
-			return nil ~= npcId and self.npcFactions[npcId] or nil
+			return nil ~= npcId and self.npc.faction[npcId] or nil
+		end,
+
+		-- Provided our internal npcId (handling game objects and items) return
+		-- the value to use in looking up the name of the NPC.  This allows our
+		-- varieties of indirection.  Without a value, return the requested.
+		_NPCIndex = function(self, npcId)
+			local retval = tonumber(npcId)
+			if nil ~= retval and nil ~= self.npc.nameIndex[retval] then
+				retval = self.npc.nameIndex[retval]
+			end
+			return retval
 		end,
 
 		---
@@ -5905,8 +6105,121 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 		--	@param npcId The standard numeric npcId representing an NPC.
 		--	@return The localized string for the specific NPC, or nil if the NPC is not found in the database.
 		NPCName = function(self, npcId)
+			local retval = nil
 			npcId = tonumber(npcId)
-			return nil ~= npcId and nil ~= self.npcIndex[npcId] and self.npcNames[self.npcIndex[npcId]] or nil
+			if nil ~= npcId then
+				local indexToUse = self:_NPCIndex(npcId)
+				retval = self.npc.name[indexToUse]
+				if nil == retval then
+					local hyperlinkFormat
+					if indexToUse > 100000000 then
+--						if self.blizzardRelease < 18505 then
+							hyperlinkFormat = strformat("item:%d:0:0:0:0:0:0:0", indexToUse - 100000000)
+--						else
+--							hyperlinkFormat = 'unit:GameObject-0-0-0-0-' .. indexToUse - 100000000 .. '-0'	-- did not work, but old version does
+--						end
+					elseif indexToUse > 1000000 then
+						hyperlinkFormat = strformat("unit:0xF51%05X00000000", indexToUse - 1000000)	-- does not work
+--						hyperlinkFormat = 'item:GameObject-0-0-0-0-' .. indexToUse - 1000000 .. '-0'	-- did not work
+--						hyperlinkFormat = 'unit:GameObject-0-0-0-0-' .. indexToUse - 1000000 .. '-0'	-- did not work
+--						hyperlinkFormat = 'unit:Creature-0-0-0-0-' .. indexToUse - 1000000 .. '-0'	-- did not work
+					else
+						if self.blizzardRelease < 18505 then
+							hyperlinkFormat = strformat("unit:0xF53%05X00000000", indexToUse)
+						else
+							hyperlinkFormat = 'unit:Creature-0-0-0-0-' .. indexToUse .. '-0'
+						end
+					end
+					local frame = self.tooltipNPC
+					if not frame:IsOwned(UIParent) then frame:SetOwner(UIParent, "ANCHOR_NONE") end
+					frame:ClearLines()
+					frame:SetHyperlink(hyperlinkFormat)
+					local numLines = frame:NumLines()
+					if nil ~= numLines and 0 ~= numLines then
+						local text = _G["com_mithrandir_grailTooltipNPCTextLeft1"]
+						if text then
+							retval = text:GetText()
+							if retval ~= self.retrievingString then
+								self.npc.name[indexToUse] = retval
+							end
+						end
+					end
+				end
+			end
+			return retval
+		end,
+
+		---
+		--	Returns the npcId to use for the NPC found at the specified location
+		--	with the specified npcId.  This can return an alias npcId, and it can
+		--	create either the real one or an alias, updating the databases based
+		--	on what it has done.
+		--	@param npcId The standard numeric Blizzard ID representing an NPC.
+		--	@param npcLocationString The standard Grail string representing the location of the NPC.
+		--	@return The npcId one should use for this NPC.
+		_NPCToUse = function(self, npcId, npcLocationString)
+			npcId = tonumber(npcId)
+			local retval = npcId
+			if nil ~= npcId and npcId > 0 then
+				if not self:_LocationKnown(npcId, npcLocationString) then
+					local aliasFound = false
+					local possibleAliases = self.npc.aliases[npcId]
+					if nil ~= possibleAliases then
+						for _, aliasId in pairs(possibleAliases) do
+							if self:_LocationKnown(aliasId, npcLocationString) then
+								retval = aliasId
+								aliasFound = true
+							end
+						end
+					end
+					if not aliasFound then
+						if nil ~= self.npc.locations[npcId] and 0 < #(self.npc.locations[npcId]) then
+							retval = self:_CreateAliasNPC(npcId, npcLocationString)
+						else
+							self:LearnNPCLocation(npcId, npcLocationString)
+						end
+					end
+				end
+			end
+			return retval
+		end,
+
+		_CreateAliasNPC = function(self, npcId, npcLocationString)
+			local aliasBase = 2999999
+			while nil ~= self.npc.locations[aliasBase + 1] do
+				aliasBase = aliasBase + 1
+			end
+			local newAliasId = aliasBase + 1
+			self:LearnNPCLocation(newAliasId, npcLocationString, npcId)
+			return newAliasId
+		end,
+
+		---
+		--	Returns the localized name of the GameObject represented by the specified Object ID, if Grail knows it.
+		--	@param objectId The standard numeric Blizzard ID representing a game object.
+		--	@return The localized string for the specific game object, or nil if it is not in the database.
+		ObjectName = function(self, objectId)
+			local retval = nil
+			objectId = tonumber(objectId)
+			if nil ~= objectId then
+				local indexToUse = self:_NPCIndex(objectId + 1000000)
+				retval = self:NPCName(indexToUse)
+			end
+			return retval
+		end,
+
+		---
+		--	Returns the localized name of the item represented by the specified Item ID.
+		--	@param itemId The standard numeric Blizzard ID representing an item.
+		--	@return The localized string for the specific item.
+		ItemName = function(self, itemId)
+			local retval = nil
+			itemId = tonumber(itemId)
+			if nil ~= itemId then
+				local indexToUse = self:_NPCIndex(itemId + 100000000)
+				retval = self:NPCName(indexToUse)
+			end
+			return retval
 		end,
 
 		-- Checks to ensure the only prerequisites that fail are ones that possess the specified questCode
@@ -6882,7 +7195,7 @@ if GrailDatabase.debug then print("Marking OEC quest complete", oecCodes[i]) end
 --				for i = 1, numEntries do
 				local i = 1
 				while (true) do
-					local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestId = self:GetQuestLogTitle(i)
+					local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestId, isWeekly, isTask = self:GetQuestLogTitle(i)
 					if not questTitle then
 						break
 					else
@@ -6984,134 +7297,76 @@ if GrailDatabase.debug then print("Marking OEC quest complete", oecCodes[i]) end
 		_RawNPCLocations = function(self, npcId)
 			local retval = {}
 			npcId = tonumber(npcId)
-			if nil ~= npcId and npcId < 0 and nil == self.npcIndex[npcId] then
-				self.npcIndex[npcId] = 0
-				self.npcCodes[npcId] = strformat("Z%d",-1 * npcId)
+			if nil ~= npcId and npcId < 0 and nil == self.npc.nameIndex[npcId] then
+				self.npc.nameIndex[npcId] = 0
+				self.npc.locations[npcId] = {{["mapArea"]= -1 * npcId}}
 			end
-			if nil ~= npcId and nil ~= self.npcIndex[npcId] then
-				local npcName = self:NPCName(npcId)
-				local codes = self.npcCodes[npcId]
-				if nil ~= codes then
-					local codeArray = { strsplit(" ", codes) }
-					local controlCode
-					local t = {}
-					t.name = npcName
-					t.id = npcId
-					t.notes = self.npcComments[npcId]
-					t.locations = {}
-					t.droppers = {}
-					for _, code in pairs(codeArray) do
-						controlCode = strsub(code, 1, 1)
-						if 'Z' == controlCode then
-							tinsert(t.locations, { ["mapArea"]=tonumber(strsub(code, 2)) })
-						elseif 'H' == controlCode then
-						elseif 'K' == controlCode then
-							t.kill = true
-						elseif 'A' == controlCode then
-							t.alias = tonumber(strsub(code, 3))
-						elseif 'X' == controlCode then
-							t.heroic = true
-						elseif 'P' == controlCode		-- Preowned
-							or 'C' == controlCode		-- Created
-							or 'M' == controlCode		-- Mailbox
-							or 'S' == controlCode then	-- Self
-							if 'M' == controlCode then
-								local t1 = { mailbox = true }
-								if strlen(code) > 7 then
-									t1.mapArea = tonumber(strsub(code, 8))
-								end
-								tinsert(t.locations, t1)
-							elseif 'C' == controlCode then
-								tinsert(t.locations, { created = true })
-							else
-								tinsert(t.locations, {})
+			if nil ~= npcId and nil ~= self.npc.locations[npcId] then
+				local t = {}
+				t.name = self:NPCName(npcId)
+				t.id = npcId
+				t.notes = self.npc.comment[npcId]
+				t.locations = self.npc.locations[npcId]
+				t.kill = (nil ~= self.npc.kill[npcId])
+				t.alias = self.npc.nameIndex[npcId]
+				if nil ~= t.alias then
+					if nil == self.npc.aliases[t.alias] then
+						t.alias = nil
+					end
+				end
+				t.heroic = self.npc.heroic[npcId]
+				t.droppers = {}
+				local droppedBy = self.npc.droppedBy[npcId]
+				if nil ~= droppedBy then
+					for _, anNPCId in pairs(droppedBy) do
+						local droppers = self:_RawNPCLocations(anNPCId)
+						if nil ~= droppers then
+							for _, dropper in pairs(droppers) do
+								tinsert(t.droppers, dropper)
 							end
-						elseif 'N' == controlCode then
-							local t1 = { ["near"] = true }
-							if strlen(code) > 4 then
-								t1.mapArea = tonumber(strsub(code, 5))
-							end
-							tinsert(t.locations, t1)
-						elseif 'D' == controlCode then
-							-- the D: represents a list of NPCs that drop the item we are actually processing
-							if strlen(code) > 2 and ':' == strsub(code, 2, 2) then
-								local realNPCs = { strsplit(',', strsub(code, 3)) }
-								for _, anNPCId in pairs(realNPCs) do
-									local droppers = self:_RawNPCLocations(anNPCId)
-									if nil ~= droppers then
-										for _, dropper in pairs(droppers) do
-											tinsert(t.droppers, dropper)
-										end
-									end
-								end
-							end
-						elseif 'Q' == controlCode then
-							if strlen(code) > 2 and ':' == strsub(code, 2, 2) then
-								t.questId = tonumber(strsub(code, 3))
-							end
-						else	-- a real coordinate
-							local mapId, rest = strsplit(':', code)
-							local mapLevel = 0
-							local mapLevelString
-							mapId, mapLevelString = strsplit('[', mapId)
-							local t1 = { ["mapArea"] = tonumber(mapId) }
-							if nil ~= mapLevelString then
-								mapLevel = tonumber(strsub(mapLevelString, 1, strlen(mapLevelString) - 1))
-							end
-							t1.mapLevel = mapLevel
-							local coord, realArea = nil, nil
-							if nil ~= rest then
-								coord, realArea = strsplit('>', rest)
-								local coordinates = { strsplit(',', coord) }
-								t1.x = tonumber(coordinates[1])
-								t1.y = tonumber(coordinates[2])
-								if nil ~= realArea then
-									t1.realArea = tonumber(realArea)
-								end
-							end
-							tinsert(t.locations, t1)
 						end
 					end
-					for _, t1 in pairs(t.locations) do
-						local t2 = {}
-						t2.name = t.name
-						t2.id = t.id
-						t2.notes = t.notes
-						t2.kill = t.kill
-						t2.alias = t.alias
-						t2.heroic = t.heroic
-						t2.mapArea = t1.mapArea
-						t2.mapLevel = t1.mapLevel
-						t2.near = t1.near
-						t2.mailbox = t1.mailbox
-						t2.created = t1.created
-						t2.x = t1.x
-						t2.y = t1.y
-						t2.realArea = t1.realArea
-						t2.questId = t.questId
-						tinsert(retval, t2)
-					end
-					for _, t1 in pairs(t.droppers) do
-						local t2 = {}
-						t2.name = t1.name
-						t2.id = t1.id
-						t2.notes = t1.notes
-						t2.kill = t.kill
-						t2.alias = t.alias
-						t2.heroic = t.heroic
-						t2.mapArea = t1.mapArea
-						t2.mapLevel = t1.mapLevel
-						t2.near = t1.near
-						t2.mailbox = t1.mailbox
-						t2.created = t1.created
-						t2.x = t1.x
-						t2.y = t1.y
-						t2.realArea = t1.realArea
-						t2.dropName = t.name
-						t2.dropId = t.id
-						t2.questId = t.questId
-						tinsert(retval, t2)
-					end
+				end
+				t.questId = self.npc.questAssociations[npcId] and self.npc.questAssociations[npcId][1] or nil
+				for _, t1 in pairs(t.locations) do
+					local t2 = {}
+					t2.name = t.name
+					t2.id = t.id
+					t2.notes = t.notes
+					t2.kill = t.kill
+					t2.alias = t.alias
+					t2.heroic = t.heroic
+					t2.mapArea = t1.mapArea
+					t2.mapLevel = t1.mapLevel
+					t2.near = t1.near
+					t2.mailbox = t1.mailbox
+					t2.created = t1.created
+					t2.x = t1.x
+					t2.y = t1.y
+					t2.realArea = t1.realArea
+					t2.questId = t.questId
+					tinsert(retval, t2)
+				end
+				for _, t1 in pairs(t.droppers) do
+					local t2 = {}
+					t2.name = t1.name
+					t2.id = t1.id
+					t2.notes = t1.notes
+					t2.kill = t.kill
+					t2.alias = t.alias
+					t2.heroic = t.heroic
+					t2.mapArea = t1.mapArea
+					t2.mapLevel = t1.mapLevel
+					t2.near = t1.near
+					t2.mailbox = t1.mailbox
+					t2.created = t1.created
+					t2.x = t1.x
+					t2.y = t1.y
+					t2.realArea = t1.realArea
+					t2.dropName = t.name
+					t2.dropId = t.id
+					t2.questId = t.questId
+					tinsert(retval, t2)
 				end
 			end
 			if 0 == #retval then
@@ -7484,11 +7739,15 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[479] = 39518,	-- Demon Hunter choosing Vengeance
 			[486] = 40374,	-- Demon Hunter choosing Kayn Sunfury
 			[487] = 40375,	-- Demon Hunter choosing Atruis
+			[491] = 40582,	-- Warrior choosing Arms artifact
 			[504] = 40621,	-- Night Elf Hunter choosing beast master artifact
 			[531] = 40702,	-- Druid choosing guardian artifact
 			[533] = 40707,	-- Priest choosing Shadow artifact
 			[546] = 40817,	-- Demon Hunter choosing Havoc artifact (Kayn, Night Elf)
 			[547] = 40818,	-- Demon Hunter choosing Vengeance artifact
+			[568] = 40842,	-- Rogue choosing Assassination artifact
+			[569] = 40843,	-- Rogue choosing Outlaw artifact
+			[570] = 40844,	-- Rogue choosing Subtelty artifact
 			[585] = 41080,	-- Mage choosing Fire artifact
 			[645] = 44380,	-- Demon Hunter chossing Havoc artifact
 			},
@@ -7636,14 +7895,14 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			return retval
 		end,
 
-		_StatusCodeCallback = function(callbackType, questId)
+		_StatusCodeCallback = function(callbackType, questId, delay)
 			questId = tonumber(questId)
 			if nil ~= questId then
 				if nil ~= Grail.questStatusCache then
 					Grail.questStatuses[questId] = nil
 --					if Grail.quests[questId] then Grail.quests[questId][7] = nil end
 --					if Grail.quests[questId] then self:_MarkStatusValid(questId, true) end
-					Grail:_CoalesceDelayedNotification("Status", 0)
+					Grail:_CoalesceDelayedNotification("Status", delay or 0)
 					Grail:_StatusCodeInvalidate(Grail.questStatusCache['D'][questId])
 					Grail:_StatusCodeInvalidate(Grail.questStatusCache["I"][questId])
 					Grail:_StatusCodeInvalidate(Grail.questStatusCache.Q[questId])
@@ -7669,7 +7928,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 
 		---
 		--	
-		_StatusCodeInvalidate = function(self, tableOfQuestIds)
+		_StatusCodeInvalidate = function(self, tableOfQuestIds, delay)
 			if nil ~= tableOfQuestIds then
 				for _, questId in pairs(tableOfQuestIds) do
 					if nil ~= self.questStatuses[questId] then
@@ -7678,8 +7937,8 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 --						self.quests[questId][7] = nil
 --					if nil ~= self.quests[questId] and self:_StatusValid(questId) then
 --						self:_MarkStatusValid(questId, true)
-						self._StatusCodeCallback("bogus", questId)	-- we want to invalidate the cache for descendants
-						self:_CoalesceDelayedNotification("Status", 0)
+						self._StatusCodeCallback("bogus", questId, delay)	-- we want to invalidate the cache for descendants
+						self:_CoalesceDelayedNotification("Status", delay or 0)
 					end
 				end
 			end
@@ -7861,17 +8120,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 		--	@param coordinates The zone coordinates of the player.
 		--	@param version A version string based on the current internal database versions.
 		_UpdateTargetDatabase = function(self, targetName, npcId, coordinates, version)
-			if nil ~= npcId then
-				if nil == self.npcIndex[npcId] then
-					if nil == GrailDatabase["NewNPCs"] then	GrailDatabase["NewNPCs"] = { } end
-					if nil == GrailDatabase["NewNPCs"][npcId] then GrailDatabase["NewNPCs"][npcId] = { } end
-					GrailDatabase["NewNPCs"][npcId][self.playerLocale] = targetName
-					GrailDatabase["NewNPCs"][npcId][1] = coordinates
-					GrailDatabase["NewNPCs"][npcId][2] = version
-				elseif 0 ~= npcId and nil ~= targetName and targetName ~= self:NPCName(npcId) then
-					self:_RecordBadNPCData('G' .. self.versionNumber .. '|' .. npcId .. "|Name:" .. targetName .. "|Locale:" .. self.playerLocale)
-				end
-			end
+			return self:_NPCToUse(npcId, coordinates)
 		end,
 
 		_UpdateTrackingObserver = function(self)
@@ -7884,124 +8133,6 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 				self:UnregisterObserverQuestAccept(Grail._AddTrackingCallback)
 				self:UnregisterObserverQuestComplete(Grail._AddTrackingCallback)
 			end
-		end,
-
-		_VerifyNPC = function(self, npcId)
-			local retval = true
-			local frame = self.tooltip
-			npcId = tonumber(npcId)
-			if not frame:IsOwned(UIParent) then frame:SetOwner(UIParent, "ANCHOR_NONE") end
-			frame:ClearLines()
-
-			-- A specific section of NPCs are considered alias NPCs so the actual NPC is checked
-			-- for the name to ensure it matches the alias associated with it.	
-			local npcIdToUse = npcId
-			if npcId > 500000 and npcId < 600000 then
-				local codes = self:CodesWithPrefixNPC(npcId, 'A:')
-				if nil ~= codes and #(codes) == 1 then
-					npcIdToUse = tonumber(strsub(codes[1], 3))
-				end
-			end
-
-			local hyperlinkFormat
-			if npcIdToUse > 100000000 then
---				if self.blizzardRelease < 18505 then
-					hyperlinkFormat = strformat("item:%d:0:0:0:0:0:0:0", npcIdToUse - 100000000)
---				else
---					hyperlinkFormat = 'unit:GameObject-0-0-0-0-' .. npcIdToUse - 100000000 .. '-0'	-- did not work, but old version does
---				end
-			elseif npcIdToUse > 1000000 then
-				hyperlinkFormat = strformat("unit:0xF51%05X00000000", npcIdToUse - 1000000)	-- does not work
---				hyperlinkFormat = 'item:GameObject-0-0-0-0-' .. npcIdToUse - 1000000 .. '-0'	-- did not work
---				hyperlinkFormat = 'unit:GameObject-0-0-0-0-' .. npcIdToUse - 1000000 .. '-0'	-- did not work
---				hyperlinkFormat = 'unit:Creature-0-0-0-0-' .. npcIdToUse - 1000000 .. '-0'	-- did not work
-			else
-				if self.blizzardRelease < 18505 then
-					hyperlinkFormat = strformat("unit:0xF53%05X00000000", npcIdToUse)
-				else
-					hyperlinkFormat = 'unit:Creature-0-0-0-0-' .. npcIdToUse .. '-0'
-				end
-			end
-			frame:SetHyperlink(hyperlinkFormat)
-			local numLines = frame:NumLines()
-			if nil == numLines or 0 == numLines then
-				retval = false
-			else
-				local text = _G["com_mithrandir_grailTooltipTextLeft1"]
-				if text then
-					text = text:GetText()
-					if text == self.retrievingString then
-						retval = false
-					elseif text ~= self:NPCName(npcId) then
-						self:_LogNameIssue('NPC_ISSUES', self.npcIndex[npcId], text)
-						if GrailDatabase.debug then print("Added entry for", npcId) end
-					else
-						if GrailDatabase.debug then print("NPC item seems fine", npcId) end
-					end
-				else
-					retval = false
-				end
-			end
-			return retval
-		end,
-
-		_VerifyNPCList = function(self, elapsed)
-			self.timeSinceLastUpdate = self.timeSinceLastUpdate + elapsed
-			if self.timeSinceLastUpdate > 2.0 then
-
-				-- Everything in table two is checked and if fails is moved to table 3
-				for npcId in pairs(self.verifyTable2) do
-					if nil ~= npcId then
-						if not self:_VerifyNPC(npcId) then
-							self.verifyTable3[npcId] = true
-							self.verifyTableCount3 = self.verifyTableCount3 + 1
-						end
-						self.verifyTable2[npcId] = nil
-						self.verifyTableCount2 = self.verifyTableCount2 - 1
-					end
-				end
-
-				-- Everything in table one is checked and if fails is moved to table 2
-				for npcId in pairs(self.verifyTable) do
-					if nil ~= npcId then
-						if not self:_VerifyNPC(npcId) then
-							self.verifyTable2[npcId] = true
-							self.verifyTableCount2 = self.verifyTableCount2 + 1
-						end
-						self.verifyTable[npcId] = nil
-						self.verifyTableCount = self.verifyTableCount - 1
-					end
-				end
-
-				if not self.doneProcessingList then self.currentQuestIndex = next(self.npcIndex, self.currentQuestIndex) end
-				while nil ~= self.currentQuestIndex and self.verifyTableCount <= 100 do
-					self.currentQuestIndex = tonumber(self.currentQuestIndex)
-					if self.npcIndex[self.currentQuestIndex] and self.currentQuestIndex > 6 then
-						self.npcCountForVerification = self.npcCountForVerification + 1
-						if not self:_VerifyNPC(self.currentQuestIndex) then
-							self.verifyTable[self.currentQuestIndex] = true
-							self.verifyTableCount = self.verifyTableCount + 1
-						end
-					end
-					if self.verifyTableCount <=100 then
-						self.currentQuestIndex = next(self.npcIndex, self.currentQuestIndex)
-					end
-				end
-				if nil == self.currentQuestIndex then self.doneProcessingList = true end
-
-				self.timeSinceLastUpdate = 0
-				print("Verify NPC status:", self.verifyTableCount, "/", self.verifyTableCount2, "/", self.verifyTableCount3, "/", self.npcCountForVerification)
-
-				if (0 == self.verifyTableCount and 0 == self.verifyTableCount2 and nil == self.currentQuestIndex) then
-					self.npcNotificationFrame:SetScript("OnUpdate", nil)
-					self.currentlyVerifying = false
-					print("Total unverifiable NPCs is", self.verifyTableCount3)
-					print("Total NPCs is", self.npcCountForVerification)
-					print("Ended total NPC verification")
-				end
-
-			end
-
 		end,
 
 		}

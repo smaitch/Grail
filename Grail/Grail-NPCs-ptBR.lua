@@ -4,7 +4,7 @@
 --
 
 if GetLocale() ~= "ptBR" then return end
-local G = Grail.npcNames
+local G = Grail.npc.name
 local _, release, _, interface = GetBuildInfo()
 release = tonumber(release)
 interface = tonumber(interface)
