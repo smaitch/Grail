@@ -1088,7 +1088,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					if self.continents[751] then self.continents[751].dungeons = { 768, } end
 					if self.continents[862] then self.continents[862].dungeons = { 876, 877, 885, 875, 867, } end	-- self.blizzardRelease >= 15640
 					if self.continents[962] then self.continents[962].dungeons = {  } end	-- self.blizzardRelease >= 18505
-					if self.continents[1007] then self.continents[1007].dungeons = { 1046 } end	-- self.blizzardRelease >= 21531
+					if self.continents[1007] then self.continents[1007].dungeons = { 1046, 1066 } end	-- self.blizzardRelease >= 21531
 
 					--	Now compute the dungeonMapping master list based on all the dungeons for each continent
 					local mapName
