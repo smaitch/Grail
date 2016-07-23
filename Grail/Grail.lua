@@ -389,6 +389,8 @@
 --			Provides for prerequisites to require a specific player class.
 --			Fixes an issue where Blizzard changed the C_Garrison.GetBuildings() API not in Legion beta, but in the live release based on it.
 --			Changes the Interface to 70000.
+--		080	Corrects a problem where learning a quest causes an error if nothing else already learned.
+--			Updates some quest/NPC information for Legion.
 --
 --	Known Issues
 --
@@ -8199,6 +8201,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 				end
 			end
 			if needToWork then
+				GrailDatabase.learned = GrailDatabase.learned or {}
 				GrailDatabase.learned.QUEST = GrailDatabase.learned.QUEST or {}
 				local currentLine = GrailDatabase.learned.QUEST[questId]
 				local needToAddQuestName = (questTitle ~= "No Title Stored" and self:QuestName(questId) ~= questTitle)

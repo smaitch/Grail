@@ -23153,4 +23153,10 @@ G[44121]="DANGER: Az'jatar"
 G[44549]='Master of the Isles'
 end
 
+if release >= 22289 then
+G[9626]='Meeting the Orcs'
+G[38845]='Unused'
+G[40501]='REUSEME_40501'
+end
+
 --	End of localized quest names
