@@ -387,6 +387,8 @@
 --		079	Updates some quest/NPC information, especially for Legion.
 --			Corrects use of C_Garrison.GetGarrisonInfo() for Legion as it has changed.
 --			Provides for prerequisites to require a specific player class.
+--			Fixes an issue where Blizzard changed the C_Garrison.GetBuildings() API not in Legion beta, but in the live release based on it.
+--			Changes the Interface to 70000.
 --
 --	Known Issues
 --
@@ -1553,7 +1555,9 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					-- at the moment we ignore questTag since it is localized
 					-- With Legion there are issues because the level of the quests
 					-- match the level of the player.  So, we force the level to 0.
-					level = 0
+					if self.inWoD and level > 100 then
+						level = 0
+					end
 					local kCode = strformat("K%03d%d", level, baseValue)
 					self:_UpdateQuestDatabase(questId, questTitle, npcId, isDaily, 'A', version, kCode)
 
@@ -1967,7 +1971,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		--	items which will access the internal data structure using our modified NPC IDs.
 		npc = {
 
-			-- Possible list of quests that are aliases of the key.
+			-- Possible list of NPCs that are aliases of the key.
 			aliases = {},
 
 			-- The localized comment for the NPC.
@@ -3046,23 +3050,41 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			return allCodesGood
 		end,
 
+		_GoodNPC = function(self, npcId, preqTable, nonPreqTable)
+			local retval = false
+			npcId = tonumber(npcId)
+			if nil ~= npcId then
+				if nil ~= preqTable then
+					for anNPCId, _ in pairs(preqTable) do
+-- TODO: Make the 0 and < 0 comparisons be true as well
+						if anNPCId == npcId then
+							retval = true
+						end
+					end
+				end
+				if nil ~= nonPreqTable then
+					for _, anNPCId in pairs(nonPreqTable) do
+-- TODO: Make the 0 and < 0 comparisons be true as well
+						if anNPCId == npcId then
+							retval = true
+						end
+					end
+				end
+			end
+			return retval
+		end,
+
+		_GoodNPCAccept = function(self, questId, npcId)
+			return self:_GoodNPC(npcId, self:QuestNPCPrerequisiteAccepts(questId), self:QuestNPCAccepts(questId))
+		end,
+
+		_GoodNPCTurnin = function(self, questId, npcId)
+			return self:_GoodNPC(npcId, self:QuestNPCPrerequisiteTurnins(questId), self:QuestNPCTurnins(questId))
+		end,
+
 		--	This routine attempts to remove items from the special tables that are stored in the GrailDatabase table
 		--	when they have been added to the internal database.  These special tables are populated when Grail discovers
 		--	something lacking in its internal database as game play proceeds.  This routine is called upon startup.
--- TODO: *** Major transformation ***
---	Basically we should record into a "learned" structure those pieces of information like quest information, NPC location
---	and NPC name.  We should be smart about NPCs by looking at location and seeing if it differs a lot from what we would
---	want to record.  When this information is present in the "learned" structure we should them update the running database
---	to include this information so the game experience will benefit from this.  Of course for things like names we can only
---	update English and the running locale.  It will be quite difficult doing this properly if, for example, there is a value
---	and an English value because we do not really know from what source we have a value based on how we load the data.
---	Therefore, I think we should run the "learned" data through processing before we load the other data if we can.  I have
---	no idea whether we can, but if we turn the quest names and NPC names into loadable objects perhaps we can.  So we would
---	load the base English, then we would patch that.  Then we could load the localization on top of that.  Then we could do
---	the patch again for the locale.  If we switch to loadable objects then we could have the code load only the localization
---	files that are needed based on the locale at runtime.  This may make startup a little faster.  However, I am having my
---	doubts as I think the loadable is for an addon only, and perhaps a file cannot be done in this way.  Therefore, perhaps
---	it would be a good idea to make all the quest names into loadable addons for each locale.
 		_CleanDatabase = function(self)
 
 			local locale = GetLocale()
@@ -3096,7 +3118,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					for _, npcLine in pairs(GrailDatabase.learned.NPC_LOCATION) do
 						local shouldAdd = true
 						local ver, loc, npcId, npcLoc, aliasId = strsplit('|', npcLine)
-						if self:_LocationKnown(npcId, npcLoc) then
+						if self:_LocationKnown(npcId, npcLoc, aliasId) then
 							shouldAdd = false
 						else
 							self:_AddNPCLocation(npcId, npcLoc, aliasId)
@@ -3106,6 +3128,89 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						end
 					end
 					GrailDatabase.learned.NPC_LOCATION = newNPCLocations
+				end
+
+				if nil ~= GrailDatabase.learned.QUEST then
+					local newQuest = {}
+					for questId, questLine in pairs(GrailDatabase.learned.QUEST) do
+						local questBits = { strsplit('|', questLine) }
+						-- The questBits should have the first item being the list
+						-- of codes, K, A: and T:.  Any other bits will be the locale
+						-- a colon and the localized name of the quest that did not
+						-- match the internal database value.  Those latter bits are
+						-- optional.
+						local internalQuestLevel = self:QuestLevel(questId)
+						local newQuestLine = ''
+						local questSpacer = ''
+						for i = 1, #questBits do
+							if 1 == i then
+								-- process codes
+								local codes = { strsplit(' ', questBits[i]) }
+								local formatError = false
+								local newCodes = ''
+								local codeSpacer = ''
+								for c = 1, #codes do
+									if '' ~= codes[c] then
+										if 1 < strlen(codes[c]) then
+											local code = strsub(codes[c], 1, 1)
+											local subcode = strsub(codes[c], 2, 2)
+											if 'K' == code then
+-- TODO: Verify the K code as best we can with Legion flexible quest levels
+												if false then	-- replace the false with the proper call
+													newCodes = newCodes .. codeSpacer .. codes[c]
+													codeSpacer = ' '
+													self.questCodes[questId] = self.questCodes[questId] or ''
+													self.questCodes[questId] = self.questCodes[questId] .. ' ' .. codes[c]
+												end
+											elseif 'A' == code and ':' == subcode then
+												if not self:_GoodNPCAccept(strsub(codes[c], 3)) then
+													newCodes = newCodes .. codeSpacer .. codes[c]
+													codeSpacer = ' '
+													self.questCodes[questId] = self.questCodes[questId] or ''
+													self.questCodes[questId] = self.questCodes[questId] .. ' ' .. codes[c]
+												end
+											elseif 'T' == code and ':' == subcode then
+												if not self:_GoodNPCTurnin(strsub(codes[c], 3)) then
+													newCodes = newCodes .. codeSpacer .. codes[c]
+													codeSpacer = ' '
+													self.questCodes[questId] = self.questCodes[questId] or ''
+													self.questCodes[questId] = self.questCodes[questId] .. ' ' .. codes[c]
+												end
+											else
+												formatError = true
+											end
+										end
+									end
+								end
+								if formatError then
+									print("Malformed code in saved variables for quest", questId, questLine)
+								end
+								if 0 < strlen(newCodes) then
+									newQuestLine = newQuestLine .. questSpacer .. newCodes
+									questSpacer = '|'
+								end
+							else
+								local addLocalizedName = true
+								local loc, localizedName = strsplit(':', questBits[i])
+								if loc == locale then
+									if self:QuestName(questId) == localizedName then
+										addLocalizedName = false
+									else
+										self.questNames[questId] = localizedName
+									end
+								end
+								if addLocalizedName then
+									newQuestLine = newQuestLine .. questSpacer .. questBits[i]
+									questSpacer = '|'
+								end
+							end
+						end
+						if 0 < strlen(newQuestLine) then
+							newQuest[questId] = newQuestLine
+						end
+						self.quests[questId] = self.quests[questId] or {}
+					end
+					GrailDatabase.learned.QUEST = newQuest
 				end
 
 				self.processedLearned = true
@@ -4796,7 +4901,7 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 					end
 				end
 				if GrailDatabase.debug then
-					local message = "Looting from " .. self.lootingGUID .. " locale: " .. GetLocale() .. " name: " .. self.lootingName
+					local message = "Looting from " .. self.lootingGUID .. " locale: " .. self.playerLocale .. " name: " .. self.lootingName
 					print(message)
 					self:_AddTrackingMessage(message)
 				end
@@ -4863,7 +4968,7 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 		HasGarrisonBuilding = function(self, buildingId, ignoreIsBuildingRequirement)
 			local desiredBuildingTable = nil
 			local retval = false
-			local buildings = C_Garrison.GetBuildings()
+			local buildings = (self.blizzardRelease >= 22248) and C_Garrison.GetBuildings(LE_GARRISON_TYPE_6_0) or C_Garrison.GetBuildings()
 			local building
 			local id, name, texPrefix, icon, rank, isBuilding, timeStart, buildTime, canActivate, canUpgrade, planExists
 			local foundPlot, foundBuildingId
@@ -5482,23 +5587,34 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 			GrailDatabase.learned = GrailDatabase.learned or {}
 			GrailDatabase.learned.NPC_LOCATION = GrailDatabase.learned.NPC_LOCATION or {}
 			local aliasString = aliasNPCId and ('|' .. aliasNPCId) or ''
-			tinsert(GrailDatabase.learned.NPC_LOCATION, self.blizzardRelease .. '|' .. GetLocale() .. '|' .. npcId .. '|' .. npcLocation .. aliasString)
+			tinsert(GrailDatabase.learned.NPC_LOCATION, self.blizzardRelease .. '|' .. self.playerLocale .. '|' .. npcId .. '|' .. npcLocation .. aliasString)
 			self:_AddNPCLocation(npcId, npcLocation, aliasNPCId)
 		end,
 
 		LearnObjectName = function(self, objectId, objectName)
 			GrailDatabase.learned = GrailDatabase.learned or {}
 			GrailDatabase.learned.OBJECT_NAME = GrailDatabase.learned.OBJECT_NAME or {}
-			tinsert(GrailDatabase.learned.OBJECT_NAME, self.blizzardRelease .. '|' .. GetLocale() .. '|' .. objectId .. '|' .. objectName)
+			tinsert(GrailDatabase.learned.OBJECT_NAME, self.blizzardRelease .. '|' .. self.playerLocale .. '|' .. objectId .. '|' .. objectName)
 			self.npc.name[1000000 + tonumber(objectId)] = objectName
 		end,
 
 		--	Check the internal npc.locations structure for a location close to
 		--	the one derived from the locationString provided.
-		_LocationKnown = function(self, npcId, locationString)
+		_LocationKnown = function(self, npcId, locationString, possibleAliasId)
 			local retval = false
 			npcId = tonumber(npcId)
 			local t = self.npc.locations[npcId]
+			if npcId >= 3000000 and npcId < 4000000 and nil ~= possibleAliasId then
+				possibleAliasId = tonumber(possibleAliasId)
+				local possibleAliases = self.npc.aliases[possibleAliasId]
+				if nil ~= possibleAliases then
+					for _, aliasId in pairs(possibleAliases) do
+						if self:_LocationKnown(aliasId, locationString) then
+							retval = true
+						end
+					end
+				end
+			end
 			if nil ~= t then
 				local locationStructure = self:_LocationStructure(locationString)
 				for _, t1 in pairs(t) do
@@ -7739,6 +7855,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[479] = 39518,	-- Demon Hunter choosing Vengeance
 			[486] = 40374,	-- Demon Hunter choosing Kayn Sunfury
 			[487] = 40375,	-- Demon Hunter choosing Atruis
+			[490] = 40409,	-- Paladin choosing Retribution artifact ... also 42495
 			[491] = 40582,	-- Warrior choosing Arms artifact
 			[504] = 40621,	-- Night Elf Hunter choosing beast master artifact
 			[531] = 40702,	-- Druid choosing guardian artifact
@@ -7749,6 +7866,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[569] = 40843,	-- Rogue choosing Outlaw artifact
 			[570] = 40844,	-- Rogue choosing Subtelty artifact
 			[585] = 41080,	-- Mage choosing Fire artifact
+			[629] = 43979,	-- Druid choosing Restoration artifact
 			[645] = 44380,	-- Demon Hunter chossing Havoc artifact
 			},
 
@@ -8067,38 +8185,90 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 		--	@param version A version string based on the current internal database versions.
 		_UpdateQuestDatabase = function(self, questId, questTitle, npcId, isDaily, npcCode, version, kCode)
 			questId = tonumber(questId)
-			if nil == questId then return end
-			if not self:DoesQuestExist(questId) or (nil == self.quests[questId][npcCode] and nil == self.quests[questId][npcCode..'P']) then
-				if nil == GrailDatabase["NewQuests"] then GrailDatabase["NewQuests"] = { } end
-				if nil == GrailDatabase["NewQuests"][questId] then
-					GrailDatabase["NewQuests"][questId] = { }
-					GrailDatabase["NewQuests"][questId][self.playerLocale] = questTitle
-					local codes = kCode
-					-- no longer need the following since kCode should have it
-					if nil ~= npcId then
-						if nil == codes then codes = npcCode..':'..npcId else codes = codes.." "..npcCode..':'..npcId end
+			npcId = tonumber(npcId)
+			if nil == questId or nil == npcId then return end
+			local needToWork = false
+			if not self:DoesQuestExist(questId) then
+				needToWork = true
+			else
+				if 'A' == npcCode then
+					needToWork = not self:_GoodNPCAccept(questId, npcId)
+				end
+				if 'T' == npcCode then
+					needToWork = not self:_GoodNPCTurnin(questId, npcId)
+				end
+			end
+			if needToWork then
+				GrailDatabase.learned.QUEST = GrailDatabase.learned.QUEST or {}
+				local currentLine = GrailDatabase.learned.QUEST[questId]
+				local needToAddQuestName = (questTitle ~= "No Title Stored" and self:QuestName(questId) ~= questTitle)
+				local completeNPCCode = npcCode .. ':' .. npcId
+				local newLine = ''
+				if nil == currentLine then
+					local spacer = ''
+					if nil ~= kCode then
+						newLine = kCode
+						spacer = ' '
 					end
-					if nil ~= codes then GrailDatabase["NewQuests"][questId][1] = codes end
-					GrailDatabase["NewQuests"][questId][2] = version
-					GrailDatabase["NewQuests"][questId][3] = self.blizzardRelease
+					if nil ~= completeNPCCode then
+						newLine = newLine .. spacer .. completeNPCCode
+					end
+					self.questCodes[questId] = newLine
 				else
-					local codes = GrailDatabase["NewQuests"][questId][1] or ''
-					if nil == self:CodesWithPrefix(codes, npcCode) then
-						if nil ~= npcId then
-							if nil == codes then codes = npcCode..':'..npcId else codes = codes.." "..npcCode..':'..npcId end
-						end
-						if nil ~= codes then
-							GrailDatabase["NewQuests"][questId][1] = codes
-							GrailDatabase["NewQuests"][questId][3] = self.blizzardRelease
+					local questBits = { strsplit('|', currentLine) }
+					self.questCodes[questId] = self.questCodes[questId] or ''
+					for i = 1, #questBits do
+						if 1 == i then
+							local codeSpacer = ''
+							local codes = { strsplit(' ', questBits[i]) }
+							local foundK, foundNPC = false, false
+							for j = 1, #codes do
+								local matchFound = false
+								if not foundK then
+									foundK = (codes[j] == kCode)
+									if foundK then
+										matchFound = true
+									end
+								end
+								if not foundNPC then
+									foundNPC = (codes[j] == completeNPCCode)
+									if foundNPC then
+										matchFound = true
+									end
+								end
+								if not matchFound then
+									newLine = newLine .. codeSpacer .. codes[j]
+									codeSpacer = ' '
+								end
+							end
+							if not foundK and nil ~= kCode then
+								newLine = newLine .. codeSpacer .. kCode
+								codeSpacer = ' '
+								self.questCodes[questId] = self.questCodes[questId] .. ' ' .. kCode
+							end
+							if not foundNPC and nil ~= completeNPCCode then
+								newLine = newLine .. codeSpacer .. completeNPCCode
+								codeSpacer = ' '
+								self.questCodes[questId] = self.questCodes[questId] .. ' ' .. completeNPCCode
+							end
+						else
+							local loc, localizedName = strsplit(':', questBits[i])
+							if loc ~= self.playerLocale then
+								newLine = newLine .. '|' .. questBits[i]
+							else
+								if localizedName == questTitle then
+									needToAddQuestName = false
+								end
+							end
 						end
 					end
 				end
-				if nil == self.quests[questId] then
---					self.quests[questId] = { [0] = questTitle, [1] = '' }
+				if needToAddQuestName then
+					newLine = newLine .. '|' .. self.playerLocale .. ':' .. questTitle
 					self.questNames[questId] = questTitle
-					self.questCodes[questId] = ''
-					self.quests[questId] = {}
 				end
+				self.quests[questId] = self.quests[questId] or {}
+				GrailDatabase.learned.QUEST[questId] = newLine
 			end
 		end,
 
