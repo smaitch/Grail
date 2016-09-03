@@ -2485,11 +2485,12 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --		warnedClientQuestLocationsTurnin = nil,
 		zoneNameMapping = {},	-- maps zone names into map IDs
 		zonesForLootingTreasure = {
+			[941] = true, -- Frostfire Ridge
 			[945] = true,
-			[946] = true,
-			[947] = true,
+			[946] = true, -- Talador
+			[947] = true, -- Shadowmoon Valley
 			[948] = true,
-			[949] = true,
+			[949] = true, -- Gorgrond
 			[950] = true,
 			[951] = true,
 			[1015] = true, -- Azsuna
