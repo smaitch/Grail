@@ -313,6 +313,23 @@ G[1243402]='Navarroggs Käfig'
 G[1243836]='Kopf von Yotnar'
 end
 
+if release >= 20574 then
+G[100113448]='Stück des Kraterfürsten'
+G[100113453]='Edelpilz'
+G[100122399]='Späherbericht: Magnarok'
+G[100122401]='Späherbericht: Steinzornklippen'
+G[100122404]='Späherbericht: Immergrüne Wildnis'
+G[100122406]='Späherbericht: Eisernes Belagerungswerk'
+G[100122407]='Späherbericht: Skettis'
+G[100122409]='Späherbericht: Säulen des Schicksals'
+G[100122414]='Späherbericht: Vergessenes Anzuversteck'
+G[100122415]='Späherbericht: Socrethars Klippe'
+G[100122417]='Späherbericht: Nachtflutnest'
+G[100122420]='Späherbericht: Gorianisches Übungsgelände'
+G[100128231]='Ausstattungsbaupläne: Abgerichtete Haie'
+G[100128232]='Ausstattungsbaupläne: Hochleistungsnebelleuchten'
+end
+
 if release >= 20726 then
 G[1229314]='Goblingedankenkontrollgerät'
 end

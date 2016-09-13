@@ -267,7 +267,6 @@ G[1222684]='Sable luisant'
 G[1244694]='Petit coffre au trésor'
 end
 
-
 if release >= 20726 then
 G[1229314]='Appareil de contrôle mental gobelin'
 end
