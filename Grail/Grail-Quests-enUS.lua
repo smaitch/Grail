@@ -23239,4 +23239,27 @@ G[44119]='DANGER: Volshax, Breaker of Will'
 G[44291]='WANTED: Crawshuk the Hungry'
 end
 
+if release >= 22594 then
+G[41171]='The Reliquary Calls'
+G[41172]='Echoes of My Ancestors'
+G[41173]='A Beacon of Hope'
+G[41235]='Work Order: Stonehide Leather'
+G[41273]='Buoy Fishing'
+G[41354]='Shattered Felslate Seams'
+G[41500]='Leyworms'
+G[41508]='Felslate Basilisks'
+G[41534]='Brambly Fjarnskaggl'
+G[41546]='Dreamleaf Cluster'
+G[41552]='Slab of Bacon'
+G[41560]='Felhide'
+G[41652]='Work Order: Deep Amber Loop'
+G[41678]='Work Order: Gunpack'
+G[43101]='DANGER: Witchdoctor Grgl-Brgl'
+G[43616]='WANTED: Bodash the Hoarder'
+G[43640]='The Arcway: Creeping Suspicions'
+G[44026]="WANTED: Mal'Dreth the Corruptor"
+G[44190]='DANGER: Jade Darkhaven'
+G[44292]='WANTED: Majestic Elderhorn'
+end
+
 --	End of localized quest names
