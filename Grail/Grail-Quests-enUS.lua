@@ -23262,4 +23262,38 @@ G[44190]='DANGER: Jade Darkhaven'
 G[44292]='WANTED: Majestic Elderhorn'
 end
 
+if release >= 22624 then
+G[41186]='History of Highmountain'
+G[41187]='Surveying Student'
+G[41188]='Misdirected'
+G[41268]='Queen Queenfish'
+G[41290]='Aqueous Aethril'
+G[41326]='Work Order: Stormscales'
+G[41347]='Extra-Rancid Felhound Hide'
+G[41442]='Striking Leystone Deposits'
+G[41531]='Iridescent Dreamleaf'
+G[41664]='Vantus Rune Work Order: Dragons of Nightmare'
+G[41675]='Work Order: Blink-Trigger Headgun'
+G[42723]='Eye of Azshara: A Tough Shell'
+G[42742]='Darkheart Thicket: Rage Rot'
+G[42764]='Court of Stars: Wraith in the Machine'
+G[42769]='Court of Stars: Bring Me the Eyes'
+G[42922]='Vault of the Wardens: Startup Sequence'
+G[42927]='DANGER: Malisandra'
+G[43502]='A Change of Seasons'
+G[43558]='Bindings of the Windlord'
+G[43562]="Giving It All We've Got"
+G[43563]='Ephemeral Manastorm Projector'
+G[43564]='Flow Control'
+G[43565]='Bring Home the Beacon'
+G[43566]='Withered Progress'
+G[43567]='All In'
+G[43568]="Arcan'dor, Gift of the Ancient Magi"
+G[43569]="Arluin's Request"
+G[43633]='WANTED: Thondrax'
+G[43756]='Enigmatic'
+G[44054]='Demonicide'
+G[44172]='The Arena Calls'
+end
+
 --	End of localized quest names
