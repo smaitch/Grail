@@ -6883,6 +6883,8 @@ G[39800]={510790}	-- needed for Greymane's Gambit part of Vrykul Story, Bro
 G[39801]={510790}	-- needed for Greymane's Gambit of Vrykul Story, Bro
 G[39992]={510059}	-- needed for Huln's War of Ain't No Mountain High Enough
 G[40573]={510698}	-- needed for Archdruid of the Vale part of That's 'Val'sharah Folks!
+G[40794]={510763}	-- needed for Mak'rana and the Fate of the Queen's Reprisal part of Azsuna Matata
+G[42244]={510763}	-- needed for Mak'rana and the Fate of the Queen's Reprisal part of Azsuna Matata
 G[42756]={510763}	-- needed for Defending Azurewing Repose part of Azsuna Matata
 end
 

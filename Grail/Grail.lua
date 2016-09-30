@@ -755,7 +755,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		--	any specific quest is already in the quest log.  When evaluating many quests this check of quests in the quest
 		--	log would be made at least once for each quest, so caching makes things a little quicker.
 		cachedQuestsInLog = nil,
-		checksReputationRewardsOnAcceptance = false,	-- This is set to false because Blizzard has messed up their API use...see later where this is used for what is happening
+		checksReputationRewardsOnAcceptance = true,
 		classMapping = { ['K'] = 'DEATHKNIGHT', ['D'] = 'DRUID', ['H'] = 'HUNTER', ['M'] = 'MAGE', ['O'] = 'MONK', ['P'] = 'PALADIN', ['T'] = 'PRIEST', ['R'] = 'ROGUE', ['S'] = 'SHAMAN', ['L'] = 'WARLOCK', ['W'] = 'WARRIOR', },
 		classToBitMapping = { ['K'] = 0x00000004, ['D'] = 0x00000008, ['H'] = 0x00000010, ['M'] = 0x00000020, ['O'] = 0x00000040, ['P'] = 0x00000080, ['T'] = 0x00000100, ['R'] = 0x00000200, ['S'] = 0x00000400, ['L'] = 0x00000800, ['W'] = 0x00001000, },
 		classToMapAreaMapping = { ['CK'] = 200011, ['CD'] = 200004, ['CH'] = 200008, ['CM'] = 200013, ['CO'] = 200015, ['CP'] = 200016, ['CT'] = 200020, ['CR'] = 200018, ['CS'] = 200019, ['CL'] = 200012, ['CW'] = 200023, },
@@ -1569,6 +1569,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					-- Ask Blizzard API to provide us with the reputation rewards for this quest
 -- As of July 2015 it has been reported that GetNumQuestLogRewardFactions() and GetQuestLogRewardFactionInfo() are not
 -- honoring the call to SelectQuestLogEntry() but seem to be using the "last selected quest with the mouse in the interface"
+--	However, with live Legion it seems we have the ability back in place properly.
 					if self.checksReputationRewardsOnAcceptance then
 						SelectQuestLogEntry(questIndex)
 						local reputationRewardsCount = GetNumQuestLogRewardFactions()
