@@ -708,6 +708,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		bitMaskQuestBonus		=	0x00008000,		-- bonus objective
 		bitMaskQuestRareMob		=	0x00010000,		-- rare mob
 		bitMaskQuestTreasure	=	0x00020000,
+		bitMaskQuestWorldQuest	=	0x00040000,
 -- 		lots of unused bits we can still abuse :-)
 		bitMaskQuestSpecial		=	0x80000000,		-- quest is "special" and never appears in the quest log
 		-- End of bit mask values
@@ -5557,6 +5558,14 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 		end,
 
 		---
+		--	Returns whether the quest is a weekly quest.
+		--	@param questId The standard numeric questId representing a quest.
+		--	@return True if the quest is a weekly quest, false otherwise.
+		IsWorldQuest = function(self, questId)
+			return (bitband(self:CodeType(questId), self.bitMaskQuestWorldQuest) > 0)
+		end,
+
+		---
 		--	Returns whether the quest is a yearly quest.
 		--	@param questId The standard numeric questId representing a quest.
 		--	@return True if the quest is a yearly quest, false otherwise.
@@ -7903,6 +7912,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[629] = 43979,	-- Druid choosing Restoration artifact
 			[645] = 44380,	-- Demon Hunter chossing Havoc artifact
 			[667] = 44433,	-- Druid choosing Feral artifact
+			[670] = 44444,	-- Druid choosing Balance artifact
 			},
 
 		--	Internal Use.
