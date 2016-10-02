@@ -17794,6 +17794,7 @@ G[36570]='Unruly Visitors'
 G[37441]="Solanian's Belongings"
 G[37839]='Light Be With You'
 G[37840]="Draenor's Blessing"
+G[40173]='The Unstable Prism'
 end
 
 if release >= 20490 then
@@ -17805,7 +17806,6 @@ G[40105]='Drakum'
 G[40106]='Gondar'
 G[40107]='Mudlump'
 G[40168]='The Swirling Vial'
-G[40173]='The Unstable Prism'
 G[40235]='Abrogator Arbitrator'
 G[40237]='Work Work Stoppage'
 G[40329]='Battle Pet Tamers: Warlords'
