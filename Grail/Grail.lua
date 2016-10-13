@@ -883,7 +883,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end
 					if nil == GetQuestsCompleted then
 						GetQuestsCompleted = function(t)
-							for questId in pairs(Grail.questNames) do
+							for questId in pairs(Grail.questCodes) do
 								if IsQuestFlaggedCompleted(questId) then
 									t[questId] = true
 								end
@@ -1124,7 +1124,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						-- The following quests are not available on European servers
 						local bannedQuests = {11117, 11118, 11120, 11431}
 						for _, questId in pairs(bannedQuests) do
-							self.questNames[questId] = nil
+--							self.questNames[questId] = nil
 							self.questCodes[questId] = nil
 							self.quests[questId] = nil	--	Don't really need to do this since self.quests is not populated until after this (currently at least)
 						end
@@ -2027,6 +2027,19 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 			},
 
+		quest = {
+
+			-- Note that Grail.questCodes is where we put all the codes associated with quests.  This could be used
+			-- to control access to what quests are available since we want a code for each quest, even if it were
+			-- an empty code.
+
+			-- The localized name of the quest.
+			-- This is dynamically populated as requests are made to show the quest name.  However, if someone were
+			-- to load one of the loadable addons of quest names, they would replace the contents of this table.
+			name = {},
+
+			},
+
 		npcNames = {},
 		observers = { },
 		origAbandonQuestFunction = nil,
@@ -2063,7 +2076,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		professionToMapAreaMapping = { ['PA'] = 300001, ['PB'] = 300002, ['PC'] = 300003, ['PE'] = 300005, ['PF'] = 300006, ['PH'] = 300008, ['PI'] = 300009, ['PJ'] = 300010, ['PL'] = 300012, ['PM'] = 300013, ['PN'] = 300014, ['PP'] = 300016, ['PR'] = 300018, ['PS'] = 300019, ['PT'] = 300020, ['PU'] = 300021, ['PX'] = 300024, ['PZ'] = 300043, },
 		questBits = {},					-- key is the questId, and value is a string that represents integers of bits
 		questCodes = {},
-		questNames = {},
+--		questNames = {},
 		questNPCId = nil,
 		questPrerequisites = {},
 		questReputationRequirements = {},	-- key is questId, value is a string of 4-character codes appended to each other, ignoring specific aspects of the P: code positions
@@ -2703,7 +2716,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		_AnyEvaluateTrue = function(self, questId, codePrefix, forceSpecificChecksOnly)
 			questId = tonumber(questId)
 --			if nil == questId or nil == self.quests[questId] then return false end
-			if nil == questId or nil == self.questNames[questId] then return false end
+			if nil == questId or nil == self.questCodes[questId] then return false end
 --			local codeValues = self.quests[questId][codePrefix]
 			local codeValues
 			if 'P' == codePrefix then
@@ -3225,19 +3238,20 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 									questSpacer = '|'
 								end
 							else
-								local addLocalizedName = true
-								local loc, localizedName = strsplit(':', questBits[i])
-								if loc == locale then
-									if self:QuestName(questId) == localizedName then
-										addLocalizedName = false
-									else
-										self.questNames[questId] = localizedName
-									end
-								end
-								if addLocalizedName then
-									newQuestLine = newQuestLine .. questSpacer .. questBits[i]
-									questSpacer = '|'
-								end
+-- With dynamic determination of quest names we no longer need to worry about mismatches.
+--								local addLocalizedName = true
+--								local loc, localizedName = strsplit(':', questBits[i])
+--								if loc == locale then
+--									if self:QuestName(questId) == localizedName then
+--										addLocalizedName = false
+--									else
+--										self.questNames[questId] = localizedName
+--									end
+--								end
+--								if addLocalizedName then
+--									newQuestLine = newQuestLine .. questSpacer .. questBits[i]
+--									questSpacer = '|'
+--								end
 							end
 						end
 						if 0 < strlen(newQuestLine) then
@@ -4111,7 +4125,7 @@ self.totalFixedTime = 0
 local totalLocationsTime = 0
 
 --			for questId in pairs(self.quests) do
-			for questId in pairs(self.questNames) do
+			for questId in pairs(self.questCodes) do
 
 				self.quests[questId] = self.quests[questId] or {}
 --	Conceptually it would be nice for those that access the self.quests[questId]['SP'] structure
@@ -4210,7 +4224,9 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 
 				--	Deal with SPecial and repeatable quests to allow them to be accepted even when they do not appear in the quest log
 				if bitband(self:CodeType(questId), self.bitMaskQuestRepeatable + self.bitMaskQuestSpecial) > 0 then
-					questName = self:QuestName(questId)
+					questName = self:QuestName(questId, 3)
+-- TODO: Need to rethink how we deal with specialQuests because name getting is going to be delayed...perhaps store by questId
+if nil ~= questName then
 					if nil == self.specialQuests[questName] then self.specialQuests[questName] = {} end
 					-- Now we go through and get the NPCs that give this quest and add them to the name table matching this quest
 					local npcs = self:_TableAppendCodes(nil, self.quests[questId], { 'A', 'AK' })
@@ -4219,6 +4235,7 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 							tinsert(self.specialQuests[questName], { questGiverId, questId })
 						end
 					end
+end
 				end
 
 			end
@@ -4279,8 +4296,7 @@ totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 		--	@return true if the quest is known to the internal database, false otherwise
 		DoesQuestExist = function(self, questId)
 			questId = tonumber(questId)
---			return nil ~= questId and nil ~= self.quests[questId] and true or false
-			return nil ~= questId and nil ~= self.questNames[questId] and true or false
+			return nil ~= questId and nil ~= self.questCodes[questId] and true or false
 		end,
 
 		-- This is a "f" function that evaluates the codeString to see whether it is a quest that requires presence in the
@@ -7247,13 +7263,51 @@ if GrailDatabase.debug then print("Marking OEC quest complete", oecCodes[i]) end
 			Grail:_HandleEventUnitQuestLogChanged()
 		end,
 
+
+		_RealQuestIdToUse = function(self, questId)
+			questId = tonumber(questId)
+			local retval = questId
+			if nil ~= retval and questId > 500000 and questId < 600000 then
+				local alias = self:AliasQuestId(questId)
+				if nil ~= alias then
+					retval = alias
+				end
+			end
+			return retval
+		end,
+
 		---
 		--	Returns the name of the quest with the specified questId.
 		--	@param questId The standard numeric questId representing a quest.
 		--	@return The localized name of the quest matching the questId or nil if none found.
-		QuestName = function(self, questId)
-			questId = tonumber(questId)
-			return nil ~= questId and self.questNames[questId] or nil
+		QuestName = function(self, questId, waitForResponse)
+			local retval = nil
+			questId = self:_RealQuestIdToUse(questId)
+			if nil ~= questId then
+				local attempts = 0
+				local maxAttempts = waitForResponse or 1
+				while (nil == retval and attempts < maxAttempts) do
+					retval = self.quest.name[questId]
+					if nil == retval then
+						local frame = self.tooltip
+						if not frame:IsOwned(UIParent) then frame:SetOwner(UIParent, "ANCHOR_NONE") end
+						frame:ClearLines()
+						frame:SetHyperlink(strformat("quest:%d", questId))
+						local numLines = frame:NumLines()
+						if nil ~= numLines or 0 ~= numLines then
+							local text = _G["com_mithrandir_grailTooltipTextLeft1"]
+							if text then
+								retval = text:GetText()
+								if retval ~= self.retrievingString then
+									self.quest.name[questId] = retval
+								end
+							end
+						end
+					end
+					attempts = attempts + 1
+				end
+			end
+			return retval
 		end,
 
 		---
@@ -7438,7 +7492,9 @@ if GrailDatabase.debug then print("Marking OEC quest complete", oecCodes[i]) end
 		QuestWithName = function(self, soughtName)
 			assert((nil ~= soughtName), "Grail Error: sought name cannot be nil")
 			local retval = nil
-			for questId, questName in pairs(self.questNames) do
+-- With the change to have dynamic quest name lookups, this API is only going to give names that
+-- have already been seen (unless a loadable addon of names has been loaded).
+			for questId, questName in pairs(self.quest.name) do
 				if questName == soughtName then
 					retval = questId
 -- TODO: Think about breaking out of the loop when retval is set...basically return the first match instead of the last match
@@ -8247,7 +8303,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 				GrailDatabase.learned = GrailDatabase.learned or {}
 				GrailDatabase.learned.QUEST = GrailDatabase.learned.QUEST or {}
 				local currentLine = GrailDatabase.learned.QUEST[questId]
-				local needToAddQuestName = (questTitle ~= "No Title Stored" and self:QuestName(questId) ~= questTitle)
+--				local needToAddQuestName = (questTitle ~= "No Title Stored" and self:QuestName(questId) ~= questTitle)
 				local completeNPCCode = npcCode .. ':' .. npcId
 				local newLine = ''
 				if nil == currentLine then
@@ -8298,21 +8354,21 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 								self.questCodes[questId] = self.questCodes[questId] .. ' ' .. completeNPCCode
 							end
 						else
-							local loc, localizedName = strsplit(':', questBits[i])
-							if loc ~= self.playerLocale then
-								newLine = newLine .. '|' .. questBits[i]
-							else
-								if localizedName == questTitle then
-									needToAddQuestName = false
-								end
-							end
+--							local loc, localizedName = strsplit(':', questBits[i])
+--							if loc ~= self.playerLocale then
+--								newLine = newLine .. '|' .. questBits[i]
+--							else
+--								if localizedName == questTitle then
+--									needToAddQuestName = false
+--								end
+--							end
 						end
 					end
 				end
-				if needToAddQuestName then
-					newLine = newLine .. '|' .. self.playerLocale .. ':' .. questTitle
-					self.questNames[questId] = questTitle
-				end
+--				if needToAddQuestName then
+--					newLine = newLine .. '|' .. self.playerLocale .. ':' .. questTitle
+--					self.questNames[questId] = questTitle
+--				end
 				self.quests[questId] = self.quests[questId] or {}
 				GrailDatabase.learned.QUEST[questId] = newLine
 			end

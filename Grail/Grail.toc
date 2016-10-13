@@ -9,17 +9,6 @@
 Grail.lua
 
 Grail-Quests.lua
-Grail-Quests-enUS.lua
-Grail-Quests-deDE.lua
-Grail-Quests-esES.lua
-Grail-Quests-esMX.lua
-Grail-Quests-frFR.lua
-Grail-Quests-itIT.lua
-Grail-Quests-koKR.lua
-Grail-Quests-ptBR.lua
-Grail-Quests-ruRU.lua
-Grail-Quests-zhCN.lua
-Grail-Quests-zhTW.lua
 
 Grail-NPCs.lua
 Grail-NPCs-enUS.lua

@@ -4,7 +4,7 @@
 --
 
 if GetLocale() ~= "deDE" then return end
-local G = Grail.questNames
+local G = Grail.quest.name
 local _, release, _, interface = GetBuildInfo()
 release = tonumber(release)
 interface = tonumber(interface)

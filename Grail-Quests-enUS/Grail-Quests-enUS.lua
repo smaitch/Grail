@@ -6,7 +6,7 @@
 --	We are using this as the base list of quests, so we do not look at the locale
 --	to determine whether we should abandon further processing.
 
-local G = Grail.questNames
+local G = Grail.quest.name
 local _, release, _, interface = GetBuildInfo()
 release = tonumber(release)
 interface = tonumber(interface)
