@@ -394,6 +394,9 @@
 --		081	Updates some quest/NPC information for Legion.
 --			Adds factions for Legion.
 --			Fixes the problem with strsplit error that can happen when first looting.
+--		082	Updates some quest/NPC information for Legion.
+--			Turns reputation recording system back on as Blizzard API seems to be working properly again.
+--			Splits localized quest names into loadable addons.
 --
 --	Known Issues
 --
