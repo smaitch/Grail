@@ -17812,12 +17812,6 @@ G[40329]='Battle Pet Tamers: Warlords'
 G[40395]='Timewalking Heroic Random (Nth)'
 G[40416]='Tracking Quest'
 G[40418]='To Tanaan!'
-G[600000]='Blasted Lands Phase Requirements'
-G[600001]='Blasted Lands Alliance Phase Requirements'
-G[600002]='Blasted Lands Horde Phase Requirements'
-G[600000]=GetMapNameByID(19)..' '..REQUIREMENTS
-G[600001]=GetMapNameByID(19)..' '..FACTION_ALLIANCE..' '..REQUIREMENTS
-G[600002]=GetMapNameByID(19)..' '..FACTION_HORDE..' '..REQUIREMENTS
 end
 
 if release >= 20726 then
@@ -23294,6 +23288,10 @@ G[43633]='WANTED: Thondrax'
 G[43756]='Enigmatic'
 G[44054]='Demonicide'
 G[44172]='The Arena Calls'
+end
+
+if release >= 22810 then
+G[43642]='Black Rook Hold: The Sorrow'
 end
 
 --	End of localized quest names

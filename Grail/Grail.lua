@@ -397,6 +397,7 @@
 --		082	Updates some quest/NPC information for Legion.
 --			Turns reputation recording system back on as Blizzard API seems to be working properly again.
 --			Splits localized quest names into loadable addons.
+--		083	Updates some quest/NPC information for Legion.
 --
 --	Known Issues
 --
@@ -410,8 +411,6 @@
 --			Need to make it so special quests with the same name AND same NPC ID can be handled.  For the Consortium gem quests I believe we will have to check the levels of the Consortium rep to know how to distinguish.
 --			Need a time detection system because we need to know when we cross boundaries for things like the fishing holidays so we can turn the quests on or off appropriately.  This will also allow us to handle other time-based quests.  It means we will most likely use OnUpdate and the above comment will go away and we can actually put in a timer for the next quest reset time so we know when dailies reset.  Of course this means we may want to study the calendar to know when an upcoming event boundary will be crossed as well other than fishing (like Darkmoon Faire, etc.).
 --			Need to be able to set Grail.playerFactionBitMask for a Pandaren if they start out playing before they select a faction, and then select a faction during play.  Otherwise they will be defaulted to Alliance which could prove problematic.
---
---			Celebratingholiday() does not check the time when a holiday starts and stops, and assumes presence of a holiday on a day means the entire day has the holiday.  This is incorrect for holidays, that for example, start or end at 02h00.
 --
 --			Determine if it is possible to notice when a faction is marked "at war" by the user so reputation checks against it take that into account because when one is "at war" the NPCs will not give the quests as expected.  If we can note whether at war then we need to mark NPCs as being associated with a specific faction.  If the NPC has a faction then we can check whether at war (or a low enough reputation with the faction).  Added _NPCFaction() to handle getting the data assuming we have it.
 --
@@ -683,7 +682,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		bitMaskRaceBloodElf		=	0x02000000,
 		bitMaskRaceGoblin		=	0x04000000,
 		bitMaskRacePandaren		=	0x08000000,
-		bitMaskClassDemonHunter =	0x10000000,
+		bitMaskClassDemonHunter =	0x10000000,	-- *** CLASS ***, kept in bit order
+		bitMaskCanGetUnused1	=	0x20000000,
+		bitMaskCanGetUnused2	=	0x40000000,
+		bitMaskCanGetUnused3	=	0x80000000,
 		-- Some convenience values
 		bitMaskFactionAll		=	0x00000003,
 		bitMaskClassAll			=	0x10001ffc,
@@ -822,6 +824,13 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.blizzardVersion = version
 					self.portal = GetCVar("portal")
 
+					self.existsPandaria = (self.blizzardRelease >= 15640)
+					self.existsWoD = (self.blizzardRelease >= 18505)
+					self.existsLegion = (self.blizzardRelease >= 21531 and strsub(self.blizzardVersion, 1, 2) == "7.")
+					--	The next two are only here in case an external addon is making use of this information already.
+					self.inWoD = self.existsWoD
+					self.inLegion = self.existsLegion
+
 					--
 					--	Create the tooltip that we use for getting information like NPC name
 					--
@@ -900,7 +909,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					--	Blizzard UI uses regarding quests.
 					--
 					-- Now to hook the QuestRewardCompleteButton_OnClick function
-					if self.blizzardRelease < 18505 then
+					if not self.existsWoD then
 						self.origHookFunction = QuestFrameCompleteQuestButton:GetScript("OnClick")
 						QuestFrameCompleteQuestButton:SetScript("OnClick", function() self:_QuestRewardCompleteButton_OnClick() end);
 					end
@@ -969,11 +978,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.npcStatusCache = { ["L"] = {}, ["P"] = {}, ["R"] = {}, ["I"] = {}, ["Q"] = {}, ["V"] = {}, ["A"] = {}, ["B"] = {}, ["D"] = {}, ["C"] = {}, ["E"] = {}, ["F"] = {}, ["S"] = {}, ["Y"] = {}, ["Z"] = {}, ["G"] = {}, ["H"] = {}, ["W"] = {}, ["X"] = {}, }
 					end
 
-					self.inWoD = (self.blizzardRelease >= 18505)
-					self.inLegion = (self.blizzardRelease >= 21531 and strsub(self.blizzardVersion, 1, 2) == "7.")
-
 					-- Deal with the Demon Hunter introduced in Legion
-					if self.inLegion then
+					if self.existsLegion then
 						self.classMapping['E'] = 'DEMONHUNTER'
 						self.classToBitMapping['E'] = 0x10000000
 						self.classToMapAreaMapping['CE'] = 200005
@@ -1052,25 +1058,26 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					local zoneNames
 					--	In WoD GetMapContinents() and GetMapZones() now return the map area IDs interspersed with the names,
 					--	while before WoD only the names were returned.
-					local offset = self.inWoD and 1 or 0
+					local offset = self.existsWoD and 1 or 0
 					local continentIndex
 					local mapIndex
-					self.continentMapIds = { 13, 14, 466, 485, 751, 862 } -- 13 Kalimdor, 14 Eastern Kingdoms, 466 Outland, 485 Northrend, 751 The Maelstrom, 862 Pandaria
-					if self.inWoD then tinsert(self.continentMapIds, 962) end	-- 962 Draenor
-					if self.inLegion then tinsert(self.continentMapIds, 1007) end	-- 1007 Broken Isle
+					self.continentMapIds = { 13, 14, 466, 485, 751 } -- 13 Kalimdor, 14 Eastern Kingdoms, 466 Outland, 485 Northrend, 751 The Maelstrom
+					if self.existsPandaria then tinsert(self.continentMapIds, 862) end	-- 862 Pandaria
+					if self.existsWoD then tinsert(self.continentMapIds, 962) end	-- 962 Draenor
+					if self.existsLegion then tinsert(self.continentMapIds, 1007) end	-- 1007 Broken Isle
 					self.continentIndexMapping = {}		-- reverse mapping so we can get the old concept of continent index from the now current mapIds
 					for i = 1, #(self.continentMapIds)do
 						self.continentIndexMapping[self.continentMapIds[i]] = i
 					end
 					for i = 1, #(continentNames), (1 + offset) do
-						mapId = self.inWoD and tonumber(continentNames[i]) or self.continentMapIds[i]
+						mapId = self.existsWoD and tonumber(continentNames[i]) or self.continentMapIds[i]
 						L = { name = continentNames[(i + offset)], zones = {}, mapID = mapId }
 						continentIndex = (i + offset) / (1 + offset)
 						zoneNames = { GetMapZones(continentIndex) }
 						for j = 1, #(zoneNames), (1 + offset) do
 							mapIndex = (j + offset) / (1 + offset)
 							nameToUse = zoneNames[j + offset]
-							if self.inWoD then
+							if self.existsWoD then
 								mapId = tonumber(zoneNames[j])
 								local subzoneNames = { GetMapSubzones(mapId) }
 								for k = 1, #(subzoneNames), 2 do
@@ -1097,9 +1104,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					if self.continents[466] then self.continents[466].dungeons = { 797, 710, 727, 728, 724, 722, 732, 779, 731, 726, 725, 729, 730, 723, 796, 782, } end
 					if self.continents[485] then self.continents[485].dungeons = { 523, 524, 535, 534, 528, 526, 520, 529, 533, 530, 522, 601, 604, 602, 603, 609, 536 } end
 					if self.continents[751] then self.continents[751].dungeons = { 768, } end
-					if self.continents[862] then self.continents[862].dungeons = { 876, 877, 885, 875, 867, } end	-- self.blizzardRelease >= 15640
-					if self.continents[962] then self.continents[962].dungeons = {  } end	-- self.blizzardRelease >= 18505
-					if self.continents[1007] then self.continents[1007].dungeons = { 1041, 1042, 1045, 1046, 1065, 1066, 1067, 1071, 1079, 1087 } end	-- self.blizzardRelease >= 21531
+					if self.continents[862] then self.continents[862].dungeons = { 876, 877, 885, 875, 867, } end	-- self.existsPandaria
+					if self.continents[962] then self.continents[962].dungeons = {  } end	-- self.existsWoD
+					if self.continents[1007] then self.continents[1007].dungeons = { 1041, 1042, 1045, 1046, 1065, 1066, 1067, 1071, 1079, 1087 } end	-- self.existsLegion
 
 					--	Now compute the dungeonMapping master list based on all the dungeons for each continent
 					local mapName
@@ -1270,7 +1277,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end)
 					--	Add a command for MoP that makes comparison of completed quests a little easier.  Only for MoP since before that the server
 					--	needs to be queried and that means the return result will not happen before we compare.
-					if self.blizzardRelease >= 15640 then
+					if self.existsPandaria then
 						self:RegisterSlashOption("cb", "|cFF00FF00cb|r => compares the latest server status quest list to the backup copy, and makes the backup become current", function()
 							if not InCombatLockdown() then
 								print("|cFFFFFF00Grail|r initiating server database query")
@@ -1305,12 +1312,12 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					frame:RegisterEvent("PLAYER_LEVEL_UP")	-- needed for quest status caching
 					frame:RegisterEvent("QUEST_ACCEPTED")
 					frame:RegisterEvent("QUEST_COMPLETE")
-					if self.blizzardRelease >= 18505 then
+					if self.existsWoD then
 						frame:RegisterEvent("QUEST_DETAIL")
 					end
 					frame:RegisterEvent("QUEST_LOG_UPDATE")	-- just to indicate we are now available to read the Blizzard quest log without issues
 					frame:RegisterEvent("QUEST_QUERY_COMPLETE")
-					if self.blizzardRelease >= 18505 then
+					if self.existsWoD then
 						frame:RegisterEvent("QUEST_REMOVED")
 						frame:RegisterEvent("QUEST_TURNED_IN")
 					end
@@ -1545,7 +1552,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 				-- Get the target information to ensure the target exists in the database of NPCs
 				local targetName, npcId, coordinates
-				if self.blizzardRelease < 18505 then
+				if not self.existsWoD then
 					targetName, npcId, coordinates = self:TargetInformation()
 				else
 					targetName = self.questAcceptingTargetName
@@ -1564,7 +1571,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					-- at the moment we ignore questTag since it is localized
 					-- With Legion there are issues because the level of the quests
 					-- match the level of the player.  So, we force the level to 0.
-					if self.inWoD and level > 100 then
+					if self.existsWoD and level > 100 then
 						level = 0
 					end
 					local kCode = strformat("K%03d%d", level, baseValue)
@@ -1827,7 +1834,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 			['UNIT_SPELLCAST_SUCCEEDED'] = function(self, frame, unit, spellName, noLongerValidRank, lineId, spellId)
 				if unit == "player" then
-					if self.inLegion then
+					if self.existsLegion then
 						--	Blizzard no longers returns a spellId, but a lineId that needs to be parsed
 						local numberThree, serverId, instanceId, zoneUID, realSpellId, castUID = strsplit("-", lineId)
 						spellId = realSpellId
@@ -1950,6 +1957,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		indexedQuests = {},
 		indexedQuestsExtra = {},
 		levelingLevel = nil,	-- this is set during the PLAYER_LEVEL_UP event because UnitLevel() does not work during it
+		locationCloseness = 1.55,
 		mapAreaBaseAchievement = 500000,
 		mapAreaBaseClass = 200000,
 		mapAreaBaseDaily = 400000,
@@ -2038,8 +2046,18 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 			-- The localized name of the quest.
 			-- This is dynamically populated as requests are made to show the quest name.  However, if someone were
-			-- to load one of the loadable addons of quest names, they would replace the contents of this table.
-			name = {},
+			-- to load one of the loadable addons of quest names, they would replace the contents of this table with
+			-- entries from the loadable addon.
+			-- The initial population of a few quests that are actually artifically
+			-- created to support some complicated prerequisites.
+			name = {
+			--	[600000]='Blasted Lands Phase Requirements'
+			--	[600001]='Blasted Lands Alliance Phase Requirements'
+			--	[600002]='Blasted Lands Horde Phase Requirements'
+				[600000]=GetMapNameByID(19)..' '..REQUIREMENTS,
+				[600001]=GetMapNameByID(19)..' '..FACTION_ALLIANCE..' '..REQUIREMENTS,
+				[600002]=GetMapNameByID(19)..' '..FACTION_HORDE..' '..REQUIREMENTS,
+				},
 
 			},
 
@@ -2055,15 +2073,12 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		playerName = nil,
 		playerRace = nil,
 		playerRealm = nil,
---		professionMapping = { ['A'] = 'Alchemy', ['B'] = 'Blacksmithing', ['C'] = 'Cooking', ['E'] = 'Enchanting', ['F'] = 'Fishing', ['H'] = 'Herbalism',
---				['I'] = 'Inscription', ['J'] = 'Jewelcrafting', ['L'] = 'Leatherworking', ['M'] = 'Mining', ['N'] = 'Engineering',
---				['R'] = 'Riding', ['S'] = 'Skinning', ['T'] = 'Tailoring', ['X'] = 'Archaeology', ['Z'] = 'First Aid', },
 		professionMapping = {
 			A = 'Alchemy',
 			B = 'Blacksmithing',
-			C = PROFESSIONS_COOKING,
+			C = PROFESSIONS_COOKING,	-- "Cooking"
 			E = 'Enchanting',
-			F = PROFESSIONS_FISHING,
+			F = PROFESSIONS_FISHING,	-- "Fishing"
 			H = 'Herbalism',
 			I = 'Inscription',		-- probably could use INSCRIPTION
 			J = 'Jewelcrafting',
@@ -2073,8 +2088,8 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			R = 'Riding',
 			S = 'Skinning',
 			T = 'Tailoring',
-			X = PROFESSIONS_ARCHAEOLOGY,
-			Z = PROFESSIONS_FIRST_AID,
+			X = PROFESSIONS_ARCHAEOLOGY,	-- "Archaeology"
+			Z = PROFESSIONS_FIRST_AID,	-- "First Aid"
 			},
 		professionToMapAreaMapping = { ['PA'] = 300001, ['PB'] = 300002, ['PC'] = 300003, ['PE'] = 300005, ['PF'] = 300006, ['PH'] = 300008, ['PI'] = 300009, ['PJ'] = 300010, ['PL'] = 300012, ['PM'] = 300013, ['PN'] = 300014, ['PP'] = 300016, ['PR'] = 300018, ['PS'] = 300019, ['PT'] = 300020, ['PU'] = 300021, ['PX'] = 300024, ['PZ'] = 300043, },
 		questBits = {},					-- key is the questId, and value is a string that represents integers of bits
@@ -3345,7 +3360,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						end
 					end
 				end
-				if self.inLegion then
+				if self.existsLegion then
 					GrailDatabase.NewNPCs = nil
 				end
 			end
@@ -3398,7 +3413,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					end
 				end
 				GrailDatabase["BadNPCData"] = newBadNPCData
-				if self.inLegion then
+				if self.existsLegion then
 					GrailDatabase.BadNPCData = nil
 				end
 			end
@@ -4856,7 +4871,7 @@ end
 				local gid = UnitGUID(used)
 				if nil ~= gid then
 					local targetType = nil
-					if self.blizzardRelease < 18505 then
+					if not self.existsWoD then
 						targetType = tonumber(gid:sub(5,5), 16)
 						npcId = tonumber(gid:sub(6,10), 16)
 					else
@@ -4899,7 +4914,7 @@ end
 			local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID
 			local isOnMap, hasLocalPOI, isTask, isStory
 			local isWeekly = nil
-			if self.blizzardRelease < 18505 then
+			if not self.existsWoD then
 				questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID = GetQuestLogTitle(questIndex)
 			else
 				local frequency
@@ -5660,6 +5675,26 @@ end
 			self.npc.name[1000000 + tonumber(objectId)] = objectName
 		end,
 
+		---
+		--	Attempts to load the addon with the name addonName.  If reportFailureInBlizzardUI
+		--	is true, a failure will display a message in the Blizzard UI.  Otherwise, a failure
+		--	will display in the chat window.
+		--	@param addonName The name of the addon to be loaded.
+		--	@param reportFailureInBlizzardUI Indicates whether errors are dislpayed in the Blizzard UI or the chat window.
+		--	@return True if the addon is loaded, or false otherwise.
+		LoadAddOn = function(self, addonName, reportFailureInBlizzardUI)
+			local success, failureReason
+			if reportFailureInBlizzardUI then
+				success = UIParentLoadAddOn(addonName)
+			else
+				success, failureReason = LoadAddOn(addonName)
+				if not success then
+					print(format("|cFFFF0000Grail|r "..ADDON_LOAD_FAILED, addonName, _G["ADDON_"..failureReason]))
+				end
+			end
+			return success
+		end,
+
 		--	Check the internal npc.locations structure for a location close to
 		--	the one derived from the locationString provided.
 		_LocationKnown = function(self, npcId, locationString, possibleAliasId)
@@ -5724,7 +5759,7 @@ end
 			if (l1.near or l2.near) and l1.mapArea == l2.mapArea then
 				retval = true
 			elseif l1.mapArea == l2.mapArea and l1.mapLevel == l2.mapLevel then
-				if sqrt((l1.x - l2.x)^2 + (l1.y - l2.y)^2) < 1.55 then
+				if sqrt((l1.x - l2.x)^2 + (l1.y - l2.y)^2) < self.locationCloseness then
 					retval = true
 				end
 			end
@@ -6291,7 +6326,7 @@ end
 				if nil == retval then
 					local hyperlinkFormat
 					if indexToUse > 100000000 then
---						if self.blizzardRelease < 18505 then
+--						if not self.existsWoD then
 							hyperlinkFormat = strformat("item:%d:0:0:0:0:0:0:0", indexToUse - 100000000)
 --						else
 --							hyperlinkFormat = 'unit:GameObject-0-0-0-0-' .. indexToUse - 100000000 .. '-0'	-- did not work, but old version does
@@ -6302,7 +6337,7 @@ end
 --						hyperlinkFormat = 'unit:GameObject-0-0-0-0-' .. indexToUse - 1000000 .. '-0'	-- did not work
 --						hyperlinkFormat = 'unit:Creature-0-0-0-0-' .. indexToUse - 1000000 .. '-0'	-- did not work
 					else
-						if self.blizzardRelease < 18505 then
+						if not self.existsWoD then
 							hyperlinkFormat = strformat("unit:0xF53%05X00000000", indexToUse)
 						else
 							hyperlinkFormat = 'unit:Creature-0-0-0-0-' .. indexToUse .. '-0'
@@ -6449,7 +6484,7 @@ end
 					currentPhase = C_MapBar.GetPhaseIndex() + 1	-- it starts with 0 for phase 1 (just like C)
 				end
 			elseif 971 == phaseCode or 976 == phaseCode then
-				if self.inLegion then
+				if self.existsLegion then
 					currentPhase = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0	-- the API returns nil when there is no garrison
 				else
 					currentPhase = C_Garrison.GetGarrisonInfo() or 0	-- the API returns nil when there is no garrison

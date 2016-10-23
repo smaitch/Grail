@@ -6856,8 +6856,8 @@ G[37422]={509674}
 end
 
 if Grail.inLegion then
-Grail.loremasterAchievements['Alliance'][8] = { 510698, 510763, 510059, 510790, }
-Grail.loremasterAchievements['Horde'][8] = { 510698, 510763, 510059, 510790, }
+Grail.loremasterAchievements['Alliance'][8] = { 510617, 510698, 510763, 510059, 510790, }
+Grail.loremasterAchievements['Horde'][8] = { 510617, 510698, 510763, 510059, 510790, }
 G[37449]={510763}	-- needed for Behind Legion Lines part of Azsuna Matata
 G[37470]={510763}	-- needed for Azsuna vs Azshara part of Azsuna Matata
 G[37566]={510763}	-- needed for Against the Giants part of Azsuna Matata
@@ -6881,9 +6881,13 @@ G[39597]={510790}	-- needed for The Trial of Might of Vrykul Story, Bro
 G[39780]={510059}	-- needed for Battle of Snowblind Mesa of Ain't No Mountain High Enough
 G[39800]={510790}	-- needed for Greymane's Gambit part of Vrykul Story, Bro
 G[39801]={510790}	-- needed for Greymane's Gambit of Vrykul Story, Bro
+G[39855]={510790}	-- needed for To Helheim and Back of Vrykul Story, Bro
 G[39992]={510059}	-- needed for Huln's War of Ain't No Mountain High Enough
+G[40009]={510617}	-- needed for Nightfall of Nightfallen But Not Forgotten
 G[40573]={510698}	-- needed for Archdruid of the Vale part of That's 'Val'sharah Folks!
 G[40794]={510763}	-- needed for Mak'rana and the Fate of the Queen's Reprisal part of Azsuna Matata
+G[41760]={510617}	-- needed for Arcanist Kel'danath of Nightfallen But Not Forgotten
+G[42147]={510617}	-- needed for Masquerade of Nightfallen But Not Forgotten
 G[42244]={510763}	-- needed for Mak'rana and the Fate of the Queen's Reprisal part of Azsuna Matata
 G[42756]={510763}	-- needed for Defending Azurewing Repose part of Azsuna Matata
 end
@@ -6933,7 +6937,7 @@ Grail.timings.AchievementsInternalConversion = debugprofilestop() - debugStartTi
 -- that are required and add all the quests that are prerequisites for those.
 debugStartTime = debugprofilestop()
 local achievementsDone = {}
-local achievementsToZoneMapping = { [506300] = 806, [506301] = 807, [506534] = 806, [506535] = 857, [506536] = 857, [506537] = 809, [506538] = 809, [506539] = 810, [506540] = 858, [508671] = 941, [508845] = 947, [508919] = 946, [508920] = 946, [508923] = 949, [508924] = 949, [508925] = 948, [508926] = 948, [508927] = 950, [508928] = 950, [509528] = 947, [509529] = 941, [509602] = 947, [509605] = 948, [509606] = 941, [509607] = 949, [509615] = 950, [509618] = 19, [509674] = 946, [510698] = 1018, [510763] = 1015, [510059] = 1024, [510790] = 1017, }
+local achievementsToZoneMapping = { [506300] = 806, [506301] = 807, [506534] = 806, [506535] = 857, [506536] = 857, [506537] = 809, [506538] = 809, [506539] = 810, [506540] = 858, [508671] = 941, [508845] = 947, [508919] = 946, [508920] = 946, [508923] = 949, [508924] = 949, [508925] = 948, [508926] = 948, [508927] = 950, [508928] = 950, [509528] = 947, [509529] = 941, [509602] = 947, [509605] = 948, [509606] = 941, [509607] = 949, [509615] = 950, [510617] = 1033, [509618] = 19, [509674] = 946, [510698] = 1018, [510763] = 1015, [510059] = 1024, [510790] = 1017, }
 local expansions = { 6 }
 if release >= 18505 then
 	tinsert(expansions, 7)

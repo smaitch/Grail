@@ -21942,4 +21942,12 @@ G[44300]='GESUCHT: Sehsei'
 G[44305]='GESUCHT: Bahagar'
 end
 
+if release >= 22810 then
+G[41658]='Arbeitsauftrag: Sylvanelixiere'
+G[41695]='GEFAHR: Defilia'
+G[42631]='GESUCHT: Inquisitor Tivos'
+G[43336]='Läuterung des Alptraums'
+G[43642]='Die Rabenwehr: Der Kummer'
+end
+
 --	End of localized quest names
