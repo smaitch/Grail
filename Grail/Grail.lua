@@ -5295,13 +5295,22 @@ end
 		--	@usage isHeroic, instanceName = Grail:IsInHeroicInstance()
 		IsInHeroicInstance = function(self)
 			local retval = false
-			local name, type, difficultyIndex, difficultyName, maxPlayers, dynamicDifficulty, isDynamic = GetInstanceInfo()
+			local name, type, difficultyIndex, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, mapID, instanceGroupSize = GetInstanceInfo()
 			if "none" ~= type then
 				if 3 == difficultyIndex or 4 == difficultyIndex or (2 == difficultyIndex and "raid" ~= type) then
 					retval = true
 				end
 			end
-			return retval, name
+			return retval, name, mapID
+		end,
+
+		IsInInstance = function(self)
+			local retval = false
+			local name, type, difficultyIndex, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, mapID, instanceGroupSize = GetInstanceInfo()
+			if "none" ~= type then
+				retval = true
+			end
+			return retval, name, mapID
 		end,
 
 		---
@@ -8237,6 +8246,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 		Coordinates = function(self, victim)
 			victim = victim or "player"
 			local x, y = GetPlayerMapPosition(victim)	-- cannot get target x,y since Blizzard disabled that and returns 0,0 all the time for it
+			if nil == x then x, y = 0, 0 end
 			local dungeonLevel = GetCurrentMapDungeonLevel()
 			local dungeonIndicator = (dungeonLevel > 0) and "["..dungeonLevel.."]" or ""
 			return strformat("%d%s:%.2f,%.2f", GetCurrentMapAreaID(), dungeonIndicator, x*100, y*100)

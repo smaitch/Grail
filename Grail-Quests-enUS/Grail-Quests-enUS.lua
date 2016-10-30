@@ -23294,4 +23294,56 @@ if release >= 22810 then
 G[43642]='Black Rook Hold: The Sorrow'
 end
 
+if release >= 22908 then
+G[33145]='Grimfrost Hill'
+G[34076]='The Burial Fields'
+G[34496]='The Hills of Valuun'
+G[34501]='Frostbite Hollow'
+G[34504]='Bloodthorn Cave'
+G[34505]='Forbidden Glacier'
+G[34639]="Aruuna's Desolation"
+G[34660]="Zorkra's Fall"
+G[34667]='Court of Souls'
+G[34723]='Ironfist Harbor'
+G[34724]='The Forgotten Caves'
+G[34728]='The Shimmer Moor'
+G[35236]='Orunai Coast'
+G[35237]="Mor'gran Logworks"
+G[35649]='The Writhing Mire'
+G[35881]='Ruins of the First Bastion'
+G[36473]='Affliction Ridge'
+G[36476]='South Gronn Canyon'
+G[36480]='Valley of Destruction'
+G[36500]='The Razorbloom'
+G[36504]='Evermorn Springs'
+G[36520]='Tailthrasher Basin'
+G[36563]='Mistcreep Mire'
+G[36564]='Tangleheart'
+G[36566]='Stonemaul Arena'
+G[36571]='Iyun Weald'
+G[36590]='The Howling Crag'
+G[36603]='Brimstone Springs'
+G[36660]='Bloodmane Pridelands'
+G[36792]='Bladefist Hold'
+G[37280]='Snarlpaw Ledge'
+G[37295]='Kill Rylai Crestfall'
+G[37297]='Kill Jeron Emberfall'
+G[37421]="Kuuro's Claim"
+G[37422]='Zangarra'
+G[37475]='Molten Quarry'
+G[37476]='Ashmaul Burial Grounds'
+G[37477]="Brute's Rise"
+G[37478]='Amphitheater of Annihilation'
+G[38649]='Silence in the City'
+G[38692]='Answering Aggression'
+G[38694]='Regroup'
+G[38695]='Crackdown'
+G[38720]='No Reason to Stay'
+G[39263]='Ashran Excavation'
+G[40390]='[REUSE]'
+G[41460]='Primal Leystone Outcropping'
+G[42889]='The Way Back Home'
+G[43807]='Withered Wrangling: Ambervale'
+end
+
 --	End of localized quest names
