@@ -521,7 +521,8 @@ G[1247694]="Kel'danath's Knapsack"
 G[1248534]='Tears of Elune'
 G[1251124]='Glitzernde Schatztruhe'
 G[1251425]='Moist Grizzlecomb'
-G[1251761]='Speicherverbrauch'
+G[1252817]='Unpowered Telemancy Beacon'
+G[1258979]='Fel-Ravaged Tome'
 end
 
 if release >= 19243 then

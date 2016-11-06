@@ -17833,6 +17833,10 @@ if release >= 20779 then
 G[40792]='A Shattered Path Through Time'
 end
 
+if release >= 21154 then
+G[41240]='Work Order: High Mountain Salmon'
+end
+
 if release >= 21463 then
 G[34610]='The Iron of Winter'
 G[35700]='A City Full of Light'
@@ -22728,6 +22732,7 @@ end
 if release >= 21874 then
 G[40661]='Protect the Home Front'
 G[40925]='Bitestone Burglary'
+G[41174]='Worth Its Weight'
 G[41180]='Unspeakable Power'
 G[41181]='Narrowing Down'
 G[41182]='Uncovering the Orb of Sciallax'
@@ -22751,6 +22756,7 @@ G[42353]='Tracking Quest: Lumenstone 4'
 G[42354]='Tracking Quest: Lumenstone 5'
 G[42511]='Twisted Souls'
 G[42743]='Darkheart Thicket: Kudzilla'
+G[42795]='WANTED: Sanaar'
 G[42980]='Tracking Quest: Lumenstone 2'
 G[43193]='Calamitous Intent'
 G[43283]='Demon Commander'
@@ -23154,6 +23160,7 @@ G[40501]='REUSEME_40501'
 end
 
 if release >= 22345 then
+G[43610]='WANTED: Infernal Lord'
 G[44897]='Tracking Quest'
 G[44898]='Tracking Quest'
 G[44899]='Tracking Quest'
@@ -23249,6 +23256,7 @@ G[41560]='Felhide'
 G[41652]='Work Order: Deep Amber Loop'
 G[41678]='Work Order: Gunpack'
 G[43101]='DANGER: Witchdoctor Grgl-Brgl'
+G[43615]="WANTED: Warbringer Mox'na"
 G[43616]='WANTED: Bodash the Hoarder'
 G[43640]='The Arcway: Creeping Suspicions'
 G[44026]="WANTED: Mal'Dreth the Corruptor"
@@ -23343,7 +23351,9 @@ G[39263]='Ashran Excavation'
 G[40390]='[REUSE]'
 G[41460]='Primal Leystone Outcropping'
 G[42889]='The Way Back Home'
+G[43063]='DANGER: Stormfeather'
 G[43807]='Withered Wrangling: Ambervale'
+G[44895]='Sharptalon Swarm!'
 end
 
 --	End of localized quest names
