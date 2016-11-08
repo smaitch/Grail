@@ -8634,7 +8634,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 --				local needToAddQuestName = (questTitle ~= "No Title Stored" and self:QuestName(questId) ~= questTitle)
 				local completeNPCCode = npcCode .. ':' .. npcId
 				local newLine = ''
-				local possibleLevel = tonumber(strsub(kCode, 2, 4))
+				local possibleLevel = nil ~= kCode and tonumber(strsub(kCode, 2, 4)) or nil
 				if nil == currentLine then
 					local spacer = ''
 					if nil ~= kCode and nil ~= possibleLevel and possibleLevel < 100 then
