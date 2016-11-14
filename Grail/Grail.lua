@@ -2683,6 +2683,9 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					if minutesLeft < smallestMinutes then
 						smallestMinutes = minutesLeft
 					end
+				else
+					GrailDatabase.learned.WORLD_QUEST_UNAVAILABLE = GrailDatabase.learned.WORLD_QUEST_UNAVAILABLE or {}
+					GrailDatabase.learned.WORLD_QUEST_UNAVAILABLE[questId] = true
 				end
 			end
 			self.availableWorldQuests = newTable
