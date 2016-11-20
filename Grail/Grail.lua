@@ -2685,8 +2685,11 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					end
 				else
 					if self.levelingLevel >= 110 then
+						local hour, minute = GetGameTime()
+						local weekday, month, day, year = CalendarGetDate()
+						local stringValue = strformat("%4d-%02d-%02d %02d:%02d %s/%s", year, month, day, hour, minute, self.playerRealm, self.playerName)
 						GrailDatabase.learned.WORLD_QUEST_UNAVAILABLE = GrailDatabase.learned.WORLD_QUEST_UNAVAILABLE or {}
-						GrailDatabase.learned.WORLD_QUEST_UNAVAILABLE[questId] = true
+						GrailDatabase.learned.WORLD_QUEST_UNAVAILABLE[questId] = stringValue
 					end
 				end
 			end
