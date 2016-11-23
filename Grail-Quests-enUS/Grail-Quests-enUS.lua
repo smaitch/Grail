@@ -23356,4 +23356,90 @@ G[43807]='Withered Wrangling: Ambervale'
 G[44895]='Sharptalon Swarm!'
 end
 
+if release >= 22950 then
+G[12103]='Before the Storm'
+G[40951]='Bitestone Bazaar'
+G[41242]='Slab of Bacon'
+G[44171]='Emissary of War'
+G[44173]='A Call to Battle'
+G[44663]='In the Blink of an Eye'
+G[44760]='Blood On Your Hands'
+G[44892]='Snowfeather Swarm!'
+G[44894]='Bloodgazer Swarm!'
+G[45174]='The Hunt for Illidan Stormrage'
+G[45175]='Soul Prism of the Illidari'
+end
+
+if release >= 22989 then
+G[44891]='2v2 Weekly Quest'
+G[44908]='3v3 Weekly Quest'
+G[44909]='RBG Weekly'
+end
+
+if release >= 22995 then
+G[41554]='Slab of Bacon'
+G[44720]='A Call to Action'
+end
+
+if release >= 22996 then
+G[8237]='In the Blink of an Eye Tracking Quest'
+G[9488]='A Simple Robe'
+G[24596]="The Purification of Quel'Delar"
+G[24798]='A Victory For The Sunreavers'
+G[40391]='Take Me To Your Leader'
+G[40632]='Take Me To Your Leader'
+G[41090]='Lords of the Hills'
+G[41175]='Fit for an Elven Queen'
+G[41198]='Leystone Basilisks'
+G[41240]='Work Order: Highmountain Salmon'
+G[41275]='Huge Stormrays'
+G[41282]='Work Order: Runescale Koi'
+G[41283]='The Angler Mangler'
+G[41343]='Solid Crabshell Fragment'
+G[41438]='Charged Leystone Deposits'
+G[41487]='Brimstone Destroyer'
+G[41504]='Leystone Basilisks'
+G[41526]='Bushy Foxflower'
+G[41535]='Prickly Fjarnskaggl'
+G[41544]='Foxflower Cluster'
+G[41567]='Felhide'
+G[41660]='Work Order: Skaggldrynk'
+G[41667]='Vantus Rune Work Order: Xavius'
+G[41864]="Neltharion's Lair: Crystalline Crusher"
+G[41865]="Neltharion's Lair: Mother of Stone"
+G[42241]='Halls of Valor: A Worthy Challenge'
+G[42991]='DANGER: Runeseer Sigvid'
+G[43296]='Defend'
+G[43297]='Repel'
+G[43328]='Enigmatic'
+G[43810]='Down to Business'
+G[44049]='Evil Has Many Legs'
+G[44157]="Withered Wrangling: Tel'anor"
+G[44189]='DANGER: Bestrix'
+G[44302]='WANTED: Seersei'
+G[44769]='Arming the Populace'
+G[44784]='Advanced Wanding'
+G[44786]='Midterm: Rune Aptitude'
+G[44788]='Work Study: Bestiaries of Azsuna'
+G[44799]='Safe Keeping'
+G[44801]="Defending Shal'aran"
+G[44802]='Ancient Guidance'
+G[44805]='In the Thick of It'
+G[44847]='Straight From the Source'
+G[44879]='Snowfeather Matriarch Tracking Q'
+G[44893]='Direbeak Swarm!'
+G[44943]="Now That's Just Clawful!"
+G[45032]='Like the Wind'
+G[45046]='Like the Wind'
+G[45047]='Like the Wind'
+G[45049]='Like the Wind'
+G[45072]="Barrels o' Fun"
+G[45307]='Claws for Alarm!'
+G[45488]='Nylaathria the Forgotten'
+G[45495]='Immolian'
+G[45497]='Stormfeather'
+G[45500]="Shalas'aman"
+G[45515]='Valakar the Thirsty'
+end
+
 --	End of localized quest names

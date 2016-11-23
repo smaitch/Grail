@@ -33,6 +33,8 @@ local Grail_Achievements_File_Version = 010
 if Grail.achievementsVersionNumber < Grail_Achievements_File_Version then
 	Grail.achievementsVersionNumber = Grail_Achievements_File_Version
 
+local originalMem = gcinfo()
+
 --	These are the achievements organized by zone for completing the "loremaster" achievements (basically completing a specific number of quests in each zone).
 Grail.loremasterAchievements = {
 	['Alliance'] = {
@@ -6970,5 +6972,6 @@ end
 wipe(achievementsDone)
 achievementsDone = nil
 Grail.timings.AchievementsPandariaLoremaster = debugprofilestop() - debugStartTime
+Grail.memoryUsage.Achievements = gcinfo() - originalMem
 
 end

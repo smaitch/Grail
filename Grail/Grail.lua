@@ -1340,6 +1340,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end
 					frame:RegisterEvent("ZONE_CHANGED_NEW_AREA")	-- only to get the first time logging in so the GetQuestResetTime() actually returns a real value
 					self:_CleanDatabase()
+					self:_CleanDatabaseLearnedQuestName()
 
 					self:RegisterObserver("Bags", self._BagUpdates)
 					self:RegisterObserver("QuestLogChange", self._QuestLogUpdate)
@@ -1990,6 +1991,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		mapAreaMaximumProfession = 399999,
 		mapAreaMaximumReputation = 499999,
 		mapAreaMaximumReputationChange = 699999,
+		memoryUsage = {},	-- see timings
 		nonPatternExperiment = true,
 
 		--	The NPC database contains all we need to know about NPCs with data in specifc tables based on need.
@@ -2709,6 +2711,31 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
 				if nil ~= tasks and 0 < #tasks then
 					for k,v in ipairs(tasks) do
+						local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(v.questId)
+GrailDatabase.eek = GrailDatabase.eek or {}
+if tagID and nil == self._LearnedWorldQuestProfessionMapping[tagID] and nil == self._LearnedWorldQuestTypeMapping[tagID] then
+GrailDatabase.eek[v.questId] = 'A:'..(tagID and tagID or 'NoTagID')..' B:'..(tagName and tagName or 'NoTagName')..' C:'..(worldQuestType and worldQuestType or 'NotWorld') ..' D:'..(rarity and rarity or 'NO')..' E:'..(isElite and 'YES' or 'NO')..' F:'..(tradeskillLineIndex or 'nil')
+end
+--	41672 123	"Enchanting World Quest" 1 1 false 9
+--	109 normal world quest
+--	112	epic elite
+--	113	PVP
+--	114	
+--	115	battle pet
+--	116 Blacksmithing
+--	117	Leatherworking
+--	118	Alchemy
+--	119	Herbalism
+--	120	Mining
+--	121	Tailoring
+--	122
+--	123	Enchanting	tradeskillLineIndex: 9
+--	124	Skinning
+--	130	Fishing		tradeskillLineIndex: 10
+--	131 Cooking		tradeskillLineIndex: 7
+--	135	rare
+--	136	rare elite
+--	137	Dungeon
 						self:_LearnWorldQuest(v.questId)
 						self.availableWorldQuests[v.questId] = true
 						C_TaskQuest.GetQuestTimeLeftMinutes(v.questId)	-- attempting to prime the system, because first calls do not work
@@ -2719,12 +2746,28 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			C_Timer.After(2, function() Grail:_AddWorldQuestsUpdateTimes() end)
 		end,
 
+		_LearnedWorldQuestProfessionMapping = { [116] = 'B', [117] = 'L', [118] = 'A', [119] = 'H', [120]= 'M', [121] = 'T', [123] = 'E', [124] = 'S', [130] = 'F', [131] = 'C', },
+
+		_LearnedWorldQuestTypeMapping = { [109] = 0, [112] = 0, [113] = 0x00000100, [115] = 0x00004000, [135] = 0, [136] = 0, [137] = 0x00000040, },
+
 		_LearnWorldQuest = function(self, questId)
 			GrailDatabase.learned = GrailDatabase.learned or {}
 			GrailDatabase.learned.QUEST = GrailDatabase.learned.QUEST or {}
 			local currentLine = GrailDatabase.learned.QUEST[questId]
 			local needToAddKCode, needToAddLCode, needToAddPCode = false, false, false
-			local kCodeToAdd, lCodeToAdd, pCodeToAdd = 'K110262144', 'L110', 'P:a'..questId
+			local kCodeToAdd, lCodeToAdd, pCodeToAdd = 'K110', 'L110', 'P:a'..questId
+			local tagId, tagName = GetQuestTagInfo(questId)
+			local professionRequirement = self._LearnedWorldQuestProfessionMapping[tagId]
+			local typeModifier = self._LearnedWorldQuestTypeMapping[tagId]
+			local typeValue = 262144
+
+			if nil ~= professionRequirement then
+				pCodeToAdd = pCodeToAdd .. '+P' .. professionRequirement .. '001'
+			end
+			if nil ~= typeModifier then
+				typeValue = typeValue + typeModifier
+			end
+			kCodeToAdd = kCodeToAdd .. typeValue
 
 			--	We do not check whether the codes are present in currentLine because we assume when
 			--	currentLine was processed during the cleaning process anything already in the database
@@ -3271,24 +3314,37 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			return allCodesGood
 		end,
 
+		_NPCsMatch = function(self, npcId1, npcId2)
+			local retval = false
+			npcId1 = tonumber(npcId1)
+			npcId2 = tonumber(npcId2)
+			if npcId1 == npcId2 then
+				retval = true
+			elseif npcId1 == 0 and npcId2 < 0 then
+				retval = true
+			elseif npcId2 == 0 and npcId1 < 0 then
+				retval = true
+			elseif Grail.npc.aliases[npcId1] and tContains(Grail.npc.aliases[npcId1], npcId2) then
+				retval = true
+			end
+			return retval
+		end,
+
+		--	The preqTable is from AP: or TP:, and the nonPreqTable is from A: or T:
 		_GoodNPC = function(self, npcId, preqTable, nonPreqTable)
 			local retval = false
 			npcId = tonumber(npcId)
 			if nil ~= npcId then
 				if nil ~= preqTable then
 					for anNPCId, _ in pairs(preqTable) do
--- TODO: Make the 0 and < 0 comparisons be true as well
-						if anNPCId == npcId then
-							retval = true
-						end
+						retval = self:_NPCsMatch(anNPCId, npcId)
+						if retval then break end
 					end
 				end
-				if nil ~= nonPreqTable then
+				if not retval and nil ~= nonPreqTable then
 					for _, anNPCId in pairs(nonPreqTable) do
--- TODO: Make the 0 and < 0 comparisons be true as well
-						if anNPCId == npcId then
-							retval = true
-						end
+						retval = self:_NPCsMatch(anNPCId, npcId)
+						if retval then break end
 					end
 				end
 			end
@@ -3301,6 +3357,29 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 		_GoodNPCTurnin = function(self, questId, npcId)
 			return self:_GoodNPC(npcId, self:QuestNPCPrerequisiteTurnins(questId), self:QuestNPCTurnins(questId))
+		end,
+
+		_CleanDatabaseLearnedQuestName = function(self)
+			if nil ~= GrailDatabase.learned.QUEST_NAME then
+				local newQuestNames = {}
+				for _, questNameLine in pairs(GrailDatabase.learned.QUEST_NAME) do
+					local shouldAdd = true
+					local locale, release, questId, questName = strsplit('|', questNameLine)
+					questId = tonumber(questId)
+					if locale == self.playerLocale and nil ~= questId then
+						local storedQuestName = self.quest.name[questId]
+						if nil == storedQuestName or storedQuestName ~= questName then
+							self.quest.name[questId] = questName
+						else
+							shouldAdd = false
+						end
+					end
+					if shouldAdd then
+						tinsert(newQuestNames, questNameLine)
+					end
+				end
+				GrailDatabase.learned.QUEST_NAME = newQuestNames
+			end
 		end,
 
 		--	This routine attempts to remove items from the special tables that are stored in the GrailDatabase table
@@ -3351,26 +3430,6 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					GrailDatabase.learned.NPC_LOCATION = newNPCLocations
 				end
 
-				if nil ~= GrailDatabase.learned.QUEST_NAME then
-					local newQuestNames = {}
-					for _, questNameLine in pairs(GrailDatabase.learned.QUEST_NAME) do
-						local shouldAdd = true
-						local locale, release, questId, questName = strsplit('|', questNameLine)
-						if locale == self.playerLocale then
-							local storedQuestName = self.quest.name[questId]
-							if nil == storedQuestName or storedQuestName ~= questName then
-								self.quest.name[questId] = questName
-							else
-								shouldAdd = false
-							end
-						end
-						if shouldAdd then
-							tinsert(newQuestNames, questNameLine)
-						end
-					end
-					GrailDatabase.learned.QUEST_NAME = newQuestNames
-				end
-
 				if nil ~= GrailDatabase.learned.QUEST then
 					local newQuest = {}
 					for questId, questLine in pairs(GrailDatabase.learned.QUEST) do
@@ -3411,14 +3470,14 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 													end
 												end
 											elseif 'A' == code and ':' == subcode then
-												if not self:_GoodNPCAccept(strsub(codes[c], 3)) then
+												if not self:_GoodNPCAccept(questId, strsub(codes[c], 3)) then
 													newCodes = newCodes .. codeSpacer .. codes[c]
 													codeSpacer = ' '
 													self.questCodes[questId] = self.questCodes[questId] or ''
 													self.questCodes[questId] = self.questCodes[questId] .. ' ' .. codes[c]
 												end
 											elseif 'T' == code and ':' == subcode then
-												if not self:_GoodNPCTurnin(strsub(codes[c], 3)) then
+												if not self:_GoodNPCTurnin(questId, strsub(codes[c], 3)) then
 													newCodes = newCodes .. codeSpacer .. codes[c]
 													codeSpacer = ' '
 													self.questCodes[questId] = self.questCodes[questId] or ''
