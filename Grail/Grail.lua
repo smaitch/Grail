@@ -2686,7 +2686,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						smallestMinutes = minutesLeft
 					end
 				else
-					if self.levelingLevel >= 110 then
+					if self.debug and self.levelingLevel >= 110 then
 						local hour, minute = GetGameTime()
 						local weekday, month, day, year = CalendarGetDate()
 						local stringValue = strformat("%4d-%02d-%02d %02d:%02d %s/%s", year, month, day, hour, minute, self.playerRealm, self.playerName)
@@ -2711,16 +2711,20 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
 				if nil ~= tasks and 0 < #tasks then
 					for k,v in ipairs(tasks) do
+if self.debug then
 						local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(v.questId)
 GrailDatabase.eek = GrailDatabase.eek or {}
 if tagID and nil == self._LearnedWorldQuestProfessionMapping[tagID] and nil == self._LearnedWorldQuestTypeMapping[tagID] then
 GrailDatabase.eek[v.questId] = 'A:'..(tagID and tagID or 'NoTagID')..' B:'..(tagName and tagName or 'NoTagName')..' C:'..(worldQuestType and worldQuestType or 'NotWorld') ..' D:'..(rarity and rarity or 'NO')..' E:'..(isElite and 'YES' or 'NO')..' F:'..(tradeskillLineIndex or 'nil')
 end
+end
 --	41672 123	"Enchanting World Quest" 1 1 false 9
 --	109 normal world quest
+--	110 ?
+--	111	elite
 --	112	epic elite
 --	113	PVP
---	114	
+--	114	?
 --	115	battle pet
 --	116 Blacksmithing
 --	117	Leatherworking
@@ -2728,11 +2732,14 @@ end
 --	119	Herbalism
 --	120	Mining
 --	121	Tailoring
---	122
+--	122 Engineering
 --	123	Enchanting	tradeskillLineIndex: 9
 --	124	Skinning
+--	125	Jewelcrafting
+
 --	130	Fishing		tradeskillLineIndex: 10
 --	131 Cooking		tradeskillLineIndex: 7
+
 --	135	rare
 --	136	rare elite
 --	137	Dungeon
@@ -2746,11 +2753,13 @@ end
 			C_Timer.After(2, function() Grail:_AddWorldQuestsUpdateTimes() end)
 		end,
 
-		_LearnedWorldQuestProfessionMapping = { [116] = 'B', [117] = 'L', [118] = 'A', [119] = 'H', [120]= 'M', [121] = 'T', [123] = 'E', [124] = 'S', [130] = 'F', [131] = 'C', },
+		_LearnedWorldQuestProfessionMapping = { [116] = 'B', [117] = 'L', [118] = 'A', [119] = 'H', [120]= 'M', [121] = 'T', [122] = 'N', '[123] = 'E', [124] = 'S', [125] = 'J', [130] = 'F', [131] = 'C', },
 
-		_LearnedWorldQuestTypeMapping = { [109] = 0, [112] = 0, [113] = 0x00000100, [115] = 0x00004000, [135] = 0, [136] = 0, [137] = 0x00000040, },
+		_LearnedWorldQuestTypeMapping = { [109] = 0, [111] = 0, [112] = 0, [113] = 0x00000100, [115] = 0x00004000, [135] = 0, [136] = 0, [137] = 0x00000040, },
 
 		_LearnWorldQuest = function(self, questId)
+			questId = tonumber(questId)
+			if nil == questId then return end
 			GrailDatabase.learned = GrailDatabase.learned or {}
 			GrailDatabase.learned.QUEST = GrailDatabase.learned.QUEST or {}
 			local currentLine = GrailDatabase.learned.QUEST[questId]

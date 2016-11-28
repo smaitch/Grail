@@ -509,6 +509,7 @@ G[1243402]="Navarrogg's Cage"
 G[1243690]='Bejeweled Egg'
 G[1243693]="Dead Man's Chest"
 G[1243700]='Forsaken Battle Plans'
+G[1243798]='A Steamy Jewelry Box'
 G[1243836]="Yotnar's Head"
 G[1244446]='Tatsächlich sichere Schatztruhe'
 G[1244466]='Fel Portal'
@@ -521,6 +522,7 @@ G[1247694]="Kel'danath's Knapsack"
 G[1248534]='Tears of Elune'
 G[1251124]='Glitzernde Schatztruhe'
 G[1251425]='Moist Grizzlecomb'
+G[1251571]='Ashilvara, Verse 1'
 G[1252817]='Unpowered Telemancy Beacon'
 G[1258979]='Fel-Ravaged Tome'
 end
