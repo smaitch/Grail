@@ -518,13 +518,17 @@ G[1244559]="Helya's Altar"
 G[1244694]='Small Treasure Chest'
 G[1244923]='Lever'
 G[1245328]='Enchanted Scroll'
+G[1246713]='Place Telemancy Beacon'
 G[1247694]="Kel'danath's Knapsack"
 G[1248534]='Tears of Elune'
+G[1250383]='Moonshade Relic'
+G[1251032]='Armoire'
 G[1251124]='Glitzernde Schatztruhe'
 G[1251425]='Moist Grizzlecomb'
 G[1251571]='Ashilvara, Verse 1'
 G[1252817]='Unpowered Telemancy Beacon'
 G[1258979]='Fel-Ravaged Tome'
+G[1265435]='Doodad_7sr_hubmanatree_seedholder001'
 end
 
 if release >= 19243 then

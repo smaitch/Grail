@@ -6858,8 +6858,10 @@ G[37422]={509674}
 end
 
 if Grail.inLegion then
-Grail.loremasterAchievements['Alliance'][8] = { 510617, 510698, 510763, 510059, 510790, }
-Grail.loremasterAchievements['Horde'][8] = { 510617, 510698, 510763, 510059, 510790, }
+Grail.loremasterAchievements['Alliance'][8] = { 511124, 510698, 510763, 510059, 510790, }
+Grail.loremasterAchievements['Horde'][8] = { 511124, 510698, 510763, 510059, 510790, }
+Grail.extraAchievements['Alliance'][8] = { 510617, 510756, }
+Grail.extraAchievements['Horde'][8] = { 510617, 510756, }
 G[37449]={510763}	-- needed for Behind Legion Lines part of Azsuna Matata
 G[37470]={510763}	-- needed for Azsuna vs Azshara part of Azsuna Matata
 G[37566]={510763}	-- needed for Against the Giants part of Azsuna Matata
@@ -6890,9 +6892,14 @@ G[40005]={510790}	-- needed for The Champion of Stormheim of Vrykul Story, Bro
 G[40009]={510617}	-- needed for Nightfall of Nightfallen But Not Forgotten
 G[40573]={510698}	-- needed for Archdruid of the Vale part of That's 'Val'sharah Folks!
 G[40794]={510763}	-- needed for Mak'rana and the Fate of the Queen's Reprisal part of Azsuna Matata
+G[40956]={510617}	-- needed for Chief Telemancer Oculeth of Nightfallen But Not Forgotten
+G[41028]={510756}	-- needed for Anora Hollow of Leyline Bling
+G[41138]={510617}	-- needed for Feeding Shal'Aran of Nightfallen But Not Forgotten
 G[41760]={510617}	-- needed for Arcanist Kel'danath of Nightfallen But Not Forgotten
 G[42147]={510617}	-- needed for Masquerade of Nightfallen But Not Forgotten
+G[42230]={510617,511124}	-- needed for The Light Below of Nightfallen But Not Forgotten and An Ancient Gift of Good Suramaritan
 G[42244]={510763}	-- needed for Mak'rana and the Fate of the Queen's Reprisal part of Azsuna Matata
+G[42488]={511124}	-- needed for The Waning Crescent of Good Suramaritan
 G[42756]={510763}	-- needed for Defending Azurewing Repose part of Azsuna Matata
 end
 
@@ -6941,7 +6948,7 @@ Grail.timings.AchievementsInternalConversion = debugprofilestop() - debugStartTi
 -- that are required and add all the quests that are prerequisites for those.
 debugStartTime = debugprofilestop()
 local achievementsDone = {}
-local achievementsToZoneMapping = { [506300] = 806, [506301] = 807, [506534] = 806, [506535] = 857, [506536] = 857, [506537] = 809, [506538] = 809, [506539] = 810, [506540] = 858, [508671] = 941, [508845] = 947, [508919] = 946, [508920] = 946, [508923] = 949, [508924] = 949, [508925] = 948, [508926] = 948, [508927] = 950, [508928] = 950, [509528] = 947, [509529] = 941, [509602] = 947, [509605] = 948, [509606] = 941, [509607] = 949, [509615] = 950, [510617] = 1033, [509618] = 19, [509674] = 946, [510698] = 1018, [510763] = 1015, [510059] = 1024, [510790] = 1017, }
+local achievementsToZoneMapping = { [506300] = 806, [506301] = 807, [506534] = 806, [506535] = 857, [506536] = 857, [506537] = 809, [506538] = 809, [506539] = 810, [506540] = 858, [508671] = 941, [508845] = 947, [508919] = 946, [508920] = 946, [508923] = 949, [508924] = 949, [508925] = 948, [508926] = 948, [508927] = 950, [508928] = 950, [509528] = 947, [509529] = 941, [509602] = 947, [509605] = 948, [509606] = 941, [509607] = 949, [509615] = 950, [510617] = 1033, [509618] = 19, [509674] = 946, [510698] = 1018, [510763] = 1015, [510059] = 1024, [510756] = 1033, [510790] = 1017, [511124] = 1033, }
 local expansions = { 6 }
 if release >= 18505 then
 	tinsert(expansions, 7)

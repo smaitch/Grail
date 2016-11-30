@@ -2158,7 +2158,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			[4] = { 1158, 1173, 1135, 1171, 1174, 1178, 1172, 1177, 1204, },
 			[5] = { 1216, 1351, 1270, 1277, 1275, 1283, 1282, 1228, 1281, 1269, 1279, 1243, 1273, 1358, 1276, 1271, 1242, 1278, 1302, 1341, 1337, 1345, 1272, 1280, 1352, 1357, 1353, 1359, 1375, 1376, 1387, 1388, 1435, 1492, },
 			[6] = { 1445, 1515, 1520, 1679, 1681, 1682, 1708, 1710, 1711, 1731, 1732, 1733, 1735, 1736, 1737, 1738, 1739, 1740, 1741, 1847, 1848, 1849, 1850, },
-			[7] = { 1815, 1828, 1859, 1883, 1888, 1894, 1899, 1900, 1947, 1948, 1975, 1984, 1989, },
+			[7] = { 1815, 1828, 1859, 1883, 1888, 1894, 1899, 1900, 1919, 1947, 1948, 1975, 1984, 1989, },
 			},
 
 		-- These reputations use the friendship names instead of normal reputation names
@@ -2363,6 +2363,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["766"] = "The Wardens",
 			["76B"] = "Moonguard",
 			["76C"] = "Court of Farondis",
+			["77F"] = "Arcane Thirst (Valtrois)",
 			["79B"] = "Illidari",
 			["79C"] = "Valarjar",
 			["7B7"] = "Conjurer Margoss",
@@ -2537,6 +2538,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["766"] = "Neutral",
 			["76B"] = "Neutral",
 			["76C"] = "Neutral",
+			["77F"] = "Neutral",
 			["79B"] = "Neutral",
 			["79C"] = "Neutral",
 			["7B7"] = "Neutral",
