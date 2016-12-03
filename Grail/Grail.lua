@@ -2192,6 +2192,8 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 									-- And now for Operation: Shieldwall
 									[45949] = 5000950, [49899] = 5004900, [53849] = 6002850, [57799] = 6006800, [61749] = 6010750, [65699] = 7002700,
 									[69649] = 7006650, [71661] = 7008662, [77549] = 7014550, [81499] = 7018500,
+									--	And now for Nightfallen
+									[58999] = 6008000, [69999] = 7007000,
 									},
 
 		--	The keys are the actual faction values used by Blizzard converted into a 3-character hexidecimal value.
@@ -2738,6 +2740,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --	123	Enchanting	tradeskillLineIndex: 9
 --	124	Skinning
 --	125	Jewelcrafting
+--	126	Inscription
 
 --	130	Fishing		tradeskillLineIndex: 10
 --	131 Cooking		tradeskillLineIndex: 7
@@ -2755,7 +2758,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			C_Timer.After(2, function() Grail:_AddWorldQuestsUpdateTimes() end)
 		end,
 
-		_LearnedWorldQuestProfessionMapping = { [116] = 'B', [117] = 'L', [118] = 'A', [119] = 'H', [120]= 'M', [121] = 'T', [122] = 'N', [123] = 'E', [124] = 'S', [125] = 'J', [130] = 'F', [131] = 'C', },
+		_LearnedWorldQuestProfessionMapping = { [116] = 'B', [117] = 'L', [118] = 'A', [119] = 'H', [120]= 'M', [121] = 'T', [122] = 'N', [123] = 'E', [124] = 'S', [125] = 'J', [126] = 'I', [130] = 'F', [131] = 'C', },
 
 		_LearnedWorldQuestTypeMapping = { [109] = 0, [111] = 0, [112] = 0, [113] = 0x00000100, [115] = 0x00004000, [135] = 0, [136] = 0, [137] = 0x00000040, },
 

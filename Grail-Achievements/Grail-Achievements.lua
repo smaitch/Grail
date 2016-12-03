@@ -6895,12 +6895,21 @@ G[40794]={510763}	-- needed for Mak'rana and the Fate of the Queen's Reprisal pa
 G[40956]={510617}	-- needed for Chief Telemancer Oculeth of Nightfallen But Not Forgotten
 G[41028]={510756}	-- needed for Anora Hollow of Leyline Bling
 G[41138]={510617}	-- needed for Feeding Shal'Aran of Nightfallen But Not Forgotten
+G[41494]={511124}	-- needed for Eminent Grow-main of Good Suramaritan
 G[41760]={510617}	-- needed for Arcanist Kel'danath of Nightfallen But Not Forgotten
 G[42147]={510617}	-- needed for Masquerade of Nightfallen But Not Forgotten
 G[42230]={510617,511124}	-- needed for The Light Below of Nightfallen But Not Forgotten and An Ancient Gift of Good Suramaritan
 G[42244]={510763}	-- needed for Mak'rana and the Fate of the Queen's Reprisal part of Azsuna Matata
 G[42488]={511124}	-- needed for The Waning Crescent of Good Suramaritan
 G[42756]={510763}	-- needed for Defending Azurewing Repose part of Azsuna Matata
+G[43587]={510756}	-- needed for Elor'shan of Leyline Bling
+G[43588]={510756}	-- needed for Kel'balor of Leyline Bling
+G[43590]={510756}	-- needed for Moonwhisper Gulch of Leyline Bling
+G[43591]={510756}	-- needed for Moon Guard of Leyline Bling
+G[43592]={510756}	-- needed for Falanaar North of Leyline Bling
+G[43593]={510756}	-- needed for Falanaar South of Leyline Bling
+G[43594]={510756}	-- needed for Halls of the Eclipse of Leyline Bling
+G[44052]={511124}	-- needed for Blood and Wine of Good Suramaritan
 end
 
 Grail.questsLoremaster = {}

@@ -23433,6 +23433,7 @@ G[44801]="Defending Shal'aran"
 G[44802]='Ancient Guidance'
 G[44805]='In the Thick of It'
 G[44847]='Straight From the Source'
+G[44856]='Cut the Cattitude'
 G[44879]='Snowfeather Matriarch Tracking Q'
 G[44893]='Direbeak Swarm!'
 G[44943]="Now That's Just Clawful!"
@@ -23440,6 +23441,7 @@ G[45032]='Like the Wind'
 G[45046]='Like the Wind'
 G[45047]='Like the Wind'
 G[45049]='Like the Wind'
+G[45068]="Barrels o' Fun"
 G[45072]="Barrels o' Fun"
 G[45307]='Claws for Alarm!'
 G[45488]='Nylaathria the Forgotten'
@@ -23447,6 +23449,10 @@ G[45495]='Immolian'
 G[45497]='Stormfeather'
 G[45500]="Shalas'aman"
 G[45515]='Valakar the Thirsty'
+end
+
+if release >= 23171 then
+G[44024]="WANTED: Shal'an"
 end
 
 --	End of localized quest names
