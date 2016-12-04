@@ -400,6 +400,8 @@
 --		083	Updates some quest/NPC information for Legion.
 --		084	Adds the ability to know when world quests are available.
 --			Updates some quest/NPC information for Legion, especially world quests.
+--		085	Corrects problem where map was reseting to Eye of Azshara.
+--			Updates some quest/NPC information for Legion.
 --
 --	Known Issues
 --
@@ -2193,7 +2195,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 									[45949] = 5000950, [49899] = 5004900, [53849] = 6002850, [57799] = 6006800, [61749] = 6010750, [65699] = 7002700,
 									[69649] = 7006650, [71661] = 7008662, [77549] = 7014550, [81499] = 7018500,
 									--	And now for Nightfallen
-									[58999] = 6008000, [69999] = 7007000,
+									[46749] = 5001750, [58999] = 6008000, [69999] = 7007000,
 									},
 
 		--	The keys are the actual faction values used by Blizzard converted into a 3-character hexidecimal value.
@@ -2700,7 +2702,9 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				end
 			end
 			self.availableWorldQuests = newTable
-			C_Timer.After((smallestMinutes + 1) * 60, function() self:_ResetWorldQuests() end)
+			if 0 < #newTable then
+				C_Timer.After((smallestMinutes + 1) * 60, function() self:_ResetWorldQuests() end)
+			end
 		end,
 
 		--	This adds to our internal data structure the world quests found available
@@ -2709,6 +2713,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			for _,frame in ipairs(framelist) do frame:UnregisterEvent("WORLD_MAP_UPDATE") end
 
 			self.availableWorldQuests = {}
+			local currentMap = GetCurrentMapAreaID()
 			local mapIdsForWorldQuests = { 1014, 1015, 1017, 1018, 1024, 1033, 1096, }
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				SetMapByID(mapId)
@@ -2754,6 +2759,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					end
 				end
 			end
+			SetMapByID(currentMap)
 	        for _,frame in ipairs(framelist) do frame:RegisterEvent("WORLD_MAP_UPDATE"); end
 			C_Timer.After(2, function() Grail:_AddWorldQuestsUpdateTimes() end)
 		end,
