@@ -402,6 +402,7 @@
 --			Updates some quest/NPC information for Legion, especially world quests.
 --		085	Corrects problem where map was reseting to Eye of Azshara.
 --			Updates some quest/NPC information for Legion.
+--		086	Updates some quest/NPC information for Legion.
 --
 --	Known Issues
 --
@@ -1961,7 +1962,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		gossipNPCs = {},
 		holidayMapping = { ['A'] = 'Love is in the Air', ['B'] = 'Brewfest', ['C'] = "Children's Week", ['D'] = 'Day of the Dead', ['F'] = 'Darkmoon Faire',
 				['H'] = 'Harvest Festival', ['K'] = "Kalu'ak Fishing Derby", ['L'] = 'Lunar Festival', ['M'] = 'Midsummer Fire Festival', ['N'] = 'Noblegarden', ['P'] = "Pirates' Day",
-				['U'] = 'New Year', ['V'] = 'Feast of Winter Veil', ['W'] = "Hallow's End", ['X'] = 'Stranglethorn Fishing Extravaganza', ['Y'] = "Pilgrim's Bounty", ['Z'] = "Christmas Week", ['a'] = 'Apexis Bonus Event', ['b'] ='Arena Skirmish Bonus Event', ['c'] = 'Battleground Bonus Event', ['d'] = 'Draenor Dungeon Event', ['e'] = 'Pet Battle Bonus Event', ['f'] = 'Timewalking Dungeon Event', },
+				['U'] = 'New Year', ['V'] = 'Feast of Winter Veil', ['W'] = "Hallow's End", ['X'] = 'Stranglethorn Fishing Extravaganza', ['Y'] = "Pilgrim's Bounty", ['Z'] = "Christmas Week", ['a'] = 'Apexis Bonus Event', ['b'] ='Arena Skirmish Bonus Event', ['c'] = 'Battleground Bonus Event', ['d'] = 'Draenor Dungeon Event', ['e'] = 'Pet Battle Bonus Event', ['f'] = 'Timewalking Dungeon Event', ['g'] = 'Legion Dungeon Event', },
 		holidayToBitMapping = { ['A'] = 0x00000001, ['B'] = 0x00000002, ['C'] = 0x00000004, ['D'] = 0x00000008, ['F'] = 0x00000010,
 				['H'] = 0x00000020, ['K'] = 0x00010000, ['L'] = 0x00000040, ['M'] = 0x00000080, ['N'] = 0x00000100, ['P'] = 0x00000200,
 				['U'] = 0x00000400, ['V'] = 0x00000800, ['W'] = 0x00001000, ['X'] = 0x00008000, ['Y'] = 0x00002000, ['Z'] = 0x00004000, ['a'] = 0x00020000, ['b'] = 0x00040000, ['c'] = 0x00080000, ['d'] = 0x00100000, ['e'] = 0x00200000, ['f'] = 0x00400000, ['g'] = 0x00800000, ['h'] = 0x01000000, ['i'] = 0x02000000, },
@@ -2160,7 +2161,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			[4] = { 1158, 1173, 1135, 1171, 1174, 1178, 1172, 1177, 1204, },
 			[5] = { 1216, 1351, 1270, 1277, 1275, 1283, 1282, 1228, 1281, 1269, 1279, 1243, 1273, 1358, 1276, 1271, 1242, 1278, 1302, 1341, 1337, 1345, 1272, 1280, 1352, 1357, 1353, 1359, 1375, 1376, 1387, 1388, 1435, 1492, },
 			[6] = { 1445, 1515, 1520, 1679, 1681, 1682, 1708, 1710, 1711, 1731, 1732, 1733, 1735, 1736, 1737, 1738, 1739, 1740, 1741, 1847, 1848, 1849, 1850, },
-			[7] = { 1815, 1828, 1859, 1883, 1888, 1894, 1899, 1900, 1919, 1947, 1948, 1975, 1984, 1989, },
+			[7] = { 1815, 1828, 1859, 1860, 1862, 1883, 1888, 1894, 1899, 1900, 1919, 1947, 1948, 1975, 1984, 1989, },
 			},
 
 		-- These reputations use the friendship names instead of normal reputation names
@@ -2362,6 +2363,8 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["739"] = "Order of the Awakened",
 			["73A"] = "The Saberstalkers",
 			["743"] = "The Nightfallen",
+			["744"] = "Arcane Thirst (Thalyssra)",
+			["746"] = "Arcane Thirst (Oculeth)",
 			["75B"] = "Dreamweavers",
 			["760"] = "Jandvik Vrykul",
 			["766"] = "The Wardens",
@@ -2537,6 +2540,8 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["739"] = "Neutral",
 			["73A"] = "Neutral",
 			["743"] = "Neutral",
+			["744"] = "Neutral",
+			["746"] = "Neutral",
 			["75B"] = "Neutral",
 			["760"] = "Neutral",
 			["766"] = "Neutral",
@@ -3380,6 +3385,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		end,
 
 		_CleanDatabaseLearnedQuestName = function(self)
+			GrailDatabase.learned = GrailDatabase.learned or {}
 			if nil ~= GrailDatabase.learned.QUEST_NAME then
 				local newQuestNames = {}
 				for _, questNameLine in pairs(GrailDatabase.learned.QUEST_NAME) do
@@ -5316,11 +5322,11 @@ end
 				if nil ~= guidParts and guidParts[1] == "GameObject" and self.lootingName ~= self.defaultUnfoundLootingName then
 					local internalName = self:ObjectName(guidParts[6])
 					if self.lootingName ~= internalName then
-						self:LearnObjectName(guidParts[6], self.lootingName)
+						self:LearnObjectName(guidParts[6], self.lootingName or "NO LOOTING OBJECT")
 					end
 				end
 				if GrailDatabase.debug then
-					local message = "Looting from " .. self.lootingGUID .. " locale: " .. self.playerLocale .. " name: " .. self.lootingName
+					local message = "Looting from " .. self.lootingGUID .. " locale: " .. self.playerLocale .. " name: " .. self.lootingName or "NO LOOTING OBJECT"
 					print(message)
 					self:_AddTrackingMessage(message)
 				end

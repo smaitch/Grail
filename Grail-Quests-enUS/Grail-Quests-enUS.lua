@@ -23455,4 +23455,11 @@ if release >= 23171 then
 G[44024]="WANTED: Shal'an"
 end
 
+if release >= 23222 then
+G[42870]='DANGER: Kathaw the Savage'
+G[44744]='Lifelines'
+G[44857]='Not There, Not Then, Not Forever'
+G[45172]='To Battle!'
+end
+
 --	End of localized quest names
