@@ -23461,6 +23461,7 @@ G[41607]='Taking a Promenade'
 G[41916]='A Better Future'
 G[42870]='DANGER: Kathaw the Savage'
 G[43812]='Down to Business'
+G[44118]='DANGER: Auditor Esiel'
 G[44719]='Breaching the Sanctum'
 G[44722]='Disillusioned Defector'
 G[44723]='More Like Me'
@@ -23539,6 +23540,34 @@ G[45271]='Insurrection'
 G[45316]='Stabilizing Suramar'
 G[45317]='Fighting on All Fronts'
 G[45417]='Lord of the Shadow Council'
+end
+
+if release >= 23360 then
+G[44823]='Thunder Totem Cleanup Detail'
+G[44868]="Trial of Valor: Odyn's Judgement"
+G[45048]='Like the Wind'
+G[45071]="Barrels o' Fun"
+G[45088]='Trial of Valor: The Lost Army'
+G[45352]='Touch of a Titan'
+G[46128]='Time for a Recharge'
+end
+
+if release >= 23420 then
+G[41169]='Darkheart Thicket: Through the Fog'
+G[41192]='The Right Path'
+G[41193]='Laying to Rest'
+G[41600]='Lively Mossgill Perch'
+G[42924]='Vault of the Wardens: A Grim Matter'
+G[43609]='WANTED: Doomlord Kazrok'
+G[44886]='Unwanted Evidence'
+G[44887]='Uncovering Orders'
+G[45159]='Cubic Conundrum'
+G[45160]='Cubic Currents'
+G[45238]='Return to Karazhan: Cubic Cynosure'
+G[45353]='Touch of a Titan'
+G[45422]='Edict of the God-King'
+G[45533]='Legion Dungeon Reward Quest'
+G[46119]='Boon of the Builder'
 end
 
 --	End of localized quest names

@@ -404,6 +404,9 @@
 --			Updates some quest/NPC information for Legion.
 --		086	Updates some quest/NPC information for Legion.
 --			Adds capability to know when withering is happening with NPCs.
+--		087	Updates some quest/NPC information for Legion.
+--			Corrects problem where GrailDatabase.learned was not being initialized before accessed.
+--			Uses Blizzard's new calendar API present in 7.2.
 --
 --	Known Issues
 --
@@ -834,6 +837,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.existsPandaria = (self.blizzardRelease >= 15640)
 					self.existsWoD = (self.blizzardRelease >= 18505)
 					self.existsLegion = (self.blizzardRelease >= 21531 and strsub(self.blizzardVersion, 1, 2) == "7.")
+					self.exists72 = (self.blizzardRelease >= 23578)
 					--	The next two are only here in case an external addon is making use of this information already.
 					self.inWoD = self.existsWoD
 					self.inLegion = self.existsLegion
@@ -876,6 +880,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 --							self.LAD.RegisterCallback(self, "ARTIFACT_KNOWLEDGE_CHANGED", "ArtifactChange")
 --						end
 --					end
+
+					for i = 1, self.invalidateGroupHighestValue do
+						self.invalidateControl[i] = {}
+					end
 
 					if self.forceLocalizedQuestNameLoad then
 						self:LoadAddOn("Grail-Quests-" .. self.playerLocale)
@@ -1121,7 +1129,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					if self.existsWoD then tinsert(self.continentMapIds, 962) end	-- 962 Draenor
 					if self.existsLegion then tinsert(self.continentMapIds, 1007) end	-- 1007 Broken Isle
 					self.continentIndexMapping = {}		-- reverse mapping so we can get the old concept of continent index from the now current mapIds
-					for i = 1, #(self.continentMapIds)do
+					for i = 1, #(self.continentMapIds) do
 						self.continentIndexMapping[self.continentMapIds[i]] = i
 					end
 					for i = 1, #(continentNames), (1 + offset) do
@@ -1357,7 +1365,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						frame:RegisterEvent("UNIT_QUEST_LOG_CHANGED")	-- so we can know when a quest is complete or failed
 						frame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 					end
-					frame:RegisterEvent("ZONE_CHANGED_NEW_AREA")	-- only to get the first time logging in so the GetQuestResetTime() actually returns a real value
+--					frame:RegisterEvent("ZONE_CHANGED_NEW_AREA")	-- only to get the first time logging in so the GetQuestResetTime() actually returns a real value
 					self:_CleanDatabase()
 					self:_CleanDatabaseLearnedQuestName()
 
@@ -1885,10 +1893,10 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				end
 			end,
 
-			['ZONE_CHANGED_NEW_AREA'] = function(self, frame)
-				self:_UpdateQuestResetTime()	-- moved here from ADDON_LOADED in the hopes that here GetQuestResetTime() will always return a real value
-				frame:UnregisterEvent("ZONE_CHANGED_NEW_AREA")
-			end,
+--			['ZONE_CHANGED_NEW_AREA'] = function(self, frame)
+--				self:_UpdateQuestResetTime()	-- moved here from ADDON_LOADED in the hopes that here GetQuestResetTime() will always return a real value
+--				frame:UnregisterEvent("ZONE_CHANGED_NEW_AREA")
+--			end,
 
 			},
 		factionMapping = { ['A'] = 'Alliance', ['H'] = 'Horde', },
@@ -2105,6 +2113,8 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		-- it will automatically be re-evaluated.  The keys are numbers with arbitrary values, except for those that
 		-- are associated with Blizzard groups (like factions), which are noted.
 		invalidateControl = {},
+
+		invalidateGroupHighestValue = 4,
 
 		invalidateGroupWithering = 1,
 		invalidateGroupGarrisonBuildings = 2,
@@ -2777,6 +2787,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					if self.debug and self.levelingLevel >= 110 then
 						local weekday, month, day, year = CalendarGetDate()
 						local stringValue = strformat("%4d-%02d-%02d %02d:%02d %s/%s", year, month, day, hour, minute, self.playerRealm, self.playerName)
+						GrailDatabase.learned = GrailDatabase.learned or {}
 						GrailDatabase.learned.WORLD_QUEST_UNAVAILABLE = GrailDatabase.learned.WORLD_QUEST_UNAVAILABLE or {}
 						GrailDatabase.learned.WORLD_QUEST_UNAVAILABLE[questId] = stringValue
 					end
@@ -3020,6 +3031,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			if 'P' == codePrefix then
 				codeValues = self.questPrerequisites[questId]
 			else
+-- TODO: SMH: Check the following because there was an error reported.  Note that the code above checks questCodes and not quests...investigate
 				codeValues = self.quests[questId][codePrefix]
 			end
 			local dangerous = (codePrefix == 'I' or codePrefix == 'B')
@@ -3183,8 +3195,23 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			if holidayCode == 'g' or holidayCode == 'h' or holidayCode == 'i' then
 				soughtHolidayName = self.holidayMapping['f']
 			end
-			while CalendarGetDayEvent(0, day, i) do
-				local title, calHour, calMinute, calendarType, sequenceType, eventType, texture, modStatus, inviteStatus, invitedBy, difficulty, inviteType = CalendarGetDayEvent(0, day, i)
+			-- sometime between release 23478 and 23578 CalendarGetDayEvent was removed, replaced with C_Calendar.GetDayEvent which returns a table
+			local numEvents = CalendarGetNumDayEvents(0, day)
+			local title, calHour, calMinute, calendarType, sequenceType, eventType, texture, modStatus, inviteStatus, invitedBy, difficulty, inviteType
+			for i = 1, numEvents do
+				if self.exists72 then
+					local event = C_Calendar.GetDayEvent(0, day, i)
+					calendarType = event.calendarType
+					eventType = event.eventType
+					title = event.title
+					texture = event.texture
+					sequenceType = event.sequenceType
+					local date = (event.sequenceType == "END") and event.endTime or event.startTime
+					calHour = date.hour
+					calMinute = date.minute
+				else
+					title, calHour, calMinute, calendarType, sequenceType, eventType, texture, modStatus, inviteStatus, invitedBy, difficulty, inviteType = CalendarGetDayEvent(0, day, i)
+				end
 				--	hour and minute indicate time when event starts for START
 				--	or ONGOING, and ends for END
 				--	sequenceType is START, ONGOING, END
@@ -3262,6 +3289,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		--		I	in log
 		--		K	weekly
 		--		L	too high
+		--		O	world quest
 		--		P	fails (prerequisites)
 		--		R	repeatable
 		--		U	unknown
@@ -3397,6 +3425,8 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						retval = 'W'
 					elseif bitband(questTypeMask, self.bitMaskQuestLegendary) > 0 then
 						retval = 'Y'
+					elseif bitband(questTypeMask, self.bitMaskQuestWorldQuest) > 0 then
+						retval = 'O'
 					elseif self:IsWeekly(numeric) then
 						retval = 'K'
 					else
@@ -5419,15 +5449,16 @@ end
 			local newlyCompleted = {}
 			self:_ProcessServerCompare(newlyCompleted)
 			if #newlyCompleted > 0 then
+				local lootingNameToUse = self.lootingName or "NO LOOTING OBJECT"
 				local guidParts = { strsplit('-', self.lootingGUID or "") }
 				if nil ~= guidParts and guidParts[1] == "GameObject" and self.lootingName ~= self.defaultUnfoundLootingName then
 					local internalName = self:ObjectName(guidParts[6])
 					if self.lootingName ~= internalName then
-						self:LearnObjectName(guidParts[6], self.lootingName or "NO LOOTING OBJECT")
+						self:LearnObjectName(guidParts[6], lootingNameToUse)
 					end
 				end
 				if GrailDatabase.debug then
-					local message = "Looting from " .. self.lootingGUID .. " locale: " .. self.playerLocale .. " name: " .. self.lootingName or "NO LOOTING OBJECT"
+					local message = "Looting from " .. self.lootingGUID .. " locale: " .. self.playerLocale .. " name: " .. lootingNameToUse
 					print(message)
 					self:_AddTrackingMessage(message)
 				end
@@ -6067,7 +6098,7 @@ end
 		end,
 
 		---
-		--	Returns whether the quest is a weekly quest.
+		--	Returns whether the quest is a world quest.
 		--	@param questId The standard numeric questId representing a quest.
 		--	@return True if the quest is a weekly quest, false otherwise.
 		IsWorldQuest = function(self, questId)
@@ -7818,6 +7849,7 @@ if GrailDatabase.debug then print("Marking OEC quest complete", oecCodes[i]) end
 								if nil ~= retval and retval ~= self.retrievingString then
 									self.quest.name[questId] = retval
 									if self.forceLocalizedQuestNameLoad then
+										GrailDatabase.learned = GrailDatabase.learned or {}
 										GrailDatabase.learned.QUEST_NAME = GrailDatabase.learned.QUEST_NAME or {}
 										tinsert(GrailDatabase.learned.QUEST_NAME, self.playerLocale .. '|' .. self.blizzardRelease .. '|' .. questId .. '|' .. retval)
 									end
