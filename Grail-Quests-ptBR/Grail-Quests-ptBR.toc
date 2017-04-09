@@ -1,4 +1,4 @@
-## Interface: 70100
+## Interface: 70200
 ## Title: Grail |r|cff69ccf0Quests ptBR|r
 ## Author: Scott M Harrison
 ## Notes: Provides localized ptBR quest names to Grail
