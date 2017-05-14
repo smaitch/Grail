@@ -728,6 +728,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		bitMaskQuestRareMob		=	0x00010000,		-- rare mob
 		bitMaskQuestTreasure	=	0x00020000,
 		bitMaskQuestWorldQuest	=	0x00040000,
+		bitMaskQuestBiweekly	=	0x00080000,
 -- 		lots of unused bits we can still abuse :-)
 		bitMaskQuestSpecial		=	0x80000000,		-- quest is "special" and never appears in the quest log
 		-- End of bit mask values
@@ -1139,7 +1140,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end
 					for i = 1, #(continentNames), (1 + offset) do
 						mapId = self.existsWoD and tonumber(continentNames[i]) or self.continentMapIds[i]
-						L = { name = continentNames[(i + offset)], zones = {}, mapID = mapId }
+						L = { name = continentNames[(i + offset)], zones = {}, mapID = mapId, dungeons = {} }
 						continentIndex = (i + offset) / (1 + offset)
 						zoneNames = { GetMapZones(continentIndex) }
 						for j = 1, #(zoneNames), (1 + offset) do
@@ -1742,7 +1743,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				--	If the level as reported by Blizzard API does not match our internal database we should note that fact
 				if self:DoesQuestExist(questId) then
 					local internalQuestLevel = self:QuestLevel(questId)
-					if (0 ~= internalQuestLevel and (internalQuestLevel or 1) ~= level) or (0 == internalQuestLevel and level ~= UnitLevel('player')) then
+					if (0 ~= internalQuestLevel and (internalQuestLevel or 1) ~= level) or (0 == internalQuestLevel and level ~= 0 and level ~= UnitLevel('player')) then
 						errorString = errorString .. "|Level:" .. level
 						self:_RecordBadQuestData(errorString)
 					end
@@ -2869,6 +2870,15 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --	135	rare
 --	136	rare elite
 --	137	Dungeon
+
+--	139 Legion Invasion World Quest
+
+--	141	Raid World Quest
+--	142	Legion Invasion Elite World Quest
+
+--	144	Legionfall World Quest
+--	145	Legionfall Dungeon World Quest
+
 						self:_LearnWorldQuest(v.questId, mapId)
 --						self.availableWorldQuests[v.questId] = true
 						tinsert(self.invalidateControl[self.invalidateGroupCurrentWorldQuests], v.questId)
@@ -2883,7 +2893,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 		_LearnedWorldQuestProfessionMapping = { [116] = 'B', [117] = 'L', [118] = 'A', [119] = 'H', [120]= 'M', [121] = 'T', [122] = 'N', [123] = 'E', [124] = 'S', [125] = 'J', [126] = 'I', [130] = 'F', [131] = 'C', },
 
-		_LearnedWorldQuestTypeMapping = { [109] = 0, [111] = 0, [112] = 0, [113] = 0x00000100, [115] = 0x00004000, [135] = 0, [136] = 0, [137] = 0x00000040, },
+		_LearnedWorldQuestTypeMapping = { [109] = 0, [111] = 0, [112] = 0, [113] = 0x00000100, [115] = 0x00004000, [135] = 0, [136] = 0, [137] = 0x00000040, [139] = 0, [141] = 0x00000080, [142] = 0, [144] = 0, [145] = 0x00000040, },
 
 		_LearnWorldQuest = function(self, questId, mapId)
 			questId = tonumber(questId)
@@ -4273,8 +4283,9 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 									local iQuests = self.quests[questId]['I']
 									if nil ~= iQuests then
 										for _, iQuestId in pairs(iQuests) do
-											if nil == self.questStatusCache["I"][iQuestId] then self.questStatusCache["I"][iQuestId] = {} end
-											if not tContains(self.questStatusCache["I"][iQuestId], questId) then tinsert(self.questStatusCache["I"][iQuestId], questId) end
+											local t = self.questStatusCache["I"][iQuestId] or {}
+											if not tContains(t, questId) then tinsert(t, questId) end
+											self.questStatusCache["I"][iQuestId] = t
 										end
 									end
 									self:_ProcessQuestsForHandlers(questId, self.quests[questId]['I'])
@@ -5001,8 +5012,9 @@ end
 --		30726 is no longer obtainable (since it is likewise marked I:H30726 which resolves as unobtainable since 30726 has already been completed) and we
 --		get the inherited prerequisite failure.
 					if dangerous then
-						if nil == Grail.currentMortalIssues[value] then Grail.currentMortalIssues[value] = {} end
-						if value ~= questId and not tContains(Grail.currentMortalIssues[value], questId) then tinsert(Grail.currentMortalIssues[value], questId) end
+						local t = Grail.currentMortalIssues[value] or {}
+						if value ~= questId and not tContains(t, questId) then tinsert(t, questId) end
+						Grail.currentMortalIssues[value] = t
 					else
 --						canAcceptQuest = Grail:CanAcceptQuest(value, true)
 						canAcceptQuest = Grail:CanAcceptQuest(value, true, true, true, true, true)
@@ -5199,8 +5211,9 @@ end
 --					if nil == currentQuestId then currentQuestId = tonumber(strsub(codeString, 2)) end
 					local currentQuestId = numeric
 
-					Grail.questStatusCache.Q[currentQuestId] = Grail.questStatusCache.Q[currentQuestId] or {}
-					if not tContains(Grail.questStatusCache.Q[currentQuestId], questId) then tinsert(Grail.questStatusCache.Q[currentQuestId], questId) end
+					local t = Grail.questStatusCache.Q[currentQuestId] or {}
+					if not tContains(t, questId) then tinsert(t, questId) end
+					Grail.questStatusCache.Q[currentQuestId] = t
 					local subCode = Grail:StatusCode(currentQuestId)
 					--	SMH 2014-02-09
 					--	The behavior of failing for ancestors is changing such that we will return both the current status hard failure and the ancestor one together and let
@@ -6172,6 +6185,14 @@ end
 		--	@return True if the quest is a weekly quest, false otherwise.
 		IsWeekly = function(self, questId)
 			return (bitband(self:CodeType(questId), self.bitMaskQuestWeekly) > 0)
+		end,
+
+		---
+		--	Returns whether the quest is a biweekly quest (meaning once every two weeks).
+		--	@param questId The standard numeric questId representing a quest.
+		--	@return True if the quest is a biweekly quest, false otherwise.
+		IsBiweekly = function(self, questId)
+			return (bitband(self:CodeType(questId), self.bitMaskQuestBiweekly) > 0)
 		end,
 
 		---
@@ -7394,10 +7415,11 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			elseif '@' == code then
 				-- This is implemented quite simply to say that any quest that has an artifact level requirement will be invalidated
 				-- if there is a change in any artifact level, not examining the actual artifact involved in the change.
-				self.invalidateControl[self.invalidateGroupArtifactLevel] = self.invalidateControl[self.invalidateGroupArtifactLevel] or {}
-				if not tContains(self.invalidateControl[self.invalidateGroupArtifactLevel], questId) then
-					tinsert(self.invalidateControl[self.invalidateGroupArtifactLevel], questId)
+				local t = self.invalidateControl[self.invalidateGroupArtifactLevel] or {}
+				if not tContains(t, questId) then
+					tinsert(t, questId)
 				end
+				self.invalidateControl[self.invalidateGroupArtifactLevel] = t
 			end
 		end,
 
@@ -8273,30 +8295,29 @@ if GrailDatabase.debug then print("Marking OEC quest complete", oecCodes[i]) end
 		--	any previous information if the "daily" day changes.  It returns the count 
 		_RecordGroupValueChange = function(self, group, isAdding, isRemoving, questId)
 			local dailyDay = self:_GetDailyDay()
-			if nil == GrailDatabasePlayer["dailyGroups"] or nil == GrailDatabasePlayer["dailyGroups"][dailyDay] then
-				GrailDatabasePlayer["dailyGroups"] = {}
-				GrailDatabasePlayer["dailyGroups"][dailyDay] = {}
-			end
-			if nil == GrailDatabasePlayer["dailyGroups"][dailyDay][group] then GrailDatabasePlayer["dailyGroups"][dailyDay][group] = {} end
+			GrailDatabasePlayer["dailyGroups"] = GrailDatabasePlayer["dailyGroups"] or {}
+			GrailDatabasePlayer["dailyGroups"][dailyDay] = GrailDatabasePlayer["dailyGroups"][dailyDay] or {}
+			local t = GrailDatabasePlayer["dailyGroups"][dailyDay][group] or {}
 			if isAdding then
-				if not tContains(GrailDatabasePlayer["dailyGroups"][dailyDay][group], questId) then tinsert(GrailDatabasePlayer["dailyGroups"][dailyDay][group], questId) end
+				if not tContains(t, questId) then tinsert(t, questId) end
 			elseif isRemoving then
-				if tContains(GrailDatabasePlayer["dailyGroups"][dailyDay][group], questId) then
+				if tContains(t, questId) then
 					local index, foundIndex = 1, nil
-					while GrailDatabasePlayer["dailyGroups"][dailyDay][group][index] do
-						if GrailDatabasePlayer["dailyGroups"][dailyDay][group][index] == questId then
+					while t[index] do
+						if t[index] == questId then
 							foundIndex = index
 						end
 						index = index + 1
 					end
 					if foundIndex then
-						tremove(GrailDatabasePlayer["dailyGroups"][dailyDay][group], foundIndex)
+						tremove(t, foundIndex)
 					end
 				else
 					if GrailDatabase.debug then print("|cFFFFFF00Grail|r _RecordGroupValueChange could not remove a non-existent quest", questId) end
 				end
 			end
-			return #(GrailDatabasePlayer["dailyGroups"][dailyDay][group])
+			GrailDatabasePlayer["dailyGroups"][dailyDay][group] = t
+			return #(t)
 		end,
 
 		_RegisterDelayedEvent = function(self, frame, delayTable)
