@@ -410,6 +410,8 @@
 --		088	Changes the Interface to 70200
 --			Updates some quest/NPC information for Legion.
 --			Adds the ability to handle artifact levels which are required for some newer quests.
+--		089	Corrects problem where garrison NPC building prerequisites was causing a Lua error.
+--			Updates some quest/NPC information.
 --
 --	Known Issues
 --
@@ -5062,7 +5064,7 @@ end
 					end
 				end
 				if checkGarrisonBuildingNPC then
-					garrisonBuildingNPCMatches = Grail:HasGarrisonBuildingNPCWorking(subcode)
+					garrisonBuildingNPCMatches = Grail:HasGarrisonBuildingNPCWorking(value)
 				end
 				if checkStatusNotComplete and checkNotCompleted then
 					-- TODO: this is a situation where we need an AND between the two, where each individually will not succeed
