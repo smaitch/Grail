@@ -25045,9 +25045,12 @@ G[45572]='Holding Our Ground'
 G[45626]='Set You Up the Bomb!'
 G[45805]='The Burning Keys'
 G[45840]='Assault on Highmountain'
+G[45973]='Unchecked Power'
 G[46032]='The Tormented Return'
 G[46068]='Brute Wrangling'
 G[46076]='Restless Spirits'
+G[46105]='Arachnid Superiority'
+G[46126]='Fel-Corrupted Feathers'
 G[46162]="Subjugator Val'rek"
 G[46166]='Garthulak the Crusher'
 G[46167]='Kozrum'
@@ -25056,20 +25059,41 @@ G[46188]='Orgrokk'
 G[46193]='Borne of Fel'
 G[46195]='Swarming Skies'
 G[46196]='Class Dismissed'
+G[46246]='Strike Them Down'
 G[46248]='Self-Fulfilling Prophecy'
+G[46249]='Championing Our Cause'
+G[46250]='Take Out the Head...'
 G[46252]='Intolerable Infestation'
 G[46288]='Everyone to the Front'
 G[46360]='Simply Stunning'
+G[46769]='Relieved of Their Valuables'
 G[46814]='Call of the Frostwyrm'
 G[46904]='Boon of the Command Center'
 G[46945]="Si'vash"
 G[46947]='Brutallus'
 G[46999]='Boon of the Command Center'
 G[47009]='Boon of the Mage Tower'
+G[47010]='Boon of the Mage Tower'
 G[47015]='Boon of the Nether Disruptor'
 G[47016]='Boon of the Nether Disruptor'
 G[47064]='Tracking Quest'
+G[47090]='Tracking Quest'
 G[47185]='Invasion Boss Weekly Bonus'
+end
+
+if release >= 24330 then
+G[47543]='The Day That Chromie Dies'
+G[47545]='Rewind'
+G[47550]='The Many Advantages of Being a Time Dragon'
+G[48021]='Chromie'
+end
+
+if release >= 24367 then
+G[45744]='Fall of the Felskorn'
+G[47558]='Fel-Touched Chronoshard'
+G[47644]='Demonic Corestone'
+G[47645]="Voidcallers' Scroll"
+G[47904]='Preserve the True Future'
 end
 
 --	End of localized quest names
