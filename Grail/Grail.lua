@@ -412,6 +412,7 @@
 --			Adds the ability to handle artifact levels which are required for some newer quests.
 --		089	Corrects problem where garrison NPC building prerequisites was causing a Lua error.
 --			Updates some quest/NPC information.
+--		090	Updates some quest/NPC information.
 --
 --	Known Issues
 --
