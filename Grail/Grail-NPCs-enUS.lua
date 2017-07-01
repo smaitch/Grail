@@ -515,6 +515,7 @@ G[1244466]='Fel Portal'
 G[1244555]='Mysterious Dust'
 G[1244559]="Helya's Altar"
 G[1244694]='Small Treasure Chest'
+G[1244708]="Watcher's Journal"
 G[1244923]='Lever'
 G[1245328]='Enchanted Scroll'
 G[1245688]='Shattered Burial Urn'

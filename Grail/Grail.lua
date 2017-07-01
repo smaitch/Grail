@@ -413,6 +413,7 @@
 --		089	Corrects problem where garrison NPC building prerequisites was causing a Lua error.
 --			Updates some quest/NPC information.
 --		090	Updates some quest/NPC information.
+--			Supports quests requiring paragon reputations.
 --
 --	Known Issues
 --
@@ -2292,6 +2293,8 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 									[69649] = 7006650, [71661] = 7008662, [77549] = 7014550, [81499] = 7018500,
 									--	And now for Nightfallen
 									[46749] = 5001750, [58999] = 6008000, [69999] = 7007000,
+									--	And now for Paragon reputations
+									[93999] = 8010000,
 									},
 
 		--	The keys are the actual faction values used by Blizzard converted into a 3-character hexidecimal value.
@@ -8452,6 +8455,14 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 				local name, description, standingId, barMin, barMax, barValue = GetFactionInfoByID(factionId)
 				if name then
 					actualEarnedValue = barValue + 42000	-- the reputationValue is stored with 42000 added to it so we do not have to deal with negative numbers, so we normalize here
+					if self.exists72 then
+						if C_Reputation.IsFactionParagon(factionId) then
+							local paraValue, paraThreshold, paraQuestId, paraRewardPending = C_Reputation.GetFactionParagonInfo(factionId)
+							if paraValue and paraThreshold then
+								actualEarnedValue = actualEarnedValue + paraValue - paraThreshold
+							end
+						end
+					end
 					retval = (actualEarnedValue > reputationValue)
 				end
 			end

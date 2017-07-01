@@ -25096,4 +25096,47 @@ G[47645]="Voidcallers' Scroll"
 G[47904]='Preserve the True Future'
 end
 
+if release >= 24430 then
+G[41278]='Slippery Stormrays'
+G[42755]='Eye of Azshara: Azsunian Pearls'
+G[43778]='Enigmatic'
+G[44867]='Contain their Advance'
+G[45390]='Souls of the Vrykul'
+G[45837]='Creeping Fel'
+G[45915]='The Folly of Levia Laurance'
+G[45921]="Thal'xur"
+G[45922]='Agmozuul'
+G[46164]="Mal'serus"
+G[46168]='Commander Vorlax'
+G[46170]="Thar'gokk"
+G[46179]='Crushing the Legion'
+G[46197]='From the Skies They Fel'
+G[46216]='Congealed Corruption'
+G[46253]='Pillars of Creation'
+G[46752]='On Borrowed Wings'
+G[46802]='Paragon of the Legionfall Armies'
+G[46805]="The Deceiver's Downfall"
+G[47001]='Rare Elite 21'
+G[47021]='7.2 Broken Shore - Buildings - Command Center - Buff - Follower Token - Tracking'
+G[47043]='Havoc: The Thieving Apprentice'
+G[47046]='Frost: The Thieving Apprentice'
+G[47047]='Survival: The Thieving Apprentice'
+G[47048]='Subtlety: The Thieving Apprentice'
+G[47049]='Demonology: Fate of the Tideskorn'
+G[47050]='Enhancement: Fate of the Tideskorn'
+G[47051]='Assassination: Fate of the Tideskorn'
+G[47052]='Retribution: Fate of the Tideskorn'
+G[47062]='Tracking Quest'
+G[47063]='Tracking Quest'
+G[47065]='Tracking Quest'
+G[47084]='Tracking Quest'
+G[47085]='Tracking Quest'
+G[47086]='Tracking Quest'
+G[47114]='The Tombs Mistress'
+G[47193]='Battle for Azsuna'
+G[47590]='Tier 3 Mob Daily Bonus (DNT)'
+G[47790]='Unsettled Power'
+G[47793]='The Spoiled Sample'
+end
+
 --	End of localized quest names
