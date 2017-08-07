@@ -25139,4 +25139,149 @@ G[47790]='Unsettled Power'
 G[47793]='The Spoiled Sample'
 end
 
+if release >= 24461 then
+G[40390]='Hallowed Ground'
+G[41276]='Rocket Boot Fishing'
+G[41294]='Flourishing Dreamleaf'
+G[41314]='Work Order: Felslate'
+G[41352]='Felslate Basilisks'
+G[41602]='Lively Stormrays'
+G[41646]='Work Order: Silkweave Gloves'
+G[42242]='Halls of Valor: A Gift for Vethir'
+G[42783]='Court of Stars: They Bloom at Night'
+G[43613]='WANTED: Syphonus'
+G[43623]='WANTED: Hannval the Butcher'
+G[44113]='DANGER: Achronos'
+G[44187]='DANGER: Cinderwing'
+G[45134]='The Soul Harvesters'
+G[45542]='Behind Enemy Portals'
+G[45786]='Feast of the Hounds'
+G[45924]='Abyssal Monstrosity'
+G[45926]="Zar'teth"
+G[45927]='Zagmothar'
+G[46006]='Arkuthaz'
+G[46011]='Colossal Infernal'
+G[46016]='Magdrezoth'
+G[46017]="Shel'drozul"
+G[46021]="Thel'draz"
+G[46075]='Relic Hunting'
+G[46163]="Thaz'gul"
+G[46169]="Dro'zek"
+G[46183]='Commander Zarthak'
+G[46184]='Gelgothar'
+G[46185]='Iroxus'
+G[46186]="Ix'dreloth"
+G[46190]='Ulgrom'
+G[46191]='Balinar'
+G[46192]="Zar'vok"
+G[46194]='Wolves of the Legion'
+G[46262]='Save the Tadpoles!'
+G[46766]='Ulgthax'
+G[46844]='Cathedral of Eternal Night: Mistress of Blades'
+G[46865]='Cathedral of Eternal Night: Mother of Flame'
+G[46867]='Cathedral of Eternal Night: Fel Beast'
+G[46868]='Cathedral of Eternal Night: Infernal Dead'
+G[46869]='Cathedral of Eternal Night: Temptress of Pain'
+G[47014]='Boon of the Nether Disruptor'
+G[47557]='Smoldering Chronoshard'
+G[47559]='Gleaming Chronoshard'
+G[47560]='Frozen Chronoshard'
+G[47642]='Soul Crystal'
+G[47643]="The Ancients' Wisdom"
+G[47791]='Unsettled Power'
+G[47807]='Worried About My Friends'
+G[48064]='Goroth Intro'
+end
+
+if release >= 24563 then
+G[48639]='Army of the Light'
+G[48641]='Armies of Legionfall'
+end
+
+if release >= 24608 then
+G[47221]='The Hand of Fate'
+G[47222]='Two If By Sea'
+end
+
+if release >= 24651 then
+G[40238]='A Grim Equation'
+G[46297]='Overwhelming Power'
+G[46732]="The Prophet's Gambit"
+G[46816]='Rendezvous'
+G[46839]='From Darkness'
+G[46840]='Prisoners No More'
+G[46841]='Threat Reduction'
+G[46842]='A Strike at the Heart'
+G[46843]='Return to the Vindicaar'
+G[46938]='Alone in the Abyss'
+G[47223]="Light's Exodus"
+G[47224]='The Vindicaar'
+G[47287]='The Vindicaar Matrix Core'
+G[47431]='Gathering Light'
+G[47508]='Fire At Will'
+G[47526]='Bringing the Big Guns'
+G[47541]='The Best Prevention'
+G[47589]='Righteous Fury'
+G[47627]='Vengeance'
+G[47641]='Signs of Resistance'
+G[47652]='The Light Mother'
+G[47653]="Light's Return"
+G[47743]='The Child of Light and Shadow'
+G[47754]='Lightly Roasted'
+G[47771]='Locating the Longshot'
+G[47889]='The Speaker Calls'
+G[47890]='Visions of Torment'
+G[47891]='Dire News'
+G[47892]='Storming the Citadel'
+G[47967]='An Argus Roper'
+G[47986]='Scars of the Past'
+G[47987]='Preventive Measures'
+G[47988]='Chaos Theory'
+G[47989]='Heralds of Apocalypse'
+G[47990]='A Touch of Fel'
+G[47991]='Dark Machinations'
+G[48199]='The Burning Heart'
+G[48200]='Securing a Foothold'
+G[48338]='Supplies Needed: Astral Glory'
+G[48374]='Supplies Needed: Lightweave Cloth'
+G[48440]='Into the Night'
+G[48455]='Duskcloak Problem'
+G[48483]="A Stranger's Plea"
+G[48500]='A Moment of Respite'
+G[48559]='An Offering of Light'
+G[48642]='Argussian Reach'
+G[48867]='Chief Alchemist Munculus'
+G[48983]='Mining Regulation'
+end
+
+if release >= 24681 then
+G[46815]="Mac'Aree, Jewel of Argus"
+G[46818]='Defenseless and Afraid'
+G[46834]='Khazaduum, First of His Name'
+G[46941]='The Path Forward'
+G[47066]='Consecrating Ground'
+G[47685]="Gatekeeper's Challenge: Cunning"
+G[47686]='Not-So-Humble Beginnings'
+G[47687]="Gatekeeper's Challenge: Mastery"
+G[47688]='Invasive Species'
+G[47689]="Gatekeeper's Challenge: Tenacity"
+G[47690]="The Defiler's Legacy"
+G[47882]='Conservation of Magic'
+G[47883]='The Longest Vigil'
+G[47992]='Dawn of Justice'
+G[47993]='Lord of the Spire'
+G[47994]='Forming a Bond'
+G[48069]='The Wrench Calls'
+G[48081]='A Floating Ruin'
+G[48107]='The Sigil of Awakening'
+G[48344]='We Have a Problem'
+G[48461]='Where They Least Expect It'
+G[48668]='Lightforged Beacon: City Center'
+end
+
+if release >= 24700 then
+G[49014]='The Burning Throne'
+G[49015]='The Death of a Titan'
+end
+
 --	End of localized quest names

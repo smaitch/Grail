@@ -34,6 +34,8 @@ if Grail.achievementsVersionNumber < Grail_Achievements_File_Version then
 	Grail.achievementsVersionNumber = Grail_Achievements_File_Version
 
 local originalMem = gcinfo()
+local debugStartTime = debugprofilestop()
+local supportedFactions = {'Alliance', 'Horde'}
 
 --	These are the achievements organized by zone for completing the "loremaster" achievements (basically completing a specific number of quests in each zone).
 Grail.loremasterAchievements = {
@@ -6918,13 +6920,16 @@ G[43594]={510756}	-- needed for Halls of the Eclipse of Leyline Bling
 G[44052]={511124}	-- needed for Blood and Wine of Good Suramaritan
 end
 
+Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime
+debugStartTime = debugprofilestop()
+
 Grail.questsLoremaster = {}
 
 -- TODO: Need to delay this until after combat
 
 -- Now create Grail.achievements by combining Grail.loremasterAchievements and Grail.extraAchievements
 Grail.achievements = {}
-for _, faction in pairs({'Alliance','Horde'}) do
+for _, faction in pairs(supportedFactions) do
 	Grail.achievements[faction] = {}
 	for index, table in pairs(Grail.loremasterAchievements[faction]) do
 		Grail.achievements[faction][index] = Grail:_TableAppend({}, table)
@@ -6934,7 +6939,9 @@ for _, faction in pairs({'Alliance','Horde'}) do
 	end
 end
 
-local debugStartTime = debugprofilestop()
+Grail.timings.AchievementsFactionCreation = debugprofilestop() - debugStartTime
+debugStartTime = debugprofilestop()
+
 for questId, achs in pairs(G) do
 	if achs ~= nil then
 		-- Add this quest to its achievements
@@ -6971,7 +6978,7 @@ end
 if Grail.inLegion then
 	tinsert(expansions, 8)
 end
-for _, faction in pairs({'Alliance', 'Horde'}) do
+for _, faction in pairs(supportedFactions) do
 	for _, expansion in pairs(expansions) do
 		for _, achievement in pairs(Grail.loremasterAchievements[faction][expansion]) do
 			if not tContains(achievementsDone, achievement) then

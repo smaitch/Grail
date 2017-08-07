@@ -549,6 +549,7 @@ G[1252816]='Unpowered Telemancy Beacon'
 G[1252817]='Unpowered Telemancy Beacon'
 G[1258979]='Fel-Ravaged Tome'
 G[1265435]='Doodad_7sr_hubmanatree_seedholder001'
+G[1271124]="Light's Judgment"
 end
 
 if release >= 19243 then
