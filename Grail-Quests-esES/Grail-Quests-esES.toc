@@ -1,8 +1,8 @@
-## Interface: 70200
+## Interface: 70300
 ## Title: Grail |r|cff69ccf0Quests esES|r
 ## Author: Scott M Harrison
 ## Notes: Provides localized esES quest names to Grail
-## Version: 22996
+## Version: 24920
 ## Dependencies: Grail
 ## LoadOnDemand: 1
 

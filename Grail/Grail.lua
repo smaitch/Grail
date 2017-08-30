@@ -415,6 +415,8 @@
 --		090	Updates some quest/NPC information.
 --			Supports quests requiring paragon reputations.
 --			Supports the Argus continent being introduced in 7.3.
+--		091	Updates some quest/NPC information.
+--			Updates the Interface to 70300.
 --
 --	Known Issues
 --
@@ -798,6 +800,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		continentPandaria = 6,
 		continentDraenor = 7,
 		continentLegion = 8,
+		continentArgus = 9,
 		currentlyProcessingStatus = {},
 		currentlyVerifying = false,
 		currentMortalIssues = {},
@@ -849,7 +852,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.existsWoD = (self.blizzardRelease >= 18505)
 					self.existsLegion = (self.blizzardRelease >= 21531 and strsub(self.blizzardVersion, 1, 2) == "7.")
 					self.exists72 = (self.blizzardRelease >= 23578)
-					self.exists73 = (self.blizzardRelease >= 24563)
+					self.exists73 = (self.blizzardRelease >= 24563 and strsub(self.blizzardVersion, 1, 3) == "7.3")
 					--	The next two are only here in case an external addon is making use of this information already.
 					self.inWoD = self.existsWoD
 					self.inLegion = self.existsLegion
@@ -2735,6 +2738,8 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			[1033] = true, -- Suramar
 			[1080] = true, -- Thunder Totem village in HighMountain
 			[1096] = true, -- Eye of Azshara
+			[1135] = true, -- Krokuun
+			[1171] = true, -- Antoran Wastes
 			},
 
 		---

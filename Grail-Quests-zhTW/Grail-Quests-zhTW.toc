@@ -1,8 +1,8 @@
-## Interface: 70200
+## Interface: 70300
 ## Title: Grail |r|cff69ccf0Quests zhTW|r
 ## Author: Scott M Harrison
 ## Notes: Provides localized zhTW quest names to Grail
-## Version: 001
+## Version: 24920
 ## Dependencies: Grail
 ## LoadOnDemand: 1
 

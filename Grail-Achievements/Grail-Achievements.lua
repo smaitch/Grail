@@ -6920,6 +6920,13 @@ G[43594]={510756}	-- needed for Halls of the Eclipse of Leyline Bling
 G[44052]={511124}	-- needed for Blood and Wine of Good Suramaritan
 end
 
+if Grail.exists73 then
+Grail.loremasterAchievements['Alliance'][9] = {  }
+Grail.loremasterAchievements['Horde'][9] = {  }
+Grail.extraAchievements['Alliance'][9] = {  }
+Grail.extraAchievements['Horde'][9] = {  }
+end
+
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime
 debugStartTime = debugprofilestop()
 
