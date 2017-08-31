@@ -417,6 +417,7 @@
 --			Supports the Argus continent being introduced in 7.3.
 --		091	Updates some quest/NPC information.
 --			Updates the Interface to 70300.
+--			Adds Argus zones to treasure looting.
 --
 --	Known Issues
 --
@@ -2739,6 +2740,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			[1080] = true, -- Thunder Totem village in HighMountain
 			[1096] = true, -- Eye of Azshara
 			[1135] = true, -- Krokuun
+			[1170] = true, -- Mac'Aree
 			[1171] = true, -- Antoran Wastes
 			},
 
