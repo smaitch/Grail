@@ -418,6 +418,7 @@
 --		091	Updates some quest/NPC information.
 --			Updates the Interface to 70300.
 --			Adds Argus zones to treasure looting.
+--		092	Updates some quest/NPC information.
 --
 --	Known Issues
 --
@@ -2888,7 +2889,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 			local currentMap = GetCurrentMapAreaID()
-			local mapIdsForWorldQuests = { 1014, 1015, 1017, 1018, 1021, 1024, 1033, 1096, 1135, 1171, }
+			local mapIdsForWorldQuests = { 1014, 1015, 1017, 1018, 1021, 1024, 1033, 1096, 1135, 1170, 1171, }
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				SetMapByID(mapId)
 				local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
@@ -2897,7 +2898,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						if GrailDatabase.debug then
 							local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(v.questId)
 							GrailDatabase.eek = GrailDatabase.eek or {}
-							if tagID and nil == self._LearnedWorldQuestProfessionMapping[tagID] and nil == self._LearnedWorldQuestTypeMapping[tagID] then
+							if tagID and ((nil == self._LearnedWorldQuestProfessionMapping[tagID] and nil == self._LearnedWorldQuestTypeMapping[tagID]) or GrailDatabase.worldquestforcing) then
 								GrailDatabase.eek[v.questId] = 'A:'..(tagID and tagID or 'NoTagID')..' B:'..(tagName and tagName or 'NoTagName')..' C:'..(worldQuestType and worldQuestType or 'NotWorld') ..' D:'..(rarity and rarity or 'NO')..' E:'..(isElite and 'YES' or 'NO')..' F:'..(tradeskillLineIndex or 'nil')
 							end
 						end
@@ -2972,7 +2973,10 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				pCodeToAdd = pCodeToAdd .. '+46734'
 			end
 			if 1135 == mapId then
-				pCodeToAdd = pCodeToAdd .. '+47743'
+				pCodeToAdd = pCodeToAdd .. '+48199'	-- PTR was 47743, but live seems to be 48199
+			end
+			if 1170 == mapId then
+				pCodeToAdd = pCodeToAdd .. '+48107'
 			end
 			if 1171 == mapId then
 				pCodeToAdd = pCodeToAdd .. '+48199'
@@ -8335,7 +8339,9 @@ if GrailDatabase.debug then print("Marking OEC quest complete", oecCodes[i]) end
 			if HasArtifactEquipped() then
 				SocketInventoryItem(INVSLOT_MAINHAND)
 				local duplicateItemId, _, _, _, _, ranksPurchased = C_ArtifactUI.GetArtifactInfo()
-				self.artifactLevels[duplicateItemId] = ranksPurchased
+				if nil ~= duplicateItemId then
+					self.artifactLevels[duplicateItemId] = ranksPurchased
+				end
 			end
 			C_ArtifactUI.Clear()
 		end,
