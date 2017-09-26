@@ -2,7 +2,7 @@
 ## Title: Grail |r|cff69ccf0Quests esES|r
 ## Author: Scott M Harrison
 ## Notes: Provides localized esES quest names to Grail
-## Version: 24920
+## Version: 25021
 ## Dependencies: Grail
 ## LoadOnDemand: 1
 

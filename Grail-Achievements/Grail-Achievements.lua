@@ -6925,6 +6925,12 @@ Grail.loremasterAchievements['Alliance'][9] = {  }
 Grail.loremasterAchievements['Horde'][9] = {  }
 Grail.extraAchievements['Alliance'][9] = {  }
 Grail.extraAchievements['Horde'][9] = {  }
+--G[47287]={}			-- needed for Light's Judgment
+-- G[48929]={}			-- needed for The Assault Begins
+-- G[47994]={}			-- needed for Lightforged Warframe
+-- G[48107]={}				-- needed for Dark Awakenings, Shroud...
+-- G[47220]={}			-- needed for War of Light and Shadon, You Are Now Prepared!
+-- G[49224]={}			-- needed for achievement Now You're Cooking With Netherlight
 end
 
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime
