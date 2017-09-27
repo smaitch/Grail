@@ -7005,13 +7005,15 @@ for _, faction in pairs(supportedFactions) do
 					--	evaluated that occurs later in the "master" list and we do not want to add it and do more work than we need.
 					if not tContains(newTable, questId) then
 						tinsert(newTable, questId)
-						tinsert(Grail.loremasterQuests[zoneId], questId);
 						local controlTable = { ["result"] = {}, ["preq"] = newTable, ["lastIndexUsed"] = 0, ["doMath"] = true }
 						-- Get the entire list of prerequisites for questId and add them to newTable
 						Grail._PreparePrerequisiteInfo(Grail:QuestPrerequisites(questId, true), controlTable)
 					end
 				end
 				Grail.indexedQuests[achievement] = newTable
+				for _, questId in pairs(newTable) do
+					tinsert(Grail.loremasterQuests[zoneId], questId);
+				end
 				tinsert(achievementsDone, achievement)
 			end
 		end
