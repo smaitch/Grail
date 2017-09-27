@@ -6991,11 +6991,15 @@ end
 if Grail.inLegion then
 	tinsert(expansions, 8)
 end
+for _, zoneId in pairs(achievementsToZoneMapping) do
+	Grail.loremasterQuests[zoneId] = {};
+end
 for _, faction in pairs(supportedFactions) do
 	for _, expansion in pairs(expansions) do
 		for _, achievement in pairs(Grail.loremasterAchievements[faction][expansion]) do
 			if not tContains(achievementsDone, achievement) then
 				local newTable = {}
+				local zoneId = achievementsToZoneMapping[achievement];
 				for _, questId in pairs(Grail.indexedQuests[achievement]) do
 					--	This check is made because processing of something earlier in the "master" list could result in a prerequisite being
 					--	evaluated that occurs later in the "master" list and we do not want to add it and do more work than we need.
@@ -7007,7 +7011,9 @@ for _, faction in pairs(supportedFactions) do
 					end
 				end
 				Grail.indexedQuests[achievement] = newTable
-				Grail.loremasterQuests[achievementsToZoneMapping[achievement]] = newTable
+				for _, questId in pairs(newTable) do
+					tinsert(Grail.loremasterQuests[zoneId], questId);
+				end
 				tinsert(achievementsDone, achievement)
 			end
 		end
