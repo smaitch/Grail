@@ -6994,20 +6994,28 @@ end
 for _, faction in pairs(supportedFactions) do
 	for _, expansion in pairs(expansions) do
 		for _, achievement in pairs(Grail.loremasterAchievements[faction][expansion]) do
+			Grail.loremasterQuests[achievementsToZoneMapping[achievement]] = {};
+		end
+	end
+end
+for _, faction in pairs(supportedFactions) do
+	for _, expansion in pairs(expansions) do
+		for _, achievement in pairs(Grail.loremasterAchievements[faction][expansion]) do
 			if not tContains(achievementsDone, achievement) then
 				local newTable = {}
+				local zoneId = achievementsToZoneMapping[achievement];
 				for _, questId in pairs(Grail.indexedQuests[achievement]) do
 					--	This check is made because processing of something earlier in the "master" list could result in a prerequisite being
 					--	evaluated that occurs later in the "master" list and we do not want to add it and do more work than we need.
 					if not tContains(newTable, questId) then
 						tinsert(newTable, questId)
+						tinsert(Grail.loremasterQuests[zoneId], questId);
 						local controlTable = { ["result"] = {}, ["preq"] = newTable, ["lastIndexUsed"] = 0, ["doMath"] = true }
 						-- Get the entire list of prerequisites for questId and add them to newTable
 						Grail._PreparePrerequisiteInfo(Grail:QuestPrerequisites(questId, true), controlTable)
 					end
 				end
 				Grail.indexedQuests[achievement] = newTable
-				Grail.loremasterQuests[achievementsToZoneMapping[achievement]] = newTable
 				tinsert(achievementsDone, achievement)
 			end
 		end
