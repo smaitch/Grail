@@ -6991,12 +6991,8 @@ end
 if Grail.inLegion then
 	tinsert(expansions, 8)
 end
-for _, faction in pairs(supportedFactions) do
-	for _, expansion in pairs(expansions) do
-		for _, achievement in pairs(Grail.loremasterAchievements[faction][expansion]) do
-			Grail.loremasterQuests[achievementsToZoneMapping[achievement]] = {};
-		end
-	end
+for _, zoneId in pairs(achievementsToZoneMapping) do
+	Grail.loremasterQuests[zoneId] = {};
 end
 for _, faction in pairs(supportedFactions) do
 	for _, expansion in pairs(expansions) do
