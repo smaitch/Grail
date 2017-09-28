@@ -419,6 +419,7 @@
 --			Updates the Interface to 70300.
 --			Adds Argus zones to treasure looting.
 --		092	Updates some quest/NPC information.
+--			Corrects a problem where Loremaster quests were not listed correctly when there is more than one achievement in the same zone.
 --
 --	Known Issues
 --
@@ -8956,6 +8957,23 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 					end
 				end
 			end
+		end,
+
+		_SetAppend = function(self, t1, t2)
+			if nil ~= t1 and nil ~= t2 then
+				if type(t2) == "table" then
+					for _, value in pairs(t2) do
+						if not tContains(t1, value) then
+							tinsert(t1, value)
+						end
+					end
+				else
+					if not tContains(t1, t2) then
+						tinsert(t1, t2)
+					end
+				end
+			end
+			return t1
 		end,
 
 		_TableAppend = function(self, t1, t2)
