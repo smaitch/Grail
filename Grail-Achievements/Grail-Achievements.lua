@@ -6925,6 +6925,7 @@ Grail.loremasterAchievements['Alliance'][9] = {  }
 Grail.loremasterAchievements['Horde'][9] = {  }
 Grail.extraAchievements['Alliance'][9] = {  }
 Grail.extraAchievements['Horde'][9] = {  }
+-- G[47182]={}			-- Needed for Fel Heart of Argus (Locked and Loaded)
 --G[47287]={}			-- needed for Light's Judgment
 -- G[48929]={}			-- needed for The Assault Begins
 -- G[47994]={}			-- needed for Lightforged Warframe
@@ -6991,6 +6992,9 @@ end
 if Grail.inLegion then
 	tinsert(expansions, 8)
 end
+if Grail.exists73 then
+	tinsert(expansions, 9)
+end
 for _, faction in pairs(supportedFactions) do
 	for _, expansion in pairs(expansions) do
 		for _, achievement in pairs(Grail.loremasterAchievements[faction][expansion]) do
@@ -7007,7 +7011,7 @@ for _, faction in pairs(supportedFactions) do
 					end
 				end
 				Grail.indexedQuests[achievement] = newTable
-				Grail.loremasterQuests[achievementsToZoneMapping[achievement]] = newTable
+				Grail.loremasterQuests[achievementsToZoneMapping[achievement]] = Grail:_SetAppend(newTable, Grail.loremasterQuests[achievementsToZoneMapping[achievement]])
 				tinsert(achievementsDone, achievement)
 			end
 		end
