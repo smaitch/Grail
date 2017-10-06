@@ -550,6 +550,9 @@ G[1252817]='Unpowered Telemancy Beacon'
 G[1258979]='Fel-Ravaged Tome'
 G[1265435]='Doodad_7sr_hubmanatree_seedholder001'
 G[1271124]="Light's Judgment"
+G[1272456]='Eredar War Supplies'
+G[1273407]='Ancient Eredar Cache'
+G[1273523]='Legion War Supplies'
 end
 
 if release >= 19243 then
