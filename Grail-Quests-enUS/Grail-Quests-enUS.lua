@@ -25397,7 +25397,24 @@ G[48952]='Throw Them a Bone'
 G[49057]='Minixis'
 end
 
+if release >= 24956 then
+G[47124]='The Fallen Avatar'
+G[48028]='Youthful Resistance'
+G[48029]='The Heart of It'
+G[48103]="Gatekeeper's Review: Tenacity"
+G[48282]='Imp Mother Laglath'
+G[48318]='Work Order: Lightblood Elixirs'
+G[48442]="Nath'raxas Hold: Preparations"
+G[48443]="Nath'raxas Hold: Rescue Mission"
+G[48453]='Strike Back'
+G[48511]='Commander Endaxis'
+G[48634]='Further Supplying Krokuun'
+G[48910]='Supplying Krokuun'
+G[49099]='Invasion Point: Bonich'
+end
+
 if release >= 24970 then
+G[47128]='The Deceiver'
 G[48056]='A Harsh Mistress'
 G[48065]='Extraterrestrial Exploration'
 G[48091]='Vagath the Betrayed'
@@ -25414,16 +25431,10 @@ G[48929]='Sizing Up The Opposition'
 G[49096]='Invasion Point: Naigtal'
 G[49097]='Invasion Point: Sangua'
 G[49098]="Invasion Point: Cen'gar"
-G[49099]='Invasion Point: Bonich'
 end
 
 if release >= 24974 then
-G[48103]="Gatekeeper's Review: Tenacity"
-G[48442]="Nath'raxas Hold: Preparations"
-G[48443]="Nath'raxas Hold: Rescue Mission"
 G[48526]='Scuttled'
-G[48634]='Further Supplying Krokuun'
-G[48910]='Supplying Krokuun'
 G[49091]='Invasion Point: Val'
 G[49293]='Invasion Onslaught'
 end
@@ -25477,7 +25488,6 @@ G[48100]="The Defense of Mac'Aree"
 G[48101]='Bully Pulpit'
 G[48106]='No Love Lost'
 G[48175]='Hidden in the Hollows'
-G[48282]='Imp Mother Laglath'
 G[48284]='Reap the Fields'
 G[48285]='Aerial Superiority'
 G[48286]='Crystal Methods'
@@ -25486,12 +25496,12 @@ G[48375]='Primal Obliterum'
 G[48386]="Jed'hin Tournament"
 G[48445]='The Ruins of Oronaar'
 G[48446]='Relics of the Ancient Eredar'
+G[48447]='Shadowguard Dispersion'
 G[48465]="Vrax'thul"
 G[48466]="Ven'orn"
 G[48502]='Naroua, King of the Forest'
 G[48506]='The Hand of Fate'
 G[48507]='The Hand of Fate'
-G[48511]='Commander Endaxis'
 G[48512]='Sister Subversia'
 G[48592]='Holding the Spire'
 G[48615]='War Never Changes'
@@ -25513,6 +25523,7 @@ G[48726]='Turek the Lucid'
 G[48727]='Captain Faruq'
 G[48730]='Sorolis the Ill-Fated'
 G[48731]='Herald of Chaos'
+G[48732]='Sabuul'
 G[48734]="Overseer Y'Beda"
 G[48735]="Overseer Y'Sorna"
 G[48736]="Overseer Y'Morna"
@@ -25546,6 +25557,43 @@ G[49054]='Bloat'
 G[49055]='Earseeker'
 G[49056]='Pilfer'
 G[49058]='One-of-Many'
+end
+
+if release >= 25195 then
+G[47122]='The Fallen Avatar'
+G[48105]='Peer Review'
+G[48230]='Fragment of the Past'
+G[48231]='Armor of the Triumvirate'
+G[48261]='The Power to Reforge'
+G[48271]='Recovering the Pieces'
+G[48448]='Hindering the Legion War Machine'
+G[48600]='Take the Edge Off'
+G[48601]='Felfire Shattering'
+G[48698]='Kaara the Pale'
+G[48739]='Commander Xethgar'
+G[48803]='Forging a Key to the Past'
+G[48864]='The Broken Blacksmith'
+G[48957]='Seat of the Triumvirate: Void-Blade Zedaat'
+G[48985]='Seat of the Triumvirate: Twilight-Harbinger Tharuul'
+end
+
+if release >= 25383 then
+G[41200]='Rough Leystone Outcropping'
+G[41266]='Raft Fishing'
+G[41270]='Huge Mossgill Perch'
+G[41304]='Flourishing Starlight Roses'
+G[41538]='Iridescent Starlight Roses'
+G[47456]='Calming the Void'
+G[47496]='Bunker Buster'
+G[48102]='Scale Samples'
+G[48376]='Mass Primal Obliterum'
+G[48636]='Fueling the Antoran Campaign'
+G[48738]="Zul'tan the Numerous"
+G[48912]='Supplying the Antoran Campaign'
+G[49049]='Gloamwing'
+G[49050]='Shadeflicker'
+G[49053]='Watcher'
+G[49445]='The Prime Exchange'
 end
 
 --	End of localized quest names
