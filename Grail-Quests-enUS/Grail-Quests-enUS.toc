@@ -2,7 +2,7 @@
 ## Title: Grail |r|cff69ccf0Quests enUS|r
 ## Author: Scott M Harrison
 ## Notes: Provides localized enUS quest names to Grail
-## Version: 25021
+## Version: 25383
 ## Dependencies: Grail
 ## LoadOnDemand: 1
 
