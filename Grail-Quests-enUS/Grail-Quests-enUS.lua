@@ -25596,4 +25596,13 @@ G[49053]='Watcher'
 G[49445]='The Prime Exchange'
 end
 
+if release >= 25455 then
+G[47744]='Smoke, Meat, and Pretty Flowers'
+G[47745]='Yeah, Definitely for the Kids'
+G[47746]='Holing Up'
+G[47747]='Fight Plague with Fire'
+G[47750]='For Emery'
+G[47906]='The Deaths of Chromie'
+end
+
 --	End of localized quest names
