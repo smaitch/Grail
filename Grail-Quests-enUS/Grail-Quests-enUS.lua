@@ -25605,4 +25605,22 @@ G[47750]='For Emery'
 G[47906]='The Deaths of Chromie'
 end
 
+if release >= 25497 then
+G[47252]='Interesting Times'
+G[47253]='The Originals'
+end
+
+if release >= 25549 then
+G[48203]='The Burning Throne'
+G[48272]='Visions of Fear'
+G[48273]='The Speaker Listens'
+G[48277]='The Speaker Seeks'
+G[48280]='Visions of Another'
+G[48288]='Antoran High Command'
+G[48729]='Ataxon'
+G[49472]='A Titanic Effort'
+G[49473]='A Titanic Effort'
+G[49474]='The Cursed Shard'
+end
+
 --	End of localized quest names
