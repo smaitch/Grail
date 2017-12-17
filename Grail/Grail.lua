@@ -420,6 +420,7 @@
 --			Adds Argus zones to treasure looting.
 --		092	Updates some quest/NPC information.
 --			Corrects a problem where Loremaster quests were not listed correctly when there is more than one achievement in the same zone.
+--			Corrects the problem where paragon faction levels were not reported properly after more than one reward achieved.
 --
 --	Known Issues
 --
@@ -8523,7 +8524,10 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 						if C_Reputation.IsFactionParagon(factionId) then
 							local paraValue, paraThreshold, paraQuestId, paraRewardPending = C_Reputation.GetFactionParagonInfo(factionId)
 							if paraValue and paraThreshold then
-								actualEarnedValue = actualEarnedValue + paraValue - paraThreshold
+								actualEarnedValue = actualEarnedValue + (paraValue % paraThreshold)
+								if paraRewardPending then
+									actualEarnedValue = actualEarnedValue + paraThreshold
+								end
 							end
 						end
 					end
