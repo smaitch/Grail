@@ -421,6 +421,7 @@
 --		092	Updates some quest/NPC information.
 --			Corrects a problem where Loremaster quests were not listed correctly when there is more than one achievement in the same zone.
 --			Corrects the problem where paragon faction levels were not reported properly after more than one reward achieved.
+--		093	Updates some quest/NPC information.
 --
 --	Known Issues
 --
@@ -823,8 +824,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 				if nil ~= achievementNumber and nil ~= self.questStatusCache['A'][achievementNumber] then
 --					if not InCombatLockdown() or not GrailDatabase.delayEvents then
 					if not self.inCombat or not GrailDatabase.delayEvents then
-						self:_StatusCodeInvalidate(self.questStatusCache['A'][achievementNumber])
-						self:_NPCLocationInvalidate(self.npcStatusCache['A'][achievementNumber])
+						self:_HandleEventAchievementEarned(achievementNumber)
 					else
 						self:_RegisterDelayedEvent(frame, { 'ACHIEVEMENT_EARNED', achievementNumber } )
 					end
@@ -1541,6 +1541,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			-- event is registered so the addon is informed when the player is no longer
 			-- in combat and can have the deferred work done.  When all the deferred work
 			-- is done, PLAYER_REGEN_ENABLED is unregistered.
+			-- Actually in more modern times PLAYER_REGEN_ENABLED remains registered.
 			['PLAYER_REGEN_ENABLED'] = function(self, frame)
 				self.inCombat = nil
 				local t, type
@@ -1573,8 +1574,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					elseif 'BAG_UPDATE' == type then
 						self:_CoalesceDelayedNotification("Bags", self.delayBagUpdate)
 					elseif 'ACHIEVEMENT_EARNED' == type then
-						self:_StatusCodeInvalidate(self.questStatusCache['A'][t[2]])
-						self:_NPCLocationInvalidate(self.npcStatusCache['A'][t[2]])
+						self:_HandleEventAchievementEarned(t[2])
 					elseif 'GARRISON_BUILDING_ACTIVATED' == type then
 						self:_HandleEventGarrisonBuildingActivated(t[2])
 					elseif 'GARRISON_BUILDING_REMOVED' == type then
@@ -5570,6 +5570,11 @@ end
 				isWeekly = (LE_QUEST_FREQUENCY_WEEKLY == frequency)
 			end
 			return questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID, isWeekly, isTask
+		end,
+
+		_HandleEventAchievementEarned = function(self, achievementId)
+			self:_StatusCodeInvalidate(self.questStatusCache['A'][achievementId])
+			self:_NPCLocationInvalidate(self.npcStatusCache['A'][achievementId])
 		end,
 
 		_HandleEventGarrisonBuildingActivated = function(self, buildingId)

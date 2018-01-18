@@ -25617,10 +25617,35 @@ G[48273]='The Speaker Listens'
 G[48277]='The Speaker Seeks'
 G[48280]='Visions of Another'
 G[48288]='Antoran High Command'
+G[48292]='The Soulhunter'
 G[48729]='Ataxon'
 G[49472]='A Titanic Effort'
 G[49473]='A Titanic Effort'
 G[49474]='The Cursed Shard'
+end
+
+if release >= 25717 then
+G[28688]="Warchief's Command: Northern Stranglethorn!"
+G[28699]="Hero's Call: Northern Stranglethorn!"
+G[28709]="Hero's Call: Borean Tundra!"
+G[28711]="Warchief's Command: Borean Tundra!"
+G[47128]='Tomb of Sargeras: The Deceiver'
+end
+
+if release >= 25753 then
+G[49976]='Gifts of the Fallen'
+G[49981]='Witness to the Wound'
+G[50046]="It's a Sabotage"
+G[50047]='Free Samples'
+G[50049]="The Speaker's Perspective"
+G[50226]='The Source of Power'
+G[50227]='Larvae By The Dozen'
+G[50228]='The Twilight Survivor'
+G[50229]="A Wee Bit O' Cloth"
+G[50371]='Summons to Stormwind'
+G[50372]='Desert Research'
+G[50373]='A Recent Arrival'
+G[50374]='The Blood of Azeroth'
 end
 
 --	End of localized quest names
