@@ -544,6 +544,7 @@ G[1271124]="Light's Judgment"
 G[1272456]='Eredar War Supplies'
 G[1273407]='Ancient Eredar Cache'
 G[1273523]='Legion War Supplies'
+G[1280948]='Legion Outhouse'
 end
 
 if release >= 19243 then
