@@ -25648,4 +25648,134 @@ G[50373]='A Recent Arrival'
 G[50374]='The Blood of Azeroth'
 end
 
+if release >= 25860 then
+G[49077]='Moments of Reflection'
+G[50432]='Titanic Innovation'
+end
+
+if release >= 25881 then
+G[45731]='Chilled Meat'
+G[45732]='Crocolisk Tails'
+G[45733]='Raw Tiger Steaks'
+G[45737]="Ahn'Qiraj: C'thun"
+G[45741]='The Colossus of Regal'
+G[45742]='The Colossus of Zora'
+G[48728]='Umbraliss'
+G[48976]='Supplies From the Argussian Reach'
+G[49860]='Adventure Calls'
+end
+
+if release >= 25901 then
+G[12071]='Attack by Air!'
+G[12958]='Shipment: Blood Jade Amulet'
+G[25809]='Leave No Man Behind!'
+G[32468]='Crystal Clarity'
+G[32469]='Crystal Clarity'
+G[32470]='Light Camera Action'
+G[32471]='Light Camera Action'
+G[39180]="Warchief's Command: Zangarmarsh!"
+G[39181]="Hero's Call: Zangarmarsh!"
+G[39182]="Warchief's Command: Terokkar Forest!"
+G[39188]="Hero's Call: Terokkar Forest!"
+G[39196]="Warchief's Command: Nagrand!"
+G[39197]="Hero's Call: Nagrand!"
+G[39198]="Warchief's Command: Blade's Edge Mountains!"
+G[39199]="Hero's Call: Blade's Edge Mountains!"
+G[39201]="Warchief's Command: Netherstorm!"
+G[39202]="Hero's Call: Netherstorm!"
+G[39203]="Warchief's Command: Dragonblight!"
+G[39204]="Hero's Call: Dragonblight!"
+G[39206]="Warchief's Command: Grizzly Hills!"
+G[39207]="Hero's Call: Grizzly Hills!"
+G[39343]='Vault of the Wardens: Bendy Glass Tubes'
+G[39781]="Neltharion's Lair: Death to the Underking"
+G[43509]="Halls of Valor: Odyn's Challenge"
+G[43521]='The Emerald Nightmare: Essence of Power'
+G[43531]='The Nighthold: Into the Nighthold'
+G[43545]='Black Rook Hold: The Lord of Black Rook Hold'
+G[43546]="The Emerald Nightmare: Il'gynoth"
+G[43547]="The Emerald Nightmare: Il'gynoth"
+G[43548]="The Emerald Nightmare: Il'gynoth"
+G[43549]="The Emerald Nightmare: Il'gynoth"
+G[43550]='Court of Stars: Into the Court of Stars'
+G[43551]='Darkheart Thicket: Into Darkheart Thicket'
+G[43552]='Eye of Azshara: Into the Eye of Azshara'
+G[43553]='Maw of Souls: Into the Maw of Souls'
+G[43554]="Neltharion's Lair: Into Neltharion's Lair"
+G[43555]='The Arcway: Into the Arcway'
+G[43556]='Vault of the Wardens: Into the Vault of the Wardens'
+G[43557]='Assault on Violet Hold: Into the Violet Hold'
+G[43596]='Maw of Souls: Piercing the Mists'
+G[43902]='The Emerald Nightmare: Fall of Cenarius'
+G[43903]='The Emerald Nightmare: Xavius'
+G[43904]='The Emerald Nightmare: Fall of Cenarius'
+G[43905]='The Emerald Nightmare: Xavius'
+G[43906]='The Emerald Nightmare: Fall of Cenarius'
+G[43907]='The Emerald Nightmare: Xavius'
+G[43908]='The Emerald Nightmare: Fall of Cenarius'
+G[43909]='The Emerald Nightmare: Xavius'
+G[44258]='Assault on Violet Hold: Into the Violet Hold'
+G[44259]='Assault on Violet Hold: Into the Violet Hold'
+G[44260]='Vault of the Wardens: Into the Vault of the Wardens'
+G[44261]='Vault of the Wardens: Into the Vault of the Wardens'
+G[44262]='The Arcway: Into the Arcway'
+G[44263]='The Arcway: Into the Arcway'
+G[44264]="Neltharion's Lair: Into Neltharion's Lair"
+G[44265]="Neltharion's Lair: Into Neltharion's Lair"
+G[44266]='Maw of Souls: Into the Maw of Souls'
+G[44267]='Maw of Souls: Into the Maw of Souls'
+G[44268]="Halls of Valor: Odyn's Challenge"
+G[44269]="Halls of Valor: Odyn's Challenge"
+G[44270]='Eye of Azshara: Into the Eye of Azshara'
+G[44271]='Eye of Azshara: Into the Eye of Azshara'
+G[44272]='Darkheart Thicket: Into Darkheart Thicket'
+G[44273]='Darkheart Thicket: Into Darkheart Thicket'
+G[44274]='Court of Stars: Into the Court of Stars'
+G[44275]='Court of Stars: Into the Court of Stars'
+G[44276]='Black Rook Hold: The Lord of Black Rook Hold'
+G[44277]='Black Rook Hold: The Lord of Black Rook Hold'
+G[45381]="The Nighthold: Talisman of the Shal'dorei"
+G[45420]="The Nighthold: The Eye of Aman'Thul"
+G[46244]='Cathedral of Eternal Night: Altar of the Aegis'
+G[47114]="Tomb of Sargeras: The Tomb's Mistress"
+G[47118]='Tomb of Sargeras: Free The Tormented'
+G[47122]='Tomb of Sargeras: The Fallen Avatar'
+G[47123]='Tomb of Sargeras: The Fallen Avatar'
+G[47124]='Tomb of Sargeras: The Fallen Avatar'
+G[47125]='Tomb of Sargeras: The Fallen Avatar'
+G[47126]='Tomb of Sargeras: The Deceiver'
+G[47725]="Tomb of Sargeras: Aegwynn's Path"
+G[47726]="Tomb of Sargeras: Aegwynn's Path"
+G[48231]='The Seat of the Triumvirate: Armor of the Triumvirate'
+G[48337]='Work Order: Astral Glory'
+G[48725]='Venomtail Skyfin'
+G[49015]='Antorus, the Burning Throne: The Death of a Titan'
+end
+
+if release >= 25928 then
+G[49042]='Foulclaw'
+G[49051]='Corrupted Blood of Argus'
+end
+
+if release >= 25946 then
+G[49787]='The Ghostlands'
+G[49929]='The Call for Allies'
+G[50239]='A Choice of Allies'
+end
+
+if release >= 25950 then
+G[48962]='Telogrus Rift'
+G[49266]='Forge of Aeons'
+G[49698]='The Lightforged'
+G[49772]='For the Alliance'
+G[49788]='For the Alliance'
+G[50071]='For the Light!'
+G[50248]='A Second Ally For the Cause'
+G[50305]='Stranger in a Strange Land'
+end
+
+if release >= 25961 then
+G[50313]='Stranger in a Strange Land'
+end
+
 --	End of localized quest names
