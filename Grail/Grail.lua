@@ -422,6 +422,9 @@
 --			Corrects a problem where Loremaster quests were not listed correctly when there is more than one achievement in the same zone.
 --			Corrects the problem where paragon faction levels were not reported properly after more than one reward achieved.
 --		093	Updates some quest/NPC information.
+--			Adds the ability to have class hall missions available as prerequisites.
+--			Adds support for Allied races.
+--			Changes CodeObtainers() to no longer return race information, which is now returned in a similar manner with CodeObtainersRace().
 --
 --	Known Issues
 --
@@ -694,30 +697,66 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		-- Gender
 		bitMaskGenderMale		=	0x00002000,
 		bitMaskGenderFemale		=	0x00004000,
-		-- Race
-		bitMaskRaceHuman		=	0x00008000,
-		bitMaskRaceDwarf		=	0x00010000,
-		bitMaskRaceNightElf		=	0x00020000,
-		bitMaskRaceGnome		=	0x00040000,
-		bitMaskRaceDraenei		=	0x00080000,
-		bitMaskRaceWorgen		=	0x00100000,
-		bitMaskRaceOrc			=	0x00200000,
-		bitMaskRaceScourge		=	0x00400000,
-		bitMaskRaceTauren		=	0x00800000,
-		bitMaskRaceTroll		=	0x01000000,
-		bitMaskRaceBloodElf		=	0x02000000,
-		bitMaskRaceGoblin		=	0x04000000,
-		bitMaskRacePandaren		=	0x08000000,
+		-- Unused
+		bitMaskCanGetUnused1	=	0x00008000,
+		bitMaskCanGetUnused2	=	0x00010000,
+		bitMaskCanGetUnused3	=	0x00020000,
+		bitMaskCanGetUnused4	=	0x00040000,
+		bitMaskCanGetUnused5	=	0x00080000,
+		bitMaskCanGetUnused6	=	0x00100000,
+		bitMaskCanGetUnused7	=	0x00200000,
+		bitMaskCanGetUnused8	=	0x00400000,
+		bitMaskCanGetUnused9	=	0x00800000,
+		bitMaskCanGetUnused10	=	0x01000000,
+		bitMaskCanGetUnused11	=	0x02000000,
+		bitMaskCanGetUnused12	=	0x04000000,
+		bitMaskCanGetUnused13	=	0x08000000,
 		bitMaskClassDemonHunter =	0x10000000,	-- *** CLASS ***, kept in bit order
-		bitMaskCanGetUnused1	=	0x20000000,
-		bitMaskCanGetUnused2	=	0x40000000,
-		bitMaskCanGetUnused3	=	0x80000000,
+		bitMaskCanGetUnused14	=	0x20000000,
+		bitMaskCanGetUnused15	=	0x40000000,
+		bitMaskCanGetUnused16	=	0x80000000,
 		-- Some convenience values
 		bitMaskFactionAll		=	0x00000003,
 		bitMaskClassAll			=	0x10001ffc,
 		bitMaskGenderAll		=	0x00006000,
-		bitMaskRaceAll			=	0x0fff8000,
 		-- End of bit mask values
+
+		-- Bit mask system for which race can get a quest
+		bitMaskRaceHighmountainTauren	=	0x00000001,
+		bitMaskRaceNightborne			=	0x00000002,
+			bitMaskRaceUnused1			=	0x00000004,
+			bitMaskRaceUnused2			=	0x00000008,
+			bitMaskRaceUnused3			=	0x00000010,
+			bitMaskRaceUnused4			=	0x00000020,
+			bitMaskRaceUnused5			=	0x00000040,
+			bitMaskRaceUnused6			=	0x00000080,
+			bitMaskRaceUnused7			=	0x00000100,
+			bitMaskRaceUnused8			=	0x00000200,
+			bitMaskRaceUnused9			=	0x00000400,
+			bitMaskRaceUnused10			=	0x00000800,
+			bitMaskRaceUnused11			=	0x00001000,
+			bitMaskRaceUnused12			=	0x00002000,
+			bitMaskRaceUnused13			=	0x00004000,
+		bitMaskRaceHuman				=	0x00008000,
+		bitMaskRaceDwarf				=	0x00010000,
+		bitMaskRaceNightElf				=	0x00020000,
+		bitMaskRaceGnome				=	0x00040000,
+		bitMaskRaceDraenei				=	0x00080000,
+		bitMaskRaceWorgen				=	0x00100000,
+		bitMaskRaceOrc					=	0x00200000,
+		bitMaskRaceScourge				=	0x00400000,
+		bitMaskRaceTauren				=	0x00800000,
+		bitMaskRaceTroll				=	0x01000000,
+		bitMaskRaceBloodElf				=	0x02000000,
+		bitMaskRaceGoblin				=	0x04000000,
+		bitMaskRacePandaren				=	0x08000000,
+			bitMaskRaceUnused14			=	0x10000000,
+		bitMaskRaceVoidElf				=	0x20000000,
+		bitMaskRaceLightforgedDraenei	=	0x40000000,
+			bitMaskRaceUnused15			=	0x80000000,
+		-- Convenience values
+		bitMaskRaceAll			=	0x6fff8003,
+		-- Enf of bit mask values
 
 
 		-- Bit mask system for information about type of quest
@@ -1630,7 +1669,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			['QUEST_ACCEPTED'] = function(self, frame, questIndex, theQuestId)
 -- TODO: Figure out how to transform to delayed if needed
 				local debugStartTime = debugprofilestop()
-				local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestId, isWeekly = self:GetQuestLogTitle(questIndex)
+				local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestId, isWeekly, isTask, isBounty, isStory, isHidden, isScaling = self:GetQuestLogTitle(questIndex)
 				local npcId = nil
 				local version = self.versionNumber.."/"..self.questsVersionNumber.."/"..self.npcsVersionNumber.."/"..self.zonesVersionNumber
 
@@ -1772,10 +1811,36 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				end
 
 				--	If the level as reported by Blizzard API does not match our internal database we should note that fact
-				if self:DoesQuestExist(questId) then
+				if self:DoesQuestExist(questId) and not isScaling then
 					local internalQuestLevel = self:QuestLevel(questId)
-					if (0 ~= internalQuestLevel and (internalQuestLevel or 1) ~= level) or (0 == internalQuestLevel and level ~= 0 and level ~= UnitLevel('player')) then
+--					if (0 ~= internalQuestLevel and (internalQuestLevel or 1) ~= level) or (0 == internalQuestLevel and level ~= 0 and level ~= UnitLevel('player')) then
+					if nil ~= level and internalQuestLevel ~= level then
 						errorString = errorString .. "|Level:" .. level
+						self:_RecordBadQuestData(errorString)
+					end
+				end
+
+				-- Check to see whether the database faction agrees with the Blizzard API and note discrepancies
+				if self:DoesQuestExist(questId) then
+					local blizzardFactionGroup = GetQuestFactionGroup(questId)	-- nil means no specific faction, otherwise LE_QUEST_FACTION_HORDE (2) or LE_QUEST_FACTION_ALLIANCE (1)
+					-- need to check our database for specific faction association
+					local obtainers = self:CodeObtainers(questId)
+					local bitMaskToCheckAgainst = 0
+					local errorCode = "Unknown"
+					if nil == blizzardFactionGroup then
+						bitMaskToCheckAgainst = self.bitMaskFactionAll
+						errorCode = "Both"
+					elseif LE_QUEST_FACTION_ALLIANCE == blizzardFactionGroup then
+						bitMaskToCheckAgainst = self.bitMaskFactionAlliance
+						errorCode = "Alliance"
+					elseif LE_QUEST_FACTION_HORDE == blizzardFactionGroup then
+						bitMaskToCheckAgainst = self.bitMaskFactionHorde
+						errorCode = "Horde"
+					else
+						print("Unknown faction association returned "..blizzardFactionGroup.." for quest "..questId)
+					end
+					if bitband(obtainers, self.bitMaskFactionAll) ~= bitMaskToCheckAgainst then
+						errorString = errorString .. "|Faction:" .. errorCode
 						self:_RecordBadQuestData(errorString)
 					end
 				end
@@ -2264,6 +2329,10 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			['B'] = { 'BloodElf', 'Blood Elf', 'Blood Elf', 0x02000000 },
 			['G'] = { 'Goblin',   'Goblin',    'Goblin',    0x04000000 },
 			['A'] = { 'Pandaren', 'Pandaren',  'Pandaren',  0x08000000 },
+			['V'] = { 'VoidElf',  'Void Elf',  'Void Elf',	0x20000000 },
+			['I'] = { 'LightforgedDraenei', 'Lightforged Draenei', 'Lightforged Draenei', 0x40000000 },
+			['M'] = { 'HighmountainTauren', 'Highmountain Tauren', 'Highmountain Tauren', 0x00000001 },
+			['B'] = { 'Nightborne', 'Nightborne', 'Nightborne', 0x00000002 },
 			},
 		receivedCalendarUpdateEventList = false,
 		receivedQuestLogUpdate = false,
@@ -2289,6 +2358,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			[5] = { 1216, 1351, 1270, 1277, 1275, 1283, 1282, 1228, 1281, 1269, 1279, 1243, 1273, 1358, 1276, 1271, 1242, 1278, 1302, 1341, 1337, 1345, 1272, 1280, 1352, 1357, 1353, 1359, 1375, 1376, 1387, 1388, 1435, 1492, },
 			[6] = { 1445, 1515, 1520, 1679, 1681, 1682, 1708, 1710, 1711, 1731, 1732, 1733, 1735, 1736, 1737, 1738, 1739, 1740, 1741, 1847, 1848, 1849, 1850, },
 			[7] = { 1815, 1828, 1859, 1860, 1862, 1883, 1888, 1894, 1899, 1900, 1919, 1947, 1948, 1975, 1984, 1989, 2018, 2045, 2097, 2098, 2099, 2100, 2101, 2102, 2135, 2165, 2170, },
+			[8] = { 2103, 2111, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2233, },
 			},
 
 		-- These reputations use the friendship names instead of normal reputation names
@@ -2513,9 +2583,21 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["834"] = "Corbyn",
 			["835"] = "Sha'leth",
 			["836"] = "Impus",
+			["837"] = "Zandalari Empire",
+			["83F"] = "Zandalari Dinosaurs",
 			["857"] = "Chromie",
+			["86C"] = "Nazmir Expedition",
+			["86D"] = "Horde War Effort",
+			["86E"] = "Vulpera",
+			["86F"] = "Alliance War Effort",
+			["870"] = "House Proudmoore",
+			["871"] = "House Waycrest",
+			["872"] = "House Stormsong",
+			["873"] = "Tortollan Seekers",
+			["874"] = "Voice of Azeroth",
 			["875"] = "Army of the Light",
 			["87A"] = "Argussian Reach",
+			["8B9"] = "Dino Training - Pterrodax",
 			},
 
 		reputationMappingFaction = {
@@ -2701,9 +2783,21 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["834"] = "Neutral",
 			["835"] = "Neutral",
 			["836"] = "Neutral",
+			["837"] = "Neutral",	-- TODO: Determine faction
+			["83F"] = "Neutral",	-- TODO: Determine faction
 			["857"] = "Neutral",
+			["86C"] = "Neutral",	-- TODO: Determine faction
+			["86D"] = "Neutral",	-- TODO: Determine faction
+			["86E"] = "Neutral",	-- TODO: Determine faction
+			["86F"] = "Neutral",	-- TODO: Determine faction
+			["870"] = "Neutral",	-- TODO: Determine faction
+			["871"] = "Neutral",	-- TODO: Determine faction
+			["872"] = "Neutral",	-- TODO: Determine faction
+			["873"] = "Neutral",	-- TODO: Determine faction
+			["874"] = "Neutral",	-- TODO: Determine faction
 			["875"] = "Neutral",
 			["87A"] = "Neutral",
+			["8B9"] = "Neutral",	-- TODO: Determine faction
 			},
 
 		slashCommandOptions = {},
@@ -2939,7 +3033,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --	144	Legionfall World Quest
 --	145	Legionfall Dungeon World Quest
 
-						self:_LearnWorldQuest(v.questId, mapId)
+						self:_LearnWorldQuest(v.questId, mapId, v.x, v.y)
 --						self.availableWorldQuests[v.questId] = true
 						tinsert(self.invalidateControl[self.invalidateGroupCurrentWorldQuests], v.questId)
 						C_TaskQuest.GetQuestTimeLeftMinutes(v.questId)	-- attempting to prime the system, because first calls do not work
@@ -2955,7 +3049,8 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 		_LearnedWorldQuestTypeMapping = { [109] = 0, [111] = 0, [112] = 0, [113] = 0x00000100, [115] = 0x00004000, [135] = 0, [136] = 0, [137] = 0x00000040, [139] = 0, [141] = 0x00000080, [142] = 0, [144] = 0, [145] = 0x00000040, },
 
-		_LearnWorldQuest = function(self, questId, mapId)
+		_LearnWorldQuest = function(self, questId, mapId, x, y)
+-- TODO: Figure out how to use the x, y to create appropriate alias NPCs for 0, that have the pattern -xmapId, where x is not already used starting from -10 and moving more negative. the turnin would be -mapId
 			questId = tonumber(questId)
 			if nil == questId then return end
 			GrailDatabase.learned = GrailDatabase.learned or {}
@@ -3247,6 +3342,60 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			return retval
 		end,
 
+		--	Not used, as the name of the mission will be showin instead...
+		_AvailableMissionsRewardItem = function(self, itemId, missionType)
+			if itemId > 100000000 then itemId = itemId - 100000000 end
+			local retval = false
+			local missionTypeToUse = missionType or 4	-- default to those from the class hall map
+			local availableMissions = C_Garrison.GetAvailableMissions(missionTypeToUse)
+			if nil ~= availableMissions then
+				for _, mission in pairs(availableMissions) do
+					local rewards = mission.rewards
+					if nil ~= rewards then
+						for _, reward in pairs(rewards) do
+							local possibleItemId = reward.itemID
+							if nil ~= possibleItemId then
+								if itemId == tonumber(possibleItemId) then
+									retval = true
+								end
+							end
+						end
+					end
+				end
+			end
+			return retval
+		end,
+
+		IsMissionAvailable = function(self, missionId, missionType)
+			local retval = false
+			if nil ~= missionId then
+				local missionTypeToUse = missionType or 4	-- default to those from the class hall map
+				local availableMissions = C_Garrison.GetAvailableMissions(missionTypeToUse)
+				if nil ~= availableMissions then
+					for _, mission in pairs(availableMissions) do
+						if missionId == mission.missionID then
+							retval = true
+						end
+					end
+				end
+			end
+			return retval
+		end,
+
+		-- It seems Blizzard's API C_Garrison.GetBasicMissionInfo() returns an empty result
+		-- when the mission is not currently available.  This means when we want to display
+		-- the name we will need to display the mission ID instead.
+		MissionName = function(self, missionId)
+			local retval = nil
+			if nil ~= missionId then
+				local mission = C_Garrison.GetBasicMissionInfo(missionId)
+				if nil ~= mission then
+					retval = mission.name
+				end
+			end
+			return retval
+		end,
+
 		_BagUpdates = function(type, ignored)
 			if nil == Grail.processedBagUpdates then
 				Grail:_RecordArtifactLevels()
@@ -3502,6 +3651,8 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					retval = self:IsAvailable(numeric) and 'C' or 'P'
 				elseif '@' == code then
 					retval = self:ArtifactLevelMeetsOrExceeds(subcode, numeric) and 'C' or 'P'
+				elseif '#' == code then
+					retval = self:IsMissionAvailable(numeric) and 'C' or 'P'
 				else	-- A, B, C, D, E, H, O, X
 					local questBitMask = self:StatusCode(numeric)
 					local questTypeMask = self:CodeType(numeric)
@@ -4003,7 +4154,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 										elseif "Level:" == strsub(v, 1, 6) then
 											local internalLevel = self:QuestLevel(questId)
 											local actualLevel = tonumber(strsub(v, 7))
-											if 0 ~= internalLevel and (internalLevel or 1) ~= actualLevel then
+											if 0 ~= actualLevel and 0 ~= internalLevel and (internalLevel or 1) ~= actualLevel then
 												tinsert(writables, v)
 											end
 										elseif "Locale:" == strsub(v, 1, 7) then
@@ -4021,6 +4172,23 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 													tinsert(writables, "Title:" .. titleValue)
 													tinsert(writables, "Locale:" .. localeValue)
 												end
+											end
+										elseif "Faction:" == strsub(v, 1, 8) then
+											local factionValue = strsub(v, 9)
+											if nil ~= factionValue then
+												local shouldWrite = true
+												local bitMaskToCheckAgainst
+												if "Alliance" == factionValue then
+													bitMaskToCheckAgainst = self.bitMaskFactionAlliance
+												elseif "Horde" == factionValue then
+													bitMaskToCheckAgainst = self.bitMaskFactionHorde
+												elseif "Both" == factionValue then
+													bitMaskToCheckAgainst = self.bitMaskFactionAll
+												end
+												if bitband(self:CodeObtainers(questId), self.bitMaskFactionAll) == bitMaskToCheckAgainst then
+													shouldWrite = false
+												end
+												if shouldWrite then tinsert(writables, v) end
 											end
 										else
 											tinsert(writables, v)
@@ -4115,6 +4283,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					local typeValue = 0
 					local holidayValue = 0
 					local obtainersValue = self.bitMaskClassAll		-- we will start out assuming all classes are allowed
+					local obtainersRaceValue = 0;
 					local levelValue = 0
 
 					local codeString = self.questCodes[questId] or nil
@@ -4256,7 +4425,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 							elseif 'R' == code then
 								bitValue = self.races[codeValue][4]
 								if nil ~= bitValue then
-									obtainersValue = obtainersValue + bitValue
+									obtainersRaceValue = obtainersRaceValue + bitValue
 								else
 									hasError = true
 								end
@@ -4266,8 +4435,8 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 									--	The inherent nature of an S code makes is such that only one has meaning, and R codes should not be combined
 									bitValue = self.races[codeValue][4]
 									if nil ~= bitValue then
-										obtainersValue = bitband(obtainersValue, bitbnot(self.bitMaskRaceAll))
-										obtainersValue = obtainersValue + self.bitMaskRaceAll - bitValue
+										obtainersRaceValue = bitband(obtainersRaceValue, bitbnot(self.bitMaskRaceAll))
+										obtainersRaceValue = obtainersRaceValue + self.bitMaskRaceAll - bitValue
 									else
 										hasError = true
 									end
@@ -4405,7 +4574,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						if 0 == bitband(obtainersValue, self.bitMaskFactionAll) then obtainersValue = obtainersValue + self.bitMaskFactionAll end
 --						if 0 == bitband(obtainersValue, self.bitMaskClassAll) then obtainersValue = obtainersValue + self.bitMaskClassAll end
 						if 0 == bitband(obtainersValue, self.bitMaskGenderAll) then obtainersValue = obtainersValue + self.bitMaskGenderAll end
-						if 0 == bitband(obtainersValue, self.bitMaskRaceAll) then obtainersValue = obtainersValue + self.bitMaskRaceAll end
+						if 0 == bitband(obtainersRaceValue, self.bitMaskRaceAll) then obtainersRaceValue = self.bitMaskRaceAll end
 
 						--	And the levels are assumed to have minimum and maximum values that are reasonable if none present
 						if 0 == bitband(levelValue, self.bitMaskQuestMinLevel) then levelValue = levelValue + self.bitMaskQuestMinLevelOffset end
@@ -4414,7 +4583,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					end
 
 local start2Time = debugprofilestop()
-					self:_SetQuestBits(questId, typeValue, 0, levelValue, obtainersValue, holidayValue)
+					self:_SetQuestBits(questId, typeValue, obtainersRaceValue, levelValue, obtainersValue, holidayValue)
 --					self.questBits[questId] = strchar(
 --												bitband(bitrshift(typeValue, 24), 255),
 --												bitband(bitrshift(typeValue, 16), 255),
@@ -4471,10 +4640,10 @@ self.totalFixedTime = self.totalFixedTime + (debugprofilestop() - start2Time)
 			self:_SetQuestBits(questId, nil, nil, levelValue)
 		end,
 
-		_SetQuestBits = function(self, questId, typeValue, statusValue, levelValue, obtainersValue, holidayValue)
+		_SetQuestBits = function(self, questId, typeValue, obtainersRaceValue, levelValue, obtainersValue, holidayValue)
 			local currentValue = self.questBits[questId]
 			typeValue = typeValue or self:_IntegerFromStringPosition(currentValue, 1)
-			statusValue = statusValue or self:_IntegerFromStringPosition(currentValue, 2)
+			obtainersRaceValue = obtainersRaceValue or self:_IntegerFromStringPosition(currentValue, 2)
 			levelValue = levelValue or self:_IntegerFromStringPosition(currentValue, 3)
 			obtainersValue = obtainersValue or self:_IntegerFromStringPosition(currentValue, 4)
 			holidayValue = holidayValue or self:_IntegerFromStringPosition(currentValue, 5)
@@ -4483,10 +4652,10 @@ self.totalFixedTime = self.totalFixedTime + (debugprofilestop() - start2Time)
 												bitband(bitrshift(typeValue, 16), 255),
 												bitband(bitrshift(typeValue, 8), 255),
 												bitband(typeValue, 255),
-												bitband(bitrshift(statusValue, 24), 255),
-												bitband(bitrshift(statusValue, 16), 255),
-												bitband(bitrshift(statusValue, 8), 255),
-												bitband(statusValue, 255),
+												bitband(bitrshift(obtainersRaceValue, 24), 255),
+												bitband(bitrshift(obtainersRaceValue, 16), 255),
+												bitband(bitrshift(obtainersRaceValue, 8), 255),
+												bitband(obtainersRaceValue, 255),
 												bitband(bitrshift(levelValue, 24), 255),
 												bitband(bitrshift(levelValue, 16), 255),
 												bitband(bitrshift(levelValue, 8), 255),
@@ -4549,6 +4718,15 @@ self.totalFixedTime = self.totalFixedTime + (debugprofilestop() - start2Time)
 			questId = tonumber(questId)
 			self:_CodeAllFixed(questId)
 			return nil ~= questId and self.questBits[questId] and self:_IntegerFromStringPosition(self.questBits[questId], 4) or 0
+		end,
+
+		---
+		--	Returns a bit mask indicating the race of the obtainers who can get the quest.
+		--	@return An integer that should be interpreted as a bit mask containing information about who can get the quest.
+		CodeObtainersRace = function(self, questId)
+			questId = tonumber(questId)
+			self:_CodeAllFixed(questId)
+			return nil ~= questId and self.questBits[questId] and self:_IntegerFromStringPosition(self.questBits[questId], 2) or 0
 		end,
 
 		--	This routine breaks apart a "prerequisite" code into its component
@@ -4946,8 +5124,8 @@ end
 			if nil ~= codeString then
 				local questId = p and p.q or nil
 				local dangerous = p and p.d or false
-				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local code, value, position, subcode
 				local forcingProfessionOnly, forcingReputationOnly = false, false
 
@@ -5069,6 +5247,7 @@ end
 					   code == '<' or
 					   code == '>' then checkPhase = true
 				elseif code == '@' then checkArtifactLevel = true
+				elseif code == '#' then checkMission = true
 				else print("|cffff0000Grail|r _EvaluateCodeAsPrerequisite cannot process code", codeString)
 				end
 
@@ -5156,6 +5335,9 @@ end
 				if checkArtifactLevel then
 					artifactLevelMatches = Grail:ArtifactLevelMeetsOrExceeds(subcode, value)
 				end
+				if checkMission then
+					missionMatches = Grail:IsMissionAvailable(value)
+				end
 
 				good =
 					(code == ' ') or
@@ -5200,7 +5382,8 @@ end
 					(checkClass and classMatches) or
 					(checkArtifactKnowledgeLevel and artifactKnowledgeLevelMatches) or
 					(checkWorldQuestAvailable and worldQuestAvailable) or
-					(checkArtifactLevel and artifactLevelMatches)
+					(checkArtifactLevel and artifactLevelMatches) or
+					(checkMission and missionMatches)
 				if not good then tinsert(failures, codeString) end
 			end
 
@@ -5558,18 +5741,18 @@ end
 		--	one location where I need to mess with it.
 		GetQuestLogTitle = function(self, questIndex)
 			local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID
-			local isOnMap, hasLocalPOI, isTask, isStory
+			local isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling
 			local isWeekly = nil
 			if not self.existsWoD then
 				questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID = GetQuestLogTitle(questIndex)
 			else
 				local frequency
-				questTitle, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questId, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory = GetQuestLogTitle(questIndex)
+				questTitle, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questId, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling = GetQuestLogTitle(questIndex)
 				questTag = nil
 				isDaily = (LE_QUEST_FREQUENCY_DAILY == frequency)
 				isWeekly = (LE_QUEST_FREQUENCY_WEEKLY == frequency)
 			end
-			return questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID, isWeekly, isTask
+			return questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID, isWeekly, isTask, isBounty, isStory, isHidden, isScaling
 		end,
 
 		_HandleEventAchievementEarned = function(self, achievementId)
@@ -6653,7 +6836,7 @@ end
 			elseif 'R' == requirementCode or 'S' == requirementCode then
 				bitMaskToUse = (nil == soughtParameter) and self.playerRaceBitMask or self.raceNameToBitMapping[soughtParameter]
 --				retval = (bitband(self.quests[questId][4], bitMaskToUse) > 0)
-				retval = (bitband(obtainers, bitMaskToUse) > 0)
+				retval = (bitband(self:CodeObtainersRace(questId), bitMaskToUse) > 0)
 
 -- TODO: Should convert these over to the new way of doing things
 --			elseif 'V' == requirementCode or 'W' == requirementCode or 'P' == requirementCode then
@@ -8761,7 +8944,9 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[487] = 40375,	-- Demon Hunter choosing Atruis
 			[490] = 40409,	-- Paladin choosing Retribution artifact ... also 42495
 			[491] = 40582,	-- Warrior choosing Arms artifact
+			[493] = 40581,	-- Warrior choosing Fury artifact
 			[504] = 40621,	-- Night Elf Hunter choosing beast master artifact
+			[523] = 40686,	-- Warlock choosing Affliction artifact
 			[531] = 40702,	-- Druid choosing guardian artifact
 			[533] = 40707,	-- Priest choosing Shadow artifact
 			[546] = 40817,	-- Demon Hunter choosing Havoc artifact (Kayn, Night Elf)
@@ -8770,10 +8955,14 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[569] = 40843,	-- Rogue choosing Outlaw artifact
 			[570] = 40844,	-- Rogue choosing Subtelty artifact
 			[585] = 41080,	-- Mage choosing Fire artifact
+			[588] = 41329,	-- Shaman choosing Elemental artifact
 			[629] = 43979,	-- Druid choosing Restoration artifact
 			[645] = 44380,	-- Demon Hunter chossing Havoc artifact
 			[667] = 44433,	-- Druid choosing Feral artifact
 			[670] = 44444,	-- Druid choosing Balance artifact
+			[783] = 48602,	-- Choosing Void Elf
+			[784] = 48603,	-- Choosing Lightforged Draenei
+--			[956] = xxxxx,	-- Choosing Duskwood from Hero's Call Board in Stormwind -- causes acceptance of 28564
 			},
 
 		--	Internal Use.
