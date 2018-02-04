@@ -425,6 +425,7 @@
 --			Adds the ability to have class hall missions available as prerequisites.
 --			Adds support for Allied races.
 --			Changes CodeObtainers() to no longer return race information, which is now returned in a similar manner with CodeObtainersRace().
+--		094	Corrects the problem where BloodElf was being overritten by Nightborne.
 --
 --	Known Issues
 --
@@ -2316,23 +2317,23 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			-- [2] is localized male
 			-- [3] is localized female
 			-- [4] is bitmap value
-			['H'] = { 'Human',    'Human',     'Human',     0x00008000 },
-			['F'] = { 'Dwarf',    'Dwarf',     'Dwarf',     0x00010000 },
-			['E'] = { 'NightElf', 'Night Elf', 'Night Elf', 0x00020000 },
-			['N'] = { 'Gnome',    'Gnome',     'Gnome',     0x00040000 },
-			['D'] = { 'Draenei',  'Draenei',   'Draenei',   0x00080000 },
-			['W'] = { 'Worgen',   'Worgen',    'Worgen',    0x00100000 },
-			['O'] = { 'Orc',      'Orc',       'Orc',       0x00200000 },
-			['U'] = { 'Scourge',  'Undead',    'Undead',    0x00400000 },
-			['T'] = { 'Tauren',   'Tauren',    'Tauren',    0x00800000 },
-			['L'] = { 'Troll',    'Troll',     'Troll',     0x01000000 },
-			['B'] = { 'BloodElf', 'Blood Elf', 'Blood Elf', 0x02000000 },
-			['G'] = { 'Goblin',   'Goblin',    'Goblin',    0x04000000 },
 			['A'] = { 'Pandaren', 'Pandaren',  'Pandaren',  0x08000000 },
-			['V'] = { 'VoidElf',  'Void Elf',  'Void Elf',	0x20000000 },
+			['B'] = { 'BloodElf', 'Blood Elf', 'Blood Elf', 0x02000000 },
+			['D'] = { 'Draenei',  'Draenei',   'Draenei',   0x00080000 },
+			['E'] = { 'NightElf', 'Night Elf', 'Night Elf', 0x00020000 },
+			['F'] = { 'Dwarf',    'Dwarf',     'Dwarf',     0x00010000 },
+			['G'] = { 'Goblin',   'Goblin',    'Goblin',    0x04000000 },
+			['H'] = { 'Human',    'Human',     'Human',     0x00008000 },
 			['I'] = { 'LightforgedDraenei', 'Lightforged Draenei', 'Lightforged Draenei', 0x40000000 },
+			['L'] = { 'Troll',    'Troll',     'Troll',     0x01000000 },
 			['M'] = { 'HighmountainTauren', 'Highmountain Tauren', 'Highmountain Tauren', 0x00000001 },
-			['B'] = { 'Nightborne', 'Nightborne', 'Nightborne', 0x00000002 },
+			['N'] = { 'Gnome',    'Gnome',     'Gnome',     0x00040000 },
+			['O'] = { 'Orc',      'Orc',       'Orc',       0x00200000 },
+			['R'] = { 'Nightborne', 'Nightborne', 'Nightborne', 0x00000002 },
+			['T'] = { 'Tauren',   'Tauren',    'Tauren',    0x00800000 },
+			['U'] = { 'Scourge',  'Undead',    'Undead',    0x00400000 },
+			['V'] = { 'VoidElf',  'Void Elf',  'Void Elf',	0x20000000 },
+			['W'] = { 'Worgen',   'Worgen',    'Worgen',    0x00100000 },
 			},
 		receivedCalendarUpdateEventList = false,
 		receivedQuestLogUpdate = false,
@@ -6835,6 +6836,11 @@ end
 				end
 			elseif 'R' == requirementCode or 'S' == requirementCode then
 				bitMaskToUse = (nil == soughtParameter) and self.playerRaceBitMask or self.raceNameToBitMapping[soughtParameter]
+				if nil == bitMaskToUse then
+					print("Grail problem: Quest "..questId.." cannot use race ".. soughtParameter)
+					self:_AddTrackingMessage("Grail problem: Quest "..questId.." cannot use race ".. soughtParameter)
+					bitMaskToUse = 0
+				end
 --				retval = (bitband(self.quests[questId][4], bitMaskToUse) > 0)
 				retval = (bitband(self:CodeObtainersRace(questId), bitMaskToUse) > 0)
 
