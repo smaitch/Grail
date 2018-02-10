@@ -25775,7 +25775,32 @@ G[50305]='Stranger in a Strange Land'
 end
 
 if release >= 25961 then
+G[41522]='Felwort'
+G[41571]='Felhide'
+G[41764]='Walking in Their Footsteps'
+G[41882]='Whispers of the Darkness'
+G[46135]='Gemcutter Needed'
+G[46136]='Gemcutter Needed'
+G[46189]="Shel'zuul"
+G[48349]='Work Order: Empyrium'
+G[48373]='Work Order: Lightweave Cloth'
 G[50313]='Stranger in a Strange Land'
+end
+
+if release >= 25996 then
+G[10]='The Scrimshank Redemption'
+G[41446]='Darkened Felslate Deposits'
+G[41495]='Brilliant Leystone Seams'
+G[45563]='The Shrouded Coin'
+G[46137]='Gemcutter Needed'
+G[46507]='Tomb of Sargeras: The Dread Stalker'
+G[46817]='Infernal Downfall'
+G[47017]='Only the Best'
+G[47040]='Fate Sealed'
+G[48689]='Lockout Tracking - Boss - Marsh'
+G[48977]='Supplies From the Army of the Light'
+G[49198]='Greater Invasion Point: Inquisitor Meto'
+G[50316]='Disturbance Detected: Ulduar'
 end
 
 --	End of localized quest names
