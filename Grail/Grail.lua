@@ -426,6 +426,7 @@
 --			Adds support for Allied races.
 --			Changes CodeObtainers() to no longer return race information, which is now returned in a similar manner with CodeObtainersRace().
 --		094	Corrects the problem where BloodElf was being overritten by Nightborne.
+--		095 Update some quest/NPC information, but primarily the required level of thousands of quests due to Blizzard changing them.
 --
 --	Known Issues
 --
