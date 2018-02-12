@@ -6857,6 +6857,7 @@ G[36941]={509618}	-- needed for The Iron Invasion
 G[37280]={509615}
 G[37421]={509674}
 G[37422]={509674}
+G[35835]={508925}   -- SECURING SOUTHPORT, SMUGGLER'S DEN, Between Arak and a Hard Place
 end
 
 if Grail.inLegion then
