@@ -37,43 +37,70 @@ local originalMem = gcinfo()
 local debugStartTime = debugprofilestop()
 local supportedFactions = {'Alliance', 'Horde'}
 
+-- We use continents as separators and their mapIds as indexes
+local mapKalimdor = 13
+local mapEasternKingdoms = 14
+local mapOutland = 466
+local mapNorthrend = 485
+local mapTheMaelstrom = 751
+local mapPandaria = 862
+local mapDraenor = 962
+local mapBrokenIsles = 1007
+local mapArgus = 1184
+local mapZandalar = 0
+local mapKulTiras = 0
+
+if Grail.battleForAzeroth then
+	mapKalimdor = 12
+	mapEasternKingdoms = 13
+	mapOutland = 101
+	mapNorthrend = 113
+	mapTheMaelstrom = 948
+	mapPandaria = 424
+	mapDraenor = 572
+	mapBrokenIsles = 619
+	mapArgus = 905
+	mapZandalar = 875
+	mapKulTiras = 876
+end
+
 --	These are the achievements organized by zone for completing the "loremaster" achievements (basically completing a specific number of quests in each zone).
 Grail.loremasterAchievements = {
 	['Alliance'] = {
-		[1] = { 504925, 504926, 504928, 504930, 504929, 504931, 504932, 504934, 504937, 504936, 504935, 504938, 504939, 504940, 504870, 504872, },
-		[2] = { 504896, 504900, 504909, 504901, 504905, 504892, 504897, 504899, 504906, 504902, 504910, 504904, 504893, 504903, 504873, 504869, },
-		[3] = { 501194, 501190, 501192, 501193, 501195, 501191, 501189, },
-		[4] = { 500037, 500034, 500040, 500039, 500035, 500033, 500036, 500038, },
-		[5] = { 504871, },
-		[6] = { 506300, 506301, 506535, 506537, 506539, 506540, },
+		[mapKalimdor] = { 504925, 504926, 504928, 504930, 504929, 504931, 504932, 504934, 504937, 504936, 504935, 504938, 504939, 504940, 504870, 504872, },
+		[mapEasternKingdoms] = { 504896, 504900, 504909, 504901, 504905, 504892, 504897, 504899, 504906, 504902, 504910, 504904, 504893, 504903, 504873, 504869, },
+		[mapOutland] = { 501194, 501190, 501192, 501193, 501195, 501191, 501189, },
+		[mapNorthrend] = { 500037, 500034, 500040, 500039, 500035, 500033, 500036, 500038, },
+		[mapTheMaelstrom] = { 504871, },
+		[mapPandaria] = { 506300, 506301, 506535, 506537, 506539, 506540, },
 		},
 	['Horde'] = {
-		[1] = { 504976, 504927, 504930, 504978, 504931, 504979, 504933, 504934, 504981, 504980, 504935, 504938, 504939, 504940, 504870, 504872, },
-		[2] = { 504896, 504900, 504909, 504901, 504905, 504892, 504908, 504895, 504897, 504906, 504910, 504894, 504904, 504893, 505501, 504982, },
-		[3] = { 501194, 501190, 501273, 501193, 501195, 501272, 501271, },
-		[4] = { 501357, 501356, 500040, 500039, 501359, 501358, 500036, 500038, },
-		[5] = { 504871, },
-		[6] = { 506301, 506534, 506536, 506538, 506539, 506540, },
+		[mapKalimdor] = { 504976, 504927, 504930, 504978, 504931, 504979, 504933, 504934, 504981, 504980, 504935, 504938, 504939, 504940, 504870, 504872, },
+		[mapEasternKingdoms] = { 504896, 504900, 504909, 504901, 504905, 504892, 504908, 504895, 504897, 504906, 504910, 504894, 504904, 504893, 505501, 504982, },
+		[mapOutland] = { 501194, 501190, 501273, 501193, 501195, 501272, 501271, },
+		[mapNorthrend] = { 501357, 501356, 500040, 500039, 501359, 501358, 500036, 500038, },
+		[mapTheMaelstrom] = { 504871, },
+		[mapPandaria] = { 506301, 506534, 506536, 506538, 506539, 506540, },
 		},
 	}
 
 --	These are the achievements organized by zone for completing special sets of quests that are not "loremaster" but extra.
 Grail.extraAchievements = {
 	['Alliance'] = {
-		[1] = { 505453, 504961, 505859, 505866, },
-		[2] = { 500940, 505318, 505320, 504960, 505452, },
-		[3] = { 500939, },
-		[4] = { 500561, 501596, 500961, 500962, 500938, 500547, },
-		[5] = { },
-		[6] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, },
+		[mapKalimdor] = { 505453, 504961, 505859, 505866, },
+		[mapEasternKingdoms] = { 500940, 505318, 505320, 504960, 505452, },
+		[mapOutland] = { 500939, },
+		[mapNorthrend] = { 500561, 501596, 500961, 500962, 500938, 500547, },
+		[mapTheMaelstrom] = { },
+		[mapPandaria] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, },
 		},
 	['Horde'] = {
-		[1] = { 504961, 505859, 505866, },
-		[2] = { 500940, 504960, 505452, 505319, 505321, },
-		[3] = { 500939, },
-		[4] = { 500561, 501596, 500961, 500962, 500938, 500547, },
-		[5] = { },
-		[6] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, },
+		[mapKalimdor] = { 504961, 505859, 505866, },
+		[mapEasternKingdoms] = { 500940, 504960, 505452, 505319, 505321, },
+		[mapOutland] = { 500939, },
+		[mapNorthrend] = { 500561, 501596, 500961, 500962, 500938, 500547, },
+		[mapTheMaelstrom] = { },
+		[mapPandaria] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, },
 		},
 	}
 
@@ -6657,8 +6684,8 @@ local _, release = GetBuildInfo()
 release = tonumber(release)
 
 if release >= 16139 then
-Grail.extraAchievements['Alliance'][6] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, 507928, }
-Grail.extraAchievements['Horde'][6] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, 507929, }
+Grail.extraAchievements['Alliance'][mapPandaria] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, 507928, }
+Grail.extraAchievements['Horde'][mapPandaria] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, 507929, }
 
 G[32108]={507929}	-- needed for Domination Point part
 G[32109]={507928}	-- needed for Lion's Landing part
@@ -6692,10 +6719,10 @@ G[32455]={507928}	-- needed for
 end
 
 if release >= 16486 then
-Grail.extraAchievements['Alliance'][6] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, 507928, 507533, 507534, 507535, 507536, 508099, }
-Grail.extraAchievements['Horde'][6] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, 507929, 507533, 508008, 507535, 507536, 508099, }
-Grail.extraAchievements['Alliance'][2] = { 500940, 505318, 505320, 504960, 505452, 508306, }
-Grail.extraAchievements['Horde'][2] = { 500940, 504960, 505452, 505319, 505321, 508307, }
+Grail.extraAchievements['Alliance'][mapPandaria] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, 507928, 507533, 507534, 507535, 507536, 508099, }
+Grail.extraAchievements['Horde'][mapPandaria] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, 507929, 507533, 508008, 507535, 507536, 508099, }
+Grail.extraAchievements['Alliance'][mapEasternKingdoms] = { 500940, 505318, 505320, 504960, 505452, 508306, }
+Grail.extraAchievements['Horde'][mapEasternKingdoms] = { 500940, 504960, 505452, 505319, 505321, 508307, }
 
 G[31482]={507533}
 G[32212]={508099}	-- needed for Build a Base part of Isle of Thunder (Horde)
@@ -6730,10 +6757,10 @@ G[32872]={508306}	-- needed for Battlefield: Barrens (Weekly) of Hordebreaker
 end
 
 if release >= 17359 then
-Grail.extraAchievements['Alliance'][6] = { 507296, 507297, 507312, 507314, 507310, 507612, 507928, 507533, 507534, 507535, 507536, 508099, 508726, 508727, 508729, 508730, }
-Grail.extraAchievements['Horde'][6] = { 507296, 507297, 507312, 507314, 507310, 507612, 507929, 507533, 508008, 507535, 507536, 508099, 508726, 508727, 508729, 508730, }
-Grail.extraAchievements['Alliance'][2] = { 500940, 505318, 505320, 504960, 505452, }
-Grail.extraAchievements['Horde'][2] = { 500940, 504960, 505452, 505319, 505321, }
+Grail.extraAchievements['Alliance'][mapPandaria] = { 507296, 507297, 507312, 507314, 507310, 507612, 507928, 507533, 507534, 507535, 507536, 508099, 508726, 508727, 508729, 508730, }
+Grail.extraAchievements['Horde'][mapPandaria] = { 507296, 507297, 507312, 507314, 507310, 507612, 507929, 507533, 508008, 507535, 507536, 508099, 508726, 508727, 508729, 508730, }
+Grail.extraAchievements['Alliance'][mapEasternKingdoms] = { 500940, 505318, 505320, 504960, 505452, }
+Grail.extraAchievements['Horde'][mapEasternKingdoms] = { 500940, 504960, 505452, 505319, 505321, }
 G[32956]={508727}
 G[32957]={508727}
 G[32958]={508727}
@@ -6757,15 +6784,16 @@ G[33210]={508729}	-- Blazing
 end
 
 if release >= 18645 then
-Grail.loremasterAchievements['Alliance'][7] = { 508845, 508920, 508923, 508925, 508927, 509528, 509618, }
-Grail.loremasterAchievements['Horde'][7] = { 508671, 508919, 508924, 508926, 508928, 509529, 509618, }
-Grail.extraAchievements['Alliance'][7] = { 509602, 509605, 509607, 509615, 509674, }
-Grail.extraAchievements['Horde'][7] = { 509605, 509606, 509607, 509615, 509674, }
+Grail.loremasterAchievements['Alliance'][mapDraenor] = { 508845, 508920, 508923, 508925, 508927, 509528, 509618, }
+Grail.loremasterAchievements['Horde'][mapDraenor] = { 508671, 508919, 508924, 508926, 508928, 509529, 509618, }
+Grail.extraAchievements['Alliance'][mapDraenor] = { 509602, 509605, 509607, 509615, 509674, 509825, 510067, 510068, }
+Grail.extraAchievements['Horde'][mapDraenor] = { 509605, 509606, 509607, 509615, 509674, 509836, 510074, 510075 }
 G[32796]={508671}	-- needed for Ga'nar's Vengeance part of You'll Get Caught Up In The... Frostfire!
 G[33116]={509528}	-- needed for On the Shadow's Trail
 G[33145]={509606}
 G[33256]={508845}	-- needed for The Light Prevails part of As I Walk Through the Valley of the Shadow of Moon
 G[33271]={508845}	-- needed for Gloomshade Grove of As I Walk Through the Valley of the Shadow of Moon
+G[33427]={509492}	-- needed for Ours is the Fury part of Garrison Campaign (Horde)
 G[33473]={508671}	-- needed for Defense of Wor'gol part of You'll Get Caught Up In The... Frostfire!
 G[33527]={508671}	-- needed for Die Belagerung der Speerspießerfestung part of Ein Lied von Frost und Feuer
 G[33582]={508919,508920}	-- needed for The Plight of the Arakkoa of Tala-done With This
@@ -6774,10 +6802,13 @@ G[33828]={508671}	-- needed for Thunder's Fall part of You'll Get Caught Up In T
 G[34019]={508845}	-- needed for Shadows Awaken part of As I Walk Through the Valley of the Shadow of Moon
 G[34054]={508845}	-- needed for A Sister's Sacrifice part of As I Walk Through the Valley of the Shadow of Moon
 G[34076]={509602}
+G[34087]={509492}	-- needed for Iron Siegeworks part of Garrison Campaign (Horde)
 G[34099]={508920}	-- needed for The Battle for Shattrath part of Tala-done With This
 G[34124]={508671}	-- needed for The Battle of Thunder Pass part of You'll Get Caught Up In The... Frostfire!
 G[34154]={508920}	-- needed for In the Shadows of AUchindown part of Don't Let the Tala-door Hit You on the Way Out
 G[34295]={509529}
+G[34319]={509492}	-- needed for Bloodmaul Compound part of Garrison Campaign (Horde)
+G[34450]={509492}	-- needed for Darktide Roost part of Garrison Campaign (Horde)
 G[34496]={509602}
 G[34501]={509606}
 G[34504]={509602}
@@ -6816,6 +6847,7 @@ G[35152]={508924}
 G[35158]={508928}	-- needed for Trouble at the Overwatch of Nagrandeur
 G[35169]={508927}	-- needed for The Legacy of Garrosh Hellscream part of Nagrandeur
 G[35171]={508928}
+G[35197]={509492}	-- needed for The Sargerei part of Garrison Campaign (Horde)
 G[35236]={509674}
 G[35237]={509674}
 G[35245]={508925}	-- needed for The Gods of Arak part of Between Arak and a Hard Place
@@ -6825,6 +6857,8 @@ G[35317]={508928}
 G[35379]={509615}
 G[35396]={508927}	-- needed for The Dark Heart of Oshu'Gun part of Nagrandeur
 G[35416]={508924}
+G[35687]={509492}	-- needed for The Fall of Shattrath part of Garrison Campaign (Horde)
+G[35835]={508925}   -- SECURING SOUTHPORT, SMUGGLER'S DEN, Between Arak and a Hard Place
 G[36473]={509607}
 G[36476]={509607}
 G[35482]={508925}	-- needed for Admiral Taylor's Garrison part of Between Arak and a Hard Place
@@ -6837,6 +6871,7 @@ G[35881]={509607}
 G[35884]={508921}	-- needed for Welcome to Draenor
 G[35896]={508925,508926}	-- needed for Terrok's Legend part of Between Arak and a Hard Place
 G[36183]={508926}
+G[36290]={509492}	-- needed for The Ring of Blood part of Garrison Campaign (Horde)
 G[36480]={509607}
 G[36500]={509607}
 G[36504]={509607}
@@ -6857,14 +6892,50 @@ G[36941]={509618}	-- needed for The Iron Invasion
 G[37280]={509615}
 G[37421]={509674}
 G[37422]={509674}
-G[35835]={508925}   -- SECURING SOUTHPORT, SMUGGLER'S DEN, Between Arak and a Hard Place
+G[37516]={509492}	-- needed for Broken Precipice part of Garrison Campaign (Horde)
+G[37811]={509825}	-- The Spirit Forge (Master Relic Hunter)
+G[37852]={509825}	-- The Apexis Device (Master Relic Hunter)
+G[37885]={509825}	-- Breaching the Barrier (Master Relic Hunter)
+G[37891]={510068}	-- Ironhold Harbor (Draenor's Last Stand)
+G[37919]={509825}	-- The Blessing of Beasts (Master Relic Hunter)
+G[37945]={509825}	-- Taking from the Taker (Master Relic Hunter)
+G[37979]={509825}	-- The Crystal Reborn (Master Relic Hunter)
+G[37992]={509836}	-- The Spirit Forge (Master Relic Hunter)
+G[37993]={509836}	-- The Apexis Device (Master Relic Hunter)
+G[37994]={509836}	-- Breaching the Barrier (Master Relic Hunter)
+G[37995]={509836}	-- The Blessing of Beasts (Master Relic Hunter)
+G[37996]={509836}	-- Taking from the Taker (Master Relic Hunter)
+G[37997]={509836}	-- The Crystal Reborn (Master Relic Hunter)
+G[37935]={510074}	-- The Invasion of Tanaan (In Pursuit of Gul'dan)
+G[37940]={510075}	-- Ironhold Harbor (Draenor's Last Stand)
+G[37968]={510068}	-- Temple of Sha'naar (Draenor's Last Stand)
+G[38044]={510075}	-- Zeth'gol (Draenor's Last Stand)
+G[38045]={510068}	-- Zeth'gol (Draenor's Last Stand)
+G[38046]={510068}	-- The Iron Front (Draenor's Last Stand)
+G[38047]={510075}	-- The Iron Front (Draenor's Last Stand)
+G[38223]={510074,510067}	-- Dark Ascension (In Pursuit of Gul'dan)
+G[38250]={510068}	-- Ruins of Kra'nak (Draenor's Last Stand)
+G[38252]={510075}	-- Ruins of Kra'nak (Draenor's Last Stand)
+G[38259]={510067}	-- All Hands on Deck (In Pursuit of Gul'dan)
+G[38274]={510074,510067}	-- Bane of the Bleeding Hollow (In Pursuit of Gul'dan)
+G[38416]={510074}	-- The Fate of Teron'gor (In Pursuit of Gul'dan)
+G[38440]={510068}	-- The Fel Forge (Draenor's Last Stand)
+G[38441]={510075}	-- The Fel Forge (Draenor's Last Stand)
+G[38445]={510067}	-- The Invasion of Tanaan (In Pursuit of Gul'dan)
+G[38449]={510075}	-- Temple of Sha'naar (Draenor's Last Stand)
+G[38463]={510074}	-- The Cipher of Damnation (In Pursuit of Gul'dan)
+G[38562]={510067}	-- The Fate of Teron'gor (In Pursuit of Gul'dan)
+G[38574]={510074}	-- All Hands on Deck (In Pursuit of Gul'dan)
+G[38585]={510068}	-- Throne of Kil'jaeden (Draenor's Last Stand)
+G[38586]={510075}	-- Throne of Kil'jaeden (Draenor's Last Stand)
+G[39394]={510067}	-- The Cipher of Damnation (In Pursuit of Gul'dan)
 end
 
 if Grail.inLegion then
-Grail.loremasterAchievements['Alliance'][8] = { 511124, 510698, 510763, 510059, 510790, }
-Grail.loremasterAchievements['Horde'][8] = { 511124, 510698, 510763, 510059, 510790, }
-Grail.extraAchievements['Alliance'][8] = { 510617, 510756, }
-Grail.extraAchievements['Horde'][8] = { 510617, 510756, }
+Grail.loremasterAchievements['Alliance'][mapBrokenIsles] = { 511124, 510698, 510763, 510059, 510790, }
+Grail.loremasterAchievements['Horde'][mapBrokenIsles] = { 511124, 510698, 510763, 510059, 510790, }
+Grail.extraAchievements['Alliance'][mapBrokenIsles] = { 510617, 510756, 511340, 511544, 511546, }
+Grail.extraAchievements['Horde'][mapBrokenIsles] = { 510617, 510756, 511340, 511544, 511546, }
 G[37449]={510763}	-- needed for Behind Legion Lines part of Azsuna Matata
 G[37470]={510763}	-- needed for Azsuna vs Azshara part of Azsuna Matata
 G[37566]={510763}	-- needed for Against the Giants part of Azsuna Matata
@@ -6910,6 +6981,7 @@ G[42244]={510763}	-- needed for Mak'rana and the Fate of the Queen's Reprisal pa
 G[42488]={511124}	-- needed for The Waning Crescent of Good Suramaritan
 G[42756]={510763}	-- needed for Defending Azurewing Repose part of Azsuna Matata
 G[43318]={511124}	-- needed for Statecraft of Good Suramaritan
+G[43362]={511124}	-- A Growing Crisis (Good Suramaritan)
 G[43568]={511124}	-- needed for A Change of Seasons of Good Suramaritan
 G[43587]={510756}	-- needed for Elor'shan of Leyline Bling
 G[43588]={510756}	-- needed for Kel'balor of Leyline Bling
@@ -6919,20 +6991,108 @@ G[43592]={510756}	-- needed for Falanaar North of Leyline Bling
 G[43593]={510756}	-- needed for Falanaar South of Leyline Bling
 G[43594]={510756}	-- needed for Halls of the Eclipse of Leyline Bling
 G[44052]={511124}	-- needed for Blood and Wine of Good Suramaritan
+G[44719]={511340}	-- Breaking the Nighthold (Insurrection)
+G[44740]={511340}	-- March on Suramar (Insurrection)
+G[44756]={511340}	-- Waxing Crescent (Insurrection)
+G[44790]={511340}	-- Crafting War (Insurrection)
+G[44814]={511340}	-- Missing Persons (Insurrection)
+G[44833]={511340}	-- Elisande's Retort (Insurrection)
+G[44845]={511340}	-- An Elven Problem (Insurrection)
+G[44955]={511340}	-- Lockdown (Insurrection)
+G[45064]={511340}	-- As Strong As Our Will (Insurrection)
+G[45856]={511544}	-- Battle for Val'sharah (Defender of the Broken Isles)
+G[46110]={511544}	-- Battle for Stormheim (Defender of the Broken Isles)
+G[46182]={511544}	-- Battle for Highmountain (Defender of the Broken Isles)
+G[46199]={511544}	-- Battle for Azsuna (Defender of the Broken Isles)
+G[46245]={511546}	-- Begin Construction (Breaching the Tomb)
+G[46246]={511546}	-- Strike Them Down (Breaching the Tomb)
+G[46247]={511546}	-- Defending Broken Isles (Breaching the Tomb)
+G[46248]={511546}	-- Self-Fulfilling Prophecy (Breaching the Tomb)
+G[46249]={511546}	-- Championing Our Cause (Breaching the Tomb)
+G[46250]={511546}	-- Take Out the Head... (Breaching the Tomb)
+G[46251]={511546}	-- Shard Times (Breaching the Tomb)
+G[46252]={511546}	-- Intolerable Infestation (Breaching the Tomb)
+G[46730]={511546}	-- Armies of Legionfall (Breaching the Tomb)
+G[46734]={511546}	-- Assault on Broken Shore (Breaching the Tomb)
+G[46769]={511546}	-- Relieved of Their Valuables (Breaching the Tomb)
+G[46832]={511546}	-- Aalgen Point (Breaching the Tomb)
+G[46845]={511546}	-- Vengeance Point (Breaching the Tomb)
+G[47137]={511546}	-- Champions of Legionfall (Breaching the Tomb)
+G[47139]={511546}	-- Mark of the Sentinax (Breaching the Tomb)
 end
 
 if Grail.exists73 then
-Grail.loremasterAchievements['Alliance'][9] = {  }
-Grail.loremasterAchievements['Horde'][9] = {  }
-Grail.extraAchievements['Alliance'][9] = {  }
-Grail.extraAchievements['Horde'][9] = {  }
--- G[47182]={}			-- Needed for Fel Heart of Argus (Locked and Loaded)
---G[47287]={}			-- needed for Light's Judgment
--- G[48929]={}			-- needed for The Assault Begins
--- G[47994]={}			-- needed for Lightforged Warframe
--- G[48107]={}				-- needed for Dark Awakenings, Shroud...
--- G[47220]={}			-- needed for War of Light and Shadon, You Are Now Prepared!
--- G[49224]={}			-- needed for achievement Now You're Cooking With Netherlight
+Grail.loremasterAchievements['Alliance'][mapArgus] = {  }
+Grail.loremasterAchievements['Horde'][mapArgus] = {  }
+Grail.extraAchievements['Alliance'][mapArgus] = { 512066, 512073, }
+Grail.extraAchievements['Horde'][mapArgus] = { 512066, 512073, }
+G[47182]={512073}	-- Needed for Fel Heart of Argus (Locked and Loaded)
+G[47287]={512073}	-- Light's Judgment (Locked and Loaded)
+G[48929]={512066}	-- The Assault Begins (You Are Now Prepared!)
+G[47994]={512073}	-- Lightforged Warframe (Locked and Loaded)
+G[48107]={512066,512073}	-- Dark Awakenings (You Are Now Prepared!), Shroud of Arcane Echoes (Locked and Loaded)
+G[47220]={512066}	-- War of Light and Shadow (You Are Now Prepared!)
+-- G[49224]={}	-- needed for achievement Now You're Cooking With Netherlight
+end
+
+if Grail.battleForAzeroth then
+Grail.loremasterAchievements['Alliance'][mapZandalar] = {  }
+Grail.loremasterAchievements['Horde'][mapZandalar] = { 511861, }
+Grail.extraAchievements['Alliance'][mapZandalar] = {  }
+Grail.extraAchievements['Horde'][mapZandalar] = { 512555, }
+Grail.loremasterAchievements['Alliance'][mapKulTiras] = { 512473, 512496, 512497, }
+Grail.loremasterAchievements['Horde'][mapKulTiras] = {  }
+Grail.extraAchievements['Alliance'][mapKulTiras] = { 512510, }
+Grail.extraAchievements['Horde'][mapKulTiras] = {  }
+G[47188]={}	-- Deep in the Swamp (The Dark Heart of Nazmir)
+G[47189]={}	-- Come Sail Away () -- Alliance
+G[47229]={}	-- (A Bargain of Blood)
+G[47250]={}	-- A Pact with Death (The Dark Heart of Nazmir)
+G[47528]={511861}	-- Web of Lies (The Throne of Zuldazar)
+G[47601]={}	-- Bring the Boom (The Dark Heart of Nazmir)
+G[47696]={}	-- A Friend of the Frogs (The Dark Heart of Nazmir)
+G[47741]={}	-- Among the People (The Throne of Zuldazar)
+G[47874]={}	-- The Warguard's Fate (Secrets in the Sands)
+G[47879]={511861}	-- Warport Rastari (The Throne of Zuldazar)
+G[47982]={512497}	-- The Final Effigy (Drust Do It)	-- Alliance
+G[48088]={512473}	-- The Norwington Estate (A Sound Plan)	-- Alliance	-- TODO: Verify required
+G[48089]={512473}	-- The Norwington Estate (A Sound Plan)	-- Alliance
+G[48198]={512497}	-- The Burden of Proof (Drust Do It)	-- Alliance
+G[48421]={512473}	-- Castaways and Cutouts (A Sound Plan) -- Alliance
+G[48505]={512473}	-- Castaways and Cutouts (A Sound Plan) -- Alliance
+G[48538]={512497}	-- An Airtight Alibi (Drust Do It)	-- Alliance
+G[48549]={}	-- Dangers in the Desert (Secrets in the Sands)
+G[48550]={}	-- Dangers in the Desert (Secrets in the Sands)
+G[48897]={511861}	-- Zanchuli Council (The Throne of Zuldazar)
+G[49082]={}	-- Undercover Sista (The Dark Heart of Nazmir)
+G[49160]={}	-- Turtle Power (The Dark Heart of Nazmir)
+G[49178]={512473}	-- Castaways and Cutouts (A Sound Plan) -- Alliance	-- TODO: Verify required
+G[49181]={512473}	-- Castaways and Cutouts (A Sound Plan) -- Alliance	-- TODO: Verify required
+G[49226]={512473}	-- Castaways and Cutouts (A Sound Plan) -- Alliance	-- TODO: Verify required
+G[49230]={512473}	-- Castaways and Cutouts (A Sound Plan) -- Alliance
+G[49302]={512473}	-- The Shadow Over Anglepoint (A Sound Plan) -- Alliance
+G[49340]={}	-- The Three Keepers (Secrets in the Sands)
+G[49404]={512473}	-- Freehold (A Sound Plan) -- Alliance
+G[49426]={511861}	-- March of the Loa (The Throne of Zuldazar)
+G[49663]={511861}	-- Portents and Prophecies (The Throne of Zuldazar)
+G[49736]={512473}	-- Defenders of Daelin's Gate (A Sound Plan)	-- Alliance
+G[49740]={512473}	-- Defenders of Daelin's Gate (A Sound Plan)	-- Alliance
+G[49985]={}	-- Everything Contained (The Dark Heart of Nazmir)
+G[50087]={}	-- Bleeding the Blood Trolls (The Dark Heart of Nazmir)
+G[50531]={512473}	-- The Ashvane Trading Company (A Sound Plan) -- Alliance
+G[50550]={}	-- Storming the Spire (Secrets in the Sands)
+G[50561]={}	-- A City of Secrets (Secrets in the Sands)
+G[50691]={512496}	-- Treasure in Deadwash (Stormsong and Dance)	-- Alliance	-- TODO: Verify required
+G[50702]={}	-- Atul'Aman (Secrets in the Sands)
+G[50704]={512496}	-- Treasure in Deadwash (Stormsong and Dance)	-- Alliance	-- TODO: Verify required
+G[50881]={511861}	-- Port of Zandalar (The Throne of Zuldazar)
+G[51140]={512496}	-- Treasure in Deadwash (Stormsong and Dance)	-- Alliance
+G[51364]={}	-- Unlikely Allies (Secrets in the Sands)
+G[51401]={512496}	-- The Tidesages of Stormsong (Stormsong and Dance)	-- Alliance
+G[51825]={512473}	-- Enemies Within (A Sound Plan)	-- Alliance
+G[51967]={512510}	-- Nazmir Foothold (Ready for War) -- Alliance
+G[51969]={512510}	-- Vol'dun Foothold (Ready for War) -- Alliance
+G[52131]={512555}	-- Welcome to Zandalar -- Horde
 end
 
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime
@@ -6986,15 +7146,19 @@ Grail.timings.AchievementsInternalConversion = debugprofilestop() - debugStartTi
 debugStartTime = debugprofilestop()
 local achievementsDone = {}
 local achievementsToZoneMapping = { [506300] = 806, [506301] = 807, [506534] = 806, [506535] = 857, [506536] = 857, [506537] = 809, [506538] = 809, [506539] = 810, [506540] = 858, [508671] = 941, [508845] = 947, [508919] = 946, [508920] = 946, [508923] = 949, [508924] = 949, [508925] = 948, [508926] = 948, [508927] = 950, [508928] = 950, [509528] = 947, [509529] = 941, [509602] = 947, [509605] = 948, [509606] = 941, [509607] = 949, [509615] = 950, [510617] = 1033, [509618] = 19, [509674] = 946, [510698] = 1018, [510763] = 1015, [510059] = 1024, [510756] = 1033, [510790] = 1017, [511124] = 1033, }
-local expansions = { 6 }
+if Grail.battleForAzeroth then
+	achievementsToZoneMapping = { [506300] = 371, [506301] = 376, [506534] = 371, [506535] = 418, [506536] = 418, [506537] = 379, [506538] = 379, [506539] = 388, [506540] = 422, [508671] = 525, [508845] = 539, [508919] = 535, [508920] = 535, [508923] = 543, [508924] = 543, [508925] = 542, [508926] = 542, [508927] = 550, [508928] = 550, [509528] = 539, [509529] = 525, [509602] = 539, [509605] = 542, [509606] = 525, [509607] = 543, [509615] = 550, [510617] = 680, [509618] = 17, [509674] = 535, [510698] = 641, [510763] = 630, [510059] = 650, [510756] = 680, [510790] = 634, [511124] = 680, [511861] = 862, [512473] = 895, [512496] = 942, [512497] = 896, [512510] = 895, [512555] = 862, }
+end
+
+local expansions = { mapPandaria }
 if release >= 18505 then
-	tinsert(expansions, 7)
+	tinsert(expansions, mapDraenor)
 end
 if Grail.inLegion then
-	tinsert(expansions, 8)
+	tinsert(expansions, mapBrokenIsles)
 end
 if Grail.exists73 then
-	tinsert(expansions, 9)
+	tinsert(expansions, mapArgus)
 end
 for _, faction in pairs(supportedFactions) do
 	for _, expansion in pairs(expansions) do
