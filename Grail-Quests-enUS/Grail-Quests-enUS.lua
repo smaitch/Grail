@@ -28058,4 +28058,15 @@ if release >= 26585 then
 G[49769]='Wreckage of the Cataclysm'
 end
 
+if release >= 26610 then
+G[48620]='Greater Invasion Point: Mistress Alluradel'
+G[48690]='Lockout Tracking - Boss - Forest'
+end
+
+if release >= 26629 then
+G[52800]='Tol Dagor: The Ashvane Overseer'
+G[53041]='Sampling the Goods'
+G[53074]='Reinforcements'
+end
+
 --	End of localized quest names

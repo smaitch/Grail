@@ -7064,6 +7064,7 @@ G[48538]={512497}	-- An Airtight Alibi (Drust Do It)	-- Alliance
 G[48549]={}	-- Dangers in the Desert (Secrets in the Sands)
 G[48550]={}	-- Dangers in the Desert (Secrets in the Sands)
 G[48897]={511861}	-- Zanchuli Council (The Throne of Zuldazar)
+G[48946]={512497}	-- The Order of Embers (Drust Do It)	-- Alliance
 G[49082]={}	-- Undercover Sista (The Dark Heart of Nazmir)
 G[49160]={}	-- Turtle Power (The Dark Heart of Nazmir)
 G[49178]={512473}	-- Castaways and Cutouts (A Sound Plan) -- Alliance	-- TODO: Verify required
@@ -7091,6 +7092,7 @@ G[51364]={}	-- Unlikely Allies (Secrets in the Sands)
 G[51401]={512496}	-- The Tidesages of Stormsong (Stormsong and Dance)	-- Alliance
 G[51825]={512473}	-- Enemies Within (A Sound Plan)	-- Alliance
 G[51967]={512510}	-- Nazmir Foothold (Ready for War) -- Alliance
+G[51968]={512510}	-- Zuldazar Foothold (Ready for War) -- Alliance
 G[51969]={512510}	-- Vol'dun Foothold (Ready for War) -- Alliance
 G[52131]={512555}	-- Welcome to Zandalar -- Horde
 end
