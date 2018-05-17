@@ -435,6 +435,7 @@
 --			Updates use of UnitAura() to support Blizzard's changes for Battle for Azeroth.
 --			Reimplements GetMapNameByID() because Blizzard removed it for Battle for Azeroth.
 --			Starts reimplementing GetPlayerMapPosition() because Blizzard removes it for Battle for Azeroth.
+--			Handles Blizzard's change of calendar APIs.
 --
 --	Known Issues
 --
@@ -473,9 +474,6 @@ local floor, mod = math.floor, mod
 -- AbandonQuest																	-- we rewrite this to our own function
 local C_MapBar							= C_MapBar
 local C_PetJournal						= C_PetJournal
-local CalendarGetDate					= CalendarGetDate
-local CalendarGetDayEvent				= CalendarGetDayEvent
-local CalendarSetAbsMonth				= CalendarSetAbsMonth
 local CreateFrame						= CreateFrame
 local debugprofilestop					= debugprofilestop
 local GetAchievementCriteriaInfoByID	= GetAchievementCriteriaInfoByID
@@ -514,7 +512,6 @@ local GetTime							= GetTime
 local GetTitleText						= GetTitleText
 --local InCombatLockdown					= InCombatLockdown
 local IsQuestFlaggedCompleted			= IsQuestFlaggedCompleted
-local OpenCalendar						= OpenCalendar
 local QueryQuestsCompleted				= QueryQuestsCompleted					-- QueryQuestsCompleted is special because in modern environments we define it ourselves
 local SelectQuestLogEntry				= SelectQuestLogEntry
 -- SendQuestChoiceResponse														-- we rewrite this to our own function
@@ -553,6 +550,13 @@ if nil == Grail or Grail.versionNumber < Grail_File_Version then
 		GetMapNameByID = function(mapId)
 			local mapInfo = mapId and C_Map.GetMapInfo(mapId) or nil
 			return mapInfo and mapInfo.name or nil
+		end
+	end
+
+	if nil == CalendarGetDate then
+		CalendarGetDate = function()
+			local date = C_Calendar.GetDate();
+			return date.weekday, date.month, date.monthDay, date.year
 		end
 	end
 
@@ -1879,8 +1883,13 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				-- not call the other calendar functions beforehand, the call to
 				-- OpenCalendar() will do nothing useful.
 				local weekday, month, day, year = CalendarGetDate();
-				CalendarSetAbsMonth(month, year);
-				OpenCalendar()
+				if self.battleForAzeroth then
+					C_Calendar.SetAbsMonth(month, year)
+					C_Calendar.OpenCalendar()
+				else
+					CalendarSetAbsMonth(month, year);
+					OpenCalendar()
+				end
 				self:_AddWorldQuests()
 			end,
 
@@ -3638,6 +3647,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				soughtHolidayName = self.holidayMapping['f']
 			end
 			-- sometime between release 23478 and 23578 CalendarGetDayEvent was removed, replaced with C_Calendar.GetDayEvent which returns a table
+			local CalendarGetNumDayEvents = self.battleForAzeroth and C_Calendar.GetNumDayEvents or CalendarGetNumDayEvents
 			local numEvents = CalendarGetNumDayEvents(0, day)
 			local title, calHour, calMinute, calendarType, sequenceType, eventType, texture, modStatus, inviteStatus, invitedBy, difficulty, inviteType
 			for i = 1, numEvents do
