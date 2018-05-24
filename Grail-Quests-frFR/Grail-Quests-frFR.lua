@@ -24664,4 +24664,8 @@ G[49198]='Site d’invasion prioritaire : inquisiteur Méto'
 G[50316]='Perturbation détectée : Ulduar'
 end
 
+if release >= 26365 then
+G[48293]='Le sabbat ardent'
+end
+
 --	End of localized quest names

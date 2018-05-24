@@ -21510,4 +21510,8 @@ G[50305]='Stranieri in terra straniera'
 G[50313]='Stranieri in terra straniera'
 end
 
+if release >= 26365 then
+G[48293]='La congrega infuocata'
+end
+
 --	End of localized quest names
