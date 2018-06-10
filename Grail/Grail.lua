@@ -2844,7 +2844,9 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		--	Returns the mapID where the player currently is.
 		GetCurrentMapAreaID = function()
 			if Grail.battleForAzeroth then
-				return C_Map.GetBestMapForUnit('player')
+-- C_Map.GetBestMapForUnit will return nil if it can't find a map for that unit, MapUtil.GetDisplayableMapForPlayer will uses a fallback map if so
+--				return C_Map.GetBestMapForUnit('player')
+				return MapUtil.GetDisplayableMapForPlayer()
 			else
 				return GetCurrentMapAreaID()
 			end
@@ -2902,7 +2904,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				--	Attempt to get all the Continents by starting wherever you are and getting the Cosmic
 				--	map and then asking it for all the Continents that are children of it, hoping the API
 				--	will bypass the intervening World maps.
-				local currentMapId, TOP_MOST, ALL_DESCENDANTS = C_Map.GetBestMapForUnit('player'), true, true
+				local currentMapId, TOP_MOST, ALL_DESCENDANTS = Grail.GetCurrentMapAreaID(), true, true
 				local cosmicMapInfo = MapUtil.GetMapParentInfo(currentMapId or 946, Enum.UIMapType.Cosmic, TOP_MOST)
 				local continents = C_Map.GetMapChildrenInfo(cosmicMapInfo.mapID, Enum.UIMapType.Continent, ALL_DESCENDANTS)
 				self.continentMapIds = {}
@@ -6780,10 +6782,13 @@ end
 				end
 			end
 			if nil ~= t then
-				local locationStructure = self:_LocationStructure(locationString)
-				for _, t1 in pairs(t) do
-					if self:_LocationsCloseStructures(t1, locationStructure) then
-						retval = true
+				local locations = { strsplit(' ', locationString) }
+				for _, loc in pairs(locations) do
+					local locationStructure = self:_LocationStructure(loc)
+					for _, t1 in pairs(t) do
+						if self:_LocationsCloseStructures(t1, locationStructure) then
+							retval = true
+						end
 					end
 				end
 			end
@@ -6791,6 +6796,7 @@ end
 		end,
 
 		_LocationStructure = function(self, locationString)
+			locationString = strsplit(' ', locationString)	-- we are taking the first one only for the time being
 			local mapId, rest = strsplit(':', locationString)
 			local mapLevel = 0
 			local mapLevelString
@@ -9186,6 +9192,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[1195] = 51570,	-- Choosing Zuldazar from Zandalar Mission Board on ship in Boralus
 			[1196] = 51572,	-- Choosing Vol'dun from Zandalar Mission Board on ship in Boralus
 			[1197] = 51571,	-- Choosing Nazmir from Zandalar Mission Board on ship in Boralus
+			[1210] = 51802,	-- Choosing Stormsong Valley from Kul Tiras Mission Board on ship in Zuldazar
 			},
 
 		--	Internal Use.
@@ -9449,13 +9456,40 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			end
 		end,
 
+		-- Returns the map coordinates for the specified victim, defaulting to player
+		-- if nothing else provided.  The coordinates are structured as
+		-- 				mapId*:xx.xx,yy.yy
+		-- where * is either nothing or the dungeon level in [] before BfA.  In BfA
+		-- there will be multiple coordinates separated by a space if the current map
+		-- is within others more than one step from a continent map.
 		Coordinates = function(self, victim)
 			victim = victim or "player"
-			local x, y = self.GetPlayerMapPosition(victim)	-- cannot get target x,y since Blizzard disabled that and returns 0,0 all the time for it
-			if nil == x then x, y = 0, 0 end
-			local dungeonLevel = GetCurrentMapDungeonLevel and GetCurrentMapDungeonLevel() or 0
-			local dungeonIndicator = (dungeonLevel > 0) and "["..dungeonLevel.."]" or ""
-			return strformat("%d%s:%.2f,%.2f", Grail.GetCurrentMapAreaID(), dungeonIndicator, x*100, y*100)
+			local retval = ""
+			local spacer = ""
+			if self.battleForAzeroth then
+				local currentMapInfo = C_Map.GetMapInfo(Grail.GetCurrentMapAreaID())
+				while currentMapInfo do
+					local currentMapId = currentMapInfo.mapID
+					local results = C_Map.GetPlayerMapPosition(currentMapId, victim)
+					if results and results.x and results.y then
+						retval = retval .. spacer .. strformat("%d:%.2f,%.2f", currentMapId, results.x * 100 , results.y * 100)
+						spacer = " "
+						currentMapInfo = C_Map.GetMapInfo(currentMapInfo.parentMapID)
+						if nil ~= currentMapInfo and currentMapInfo.mapType == Enum.UIMapType.Continent then
+							currentMapInfo = nil
+						end
+					else
+						currentMapInfo = nil
+					end
+				end
+				return retval
+			else
+				local x, y = self.GetPlayerMapPosition(victim)	-- cannot get target x,y since Blizzard disabled that and returns 0,0 all the time for it
+				if nil == x then x, y = 0, 0 end
+				local dungeonLevel = GetCurrentMapDungeonLevel and GetCurrentMapDungeonLevel() or 0
+				local dungeonIndicator = (dungeonLevel > 0) and "["..dungeonLevel.."]" or ""
+				return strformat("%d%s:%.2f,%.2f", Grail.GetCurrentMapAreaID(), dungeonIndicator, x*100, y*100)
+			end
 		end,
 
 		---
