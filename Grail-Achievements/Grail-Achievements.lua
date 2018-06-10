@@ -7043,11 +7043,12 @@ Grail.extraAchievements['Horde'][mapZandalar] = { 512555, }
 Grail.loremasterAchievements['Alliance'][mapKulTiras] = { 512473, 512496, 512497, }
 Grail.loremasterAchievements['Horde'][mapKulTiras] = {  }
 Grail.extraAchievements['Alliance'][mapKulTiras] = { 512510, }
-Grail.extraAchievements['Horde'][mapKulTiras] = {  }
+Grail.extraAchievements['Horde'][mapKulTiras] = { 512509, }
 G[47188]={}	-- Deep in the Swamp (The Dark Heart of Nazmir)
 G[47189]={}	-- Come Sail Away () -- Alliance
 G[47229]={}	-- (A Bargain of Blood)
 G[47250]={}	-- A Pact with Death (The Dark Heart of Nazmir)
+G[47440]={511861}	-- Zanchuli Council (The Throne of Zuldazar)
 G[47528]={511861}	-- Web of Lies (The Throne of Zuldazar)
 G[47601]={}	-- Bring the Boom (The Dark Heart of Nazmir)
 G[47696]={}	-- A Friend of the Frogs (The Dark Heart of Nazmir)
@@ -7094,6 +7095,7 @@ G[51825]={512473}	-- Enemies Within (A Sound Plan)	-- Alliance
 G[51967]={512510}	-- Nazmir Foothold (Ready for War) -- Alliance
 G[51968]={512510}	-- Zuldazar Foothold (Ready for War) -- Alliance
 G[51969]={512510}	-- Vol'dun Foothold (Ready for War) -- Alliance
+G[51986]={512509}	-- Stormsong Valley Foothold (Ready for War)	-- Horde
 G[52131]={512555}	-- Welcome to Zandalar -- Horde
 end
 
@@ -7149,7 +7151,7 @@ debugStartTime = debugprofilestop()
 local achievementsDone = {}
 local achievementsToZoneMapping = { [506300] = 806, [506301] = 807, [506534] = 806, [506535] = 857, [506536] = 857, [506537] = 809, [506538] = 809, [506539] = 810, [506540] = 858, [508671] = 941, [508845] = 947, [508919] = 946, [508920] = 946, [508923] = 949, [508924] = 949, [508925] = 948, [508926] = 948, [508927] = 950, [508928] = 950, [509528] = 947, [509529] = 941, [509602] = 947, [509605] = 948, [509606] = 941, [509607] = 949, [509615] = 950, [510617] = 1033, [509618] = 19, [509674] = 946, [510698] = 1018, [510763] = 1015, [510059] = 1024, [510756] = 1033, [510790] = 1017, [511124] = 1033, }
 if Grail.battleForAzeroth then
-	achievementsToZoneMapping = { [506300] = 371, [506301] = 376, [506534] = 371, [506535] = 418, [506536] = 418, [506537] = 379, [506538] = 379, [506539] = 388, [506540] = 422, [508671] = 525, [508845] = 539, [508919] = 535, [508920] = 535, [508923] = 543, [508924] = 543, [508925] = 542, [508926] = 542, [508927] = 550, [508928] = 550, [509528] = 539, [509529] = 525, [509602] = 539, [509605] = 542, [509606] = 525, [509607] = 543, [509615] = 550, [510617] = 680, [509618] = 17, [509674] = 535, [510698] = 641, [510763] = 630, [510059] = 650, [510756] = 680, [510790] = 634, [511124] = 680, [511861] = 862, [512473] = 895, [512496] = 942, [512497] = 896, [512510] = 895, [512555] = 862, }
+	achievementsToZoneMapping = { [506300] = 371, [506301] = 376, [506534] = 371, [506535] = 418, [506536] = 418, [506537] = 379, [506538] = 379, [506539] = 388, [506540] = 422, [508671] = 525, [508845] = 539, [508919] = 535, [508920] = 535, [508923] = 543, [508924] = 543, [508925] = 542, [508926] = 542, [508927] = 550, [508928] = 550, [509528] = 539, [509529] = 525, [509602] = 539, [509605] = 542, [509606] = 525, [509607] = 543, [509615] = 550, [510617] = 680, [509618] = 17, [509674] = 535, [510698] = 641, [510763] = 630, [510059] = 650, [510756] = 680, [510790] = 634, [511124] = 680, [511861] = 862, [512473] = 895, [512496] = 942, [512497] = 896, [512509] = 862, [512510] = 895, [512555] = 862, }
 end
 
 local expansions = { mapPandaria }
