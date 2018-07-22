@@ -914,15 +914,13 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.blizzardVersionAsNumber = self:_MakeNumberFromVersion(self.blizzardVersion)
 					self.portal = GetCVar("portal")
 
+                    -- These values are no longer used, but kept for posterity.
 					self.existsPandaria = (self.blizzardRelease >= 15640)
 					self.existsWoD = (self.blizzardRelease >= 18505)
 					self.existsLegion = (self.blizzardRelease >= 21531 and self.blizzardVersionAsNumber >= 7000000)
 					self.exists72 = (self.blizzardRelease >= 23578)
 					self.exists73 = (self.blizzardRelease >= 24563 and self.blizzardVersionAsNumber >= 7003000)
 					self.battleForAzeroth = (self.blizzardRelease >= 26175 and self.blizzardVersionAsNumber >= 8000000)
-					--	The next two are only here in case an external addon is making use of this information already.
-					self.inWoD = self.existsWoD
-					self.inLegion = self.existsLegion
 
 					-- We have loaded GrailDatabase at this point, but we need to ensure the structure is set up for first-time players as we rely on at least an empty structure existing
 					GrailDatabasePlayer = GrailDatabasePlayer or {}
@@ -1161,12 +1159,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.npcStatusCache = { ["L"] = {}, ["P"] = {}, ["R"] = {}, ["I"] = {}, ["Q"] = {}, ["V"] = {}, ["A"] = {}, ["B"] = {}, ["D"] = {}, ["C"] = {}, ["E"] = {}, ["F"] = {}, ["S"] = {}, ["Y"] = {}, ["Z"] = {}, ["G"] = {}, ["H"] = {}, ["W"] = {}, ["X"] = {}, }
 					end
 
+-- TODO: Move this to the place where the rest of the classes are done
 					-- Deal with the Demon Hunter introduced in Legion
-					if self.existsLegion then
-						self.classMapping['E'] = 'DEMONHUNTER'
-						self.classToBitMapping['E'] = 0x10000000
-						self.classToMapAreaMapping['CE'] = 200005
-					end
+					self.classMapping['E'] = 'DEMONHUNTER'
+					self.classToBitMapping['E'] = 0x10000000
+					self.classToMapAreaMapping['CE'] = 200005
 
 					-- Create some convenience tables
 					self.raceNameToBitMapping = {}
@@ -1344,18 +1341,16 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end)
 					--	Add a command for MoP that makes comparison of completed quests a little easier.  Only for MoP since before that the server
 					--	needs to be queried and that means the return result will not happen before we compare.
-					if self.existsPandaria then
-						self:RegisterSlashOption("cb", "|cFF00FF00cb|r => compares the latest server status quest list to the backup copy, and makes the backup become current", function()
-							if not self.inCombat then
-								print("|cFFFFFF00Grail|r initiating server database query")
-								QueryQuestsCompleted()
-								self:_ProcessServerCompare()
-								self:_ProcessServerBackup()
-							else
-								print("|cFFFFFF00Grail cb|r not available in combat")
-							end
-						end)
-					end
+                    self:RegisterSlashOption("cb", "|cFF00FF00cb|r => compares the latest server status quest list to the backup copy, and makes the backup become current", function()
+						if not self.inCombat then
+							print("|cFFFFFF00Grail|r initiating server database query")
+							QueryQuestsCompleted()
+							self:_ProcessServerCompare()
+							self:_ProcessServerBackup()
+						else
+							print("|cFFFFFF00Grail cb|r not available in combat")
+						end
+					end)
 					self:RegisterSlashOption("clearstatuses", "|cFF00FF00clearstatuses|r => clears the status of all quests allowing them to be recomputed", function()
 						wipe(self.questStatuses)
 						self.questStatuses = {}
@@ -1394,17 +1389,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 					frame:RegisterEvent("QUEST_ACCEPTED")
 					frame:RegisterEvent("QUEST_COMPLETE")
-					if self.existsWoD then
-						frame:RegisterEvent("QUEST_DETAIL")
-					end
+					frame:RegisterEvent("QUEST_DETAIL")
 					frame:RegisterEvent("QUEST_LOG_UPDATE")	-- just to indicate we are now available to read the Blizzard quest log without issues
-					if not self.battleForAzeroth then
-						frame:RegisterEvent("QUEST_QUERY_COMPLETE")
-					end
-					if self.existsWoD then
-						frame:RegisterEvent("QUEST_REMOVED")
-						frame:RegisterEvent("QUEST_TURNED_IN")
-					end
+					frame:RegisterEvent("QUEST_REMOVED")
+					frame:RegisterEvent("QUEST_TURNED_IN")
 					frame:RegisterEvent("SKILL_LINES_CHANGED")
 					if frame.RegisterUnitEvent then
 						frame:RegisterUnitEvent("UNIT_AURA", "player")
@@ -1674,7 +1662,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					if isWeekly then baseValue = baseValue + 4 end
 					if suggestedGroup and suggestedGroup > 1 then baseValue = baseValue + 512 end
 					if isTask then baseValue = baseValue + 32768 end	-- bonus objective
-					if self.battleForAzeroth and C_CampaignInfo.IsCampaignQuest(theQuestId) then baseValue = baseValue + 4096 end -- war campaign (recorded as legendary)
+					if C_CampaignInfo.IsCampaignQuest(theQuestId) then baseValue = baseValue + 4096 end -- war campaign (recorded as legendary)
 					-- at the moment we ignore questTag since it is localized
 					-- With Legion there are issues because the level of the quests
 					-- match the level of the player.  So, we force the level to 0.
@@ -1886,13 +1874,8 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				-- not call the other calendar functions beforehand, the call to
 				-- OpenCalendar() will do nothing useful.
 				local weekday, month, day, year = CalendarGetDate();
-				if self.battleForAzeroth then
-					C_Calendar.SetAbsMonth(month, year)
-					C_Calendar.OpenCalendar()
-				else
-					CalendarSetAbsMonth(month, year);
-					OpenCalendar()
-				end
+				C_Calendar.SetAbsMonth(month, year)
+				C_Calendar.OpenCalendar()
 				self:_AddWorldQuests()
 			end,
 
@@ -1930,9 +1913,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					local i = 1
 					while (true) do
 						local name,_,_,_,_,_,_,_,_,boaSpellId,spellId = UnitAura(arg1, i)
-						if self.battleForAzeroth then
-							spellId = boaSpellId
-						end
+						spellId = boaSpellId
 						if name then
 							spellId = tonumber(spellId)
 							self:_MarkQuestInDatabase(spellId, GrailDatabasePlayer["buffsExperienced"])
@@ -2843,13 +2824,9 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		---
 		--	Returns the mapID where the player currently is.
 		GetCurrentMapAreaID = function()
-			if Grail.battleForAzeroth then
 -- C_Map.GetBestMapForUnit will return nil if it can't find a map for that unit, MapUtil.GetDisplayableMapForPlayer will uses a fallback map if so
 --				return C_Map.GetBestMapForUnit('player')
-				return MapUtil.GetDisplayableMapForPlayer()
-			else
-				return GetCurrentMapAreaID()
-			end
+			return MapUtil.GetDisplayableMapForPlayer()
 		end,
 
 		---
@@ -2858,29 +2835,21 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --	Prior to 26567 there was C_Map API to use, but now we have to ask the map itself, which only
 --	works if we have shown the map.
 --			return Grail.battleForAzeroth and C_Map.GetCurrentMapID() or Grail.GetCurrentMapAreaID()
-			return Grail.battleForAzeroth and WorldMapFrame:GetMapID() or Grail.GetCurrentMapAreaID()
+			return WorldMapFrame:GetMapID() or Grail.GetCurrentMapAreaID()
 		end,
 
 		---
 		--	BfA beta 26567 removes SetMapToCurrentZone
 		SetMapToCurrentZone = function()
-			if Grail.battleForAzeroth then
-				Grail.SetMapByID(Grail.GetCurrentMapAreaID())
-			else
-				SetMapToCurrentZone()
-			end
+			Grail.SetMapByID(Grail.GetCurrentMapAreaID())
 		end,
 
 		---
 		--	BfA beta 26567 removes SetMapByID
 		SetMapByID = function(mapId)
 			if nil ~= mapId then
-				if Grail.battleForAzeroth then
 --					C_Map.RequestPreloadMap(mapId)	-- does not actually change the map
-					OpenWorldMap(mapId)
-				else
-					SetMapByID(mapId)
-				end
+				OpenWorldMap(mapId)
 			end
 		end,
 
@@ -2899,118 +2868,34 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		end,
 
 		_LoadContinentData = function(self)
-			-- With 8.x the map API has been totally changed so we get our information using the new API
-			if self.battleForAzeroth then
-				--	Attempt to get all the Continents by starting wherever you are and getting the Cosmic
-				--	map and then asking it for all the Continents that are children of it, hoping the API
-				--	will bypass the intervening World maps.
-				local currentMapId, TOP_MOST, ALL_DESCENDANTS = Grail.GetCurrentMapAreaID(), true, true
-				local cosmicMapInfo = MapUtil.GetMapParentInfo(currentMapId or 946, Enum.UIMapType.Cosmic, TOP_MOST)
-				local continents = C_Map.GetMapChildrenInfo(cosmicMapInfo.mapID, Enum.UIMapType.Continent, ALL_DESCENDANTS)
-				self.continentMapIds = {}
-				self.mapToContinentMapping = {}		-- key is mapId, value is continent mapId
-				for i, continentInfo in ipairs(continents) do
-					local L = { name = continentInfo.name, zones = {}, mapID = continentInfo.mapID, dungeons = {} }
-					local zones = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Zone, ALL_DESCENDANTS)
-					for j, zoneInfo in ipairs(zones) do
-						self:_AddMapId(L.zones, zoneInfo.name, zoneInfo.mapID, L.mapID)
-					end
-					local dungeons = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Dungeon, ALL_DESCENDANTS)
-					for j, dungeonInfo in ipairs(dungeons) do
-						self:_AddMapId(L.dungeons, dungeonInfo.name, dungeonInfo.mapID, L.mapID)
-					end
+			--	Attempt to get all the Continents by starting wherever you are and getting the Cosmic
+			--	map and then asking it for all the Continents that are children of it, hoping the API
+			--	will bypass the intervening World maps.
+			local currentMapId, TOP_MOST, ALL_DESCENDANTS = Grail.GetCurrentMapAreaID(), true, true
+			local cosmicMapInfo = MapUtil.GetMapParentInfo(currentMapId or 946, Enum.UIMapType.Cosmic, TOP_MOST)
+			local continents = C_Map.GetMapChildrenInfo(cosmicMapInfo.mapID, Enum.UIMapType.Continent, ALL_DESCENDANTS)
+			self.continentMapIds = {}
+			self.mapToContinentMapping = {}		-- key is mapId, value is continent mapId
+			for i, continentInfo in ipairs(continents) do
+				local L = { name = continentInfo.name, zones = {}, mapID = continentInfo.mapID, dungeons = {} }
+				local zones = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Zone, ALL_DESCENDANTS)
+				for j, zoneInfo in ipairs(zones) do
+					self:_AddMapId(L.zones, zoneInfo.name, zoneInfo.mapID, L.mapID)
+				end
+				local dungeons = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Dungeon, ALL_DESCENDANTS)
+				for j, dungeonInfo in ipairs(dungeons) do
+					self:_AddMapId(L.dungeons, dungeonInfo.name, dungeonInfo.mapID, L.mapID)
+				end
 -- TODO: Do we need to handle Micro map types?
-					-- Stormsong Valley is an Orphan and not a Zone in beta at least
-					local orphans = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Orphan, ALL_DESCENDANTS)
-					for j, orphanInfo in ipairs(orphans) do
-						self:_AddMapId(L.zones, orphanInfo.name, orphanInfo.mapID, L.mapID)
-					end
-					self.continents[L.mapID] = L
-					tinsert(self.continentMapIds, L.mapID)
+				-- Stormsong Valley is an Orphan and not a Zone in beta at least
+				local orphans = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Orphan, ALL_DESCENDANTS)
+				for j, orphanInfo in ipairs(orphans) do
+					self:_AddMapId(L.zones, orphanInfo.name, orphanInfo.mapID, L.mapID)
 				end
-				table.sort(self.continentMapIds)
-			else
-				-- Load Continent and Zone information
-				-- There is an assumption that GetMapContinents() will always return the continents in the same order (Kalimdor,
-				-- Eastern Kingdoms, etc.) no matter what the locale is.  The old code would be able to identify the continents
-				-- based on the number of zones in each, but with the beta of MoP we now have two continents with ten zones each.
-				-- Therefore, if we still do not want to maintain the localized list of all the zones ourselves we assume the
-				-- API will behave as we expect.
-				-- The continents structure that is generated after all is said and done is:
-				-- An array of 5 (or 6 in MoP) tables whose indexes are 1 through 5 (or 6) representing each continent.
-				-- Each table will have members:
-				--		name	(the localized name of the continent)
-				--		zones	(a table of all the zones in the continent)
-				--		dungeons	(a table consisting of the mapIDs of all the dungeons considered to be in the continent)
-				-- The zones table will contain a table representing each zone in the continent with members:
-				--		name	(the localized name of the zone)
-				--		mapID	(the mapID of the zone)
-				local continentNames = { GetMapContinents() }
-				local L
-				local mapId
-				self.mapToContinentMapping = {}		-- key is mapId, value is continent mapId
-				local nameToUse
-				local zoneNames
-				--	In WoD GetMapContinents() and GetMapZones() now return the map area IDs interspersed with the names,
-				--	while before WoD only the names were returned.
-				local offset = self.existsWoD and 1 or 0
-				local continentIndex
-				local mapIndex
-				self.continentMapIds = { 13, 14, 466, 485, 751 } -- 13 Kalimdor, 14 Eastern Kingdoms, 466 Outland, 485 Northrend, 751 The Maelstrom
-				if self.existsPandaria then tinsert(self.continentMapIds, 862) end	-- 862 Pandaria
-				if self.existsWoD then tinsert(self.continentMapIds, 962) end	-- 962 Draenor
-				if self.existsLegion then tinsert(self.continentMapIds, 1007) end	-- 1007 Broken Isle
-				if self.exists73 then tinsert(self.continentMapIds, 1184) end	-- 1184 Argus
-				for i = 1, #(continentNames), (1 + offset) do
-					mapId = self.existsWoD and tonumber(continentNames[i]) or self.continentMapIds[i]
-					L = { name = continentNames[(i + offset)], zones = {}, mapID = mapId, dungeons = {} }
-					continentIndex = (i + offset) / (1 + offset)
-					zoneNames = { GetMapZones(continentIndex) }
-					for j = 1, #(zoneNames), (1 + offset) do
-						mapIndex = (j + offset) / (1 + offset)
-						nameToUse = zoneNames[j + offset]
-						if self.existsWoD then
-							mapId = tonumber(zoneNames[j])
-							local subzoneNames = { GetMapSubzones(mapId) }
-							for k = 1, #(subzoneNames), 2 do
-								self:_AddMapId(L.zones, subzoneNames[k + 1], tonumber(subzoneNames[k]), L.mapID)
-							end
-						else
-							SetMapZoom(continentIndex, mapIndex)
-							mapId = Grail.GetCurrentMapAreaID()
-						end
-						self:_AddMapId(L.zones, nameToUse, mapId, L.mapID)
-					end
-					self.continents[L.mapID] = L
-				end
-
-				--	Add in the dungeons
-				if self.continents[13] then self.continents[13].d = { 761, 749, 688, 760, 686, 750, 718, 733, 680, 699, 766, 717, 521, 759, 769, 747, 734, }	 end
-				if self.continents[14] then self.continents[14].d = { 764, 690, 691, 762, 692, 687, 756, 721, 704, 765, 898, 755, 799, 781, 798, 753, 757, 767, 793, } end
-				if self.continents[466] then self.continents[466].d = { 797, 710, 727, 728, 724, 722, 732, 779, 731, 726, 725, 729, 730, 723, 796, 782, } end
-				if self.continents[485] then self.continents[485].d = { 523, 524, 535, 534, 528, 526, 520, 529, 533, 530, 522, 601, 604, 602, 603, 609, 536 } end
-				if self.continents[751] then self.continents[751].d = { 768, } end
-				if self.continents[862] then self.continents[862].d = { 876, 877, 885, 875, 867, } end	-- self.existsPandaria
-				if self.continents[962] then self.continents[962].d = {  } end	-- self.existsWoD
-				if self.continents[1007] then self.continents[1007].d = { 1041, 1042, 1045, 1046, 1065, 1066, 1067, 1071, 1079, 1087 } end	-- self.existsLegion
-				if self.continents[1184] then self.continents[1184].d = {  } end	-- self.exists73
-
-				local mapName
-				for mapId, continentTable in pairs(self.continents) do
-					for _, v in pairs(continentTable.d) do
-						if nil == self.mapToContinentMapping[v] then
-							mapName = self:_GetMapNameByID(v)
-							if nil ~= mapName then
-								self:_AddMapId(continentTable.dungeons, mapName, v, mapId)
-							end
-						end
-					end
-					continentTable.d = nil
-				end
-
-				-- Now hardcode zones that are really wrong
-				self.mapToContinentMapping[862] = 862
+				self.continents[L.mapID] = L
+				tinsert(self.continentMapIds, L.mapID)
 			end
+			table.sort(self.continentMapIds)
 		end,
 
 		_AddMapId = function(self, zoneTable, zoneName, mapId, continentMapId)
@@ -3660,19 +3545,15 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			local numEvents = CalendarGetNumDayEvents(0, day)
 			local title, calHour, calMinute, calendarType, sequenceType, eventType, texture, modStatus, inviteStatus, invitedBy, difficulty, inviteType
 			for i = 1, numEvents do
-				if self.exists72 then
-					local event = C_Calendar.GetDayEvent(0, day, i)
-					calendarType = event.calendarType
-					eventType = event.eventType
-					title = event.title
-					texture = event.texture
-					sequenceType = event.sequenceType
-					local date = (event.sequenceType == "END") and event.endTime or event.startTime
-					calHour = date.hour
-					calMinute = date.minute
-				else
-					title, calHour, calMinute, calendarType, sequenceType, eventType, texture, modStatus, inviteStatus, invitedBy, difficulty, inviteType = CalendarGetDayEvent(0, day, i)
-				end
+                local event = C_Calendar.GetDayEvent(0, day, i)
+				calendarType = event.calendarType
+				eventType = event.eventType
+				title = event.title
+				texture = event.texture
+				sequenceType = event.sequenceType
+				local date = (event.sequenceType == "END") and event.endTime or event.startTime
+				calHour = date.hour
+				calMinute = date.minute
 				--	hour and minute indicate time when event starts for START
 				--	or ONGOING, and ends for END
 				--	sequenceType is START, ONGOING, END
@@ -4228,9 +4109,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						end
 					end
 				end
-				if self.existsLegion then
-					GrailDatabase.NewNPCs = nil
-				end
+				GrailDatabase.NewNPCs = nil
 			end
 
 			-- BadNPCData is processed like BadQuestData (which follows)
@@ -4281,9 +4160,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					end
 				end
 				GrailDatabase["BadNPCData"] = newBadNPCData
-				if self.existsLegion then
-					GrailDatabase.BadNPCData = nil
-				end
+				GrailDatabase.BadNPCData = nil
 			end
 
 			-- The BadQuestData will be analyzed against the current database and things that have been fixed
@@ -5893,23 +5770,18 @@ end
 				local gid = UnitGUID(used)
 				if nil ~= gid then
 					local targetType = nil
-					if not self.existsWoD then
-						targetType = tonumber(gid:sub(5,5), 16)
-						npcId = tonumber(gid:sub(6,10), 16)
-					else
-						--	Blizzard has changed the separator from : to - but we will try both if needed
-						local npcBits = { strsplit("-", gid) }
-						if #npcBits == 1 then
-							npcBits = { strsplit(":", gid) }
-						end
-						if #npcBits == 3 and npcBits[1] == "Player" then
-							npcId = Grail.GetCurrentMapAreaID() * -1
-							targetName = "Player: " .. targetName
-						end
-						if #npcBits > 5 then
-							npcId = npcBits[6]
-							targetType = (npcBits[1] == "GameObject") and 1 or nil
-						end
+					--	Blizzard has changed the separator from : to - but we will try both if needed
+					local npcBits = { strsplit("-", gid) }
+					if #npcBits == 1 then
+						npcBits = { strsplit(":", gid) }
+					end
+					if #npcBits == 3 and npcBits[1] == "Player" then
+						npcId = Grail.GetCurrentMapAreaID() * -1
+						targetName = "Player: " .. targetName
+					end
+					if #npcBits > 5 then
+						npcId = npcBits[6]
+						targetType = (npcBits[1] == "GameObject") and 1 or nil
 					end
 					if 1 == targetType then npcId = npcId + 1000000 end		-- our representation of a world object
 				end
@@ -5951,15 +5823,11 @@ end
 			local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID
 			local isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling
 			local isWeekly = nil
-			if not self.existsWoD then
-				questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID = GetQuestLogTitle(questIndex)
-			else
-				local frequency
-				questTitle, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questId, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling = GetQuestLogTitle(questIndex)
-				questTag = nil
-				isDaily = (LE_QUEST_FREQUENCY_DAILY == frequency)
-				isWeekly = (LE_QUEST_FREQUENCY_WEEKLY == frequency)
-			end
+            local frequency
+			questTitle, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questId, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling = GetQuestLogTitle(questIndex)
+			questTag = nil
+			isDaily = (LE_QUEST_FREQUENCY_DAILY == frequency)
+			isWeekly = (LE_QUEST_FREQUENCY_WEEKLY == frequency)
 			return questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID, isWeekly, isTask, isBounty, isStory, isHidden, isScaling
 		end,
 
@@ -7414,22 +7282,14 @@ end
 				if nil == retval then
 					local hyperlinkFormat
 					if indexToUse > 100000000 then
---						if not self.existsWoD then
-							hyperlinkFormat = strformat("item:%d:0:0:0:0:0:0:0", indexToUse - 100000000)
---						else
---							hyperlinkFormat = 'unit:GameObject-0-0-0-0-' .. indexToUse - 100000000 .. '-0'	-- did not work, but old version does
---						end
+						hyperlinkFormat = strformat("item:%d:0:0:0:0:0:0:0", indexToUse - 100000000)
 					elseif indexToUse > 1000000 then
 						hyperlinkFormat = strformat("unit:0xF51%05X00000000", indexToUse - 1000000)	-- does not work
 --						hyperlinkFormat = 'item:GameObject-0-0-0-0-' .. indexToUse - 1000000 .. '-0'	-- did not work
 --						hyperlinkFormat = 'unit:GameObject-0-0-0-0-' .. indexToUse - 1000000 .. '-0'	-- did not work
 --						hyperlinkFormat = 'unit:Creature-0-0-0-0-' .. indexToUse - 1000000 .. '-0'	-- did not work
 					else
-						if not self.existsWoD then
-							hyperlinkFormat = strformat("unit:0xF53%05X00000000", indexToUse)
-						else
-							hyperlinkFormat = 'unit:Creature-0-0-0-0-' .. indexToUse .. '-0'
-						end
+						hyperlinkFormat = 'unit:Creature-0-0-0-0-' .. indexToUse .. '-0'
 					end
 					local frame = self.tooltipNPC
 					if not frame:IsOwned(UIParent) then frame:SetOwner(UIParent, "ANCHOR_NONE") end
@@ -7572,11 +7432,7 @@ end
 					currentPhase = C_MapBar.GetPhaseIndex() + 1	-- it starts with 0 for phase 1 (just like C)
 				end
 			elseif (not self.battleForAzeroth and (971 == phaseCode or 976 == phaseCode)) or (self.battleForAzeroth and (581 == phaseCode or 587 == phaseCode)) then
-				if self.existsLegion then
-					currentPhase = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0	-- the API returns nil when there is no garrison
-				else
-					currentPhase = C_Garrison.GetGarrisonInfo() or 0	-- the API returns nil when there is no garrison
-				end
+				currentPhase = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0	-- the API returns nil when there is no garrison
 			end
 			if nil ~= currentPhase then
 				if ('=' == typeOfMatch and currentPhase == phaseNumber) or
@@ -8934,14 +8790,12 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 				local name, description, standingId, barMin, barMax, barValue = GetFactionInfoByID(factionId)
 				if name then
 					actualEarnedValue = barValue + 42000	-- the reputationValue is stored with 42000 added to it so we do not have to deal with negative numbers, so we normalize here
-					if self.exists72 then
-						if C_Reputation.IsFactionParagon(factionId) then
-							local paraValue, paraThreshold, paraQuestId, paraRewardPending = C_Reputation.GetFactionParagonInfo(factionId)
-							if paraValue and paraThreshold then
-								actualEarnedValue = actualEarnedValue + (paraValue % paraThreshold)
-								if paraRewardPending then
-									actualEarnedValue = actualEarnedValue + paraThreshold
-								end
+                    if C_Reputation.IsFactionParagon(factionId) then
+						local paraValue, paraThreshold, paraQuestId, paraRewardPending = C_Reputation.GetFactionParagonInfo(factionId)
+						if paraValue and paraThreshold then
+							actualEarnedValue = actualEarnedValue + (paraValue % paraThreshold)
+							if paraRewardPending then
+								actualEarnedValue = actualEarnedValue + paraThreshold
 							end
 						end
 					end
