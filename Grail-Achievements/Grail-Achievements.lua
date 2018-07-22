@@ -6683,7 +6683,6 @@ G[32052]={507601}
 local _, release = GetBuildInfo()
 release = tonumber(release)
 
-if release >= 16139 then
 Grail.extraAchievements['Alliance'][mapPandaria] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, 507928, }
 Grail.extraAchievements['Horde'][mapPandaria] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, 507929, }
 
@@ -6716,9 +6715,7 @@ G[32412]={507929}	-- needed for The Purge of Dalaran part
 G[32423]={507928}	-- needed for The Purge of Dalaran part
 G[32426]={507928}	-- needed for The Man With a Thousand Faces part
 G[32455]={507928}	-- needed for 
-end
 
-if release >= 16486 then
 Grail.extraAchievements['Alliance'][mapPandaria] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, 507928, 507533, 507534, 507535, 507536, 508099, }
 Grail.extraAchievements['Horde'][mapPandaria] = { 507296, 507297, 507312, 507314, 507315, 507310, 507612, 507929, 507533, 508008, 507535, 507536, 508099, }
 Grail.extraAchievements['Alliance'][mapEasternKingdoms] = { 500940, 505318, 505320, 504960, 505452, 508306, }
@@ -6754,9 +6751,7 @@ G[32816]={508307,508306}	-- needed for The Path of the Last Emperor of Darkspear
 G[32861]={507536}
 G[32862]={508307}	-- needed for Battlefield: Barrens (Weekly) of Darkspear Revolutionary
 G[32872]={508306}	-- needed for Battlefield: Barrens (Weekly) of Hordebreaker
-end
 
-if release >= 17359 then
 Grail.extraAchievements['Alliance'][mapPandaria] = { 507296, 507297, 507312, 507314, 507310, 507612, 507928, 507533, 507534, 507535, 507536, 508099, 508726, 508727, 508729, 508730, }
 Grail.extraAchievements['Horde'][mapPandaria] = { 507296, 507297, 507312, 507314, 507310, 507612, 507929, 507533, 508008, 507535, 507536, 508099, 508726, 508727, 508729, 508730, }
 Grail.extraAchievements['Alliance'][mapEasternKingdoms] = { 500940, 505318, 505320, 504960, 505452, }
@@ -6781,9 +6776,7 @@ G[33210]={508729}	-- Blazing
 -- 8729 requires 17 of the Moss-Covered chests, but there are many more than that on the island.  So basically it would be really great if we could transform
 -- the way prerequisites work to have the same P: concepts that quests use.  This would allow us to specify 17 of a group that contains all the Moss-Covered
 -- chests.  However, it would be interesting to present the data in something like Wholly.
-end
 
-if release >= 18645 then
 Grail.loremasterAchievements['Alliance'][mapDraenor] = { 508845, 508920, 508923, 508925, 508927, 509528, 509618, }
 Grail.loremasterAchievements['Horde'][mapDraenor] = { 508671, 508919, 508924, 508926, 508928, 509529, 509618, }
 Grail.extraAchievements['Alliance'][mapDraenor] = { 509602, 509605, 509607, 509615, 509674, 509825, 510067, 510068, }
@@ -6929,9 +6922,7 @@ G[38574]={510074}	-- All Hands on Deck (In Pursuit of Gul'dan)
 G[38585]={510068}	-- Throne of Kil'jaeden (Draenor's Last Stand)
 G[38586]={510075}	-- Throne of Kil'jaeden (Draenor's Last Stand)
 G[39394]={510067}	-- The Cipher of Damnation (In Pursuit of Gul'dan)
-end
 
-if Grail.inLegion then
 Grail.loremasterAchievements['Alliance'][mapBrokenIsles] = { 511124, 510698, 510763, 510059, 510790, }
 Grail.loremasterAchievements['Horde'][mapBrokenIsles] = { 511124, 510698, 510763, 510059, 510790, }
 Grail.extraAchievements['Alliance'][mapBrokenIsles] = { 510617, 510756, 511340, 511544, 511546, }
@@ -7019,9 +7010,7 @@ G[46832]={511546}	-- Aalgen Point (Breaching the Tomb)
 G[46845]={511546}	-- Vengeance Point (Breaching the Tomb)
 G[47137]={511546}	-- Champions of Legionfall (Breaching the Tomb)
 G[47139]={511546}	-- Mark of the Sentinax (Breaching the Tomb)
-end
 
-if Grail.exists73 then
 Grail.loremasterAchievements['Alliance'][mapArgus] = {  }
 Grail.loremasterAchievements['Horde'][mapArgus] = {  }
 Grail.extraAchievements['Alliance'][mapArgus] = { 512066, 512073, }
@@ -7033,7 +7022,6 @@ G[47994]={512073}	-- Lightforged Warframe (Locked and Loaded)
 G[48107]={512066,512073}	-- Dark Awakenings (You Are Now Prepared!), Shroud of Arcane Echoes (Locked and Loaded)
 G[47220]={512066}	-- War of Light and Shadow (You Are Now Prepared!)
 -- G[49224]={}	-- needed for achievement Now You're Cooking With Netherlight
-end
 
 if Grail.battleForAzeroth then
 Grail.loremasterAchievements['Alliance'][mapZandalar] = {  }
@@ -7154,16 +7142,7 @@ if Grail.battleForAzeroth then
 	achievementsToZoneMapping = { [506300] = 371, [506301] = 376, [506534] = 371, [506535] = 418, [506536] = 418, [506537] = 379, [506538] = 379, [506539] = 388, [506540] = 422, [508671] = 525, [508845] = 539, [508919] = 535, [508920] = 535, [508923] = 543, [508924] = 543, [508925] = 542, [508926] = 542, [508927] = 550, [508928] = 550, [509528] = 539, [509529] = 525, [509602] = 539, [509605] = 542, [509606] = 525, [509607] = 543, [509615] = 550, [510617] = 680, [509618] = 17, [509674] = 535, [510698] = 641, [510763] = 630, [510059] = 650, [510756] = 680, [510790] = 634, [511124] = 680, [511861] = 862, [512473] = 895, [512496] = 942, [512497] = 896, [512509] = 862, [512510] = 895, [512555] = 862, }
 end
 
-local expansions = { mapPandaria }
-if release >= 18505 then
-	tinsert(expansions, mapDraenor)
-end
-if Grail.inLegion then
-	tinsert(expansions, mapBrokenIsles)
-end
-if Grail.exists73 then
-	tinsert(expansions, mapArgus)
-end
+local expansions = { mapPandaria, mapDraenor, mapBrokenIsles, mapArgus, }
 for _, faction in pairs(supportedFactions) do
 	for _, expansion in pairs(expansions) do
 		for _, achievement in pairs(Grail.loremasterAchievements[faction][expansion]) do
