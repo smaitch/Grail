@@ -24693,4 +24693,29 @@ G[47068]='Rare Elite 25 : Oeil de Gurgh'
 G[48293]='Le sabbat ardent'
 end
 
+if release >= 27165 then
+G[52058]="Une paix de courte durée"
+G[52060]="Le soulèvement de la Horde"
+G[52062]="Hostilités à Orneval"
+G[53616]="Les lames des Réprouvés"
+G[52072]="La lumière d’Élune"
+G[52116]="Une douce lueur"
+G[53617]="Calmer les ardeurs"
+G[52234]="Cachés dans les frondaisons"
+G[52240]="Panique dans le bosquet"
+G[53551]="Passer les elfes à la machine"
+G[52245]="Furbolgs enragés"
+G[52242]="L’éveil d’une nouvelle force"
+G[53621]="Accès interdit à la Horde"
+G[53619]="La course à l’azérite"
+G[52256]="Le retour de Malfurion"
+G[52257]="Sortir du bois"
+G[52197]="Une longue route"
+G[52279]="La menace se précise"
+G[52504]="Une vraie boucherie"
+G[52307]="Assistance spirituelle"
+G[52897]="Sur la route"
+G[52207]="Mystérieuse azérite"
+end
+
 --	End of localized quest names
