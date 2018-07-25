@@ -1602,9 +1602,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				-- It turns out that GetCurrentMapAreaID() and GetCurrentMapDungeonLevel() are not working properly unless the map system is accessed.
 				-- This would manifest itself when the UI is reloaded, and then the map location would be lost.  By forcing the map to the current zone
 				-- the problem goes away.
-				if not self.battleForAzeroth then
-					self.SetMapToCurrentZone()
-				end
+				self.SetMapToCurrentZone(true)
 				frame:RegisterEvent("ARTIFACT_XP_UPDATE")
 			end,
 
@@ -2840,16 +2838,19 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 		---
 		--	BfA beta 26567 removes SetMapToCurrentZone
-		SetMapToCurrentZone = function()
-			Grail.SetMapByID(Grail.GetCurrentMapAreaID())
+		SetMapToCurrentZone = function(shouldHide)
+			Grail.SetMapByID(Grail.GetCurrentMapAreaID(), shouldHide)
 		end,
 
 		---
 		--	BfA beta 26567 removes SetMapByID
-		SetMapByID = function(mapId)
+		SetMapByID = function(mapId, shouldHide)
 			if nil ~= mapId then
 --					C_Map.RequestPreloadMap(mapId)	-- does not actually change the map
 				OpenWorldMap(mapId)
+				if shouldHide then
+					WorldMapFrameCloseButton:Click()
+				end
 			end
 		end,
 
@@ -3022,25 +3023,15 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 		--	This adds to our internal data structure the world quests found available
 		_AddWorldQuests = function(self)
-			local framelist={},currentDisplayedMap
-			if not self.battleForAzeroth then
-				framelist={GetFramesRegisteredForEvent("WORLD_MAP_UPDATE")}
-				for _,frame in ipairs(framelist) do frame:UnregisterEvent("WORLD_MAP_UPDATE") end
-				currentDisplayedMap = Grail.GetCurrentDisplayedMapAreaID()
-			end
+			local currentDisplayedMap = Grail.GetCurrentDisplayedMapAreaID()
+			local worldMapIsShowing = WorldMapFrame:IsShown()
 
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
-			local mapIdsForWorldQuests = { 1014, 1015, 1017, 1018, 1021, 1024, 1033, 1096, 1135, 1170, 1171, }
-			if self.battleForAzeroth then
-				mapIdsForWorldQuests = { 625, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885,
-										862, 863, 864, 895, 896, 942, }
-			end
+			local mapIdsForWorldQuests = { 62, 625, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, }
 			for _, mapId in pairs(mapIdsForWorldQuests) do
-				if not self.battleForAzeroth then
-					Grail.SetMapByID(mapId)
-				end
+				Grail.SetMapByID(mapId)
 				local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
 				if nil ~= tasks and 0 < #tasks then
 					for k,v in ipairs(tasks) do
@@ -3114,10 +3105,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					end
 				end
 			end
-			if not self.battleForAzeroth then
-				Grail.SetMapByID(currentDisplayedMap)
-		        for _,frame in ipairs(framelist) do frame:RegisterEvent("WORLD_MAP_UPDATE") end
-			end
+			Grail.SetMapByID(currentDisplayedMap, not worldMapIsShowing)
 			C_Timer.After(2, function() Grail:_AddWorldQuestsUpdateTimes() end)
 		end,
 
@@ -5802,19 +5790,27 @@ end
 			return retval
 		end,
 
+		-- Code derived from elcius post in http://www.wowinterface.com/forums/showthread.php?t=56290
+		GetPlayerMapPositionMapRects = {},
+		GetPlayerMapPositionTempVec2D = CreateVector2D(0,0),
 		GetPlayerMapPosition = function(unitName)
-			if Grail.battleForAzeroth then
-				if nil ~= C_Map.GetPlayerMapPosition then
-					local results = C_Map.GetPlayerMapPosition(C_Map.GetBestMapForUnit(unitName), unitName)
-					return results.x, results.y
---				elseif _G["LibStub"] and nil ~= LibStub("HereBeDragons-2.0") then
---					return LibStub("HereBeDragons-2.0"):GetPlayerZonePosition()
-				else
-					return UnitPosition(unitName)
-				end
-			else
-				return GetPlayerMapPosition(unitName)
+			local MapID = C_Map.GetBestMapForUnit(unitName)
+			local R,P,_ = Grail.GetPlayerMapPositionMapRects[MapID], Grail.GetPlayerMapPositionTempVec2D
+			if not R then
+				R = {}
+				_, R[1] = C_Map.GetWorldPosFromMapPos(MapID, CreateVector2D(0,0))
+				_, R[2] = C_Map.GetWorldPosFromMapPos(MapID, CreateVector2D(1,1))
+				R[2]:Subtract(R[1])
+				Grail.GetPlayerMapPositionMapRects[MapID] = R
 			end
+			P.x, P.y = UnitPosition(unitName)
+			P:Subtract(R[1])
+			return (1/R[2].y)*P.y, (1/R[2].x)*P.x
+--	It turns out that using this code results in a memory increase because of the table returned
+--	which means we cannot really use this to update a position of the player every second.  This
+--	is why the code from elcius above is used instead, as there is really no memory increase.
+--			local results = C_Map.GetPlayerMapPosition(C_Map.GetBestMapForUnit(unitName), unitName)
+--			return results.x, results.y
 		end,
 
 		--	This is used to mask the real Blizzard API since it changes in WoD and I would prefer to have only
