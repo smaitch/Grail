@@ -24665,7 +24665,58 @@ G[50316]='Perturbation détectée : Ulduar'
 end
 
 if release >= 26365 then
+G[46090]='Rare Elite 01 : Malgrazoth'
+G[46091]='Rare Elite 02 : Salethan le marcheur des couvées'
+G[46092]='Rare Elite 03 : Malorus le Gardien d’âmes'
+G[46093]='Rare Elite 04 : Braise-Feu'
+G[46094]='Rare Elite 05 : Maître des potions Bloup'
+G[46095]='Rare Elite 06 : Démon de braise gangregueule'
+G[46096]='Rare Elite 07 : Inquisiteur Pestefroid'
+G[46097]='Rare Elite 08 : Porte-destin Zar’thoz'
+G[46098]='Rare Elite 09 : Annihilateur lame-d’effroi'
+G[46099]='Rare Elite 10 : Gangréneur Xar’thok'
+G[46100]='Rare Elite 11 : Xorogun le Sculpteflamme'
+G[46101]='Rare Elite 12 : Mâche-Os le Pétrifiant'
+G[46102]='Rare Elite 13 : Gangrogène Zelthae'
+G[46202]='Rare Elite 14 : Oeil-Effroi'
+G[46304]='Rare Elite 15 : Seigneur Hel’nurath'
+G[46313]='Rare Elite 16 : Mère des diablotins Bruva'
+G[46951]='Rare Elite 17 : Flllurlokkr'
+G[46953]='Rare Elite 18 : Aqueux'
+G[46965]='Rare Elite 19 : Mère des couvées Nix'
+G[46995]='Rare Elite 20 : Gros-Sir'
+G[47001]='Rare Elite 21 : Frère Badatin'
+G[47026]='Rare Elite 22 : Dame Eldrathe'
+G[47028]='Rare Elite 23 : Aube sombre'
+G[47036]='Rare Elite 24 : Duc Sithizi'
+G[47068]='Rare Elite 25 : Oeil de Gurgh'
 G[48293]='Le sabbat ardent'
+end
+
+if release >= 27165 then
+G[52058]="Une paix de courte durée"
+G[52060]="Le soulèvement de la Horde"
+G[52062]="Hostilités à Orneval"
+G[53616]="Les lames des Réprouvés"
+G[52072]="La lumière d’Élune"
+G[52116]="Une douce lueur"
+G[53617]="Calmer les ardeurs"
+G[52234]="Cachés dans les frondaisons"
+G[52240]="Panique dans le bosquet"
+G[53551]="Passer les elfes à la machine"
+G[52245]="Furbolgs enragés"
+G[52242]="L’éveil d’une nouvelle force"
+G[53621]="Accès interdit à la Horde"
+G[53619]="La course à l’azérite"
+G[52256]="Le retour de Malfurion"
+G[52257]="Sortir du bois"
+G[52197]="Une longue route"
+G[52279]="La menace se précise"
+G[52504]="Une vraie boucherie"
+G[52207]="Mystérieuse azérite"
+G[52307]="Assistance spirituelle"
+G[52895]="Arboria"
+G[52897]="Sur la route"
 end
 
 --	End of localized quest names
