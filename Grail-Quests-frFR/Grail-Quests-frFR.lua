@@ -24713,9 +24713,10 @@ G[52257]="Sortir du bois"
 G[52197]="Une longue route"
 G[52279]="La menace se précise"
 G[52504]="Une vraie boucherie"
-G[52307]="Assistance spirituelle"
-G[52897]="Sur la route"
 G[52207]="Mystérieuse azérite"
+G[52307]="Assistance spirituelle"
+G[52895]="Arboria"
+G[52897]="Sur la route"
 end
 
 --	End of localized quest names
