@@ -28712,4 +28712,95 @@ G[53465]='Tea Party'
 G[53476]='The Great Sea Scrolls'
 end
 
+if release >= 27144 then
+G[52060]='The Horde Uprising'
+G[52234]='Hidden Amongst the Leaves'
+G[52240]='Garden Grove'
+G[52242]='The Wake of Something New'
+G[52256]='Malfurion Returns'
+G[52257]='"Rock" The World'
+G[52279]='A Looming Threat'
+G[53551]='Elves in the Machine'
+G[53616]='Knives of the Forsaken'
+G[53617]='Mercy for the Mad'
+G[53619]='Azerite Denial'
+G[53621]='No Horde Allowed'
+end
+
+if release >= 27165 then
+G[52893]='One Vision'
+G[52897]='We Will "Rock" You'
+G[53010]='No Turning Back'
+end
+
+if release >= 27178 then
+G[9156]='WANTED: Knucklerot and Luzran'
+G[9935]='WANTED: Giselda the Crone'
+G[9936]='WANTED: Giselda the Crone'
+G[9937]='WANTED: Durn the Hungerer'
+G[9938]='WANTED: Durn the Hungerer'
+G[9939]='WANTED: Zorbo the Advisor'
+G[9940]='WANTED: Zorbo the Advisor'
+G[10033]='WANTED: Bonelashers Dead!'
+G[10116]='WANTED: Chieftain Mummaki'
+G[11362]="WANTED: Keli'dan's Feathered Stave"
+G[11363]="WANTED: Bladefist's Seal"
+G[11368]='WANTED: The Heart of Quagmirran'
+G[11369]='WANTED: A Black Stalker Egg'
+G[11370]="WANTED: The Warlord's Treatise"
+G[11371]='WANTED: Coilfang Myrmidons'
+G[11372]='WANTED: The Headfeathers of Ikiss'
+G[11373]="WANTED: Shaffar's Wondrous Pendant"
+G[11374]="WANTED: The Exarch's Soul Gem"
+G[11375]="WANTED: Murmur's Whisper"
+G[11376]='WANTED: Malicious Instructors'
+G[11378]="WANTED: The Epoch Hunter's Head"
+G[11382]="WANTED: Aeonus's Hourglass"
+G[11383]='WANTED: Rift Lords'
+G[11384]='WANTED: A Warp Splinter Clipping'
+G[11385]='WANTED: Sunseeker Channelers'
+G[11386]="WANTED: Pathaleon's Projector"
+G[11387]='WANTED: Tempest-Forge Destroyers'
+G[11388]='WANTED: The Scroll of Skyriss'
+G[11389]='WANTED: Arcatraz Sentinels'
+G[11499]="WANTED: The Signet Ring of Prince Kael'thas"
+G[11500]='WANTED: Sisters of Torment'
+G[12438]='WANTED: Kreug Oathbreaker'
+G[12441]='WANTED: High Shaman Bloodpaw'
+G[12442]='WANTED: Onslaught Commander Iustus'
+G[28217]='WANTED: The Demon Hunter'
+G[29512]='DEPRECATED: Putting the Carnies Back Together Again'
+G[32222]='WANTED: Chief Engineer Cogwrench'
+G[33918]="WANTED: Grondo's Bounty"
+G[33919]='WANTED: Gutsmash the Destroyer'
+G[34039]='WANTED: Overlord Blackhammer'
+G[34103]="WANTED: Kil'uun"
+G[34104]='WANTED: Hilaani'
+G[34105]="WANTED: Ra'tok the Hammer"
+G[34106]="WANTED: Ra'tok the Hammer"
+G[34107]='WANTED: Hilaani'
+G[34108]="WANTED: Kil'uun"
+G[35674]="WANTED: Keeho's Severed Paw"
+G[35675]="WANTED: Spineslicer's Husk"
+G[35676]='WANTED: Venombarb'
+G[41491]='Brimstone Destroyer'
+G[41985]='DEPRECATED: Fevered Request'
+G[42058]='DEPRECATED: Crumpled Request'
+G[42215]='DEPRECATED: Singed Letter'
+G[42245]='DEPRECATED: Singed Note'
+G[42250]='DEPRECATED: Fevered Plea'
+G[42255]='DEPRECATED: Bloody Note'
+G[42303]='DEPRECATED: Fevered Note'
+G[42308]='DEPRECATED: Bloody Plea'
+G[42309]='DEPRECATED: Bloody Request'
+G[42323]='DEPRECATED: Fevered Letter'
+G[42333]='DEPRECATED: Crumpled Letter'
+G[42334]='DEPRECATED: Crumpled Note'
+G[42340]='DEPRECATED: Singed Plea'
+G[42345]='DEPRECATED: Fevered Prayer'
+G[42350]='DEPRECATED: Bloody Letter'
+G[42351]='DEPRECATED: Bloody Prayer'
+G[45743]='Judgment of Odyn'
+end
+
 --	End of localized quest names
