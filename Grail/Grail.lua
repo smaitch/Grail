@@ -957,6 +957,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[895] = true,
 							[896] = true,
 							[942] = true,
+							[1165] = true, -- Dazar'Alor
 							}
 						self.quest.name = {
 							[51570]=GetMapNameByID(862),	-- Zuldazar
