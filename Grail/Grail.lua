@@ -436,6 +436,7 @@
 --			Reimplements GetMapNameByID() because Blizzard removed it for Battle for Azeroth.
 --			Starts reimplementing GetPlayerMapPosition() because Blizzard removes it for Battle for Azeroth.
 --			Handles Blizzard's change of calendar APIs.
+--		097	Updates some quest/NPC information.
 --
 --	Known Issues
 --
@@ -516,7 +517,6 @@ local QueryQuestsCompleted				= QueryQuestsCompleted					-- QueryQuestsCompleted
 local SelectQuestLogEntry				= SelectQuestLogEntry
 -- SendQuestChoiceResponse														-- we rewrite this to our own function
 -- SetAbandonQuest																-- we rewrite this to our own function
-local SetMapZoom						= SetMapZoom
 local UnitAura							= UnitAura
 local UnitClass							= UnitClass
 local UnitFactionGroup					= UnitFactionGroup
@@ -1599,10 +1599,6 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			end,
 
 			['PLAYER_ENTERING_WORLD'] = function(self, frame)
-				-- It turns out that GetCurrentMapAreaID() and GetCurrentMapDungeonLevel() are not working properly unless the map system is accessed.
-				-- This would manifest itself when the UI is reloaded, and then the map location would be lost.  By forcing the map to the current zone
-				-- the problem goes away.
-				self.SetMapToCurrentZone(true)
 				frame:RegisterEvent("ARTIFACT_XP_UPDATE")
 			end,
 
@@ -2837,24 +2833,6 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		end,
 
 		---
-		--	BfA beta 26567 removes SetMapToCurrentZone
-		SetMapToCurrentZone = function(shouldHide)
-			Grail.SetMapByID(Grail.GetCurrentMapAreaID(), shouldHide)
-		end,
-
-		---
-		--	BfA beta 26567 removes SetMapByID
-		SetMapByID = function(mapId, shouldHide)
-			if nil ~= mapId then
---					C_Map.RequestPreloadMap(mapId)	-- does not actually change the map
-				OpenWorldMap(mapId)
-				if shouldHide then
-					WorldMapFrameCloseButton:Click()
-				end
-			end
-		end,
-
-		---
 		--	Returns whether the specified achievement is complete.
 		--	@param soughtAchievementId The standard numeric achievement ID representing an achievement.
 		--	@param onlyPlayerCompleted If true, the return value indicates whether the player completed the achievement, otherwise it represents whether the achievement is completed on the account.
@@ -3023,15 +3001,11 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 		--	This adds to our internal data structure the world quests found available
 		_AddWorldQuests = function(self)
-			local currentDisplayedMap = Grail.GetCurrentDisplayedMapAreaID()
-			local worldMapIsShowing = WorldMapFrame:IsShown()
-
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
 			local mapIdsForWorldQuests = { 62, 625, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, }
 			for _, mapId in pairs(mapIdsForWorldQuests) do
-				Grail.SetMapByID(mapId)
 				local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
 				if nil ~= tasks and 0 < #tasks then
 					for k,v in ipairs(tasks) do
@@ -3105,7 +3079,6 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					end
 				end
 			end
-			Grail.SetMapByID(currentDisplayedMap, not worldMapIsShowing)
 			C_Timer.After(2, function() Grail:_AddWorldQuestsUpdateTimes() end)
 		end,
 
