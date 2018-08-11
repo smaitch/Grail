@@ -5769,6 +5769,7 @@ end
 		GetPlayerMapPositionTempVec2D = CreateVector2D(0,0),
 		GetPlayerMapPosition = function(unitName)
 			local MapID = C_Map.GetBestMapForUnit(unitName)
+			if not MapID or MapID < 1 then return 0, 0 end
 			local R,P,_ = Grail.GetPlayerMapPositionMapRects[MapID], Grail.GetPlayerMapPositionTempVec2D
 			if not R then
 				R = {}
@@ -7396,12 +7397,15 @@ end
 		_PhaseMatches = function(self, typeOfMatch, phaseCode, phaseNumber)
 			local retval = false
 			local currentPhase = nil
-			if (not self.battleForAzeroth and 928 == phaseCode) or (self.battleForAzeroth and 504 == phaseCode) then
--- TODO: Determine if we will need to change the map to that of Thunder Isle to make use of this...I believe it will be the only way
-				if "THUNDER_ISLE" == C_MapBar.GetTag() then
-					currentPhase = C_MapBar.GetPhaseIndex() + 1	-- it starts with 0 for phase 1 (just like C)
-				end
-			elseif (not self.battleForAzeroth and (971 == phaseCode or 976 == phaseCode)) or (self.battleForAzeroth and (581 == phaseCode or 587 == phaseCode)) then
+-- SMH: This is commented out for the time being until we can investigate how to handle
+-- phasing on Thunder Isle.
+--			if (not self.battleForAzeroth and 928 == phaseCode) or (self.battleForAzeroth and 504 == phaseCode) then
+---- TODO: Determine if we will need to change the map to that of Thunder Isle to make use of this...I believe it will be the only way
+--				if "THUNDER_ISLE" == C_MapBar.GetTag() then
+--					currentPhase = C_MapBar.GetPhaseIndex() + 1	-- it starts with 0 for phase 1 (just like C)
+--				end
+--			else
+			if (not self.battleForAzeroth and (971 == phaseCode or 976 == phaseCode)) or (self.battleForAzeroth and (581 == phaseCode or 587 == phaseCode)) then
 				currentPhase = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0	-- the API returns nil when there is no garrison
 			end
 			if nil ~= currentPhase then

@@ -11,6 +11,7 @@ interface = tonumber(interface)
 
 if release >= 0 then
 G[0]='Soi-même'
+G[1]=ADVENTURE_JOURNAL
 G[500022]='Seau de bonbons'
 G[500032]='Nozdormu'
 G[562295]='Mage omnia'
@@ -264,11 +265,8 @@ G[1221376]='Fragment d’un vieux panneau'
 G[1221413]='Parchemin familial de Lin'
 G[1221617]='Coffre recouvert de crânes'
 G[1222684]='Sable luisant'
-G[1244694]='Petit coffre au trésor'
-end
-
-if release >= 20726 then
 G[1229314]='Appareil de contrôle mental gobelin'
+G[1244694]='Petit coffre au trésor'
 end
 
 --	End of localized NPC names
