@@ -951,12 +951,13 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[882] = true,
 							[885] = true,
 							-- the following are the BfA maps (the three in Zandalar and three in Kul Tiras)
-							[862] = true,
-							[863] = true,
-							[864] = true,
-							[895] = true,
-							[896] = true,
-							[942] = true,
+							[862] = true, -- Zuldazar (primarily horde)
+							[863] = true, -- Nazmir (primarily horde)
+							[864] = true, -- Vol'dun (primarily horde)
+							[895] = true, -- Tiragarde Sound (primarily alliance)
+							[896] = true, -- Drustvar (primarily alliance)
+							[942] = true, -- Stormsong Valley (primarily alliance)
+							[1165] = true, -- Dazar'Alor (primarily horde)
 							}
 						self.quest.name = {
 							[51570]=GetMapNameByID(862),	-- Zuldazar
