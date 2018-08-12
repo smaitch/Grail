@@ -27460,4 +27460,8 @@ G[42351]='DEPRECATED: Bloody Prayer'
 G[45743]='Judgment of Odyn'
 end
 
+if release >= 27326 then
+G[41537]='Lively Starlight Roses'
+end
+
 --	End of localized quest names
