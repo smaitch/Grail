@@ -927,6 +927,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 					if self.battleForAzeroth then
 						self.zonesForLootingTreasure = {
+							[81]  = true, -- Silithus
 							[525] = true,
 							[534] = true,
 							[535] = true,
