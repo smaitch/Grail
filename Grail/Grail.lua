@@ -441,6 +441,8 @@
 --			Checks whether locations have x and y coordinates before comparing.
 --			Checks whether Blizzard map returns are rational before asking for player coordinates.
 --			Ignores checking Thunder Isle for phasing for the moment.
+--		098	Updates some quest/NPC information.
+--			Adds Silithus to zones for quest looting.
 --
 --	Known Issues
 --
