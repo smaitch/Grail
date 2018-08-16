@@ -437,6 +437,10 @@
 --			Starts reimplementing GetPlayerMapPosition() because Blizzard removes it for Battle for Azeroth.
 --			Handles Blizzard's change of calendar APIs.
 --		097	Updates some quest/NPC information.
+--			Removes map setting code as it is not needed.
+--			Checks whether locations have x and y coordinates before comparing.
+--			Checks whether Blizzard map returns are rational before asking for player coordinates.
+--			Ignores checking Thunder Isle for phasing for the moment.
 --
 --	Known Issues
 --
@@ -2329,7 +2333,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			[5] = { 1216, 1351, 1270, 1277, 1275, 1283, 1282, 1228, 1281, 1269, 1279, 1243, 1273, 1358, 1276, 1271, 1242, 1278, 1302, 1341, 1337, 1345, 1272, 1280, 1352, 1357, 1353, 1359, 1375, 1376, 1387, 1388, 1435, 1492, },
 			[6] = { 1445, 1515, 1520, 1679, 1681, 1682, 1708, 1710, 1711, 1731, 1732, 1733, 1735, 1736, 1737, 1738, 1739, 1740, 1741, 1847, 1848, 1849, 1850, },
 			[7] = { 1815, 1828, 1833, 1859, 1860, 1862, 1883, 1888, 1894, 1899, 1900, 1919, 1947, 1948, 1975, 1984, 1989, 2018, 2045, 2097, 2098, 2099, 2100, 2101, 2102, 2135, 2165, 2170, },
-			[8] = { 2103, 2111, 2120, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2233, },
+			[8] = { 2103, 2111, 2120, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2233, 2264, 2265, },
 			},
 
 		-- These reputations use the friendship names instead of normal reputation names
@@ -2531,7 +2535,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["729"]	= "Uncrowned",
 			["737"] = "Hand of the Prophet",
 			["738"] = "Vol'jin's Headhunters",
-			["739"] = "Order of the Awakened",
+			["739"] = "Order of the Awakened",	-- 1849
 			["73A"] = "The Saberstalkers",
 			["743"] = "The Nightfallen",
 			["744"] = "Arcane Thirst (Thalyssra)",
@@ -2559,19 +2563,22 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["83F"] = "Zandalari Dinosaurs",
 ["848"] = "Unknown",
 			["857"] = "Chromie",
-			["86C"] = "Nazmir Expedition",
-			["86D"] = "Horde War Effort",
-			["86E"] = "Vulpera",
-			["86F"] = "Alliance War Effort",
-			["870"] = "House Proudmoore",
-			["871"] = "House Waycrest",
-			["872"] = "House Stormsong",
-			["873"] = "Tortollan Seekers",
-			["874"] = "Voice of Azeroth",
+			["86C"] = "Talanji's Expedition",	-- 2156
+			["86D"] = "The Honorbound",	-- 2157
+			["86E"] = "Voldunai",	-- 2158
+			["86F"] = "7th Legion",	-- 2159
+			["870"] = "Proudmoore Admiralty",	-- 2160
+			["871"] = "Order of Embers",	-- 2161
+			["872"] = "Storm's Wake",	-- 2162
+			["873"] = "Tortollan Seekers",	-- 2163
+			["874"] = "Champions of Azeroth",	-- 2164
 			["875"] = "Army of the Light",
 			["87A"] = "Argussian Reach",
-			["8B9"] = "Dino Training - Pterrodax",
+			["8B9"] = "Dino Training - Pterrodax",	-- 2233
+			["8D8"] = "Kul Tiras - Drustvar",	-- 2264
+			["8D9"] = "Kul Tiras - Stormsong",	-- 2265
 			},
+
 
 		reputationMappingFaction = {
 			["015"] = 'Neutral',
@@ -2773,6 +2780,8 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["875"] = "Neutral",
 			["87A"] = "Neutral",
 			["8B9"] = "Neutral",	-- TODO: Determine faction
+			["8D8"] = "Neutral",	-- TODO: Determine faction
+			["8D9"] = "Neutral",	-- TODO: Determine faction
 			},
 
 		slashCommandOptions = {},
@@ -6671,8 +6680,10 @@ end
 			if (l1.near or l2.near) and l1.mapArea == l2.mapArea then
 				retval = true
 			elseif l1.mapArea == l2.mapArea and l1.mapLevel == l2.mapLevel then
-				if sqrt((l1.x - l2.x)^2 + (l1.y - l2.y)^2) < self.locationCloseness then
-					retval = true
+				if l1.x and l2.x and l1.y and l2.y then
+					if sqrt((l1.x - l2.x)^2 + (l1.y - l2.y)^2) < self.locationCloseness then
+						retval = true
+					end
 				end
 			end
 			return retval
