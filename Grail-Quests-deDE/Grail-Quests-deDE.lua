@@ -25837,4 +25837,24 @@ G[51608]='Azeritwahn'
 G[53461]='Silberner Hoffnungsschimmer'
 end
 
+if release >= 27356 then
+G[49123]='Todeskroggs'
+G[49124]='Tortollanerrettung'
+end
+
+if release >= 27366 then
+G[50577]='Vermisst'
+G[50876]='Mordschnabel'
+G[51010]='Arbeitsauftrag: Raues Leder'
+G[51122]='Skorpox'
+G[51827]='Sie kamen von hinten!'
+G[51890]='Ranja, die letzte Frostpranke'
+G[52309]='Sandzahn'
+G[52459]='Wirbelschwinge'
+G[52858]='Azeritermächtigung'
+G[53312]='Schimmerndes Platin'
+G[53462]='Ordentlich eingewickelt'
+G[53463]='Widerlinge mit acht Beinen'
+end
+
 --	End of localized quest names
