@@ -443,6 +443,7 @@
 --			Ignores checking Thunder Isle for phasing for the moment.
 --		098	Updates some quest/NPC information.
 --			Adds Silithus to zones for quest looting.
+--			Names treasure quests based on the item looted.
 --
 --	Known Issues
 --
@@ -3084,6 +3085,9 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --	146	Legionfall Invasion World Quest
 --	147	Warfront - Barrens
 --	148	Pickpocketing
+
+--	151 Magnis Weltquest - Azerit
+--	152
 
 						self:_LearnWorldQuest(v.questId, mapId, v.x, v.y)
 --						self.availableWorldQuests[v.questId] = true
@@ -8269,6 +8273,25 @@ if GrailDatabase.debug then print("Marking OEC quest complete", oecCodes[i]) end
 				local maxAttempts = waitForResponse or 1
 				while (nil == retval and attempts < maxAttempts) do
 					retval = self.quest.name[questId]
+					if nil == retval and self:IsTreasure(questId) then
+						-- For treasure quests which Blizzard does not name we can call it the NPC name
+						local npcIDs = Grail:QuestNPCAccepts(questId)
+						if nil ~= npcIDs then
+							local npcID = npcIDs[1]
+							if nil ~= npcID then
+								local locations = Grail:NPCLocations(npcID)
+								if nil ~= locations then
+									local npcName = nil
+									for _, npc in pairs(locations) do
+										if nil ~= npc.name then
+											npcName = format("|TInterface\\MINIMAP\\ObjectIcons:0:0:0:0:128:128:32:48:80:96|t %s", npc.name)
+										end
+									end
+									retval = npcName
+								end
+							end
+						end
+					end
 					if nil == retval then
 						local frame = self.tooltip
 						if not frame:IsOwned(UIParent) then frame:SetOwner(UIParent, "ANCHOR_NONE") end
