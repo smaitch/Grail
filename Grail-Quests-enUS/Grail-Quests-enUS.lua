@@ -27370,4 +27370,150 @@ G[529411]='What Now?'
 G[529428]='What Now?'
 end
 
+if release >= 24461 then
+G[45342]='Administering Aid'
+G[45343]='A Curious Contagion'
+G[45344]='Sampling the Source'
+G[45345]='Mischievous Sprites'
+G[45346]='Shambling Specimens'
+G[45347]='Crafting a Cure'
+G[45348]='Safekeeping'
+G[45349]='To the Broken Shore'
+G[45350]='Countering the Contagion'
+G[45788]='The Speaker Awaits'
+G[45789]='The Sunken Vault'
+G[46034]='Champion: Aelthalyste'
+G[46145]='Sterile Surroundings'
+G[46788]='Further Advancement'
+end
+
+if release >= 24742 then
+G[41548]='Starlight Rose Cluster'
+G[44775]='The Peak of Bones'
+G[44783]='From Bones They Rise'
+G[44787]='The Bonemother'
+G[45103]='We Ride!'
+G[45143]='Judgment Awaits'
+G[45145]='Moonfang Family Relics'
+G[45146]='Runic Reading'
+G[45147]='Felstone Destruction'
+G[45148]='Oath Breaker'
+G[45149]='Ending the Crescent Curse'
+G[45240]='Making Preparations'
+G[45243]="On Daumyr's Wings"
+G[45331]='Return to Acherus'
+G[45398]='Harnessing Power'
+G[45399]='Severing the Sveldrek'
+G[45770]='Stirring in the Shadows'
+G[45890]='Ancestors and Enemies'
+G[46045]='Champion: Nerus Moonfang'
+G[46050]='Champion: Minerva Ravensorrow'
+G[46069]='Worthy of the Title'
+G[46070]='Preparations Underway'
+G[46071]='The Hammer of Dalaran'
+G[46074]='Leather to Legendary'
+G[46209]='A Flare In The Dark'
+G[46259]='Darkbinder Dilemma'
+G[46305]="Thorim's Flame"
+G[46719]="Amal'thazad's Message"
+G[46720]='Frozen Memories'
+G[46789]='Further Advancement'
+G[46812]='Draconic Secrets'
+G[46813]='The Lost Glacier'
+G[47027]="Legion Threat: Val'sharah"
+G[47030]='Legion Threat: Dalaran Infiltration'
+G[47123]='The Fallen Avatar'
+end
+
+if release >= 24920 then
+G[46077]='Felbound Spirits'
+end
+
+if release >= 24931 then
+G[41353]='Odious Felslate Outcropping'
+G[48040]='Tainted Scraps'
+G[48074]='Looming Over Me'
+end
+
+if release >= 25021 then
+G[45653]='Kill it with Fire!'
+G[45929]='Purging the Flames'
+G[47120]='Free The Tormented'
+end
+
+if release >= 25383 then
+G[46500]='Tomb of Sargeras: Legend of the Deep'
+end
+
+if release >= 25549 then
+G[46804]='Fashion History and a Philosophy of Style'
+G[48359]='Work Order: Fiendish Leather'
+G[49032]='Dark Passage'
+G[49075]='Dark Passage'
+G[49133]='The Heart of Argus'
+G[49134]='The Heart of Argus'
+end
+
+if release >= 26124 then
+G[45549]='Salving the Corruption'
+G[46336]='A Golden Ticket'
+G[46337]='Night of the Wilds'
+G[46791]='Carried On the Wind'
+G[46792]='Gathering of the Storms'
+end
+
+if release >= 26365 then
+G[47035]='Legion Threat: The Missing Mage'
+end
+
+if release >= 26899 then
+G[50056]="The Speaker's Call"
+G[50057]='The Power in Our Hands'
+end
+
+if release >= 26972 then
+G[44758]="What's the Cache?"
+G[45073]='Loot and Plunder!'
+G[45571]='A Bit of Espionage'
+G[45573]='Rise Up'
+G[45628]='This Time, Leave a Trail'
+G[45833]="The Pirate's Bay"
+G[45835]='False Orders'
+G[45836]="Jorach's Calling"
+G[46260]='Meld Into the Shadows'
+G[47032]='Legion Threat: Azshara'
+G[47033]='Legion Threat: Suramar'
+G[48066]='A Feast for Our Kin'
+G[48067]='Shadow Over Thunder Bluff'
+G[48079]='Return to Highmountain'
+G[48363]='Work Order: Florid Malachite'
+G[49756]='Dark Forces'
+G[50053]='Lazy Prospectors!'
+G[50055]="The Speaker's Perspective"
+G[50230]='The Source of Power'
+G[50231]='Larvae By The Dozen'
+G[50232]='The Twilight Survivor'
+G[50242]='A Choice of Allies'
+G[50300]="The Speaker's Call"
+G[50358]='Desert Research'
+G[50360]="Khadgar's Request"
+G[50364]='The Blood of Azeroth'
+end
+
+if release >= 27404 then
+G[51800]='Foothold: Tiragarde Sound'
+G[51801]='Foothold: Drustvar'
+G[51802]='Foothold: Stormsong Valley'
+G[51827]='They Came From Behind!'
+G[52309]='SandFang'
+G[52459]='Whirlwing'
+end
+
+if release >= 27602 then
+G[50650]='Smashing Zalamar'
+G[50667]='Past Due'
+G[53009]='Hang On In There'
+G[53583]='Adapting Our Tactics'
+end
+
 --	End of localized quest names

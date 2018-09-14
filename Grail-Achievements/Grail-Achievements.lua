@@ -7030,7 +7030,7 @@ Grail.extraAchievements['Alliance'][mapZandalar] = {  }
 Grail.extraAchievements['Horde'][mapZandalar] = { 512555, }
 Grail.loremasterAchievements['Alliance'][mapKulTiras] = { 512473, 512496, 512497, }
 Grail.loremasterAchievements['Horde'][mapKulTiras] = {  }
-Grail.extraAchievements['Alliance'][mapKulTiras] = { 512510, }
+Grail.extraAchievements['Alliance'][mapKulTiras] = { 512510, 512853, }
 Grail.extraAchievements['Horde'][mapKulTiras] = { 512509, }
 G[47188]={}	-- Deep in the Swamp (The Dark Heart of Nazmir)
 G[47189]={}	-- Come Sail Away () -- Alliance
@@ -7067,24 +7067,42 @@ G[49426]={511861}	-- March of the Loa (The Throne of Zuldazar)
 G[49663]={511861}	-- Portents and Prophecies (The Throne of Zuldazar)
 G[49736]={512473}	-- Defenders of Daelin's Gate (A Sound Plan)	-- Alliance
 G[49740]={512473}	-- Defenders of Daelin's Gate (A Sound Plan)	-- Alliance
+G[49811]={512853}
+G[49831]={512496}	-- From the Depths They Come (Stormsong and Dance)
 G[49985]={}	-- Everything Contained (The Dark Heart of Nazmir)
+G[49997]={512496}	-- A House in Peril (Stormsong and Dance)
 G[50087]={}	-- Bleeding the Blood Trolls (The Dark Heart of Nazmir)
+G[50089]={512853}
 G[50531]={512473}	-- The Ashvane Trading Company (A Sound Plan) -- Alliance
 G[50550]={}	-- Storming the Spire (Secrets in the Sands)
+G[50611]={512496}	-- The Growing Tempest (Stormsong and Dance)
+G[50526]={512853}
 G[50561]={}	-- A City of Secrets (Secrets in the Sands)
-G[50691]={512496}	-- Treasure in Deadwash (Stormsong and Dance)	-- Alliance	-- TODO: Verify required
+G[50640]={512496}	-- Briarback Kraul (Stormsong and Dance)
+--G[50691]={512496}	-- Treasure in Deadwash (Stormsong and Dance)	-- Alliance	-- TODO: Verify required
 G[50702]={}	-- Atul'Aman (Secrets in the Sands)
-G[50704]={512496}	-- Treasure in Deadwash (Stormsong and Dance)	-- Alliance	-- TODO: Verify required
+--G[50704]={512496}	-- Treasure in Deadwash (Stormsong and Dance)	-- Alliance	-- TODO: Verify required
+G[50734]={512853}
+G[50742]={512496}	-- Treasure in Deadwash (Stormsong and Dance)	-- Alliance
+G[50824]={512496}	-- At the Edge of Madness (Stormsong and Dance)	-- Alliance
 G[50881]={511861}	-- Port of Zandalar (The Throne of Zuldazar)
+G[50937]={512853}
 G[51140]={512496}	-- Treasure in Deadwash (Stormsong and Dance)	-- Alliance
 G[51364]={}	-- Unlikely Allies (Secrets in the Sands)
 G[51401]={512496}	-- The Tidesages of Stormsong (Stormsong and Dance)	-- Alliance
+G[51449]={512853}
+G[51712]={512496}	-- Cycle of Hatred (Stormsong and Dance)
 G[51825]={512473}	-- Enemies Within (A Sound Plan)	-- Alliance
 G[51967]={512510}	-- Nazmir Foothold (Ready for War) -- Alliance
 G[51968]={512510}	-- Zuldazar Foothold (Ready for War) -- Alliance
 G[51969]={512510}	-- Vol'dun Foothold (Ready for War) -- Alliance
 G[51986]={512509}	-- Stormsong Valley Foothold (Ready for War)	-- Horde
+--G[52130]={513053}	-- Deadliest Catch	-- Alliance
 G[52131]={512555}	-- Welcome to Zandalar -- Horde
+G[52326]={512853}
+G[52429]={512853}
+G[52976]={512853}
+G[52980]={512853}
 end
 
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime
@@ -7142,7 +7160,7 @@ if Grail.battleForAzeroth then
 	achievementsToZoneMapping = { [506300] = 371, [506301] = 376, [506534] = 371, [506535] = 418, [506536] = 418, [506537] = 379, [506538] = 379, [506539] = 388, [506540] = 422, [508671] = 525, [508845] = 539, [508919] = 535, [508920] = 535, [508923] = 543, [508924] = 543, [508925] = 542, [508926] = 542, [508927] = 550, [508928] = 550, [509528] = 539, [509529] = 525, [509602] = 539, [509605] = 542, [509606] = 525, [509607] = 543, [509615] = 550, [510617] = 680, [509618] = 17, [509674] = 535, [510698] = 641, [510763] = 630, [510059] = 650, [510756] = 680, [510790] = 634, [511124] = 680, [511861] = 862, [512473] = 895, [512496] = 942, [512497] = 896, [512509] = 862, [512510] = 895, [512555] = 862, }
 end
 
-local expansions = { mapPandaria, mapDraenor, mapBrokenIsles, mapArgus, }
+local expansions = { mapPandaria, mapDraenor, mapBrokenIsles, mapArgus, mapKulTiras, }
 for _, faction in pairs(supportedFactions) do
 	for _, expansion in pairs(expansions) do
 		for _, achievement in pairs(Grail.loremasterAchievements[faction][expansion]) do
