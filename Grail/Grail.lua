@@ -1375,6 +1375,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					frame:RegisterEvent("GARRISON_BUILDING_UPDATE")
 					frame:RegisterEvent("GOSSIP_CLOSED")
 					frame:RegisterEvent("GOSSIP_SHOW")		-- needed to learn about gossips to be able to know when specific events have happened so quest availability can be updated
+					frame:RegisterEvent("ITEM_TEXT_READY")	-- probably not need ITEM_TEXT_BEGIN
 					if not GrailDatabase.notLoot then
 						frame:RegisterEvent("LOOT_CLOSED")		-- Timeless Isle chests
 					end
@@ -1516,6 +1517,19 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local targetName, npcId, coordinates = self:TargetInformation()
 				self.currentGossipNPCId = npcId
 --				print("GOSSIP_SHOW:",targetName, npcId, coordinates,GetNumGossipAvailableQuests(),GetNumGossipActiveQuests(),GetNumGossipOptions(),GetGossipOptions())
+			end,
+
+			['ITEM_TEXT_READY'] = function(self, frame, ...)
+				local targetName, npcId, coordinates = self:TargetInformation()
+				local questToComplete = self._ItemTextBeginList[npcId]
+				if nil ~= questToComplete then
+					self:_MarkQuestComplete(questToComplete, true)
+					if GrailDatabase.debug then
+						local message = strformat("ITEM_TEXT_READY completes %d", questToComplete)
+						print(message)
+						self:_AddTrackingMessage(message)
+					end
+				end
 			end,
 
 			--	We want to be able to handle the chests on the Timeless Isle.  To do so we need to be able to determine
@@ -9058,6 +9072,13 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[1196] = 51572,	-- Choosing Vol'dun from Zandalar Mission Board on ship in Boralus
 			[1197] = 51571,	-- Choosing Nazmir from Zandalar Mission Board on ship in Boralus
 			[1210] = 51802,	-- Choosing Stormsong Valley from Kul Tiras Mission Board on ship in Zuldazar
+			},
+		_ItemTextBeginList = {
+			[1292673] = 52134,
+			[1292674] = 52135,
+			[1292675] = 52136,
+			[1292676] = 52137,
+			[1292677] = 52138,
 			},
 
 		--	Internal Use.
