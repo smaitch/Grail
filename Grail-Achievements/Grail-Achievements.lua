@@ -7025,23 +7025,23 @@ G[47220]={512066}	-- War of Light and Shadow (You Are Now Prepared!)
 
 if Grail.battleForAzeroth then
 Grail.loremasterAchievements['Alliance'][mapZandalar] = {  }
-Grail.loremasterAchievements['Horde'][mapZandalar] = { 511861, }
-Grail.extraAchievements['Alliance'][mapZandalar] = {  }
-Grail.extraAchievements['Horde'][mapZandalar] = { 512555, }
+Grail.loremasterAchievements['Horde'][mapZandalar] = { 511861, 511868, 512478, }
+Grail.extraAchievements['Alliance'][mapZandalar] = { 512771, 512849, 512851, }
+Grail.extraAchievements['Horde'][mapZandalar] = { 512555, 512771, 512849, 512851, }
 Grail.loremasterAchievements['Alliance'][mapKulTiras] = { 512473, 512496, 512497, }
-Grail.loremasterAchievements['Horde'][mapKulTiras] = {  }
-Grail.extraAchievements['Alliance'][mapKulTiras] = { 512510, 512853, }
+Grail.loremasterAchievements['Horde'][mapKulTiras] = { 512853, 512852, 512995, }
+Grail.extraAchievements['Alliance'][mapKulTiras] = { 512510, 512853, 512852, 512995, }
 Grail.extraAchievements['Horde'][mapKulTiras] = { 512509, }
-G[47188]={}	-- Deep in the Swamp (The Dark Heart of Nazmir)
+G[47188]={511868}	-- Deep in the Swamp (The Dark Heart of Nazmir)
 G[47189]={}	-- Come Sail Away () -- Alliance
 G[47229]={}	-- (A Bargain of Blood)
-G[47250]={}	-- A Pact with Death (The Dark Heart of Nazmir)
+G[47250]={511868}	-- A Pact with Death (The Dark Heart of Nazmir)
 G[47440]={511861}	-- Zanchuli Council (The Throne of Zuldazar)
 G[47528]={511861}	-- Web of Lies (The Throne of Zuldazar)
-G[47601]={}	-- Bring the Boom (The Dark Heart of Nazmir)
-G[47696]={}	-- A Friend of the Frogs (The Dark Heart of Nazmir)
-G[47741]={}	-- Among the People (The Throne of Zuldazar)
-G[47874]={}	-- The Warguard's Fate (Secrets in the Sands)
+G[47601]={511868}	-- Bring the Boom (The Dark Heart of Nazmir)
+G[47696]={511868}	-- A Friend of the Frogs (The Dark Heart of Nazmir)
+G[47741]={511861}	-- Among the People (The Throne of Zuldazar)
+G[47874]={512478}	-- The Warguard's Fate (Secrets in the Sands)
 G[47879]={511861}	-- Warport Rastari (The Throne of Zuldazar)
 G[47982]={512497}	-- The Final Effigy (Drust Do It)	-- Alliance
 G[48088]={512473}	-- The Norwington Estate (A Sound Plan)	-- Alliance	-- TODO: Verify required
@@ -7050,47 +7050,76 @@ G[48198]={512497}	-- The Burden of Proof (Drust Do It)	-- Alliance
 G[48421]={512473}	-- Castaways and Cutouts (A Sound Plan) -- Alliance
 G[48505]={512473}	-- Castaways and Cutouts (A Sound Plan) -- Alliance
 G[48538]={512497}	-- An Airtight Alibi (Drust Do It)	-- Alliance
-G[48549]={}	-- Dangers in the Desert (Secrets in the Sands)
-G[48550]={}	-- Dangers in the Desert (Secrets in the Sands)
+G[48549]={512478}	-- Dangers in the Desert (Secrets in the Sands)
+G[48550]={512478}	-- Dangers in the Desert (Secrets in the Sands)
 G[48897]={511861}	-- Zanchuli Council (The Throne of Zuldazar)
+G[48938]={512851}
 G[48946]={512497}	-- The Order of Embers (Drust Do It)	-- Alliance
-G[49082]={}	-- Undercover Sista (The Dark Heart of Nazmir)
-G[49160]={}	-- Turtle Power (The Dark Heart of Nazmir)
+G[49082]={511868}	-- Undercover Sista (The Dark Heart of Nazmir)
+G[49160]={511868}	-- Turtle Power (The Dark Heart of Nazmir)
 G[49178]={512473}	-- Castaways and Cutouts (A Sound Plan) -- Alliance	-- TODO: Verify required
 G[49181]={512473}	-- Castaways and Cutouts (A Sound Plan) -- Alliance	-- TODO: Verify required
 G[49226]={512473}	-- Castaways and Cutouts (A Sound Plan) -- Alliance	-- TODO: Verify required
 G[49230]={512473}	-- Castaways and Cutouts (A Sound Plan) -- Alliance
+G[49257]={512851}
 G[49302]={512473}	-- The Shadow Over Anglepoint (A Sound Plan) -- Alliance
-G[49340]={}	-- The Three Keepers (Secrets in the Sands)
+G[49313]={512771}
+G[49340]={512478}	-- The Three Keepers (Secrets in the Sands)
 G[49404]={512473}	-- Freehold (A Sound Plan) -- Alliance
 G[49426]={511861}	-- March of the Loa (The Throne of Zuldazar)
+G[49483]={512771}
+G[49484]={512771}
 G[49663]={511861}	-- Portents and Prophecies (The Throne of Zuldazar)
 G[49736]={512473}	-- Defenders of Daelin's Gate (A Sound Plan)	-- Alliance
 G[49740]={512473}	-- Defenders of Daelin's Gate (A Sound Plan)	-- Alliance
 G[49811]={512853}
 G[49831]={512496}	-- From the Depths They Come (Stormsong and Dance)
-G[49985]={}	-- Everything Contained (The Dark Heart of Nazmir)
+G[49867]={512771}
+G[49885]={512771}
+G[49889]={512771}
+G[49891]={512771}
+G[49936]={512851}
+G[49963]={512852}
+G[49979]={512771}
+G[49985]={511868}	-- Everything Contained (The Dark Heart of Nazmir)
 G[49997]={512496}	-- A House in Peril (Stormsong and Dance)
-G[50087]={}	-- Bleeding the Blood Trolls (The Dark Heart of Nazmir)
+G[50045]={512771}
+G[50061]={512771}
+G[50087]={511868}	-- Bleeding the Blood Trolls (The Dark Heart of Nazmir)
 G[50089]={512853}
+G[50237]={512849}
+G[50259]={512851}
+G[50442]={512852}
 G[50531]={512473}	-- The Ashvane Trading Company (A Sound Plan) -- Alliance
-G[50550]={}	-- Storming the Spire (Secrets in the Sands)
-G[50611]={512496}	-- The Growing Tempest (Stormsong and Dance)
+G[50550]={512478}	-- Storming the Spire (Secrets in the Sands)
 G[50526]={512853}
-G[50561]={}	-- A City of Secrets (Secrets in the Sands)
+G[50561]={512478}	-- A City of Secrets (Secrets in the Sands)
+G[50582]={512851}
+G[50611]={512496}	-- The Growing Tempest (Stormsong and Dance)
 G[50640]={512496}	-- Briarback Kraul (Stormsong and Dance)
 --G[50691]={512496}	-- Treasure in Deadwash (Stormsong and Dance)	-- Alliance	-- TODO: Verify required
-G[50702]={}	-- Atul'Aman (Secrets in the Sands)
+G[50702]={512478}	-- Atul'Aman (Secrets in the Sands)
 --G[50704]={512496}	-- Treasure in Deadwash (Stormsong and Dance)	-- Alliance	-- TODO: Verify required
+G[50707]={512851}
 G[50734]={512853}
 G[50742]={512496}	-- Treasure in Deadwash (Stormsong and Dance)	-- Alliance
 G[50824]={512496}	-- At the Edge of Madness (Stormsong and Dance)	-- Alliance
 G[50881]={511861}	-- Port of Zandalar (The Throne of Zuldazar)
 G[50937]={512853}
+G[50947]={512851}
+G[50949]={512851}
+G[51093]={512849}
+G[51132]={512849}
+G[51133]={512849}
+G[51135]={512849}
+G[51136]={512849}
+G[51137]={512849}
 G[51140]={512496}	-- Treasure in Deadwash (Stormsong and Dance)	-- Alliance
-G[51364]={}	-- Unlikely Allies (Secrets in the Sands)
+G[51338]={512851}
+G[51364]={512478}	-- Unlikely Allies (Secrets in the Sands)
 G[51401]={512496}	-- The Tidesages of Stormsong (Stormsong and Dance)	-- Alliance
 G[51449]={512853}
+G[51624]={512851}
 G[51712]={512496}	-- Cycle of Hatred (Stormsong and Dance)
 G[51825]={512473}	-- Enemies Within (A Sound Plan)	-- Alliance
 G[51967]={512510}	-- Nazmir Foothold (Ready for War) -- Alliance
@@ -7099,10 +7128,31 @@ G[51969]={512510}	-- Vol'dun Foothold (Ready for War) -- Alliance
 G[51986]={512509}	-- Stormsong Valley Foothold (Ready for War)	-- Horde
 --G[52130]={513053}	-- Deadliest Catch	-- Alliance
 G[52131]={512555}	-- Welcome to Zandalar -- Horde
+G[52195]={512852}
 G[52326]={512853}
 G[52429]={512853}
+G[52807]={512852}
+G[52833]={512852}
+G[52836]={512852}
+G[52845]={512852}
+G[52866]={512852}
+G[52867]={512852}
+G[52870]={512852}
 G[52976]={512853}
 G[52980]={512853}
+G[52992]={512849}
+G[52994]={512849}
+G[53004]={512849}
+G[53356]={512995}
+G[53357]={512995}
+G[53385]={512995}
+G[53386]={512995}
+G[53387]={512995}
+G[53471]={512995}
+G[53472]={512995}
+G[53473]={512995}
+G[53474]={512995}
+G[53475]={512995}
 end
 
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime
@@ -7157,7 +7207,7 @@ debugStartTime = debugprofilestop()
 local achievementsDone = {}
 local achievementsToZoneMapping = { [506300] = 806, [506301] = 807, [506534] = 806, [506535] = 857, [506536] = 857, [506537] = 809, [506538] = 809, [506539] = 810, [506540] = 858, [508671] = 941, [508845] = 947, [508919] = 946, [508920] = 946, [508923] = 949, [508924] = 949, [508925] = 948, [508926] = 948, [508927] = 950, [508928] = 950, [509528] = 947, [509529] = 941, [509602] = 947, [509605] = 948, [509606] = 941, [509607] = 949, [509615] = 950, [510617] = 1033, [509618] = 19, [509674] = 946, [510698] = 1018, [510763] = 1015, [510059] = 1024, [510756] = 1033, [510790] = 1017, [511124] = 1033, }
 if Grail.battleForAzeroth then
-	achievementsToZoneMapping = { [506300] = 371, [506301] = 376, [506534] = 371, [506535] = 418, [506536] = 418, [506537] = 379, [506538] = 379, [506539] = 388, [506540] = 422, [508671] = 525, [508845] = 539, [508919] = 535, [508920] = 535, [508923] = 543, [508924] = 543, [508925] = 542, [508926] = 542, [508927] = 550, [508928] = 550, [509528] = 539, [509529] = 525, [509602] = 539, [509605] = 542, [509606] = 525, [509607] = 543, [509615] = 550, [510617] = 680, [509618] = 17, [509674] = 535, [510698] = 641, [510763] = 630, [510059] = 650, [510756] = 680, [510790] = 634, [511124] = 680, [511861] = 862, [512473] = 895, [512496] = 942, [512497] = 896, [512509] = 862, [512510] = 895, [512555] = 862, }
+	achievementsToZoneMapping = { [506300] = 371, [506301] = 376, [506534] = 371, [506535] = 418, [506536] = 418, [506537] = 379, [506538] = 379, [506539] = 388, [506540] = 422, [508671] = 525, [508845] = 539, [508919] = 535, [508920] = 535, [508923] = 543, [508924] = 543, [508925] = 542, [508926] = 542, [508927] = 550, [508928] = 550, [509528] = 539, [509529] = 525, [509602] = 539, [509605] = 542, [509606] = 525, [509607] = 543, [509615] = 550, [510617] = 680, [509618] = 17, [509674] = 535, [510698] = 641, [510763] = 630, [510059] = 650, [510756] = 680, [510790] = 634, [511124] = 680, [511861] = 862, [511868] = 863, [512478] = 864, [512473] = 895, [512496] = 942, [512497] = 896, [512509] = 862, [512510] = 895, [512555] = 862, }
 end
 
 local expansions = { mapPandaria, mapDraenor, mapBrokenIsles, mapArgus, mapKulTiras, }
@@ -7177,7 +7227,10 @@ for _, faction in pairs(supportedFactions) do
 					end
 				end
 				Grail.indexedQuests[achievement] = newTable
-				Grail.loremasterQuests[achievementsToZoneMapping[achievement]] = Grail:_SetAppend(newTable, Grail.loremasterQuests[achievementsToZoneMapping[achievement]])
+				local mappedZone = achievementsToZoneMapping[achievement]
+				if nil ~= mappedZone then
+					Grail.loremasterQuests[mappedZone] = Grail:_SetAppend(newTable, Grail.loremasterQuests[mappedZone])
+				end
 				tinsert(achievementsDone, achievement)
 			end
 		end

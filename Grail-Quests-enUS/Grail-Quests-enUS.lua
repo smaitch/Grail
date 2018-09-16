@@ -27510,10 +27510,22 @@ G[52459]='Whirlwing'
 end
 
 if release >= 27602 then
+G[50524]='Purify the Temple'
 G[50650]='Smashing Zalamar'
 G[50667]='Past Due'
+G[51010]='Work Order: Coarse Leather'
 G[53009]='Hang On In There'
+G[53148]='Boulderfist Beatdown'
+G[53150]='Wiping Out the Witherbark'
+G[53154]='The League Will Lose'
+G[53173]='Sins of the Syndicate'
+G[53190]='Executing Exorcisms'
+G[53193]='Twice-Exiled'
+G[53208]='To the Front'
+G[53209]='Warfront Contribution'
+G[53416]='Warfront: The Battle for Stromgarde'
 G[53583]='Adapting Our Tactics'
+G[53602]='Adapting Our Tactics'
 end
 
 --	End of localized quest names
