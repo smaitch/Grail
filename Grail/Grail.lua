@@ -792,7 +792,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		bitMaskRaceLightforgedDraenei	=	0x40000000,
 		bitMaskKulTiran					=	0x80000000,
 		-- Convenience values
-		bitMaskRaceAll			=	0x6fff8003,
+		bitMaskRaceAll			=	0x6fff800f,
 		-- Enf of bit mask values
 
 
