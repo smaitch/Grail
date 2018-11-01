@@ -2389,6 +2389,8 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 									[46749] = 5001750, [58999] = 6008000, [69999] = 7007000,
 									--	And now for Paragon reputations
 									[93999] = 8010000,
+									-- And now for 7th Legion
+									[49499] = 5004500, [53999] = 6003000, [58499] = 6007500,
 									},
 
 		--	The keys are the actual faction values used by Blizzard converted into a 3-character hexidecimal value.
@@ -3047,7 +3049,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
-			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, }
+			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, }
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
 				local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
@@ -3386,9 +3388,10 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			local codeValues
 			if 'P' == codePrefix then
 				codeValues = self.questPrerequisites[questId]
-			else
--- TODO: SMH: Check the following because there was an error reported.  Note that the code above checks questCodes and not quests...investigate
+			elseif self.quests[questId] then
 				codeValues = self.quests[questId][codePrefix]
+			else
+				return false
 			end
 			local dangerous = (codePrefix == 'I' or codePrefix == 'B')
 			return self:_AnyEvaluateTrueF(codeValues, { q = questId, d = dangerous}, Grail._EvaluateCodeAsPrerequisite, forceSpecificChecksOnly)
@@ -3640,7 +3643,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				--				calendar_weekendwrathofthelichking,
 				--				calendar_weekendburningcrusade
 				local foundMatch = false
-				if eventType == 0 and calendarType == 'HOLIDAY' and title == soughtHolidayName then
+				if calendarType == 'HOLIDAY' and title == soughtHolidayName then
 					foundMatch = true
 				end
 				if holidayCode == 'g' or holidayCode == 'h' or holidayCode == 'i' then

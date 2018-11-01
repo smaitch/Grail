@@ -53,6 +53,7 @@ G[1020992]='Schwarzer Schild'
 G[1021042]='Abzeichen der Wache von Theramore'
 G[1024776]='Yurivs Grabstein'
 G[1035251]='Karnitols Truhe'
+G[1035591]='Schwimmer'
 G[1112948]='Verschlossene Geldkassette der INTREPID'
 G[1131474]='Die Scheiben von Norgannon'
 G[1138492]='Splitter von Myzrael'
@@ -307,10 +308,32 @@ G[1250536]='Intact Greatstag Antler'
 G[1250990]='Kiste mit uralten Relikten'
 G[1251571]='Ashilvara, Erste Strophe'
 G[1275099]='Sauroliskenei'
+G[1278437]='Opfergabe für Bwonsamdi'
+G[1278594]='Gesprenkeltes Ei'
+G[1279042]='Schmugglervorrat'
+G[1279367]='Schatztruhe'
+G[1279689]='Verlorener Schatz der Nazmani'
+G[1280951]='Aschenwindschätze'
 G[1281176]='Janis Schatz'
+G[1281722]='Tortollaneropfer'
+G[1281898]='Dazars vergessene Truhe'
+G[1282481]='Geplünderte Vorräte'
+G[1284417]='Ross des kopflosen Reiters'
+G[1284418]='Schatztruhe'
+G[1284455]='Klage des Verbannten'
+G[1287239]='Grayals letzte Opfergabe'
+G[1287304]='Beute des verschollenen Entdeckers'
+G[1287326]="Zem'lans vergrabener Schatz"
+G[1292764]='Metallreste'
+G[1293962]='Heikler Vorrat eines Adligen'
+G[1294317]='Totholztruhe'
+G[1296159]='Angespülte Ladung'
 G[1296574]='Ians leere Flasche'
 G[1296583]='Navarros Fläschchen'
 G[1296584]='Zachs Feldflasche'
+G[1296586]='Rachels Flöte'
+G[1297893]='Runengebundene Lade'
+G[1298920]='Gestohlener Dornsprecherschatz'
 G[100113448]='Stück des Kraterfürsten'
 G[100113453]='Edelpilz'
 G[100122399]='Späherbericht: Magnarok'
@@ -325,41 +348,6 @@ G[100122417]='Späherbericht: Nachtflutnest'
 G[100122420]='Späherbericht: Gorianisches Übungsgelände'
 G[100128231]='Ausstattungsbaupläne: Abgerichtete Haie'
 G[100128232]='Ausstattungsbaupläne: Hochleistungsnebelleuchten'
-end
-
-if release >= 27547 then
-G[1278437]='Opfergabe für Bwonsamdi'
-G[1278594]='Gesprenkeltes Ei'
-G[1279367]='Schatztruhe'
-G[1287239]='Grayals letzte Opfergabe'
-G[1287304]='Beute des verschollenen Entdeckers'
-end
-
-if release >= 27602 then
-G[1035591]='Schwimmer'
-G[1279042]='Schmugglervorrat'
-G[1279689]='Verlorener Schatz der Nazmani'
-G[1280951]='Aschenwindschätze'
-G[1281722]='Tortollaneropfer'
-G[1282481]='Geplünderte Vorräte'
-G[1284417]='Ross des kopflosen Reiters'
-G[1284418]='Schatztruhe'
-G[1292764]='Metallreste'
-G[1293962]='Heikler Vorrat eines Adligen'
-G[1296159]='Angespülte Ladung'
-G[1296586]='Rachels Flöte'
-end
-
-if release >= 27843 then
-G[1281898]='Dazars vergessene Truhe'
-G[1284455]='Klage des Verbannten'
-G[1287326]="Zem'lans vergrabener Schatz"
-G[1294317]='Totholztruhe'
-end
-
-if release >= 27980 then
-G[1297893]='Runengebundene Lade'
-G[1298920]='Gestohlener Dornsprecherschatz'
 end
 
 --	End of localized NPC names
