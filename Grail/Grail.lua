@@ -444,6 +444,7 @@
 --		098	Updates some quest/NPC information.
 --			Adds Silithus to zones for quest looting.
 --			Names treasure quests based on the item looted.
+--			Updates map areas for Loremaster quests.
 --
 --	Known Issues
 --
