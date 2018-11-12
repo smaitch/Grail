@@ -12,8 +12,27 @@ release = tonumber(release)
 interface = tonumber(interface)
 
 if release >= 0 then
+G[-1920895]='NukeMe -1920895'
+G[-1910895]='NukeMe -1910895'
+G[-1900895]='NukeMe -1900895'
+G[-1410864]='NukeMe -1410864'
+G[-1370896]='NukeMe -1370896'
+G[-1360896]='NukeMe -1360896'
+G[-1100863]='NukeMe -1100863'
+G[-1080942]='NukeMe -1080942'
+G[-910680]='NukeMe -910680'
+G[-890680]='NukeMe -890680'
+G[-890630]='NukeMe -890630'
+G[-880630]='NukeMe -880630'
+G[-780634]='NukeMe -780634'
+G[-770650]='NukeMe -770650'
+G[-770641]='NukeMe -770641'
+G[-760641]='NukeMe -760641'
+G[-750641]='NukeMe -750641'
+G[-610646]='NukeMe -610646'
 G[0]='Self'
 G[1]=ADVENTURE_JOURNAL
+G[130809]='NukeMe 130809'
 G[500022]='Candy Bucket'
 G[500024]="Anson's Crate"
 G[500025]="Edgar's Crate"
@@ -31,6 +50,7 @@ G[565558]='Huojin Monk'
 G[600000]='Moss-Covered Chest'
 G[600001]='Sturdy Chest'
 G[600002]='Smoldering Chest'
+G[702446]='NukeMe 702446'
 G[1000033]='Locked Chest'
 G[1000034]='Old Jug'
 G[1000035]="Captain's Footlocker"
@@ -1158,6 +1178,16 @@ G[1297892]='Runebound Chest'
 G[1297893]='Runebound Coffer'
 G[1298920]='Stolen Thornspeaker Cache'
 G[1303039]='Curious Grain Sack'
+end
+
+if release >= 28153 then
+G[-1800895]='NukeMe -1800895'
+G[-1240896]='NukeMe -1240896'
+G[-1020942]='NukeMe -1020942'
+G[-970942]='NukeMe -970942'
+G[-740641]='NukeMe -740641'
+G[134310]='NukeMe 134310'
+G[1293119]='Seaweed'
 end
 
 --	End of localized NPC names
