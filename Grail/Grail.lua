@@ -445,6 +445,8 @@
 --			Adds Silithus to zones for quest looting.
 --			Names treasure quests based on the item looted.
 --			Updates map areas for Loremaster quests.
+--		099	Updates some quest/NPC information.
+--			Corrects a problem where cleaning quest data could result in a Lua error.
 --
 --	Known Issues
 --
@@ -3867,7 +3869,15 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 		_CleanCheckNPC = function(self, code, npcId, questId)
 			local allCodesGood = true
-			if 0 == npcId then
+			if nil == code or "" == code then
+				allCodesGood = false
+			elseif nil == npcId then
+				allCodesGood = false
+			elseif nil == questId then
+				allCodesGood = false
+			elseif nil == self.quests[questId] then
+				allCodesGood = false
+			elseif 0 == npcId then
 				local foundAny = false
 				if nil ~= self.quests[questId][code] then
 					for _, n in pairs(self.quests[questId][code]) do
@@ -4327,7 +4337,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			end
 
 			-- Remove quests from NewQuests that have been added to our internal database.
-			-- If the name matches and all the codes are in our internal datbase we remove.
+			-- If the name matches and all the codes are in our internal database we remove.
 			if nil ~= GrailDatabase["NewQuests"] then
 				local originalQuestIdThatBlizzardHasBrokenInBeta
 				for questId, q in pairs(GrailDatabase["NewQuests"]) do
