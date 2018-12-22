@@ -937,6 +937,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 					if self.battleForAzeroth then
 						self.zonesForLootingTreasure = {
+							[62]  = true,
 							[81]  = true, -- Silithus
 							[525] = true,
 							[534] = true,
@@ -3011,7 +3012,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			local smallestMinutes = 60 - minute
 --			for questId, _ in pairs(self.availableWorldQuests) do
 			for _, questId in pairs(self.invalidateControl[self.invalidateGroupCurrentWorldQuests]) do
-				local minutesLeft = C_TaskQuest.GetQuestTimeLeftMinutes(questId)
+				local minutesLeft = C_TaskQuest.GetQuestTimeLeftMinutes(questId) or 0
 				if 0 < minutesLeft then
 ----					newTable[questId] = minutesLeft .. ' => ' .. C_TaskQuest.GetQuestInfoByQuestID(questId)
 --					newTable[questId] = minutesLeft
@@ -4104,6 +4105,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						local codeSpacer = ''
 						for c = 1, #codes do
 							local shouldAdd = false
+							local codeToAdd = codes[c]
 							if '' ~= codes[c] then
 								if 1 < strlen(codes[c]) then
 									local code = strsub(codes[c], 1, 1)
@@ -4115,12 +4117,38 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 											shouldAdd = true
 										end
 									elseif 'A' == code and ':' == subcode then
-										if not self:_GoodNPCAccept(questId, strsub(codes[c], 3)) then
+										local stillNeedToHaveSet = {}
+										local aCodes = { strsplit(',', strsub(codes[c], 3)) }
+										for a = 1, #aCodes do
+											if not self:_GoodNPCAccept(questId, aCodes[a]) then
+												self:InsertSet(stillNeedToHaveSet, aCodes[a])
+											end
+										end
+										if #stillNeedToHaveSet > 0 then
 											shouldAdd = true
+											codeToAdd = 'A:'
+											local commaSpacer = ''
+											for a = 1, #stillNeedToHaveSet do
+												codeToAdd = codeToAdd .. commaSpacer .. stillNeedToHaveSet[a]
+												commaSpacer = ','
+											end
 										end
 									elseif 'T' == code and ':' == subcode then
-										if not self:_GoodNPCTurnin(questId, strsub(codes[c], 3)) then
+										local stillNeedToHaveSet = {}
+										local tCodes = { strsplit(',', strsub(codes[c], 3)) }
+										for t = 1, #tCodes do
+											if not self:_GoodNPCTurnin(questId, tCodes[t]) then
+												self:InsertSet(stillNeedToHaveSet, tCodes[t])
+											end
+										end
+										if #stillNeedToHaveSet > 0 then
 											shouldAdd = true
+											codeToAdd = 'T:'
+											local commaSpacer = ''
+											for t = 1, #stillNeedToHaveSet do
+												codeToAdd = codeToAdd .. commaSpacer .. stillNeedToHaveSet[t]
+												commaSpacer = ','
+											end
 										end
 									elseif 'L' == code then
 										if self:QuestLevelRequired(questId) ~= tonumber(strsub(codes[c], 2)) then
@@ -4138,7 +4166,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 								end
 							end
 							if shouldAdd then
-								newCodes = newCodes .. codeSpacer .. codes[c]
+								newCodes = newCodes .. codeSpacer .. codeToAdd
 								codeSpacer = ' '
 							end
 						end
@@ -6232,7 +6260,7 @@ end
 					if bitband(cachedStatus, bitsToCheckAgainst) ~= soughtBitMask then
 						tinsert(questsToInvalidate, questId)
 						if foundComplete then
-							local occCodes = self.quests[questId]['OCC']
+							local occCodes = (self.quests[questId] and self.quests[questId]['OCC'])
 							if nil ~= occCodes then
 								for i = 1, #occCodes do
 									self:_MarkQuestComplete(occCodes[i], true, false, false)
@@ -6401,11 +6429,11 @@ end
 			table[index] = t
 		end,
 
---		InsertSet = function(self, table, value)
---			if not tContains(table, value) then
---				tinsert(table, value)
---			end
---		end,
+		InsertSet = function(self, table, value)
+			if not tContains(table, value) then
+				tinsert(table, value)
+			end
+		end,
 
 		---
 		--	Indicates whether the character is in a heroic instance with the specified NPC.
