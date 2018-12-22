@@ -1,4 +1,4 @@
-## Interface: 80000
+## Interface: 80100
 ## Title: Grail
 ## Author: Scott M Harrison
 ## Notes: Knows about quests
