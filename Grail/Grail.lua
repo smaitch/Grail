@@ -447,6 +447,7 @@
 --			Updates map areas for Loremaster quests.
 --		099	Updates some quest/NPC information.
 --			Corrects a problem where cleaning quest data could result in a Lua error.
+--		100 Updates some quest/NPC information.
 --
 --	Known Issues
 --
