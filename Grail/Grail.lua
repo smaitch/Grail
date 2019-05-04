@@ -938,6 +938,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 					if self.battleForAzeroth then
 						self.zonesForLootingTreasure = {
++							[14]  = true, -- Arathi
 							[62]  = true,
 							[81]  = true, -- Silithus
 							[525] = true,
@@ -971,6 +972,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[896] = true, -- Drustvar (primarily alliance)
 							[942] = true, -- Stormsong Valley (primarily alliance)
 							[1165] = true, -- Dazar'Alor (primarily horde)
+							[1462] = true, -- Mechagon Island 8.2
 							}
 						self.quest.name = {
 							[51570]=GetMapNameByID(862),	-- Zuldazar
