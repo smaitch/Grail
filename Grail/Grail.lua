@@ -448,6 +448,9 @@
 --		099	Updates some quest/NPC information.
 --			Corrects a problem where cleaning quest data could result in a Lua error.
 --		100 Updates some quest/NPC information.
+--			Enables support for the two latest Allied races.
+--			Updates Interface in TOC to 80200.
+--			Starts to add support for newly added zone.
 --
 --	Known Issues
 --
@@ -796,7 +799,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		bitMaskRaceLightforgedDraenei	=	0x40000000,
 		bitMaskKulTiran					=	0x80000000,
 		-- Convenience values
-		bitMaskRaceAll			=	0x6fff800f,
+		bitMaskRaceAll			=	0xffff800f,
+
 		-- Enf of bit mask values
 
 
@@ -925,6 +929,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.blizzardVersionAsNumber = self:_MakeNumberFromVersion(self.blizzardVersion)
 					self.portal = GetCVar("portal")
 
+					self.existsClassic = (self.blizzardVersionAsNumber < 2000000)
                     -- These values are no longer used, but kept for posterity.
 					self.existsPandaria = (self.blizzardRelease >= 15640)
 					self.existsWoD = (self.blizzardRelease >= 18505)
@@ -2885,6 +2890,11 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			--	Attempt to get all the Continents by starting wherever you are and getting the Cosmic
 			--	map and then asking it for all the Continents that are children of it, hoping the API
 			--	will bypass the intervening World maps.
+-- In Classic there does not seem to be a parent of all the continents (946) like there is in other
+-- versions.  So, if you are in a zone you cannot get all the continents by walking to cosmic and
+-- then looking down.  Azeroth is 947.  Let's try with the following...
+-- /dump C_Map.GetMapChildrenInfo(947, Enum.UIMapType.Continent, true)
+-- This works to give us Kalimdor and Eastern Kingdoms
 			local currentMapId, TOP_MOST, ALL_DESCENDANTS = Grail.GetCurrentMapAreaID(), true, true
 			local cosmicMapInfo = MapUtil.GetMapParentInfo(currentMapId or 946, Enum.UIMapType.Cosmic, TOP_MOST)
 			local continents = C_Map.GetMapChildrenInfo(cosmicMapInfo.mapID, Enum.UIMapType.Continent, ALL_DESCENDANTS)
@@ -3045,8 +3055,22 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				self._worldQuestSelfNPCs[mapId][coordinates] = currentNPCId
 				currentNPCId = currentNPCId - 10000
 			end
+-- We do not need to know what one is next because we are going to start counting at 6000000 and we will create new NPCs no matter
+-- what mapId they are in for all new NPCs.
+-- TODO: Comment out the next two lines when we switch to 60000000 thing
 			self._worldQuestSelfNPCs['nextToUse'] = self._worldQuestSelfNPCs['nextToUse'] or {}
 			self._worldQuestSelfNPCs['nextToUse'][mapId] = currentNPCId
+		end,
+
+		_PrepareWorldQuestSelfNewNPCs = function(self)
+			local currentNPCId = 6000000
+			while Grail.npc.locations[currentNPCId] and Grail.npc.locations[currentNPCId][1] and Grail.npc.locations[currentNPCId][1].x do
+				local coordinates = strformat("%.2f,%.2f", Grail.npc.locations[currentNPCId][1].x, Grail.npc.locations[currentNPCId][1].y)
+				local mapId = Grail.npc.locations[currentNPCId][1].mapArea
+				self._worldQuestSelfNPCs[mapId] = self._worldQuestSelfNPCs[mapId] or {}
+				self._worldQuestSelfNPCs[mapId][coordinates] = currentNPCId
+				currentNPCId = currentNPCId + 1
+			end
 		end,
 
 		--	This adds to our internal data structure the world quests found available
@@ -3054,7 +3078,7 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
-			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, }
+			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, }
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
 				local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
@@ -3194,9 +3218,10 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				needToAddKCode = true
 			end
 			local meetsReqs, levelToCompare, levelRequired, levelNotToExceed = Grail:MeetsRequirementLevel(questId, levelToCompareAgainst)
-			if levelToCompareAgainst ~= levelRequired then
-				needToAddLCode = true
-			end
+-- I am taking out adding L codes because they annoy...
+--			if levelToCompareAgainst ~= levelRequired then
+--				needToAddLCode = true
+--			end
 			if nil == strfind(self.questPrerequisites[questId] or '', strsub(pCodeToAdd, 3), 1, true) then
 				needToAddPCode = true
 			end
@@ -8139,12 +8164,14 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 					base = index * 32
 					for i = 0, 31 do
 						if bitband(diff, 2^i) > 0 then		-- this means there is a bit difference between backup and current
+							local computedQuestId = base + i + 1
+							local computedQuestName = self:QuestName(computedQuestId) or "UNKNOWN NAME"
 							if bitband(current, 2^i) > 0 then	-- this means current is marked complete
-								message = strformat("New quest completed %d", base + i + 1)
-								if newlyCompletedTable then tinsert(newlyCompletedTable, base + i + 1) end
+								message = strformat("New quest completed %d %s", computedQuestId, computedQuestName)
+								if newlyCompletedTable then tinsert(newlyCompletedTable, computedQuestId) end
 							else
-								message = strformat("New quest LOST %d", base + i + 1)
-								if newlyLostTable then tinsert(newlyLostTable, base + i + 1) end
+								message = strformat("New quest LOST %d %s", computedQuestId, computedQuestName)
+								if newlyLostTable then tinsert(newlyLostTable, computedQuestId) end
 							end
 							if not quiet then
 								print(message)
@@ -9424,6 +9451,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[1196] = 51572,	-- Choosing Vol'dun from Zandalar Mission Board on ship in Boralus
 			[1197] = 51571,	-- Choosing Nazmir from Zandalar Mission Board on ship in Boralus
 			[1210] = 51802,	-- Choosing Stormsong Valley from Kul Tiras Mission Board on ship in Zuldazar
+			[2214] = 55404,	-- Choosing Nazjatar Alliance companion Ori -- also completes 57041
 			},
 		_ItemTextBeginList = {
 			[1292673] = 52134,
