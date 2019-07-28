@@ -943,6 +943,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 					if self.battleForAzeroth then
 						self.zonesForLootingTreasure = {
+							[14]  = true, -- Arathi
+							[37]  = true, -- Elwynn Forest
+							[49]  = true, -- Redrige Mountains
 							[62]  = true,
 							[81]  = true, -- Silithus
 							[525] = true,
@@ -976,6 +979,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[896] = true, -- Drustvar (primarily alliance)
 							[942] = true, -- Stormsong Valley (primarily alliance)
 							[1165] = true, -- Dazar'Alor (primarily horde)
+							--
+							[1355] = true, -- Nazjatar 8.2
+ 							[1462] = true, -- Mechagon Island 8.2
 							}
 						self.quest.name = {
 							[51570]=GetMapNameByID(862),	-- Zuldazar
@@ -3078,7 +3084,8 @@ if GrailDatabase.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
-			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, }
+			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, }
+			
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
 				local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
