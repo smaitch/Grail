@@ -35,11 +35,25 @@ G[4495]='A Good Friend'
 end
 
 if release >= 31407 then
+G[7]='Kobold Camp Cleanup'
+G[9]='The Killing Fields'
+G[12]="The People's Militia"
+G[15]='Investigate Echo Ridge'
+G[18]='Brotherhood of Thieves'
+G[21]='Skirmish at Echo Ridge'
+G[33]='Wolves Across the Border'
+G[47]='Gold Dust Exchange'
+G[54]='Report to Goldshire'
+G[62]='The Fargodeep Mine'
 G[141]='The Defias Brotherhood'
+G[783]='A Threat Within'
 G[918]='Timberling Seeds'
 G[919]='Timberling Sprouts'
 G[922]='Rellian Greenspyre'
 G[923]='Tumors'
+G[2158]='Rest and Relaxation'
+G[3100]='Simple Letter'
+G[5261]='Eagan Peltskinner'
 G[8830]='One Commendation Signet'
 G[8831]='Ten Commendation Signets'
 end
