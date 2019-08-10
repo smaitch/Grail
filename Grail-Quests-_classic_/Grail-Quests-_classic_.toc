@@ -1,0 +1,9 @@
+## Interface: 11302
+## Title: Grail |cff69ccf0Quests |r|cffeda55fClassic|r
+## Author: Scott M Harrison
+## Notes: Provides quests to Grail for Classic
+## Version: 27178
+## Dependencies: Grail
+## LoadOnDemand: 1
+
+Grail-Quests-_classic_.lua

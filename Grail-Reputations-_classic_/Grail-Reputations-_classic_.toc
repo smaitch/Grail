@@ -1,0 +1,9 @@
+## Interface: 11302
+## Title: Grail |cff69ccf0Reputations |r|cffeda55fClassic|r
+## Author: Scott M Harrison
+## Notes: Provides reputation award information to Grail for Classic
+## Version: 007
+## Dependencies: Grail
+## LoadOnDemand: 1
+
+Grail-Reputations-_classic_.lua

@@ -1,0 +1,9 @@
+## Interface: 80200
+## Title: Grail |cff69ccf0Quests |r|cff0000ffRetail|r|cff69ccf0 ptBR|r
+## Author: Scott M Harrison
+## Notes: Provides localized ptBR quest names to Grail for Retail
+## Version: 25901
+## Dependencies: Grail
+## LoadOnDemand: 1
+
+Grail-Quests-_retail_-ptBR.lua

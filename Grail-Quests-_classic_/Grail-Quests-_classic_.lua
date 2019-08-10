@@ -1,0 +1,65 @@
+--
+--	Grail Quests
+--	Written by scott@mithrandir.com
+--
+--	Version History
+--		001	Initial verison.
+--
+--	UTF-8 file
+--
+Grail_Quests_File_Version = 001
+
+if Grail.questsVersionNumber < Grail_Quests_File_Version then
+Grail.questsVersionNumber = Grail_Quests_File_Version
+
+Grail.dailyMaximums = {
+	}
+
+Grail.weeklyMaximums = {
+	}
+
+local _, release, _, interface = GetBuildInfo()
+release = tonumber(release)
+interface = tonumber(interface)
+
+local G = Grail.questCodes
+
+if release >= 0 then
+G[141]='K0180 L014 N255 E31407'
+G[456]='K0020 L001 N255 A:2079 T:2079'
+G[457]='K0030 L001 N255 A:2079 T:2079 P:456'
+G[458]='K0010 L001 N255 A:2077 T:1992'
+G[459]='K0030 L001 N255 A:1992 T:1992 P:458'
+G[475]='K0060 L004 N255 A:2078 T:2107'
+G[476]='K0060 L004 N255 A:2107 T:2078 P:475'
+G[483]='K0090 L004 N255 A:2078 P:476'
+G[487]='K0080 L005 N255 A:2151'
+G[916]='K0040 L003 N255 A:2082 T:2082'
+G[917]='K0050 L001 N255 T:2082 P:916'
+G[918]='K0070 L004 N255 A:2080 T:2080 P:997'
+G[919]='K0070 L004 N255 A:2080 T:2080 P:997'
+G[920]='K0050 L001 N255 A:2082 T:3514 P:917'
+G[921]='K0050 L001 N255 A:3514 T:3514 P:920'
+G[922]='K0070 L004 N255 A:2080 T:3517 P:918'
+G[923]='K0090 L004 N255 A:3517 P:922'
+G[928]='K0050 L001 N255 A:3514 T:3515 P:921'
+G[929]='K0050 L001 N255 A:3515 T:3515 P:928'
+G[933]='K0090 L001 N255 A:3515 P:929'
+G[997]='K0050 L004 N255 A:2083 T:2080'
+G[2159]='K0050 L001 N255 A:6780 T:6736'
+G[3120]='FA K0010 L001 N255 RE A:2079 T:3597 P:456'
+G[3519]='K0040 L002 N255 A:8584 T:8583 P:4495'
+G[3521]='K0040 L002 N255 A:8583 T:8583 P:3519'
+G[3522]='K0040 L002 N255 A:8583 T:8584 P:3521'
+G[4495]='K0040 L002 N255 A:8583 T:8584'
+G[8830]='K0600 L001 N255 E31407'
+G[8831]='K0600 L001 N255 E31407'
+end
+
+-- Release information
+
+-- Classic
+--	30862	1.13.2	2019-06-18
+--	31407	1.13.2	2019-08-06	2019-08-08	current classic
+
+end

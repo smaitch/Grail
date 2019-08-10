@@ -1,0 +1,9 @@
+## Interface: 11302
+## Title: Grail |cff69ccf0NPCs |r|cffeda55fClassic|r
+## Author: Scott M Harrison
+## Notes: Provides NPCs to Grail for Classic
+## Version: 27178
+## Dependencies: Grail
+## LoadOnDemand: 1
+
+Grail-NPCs-_classic_.lua

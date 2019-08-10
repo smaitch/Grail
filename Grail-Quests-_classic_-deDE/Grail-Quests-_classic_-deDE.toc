@@ -1,0 +1,9 @@
+## Interface: 11302
+## Title: Grail |cff69ccf0Quests |r|cffeda55fClassic|r|cff69ccf0 deDE|r
+## Author: Scott M Harrison
+## Notes: Provides localized deDE quest names to Grail for Classic
+## Version: 29297
+## Dependencies: Grail
+## LoadOnDemand: 1
+
+Grail-Quests-_classic_-deDE.lua

@@ -1,0 +1,9 @@
+## Interface: 80200
+## Title: Grail |cff69ccf0Quests |r|cff0000ffRetail|r|cff69ccf0 esES|r
+## Author: Scott M Harrison
+## Notes: Provides localized esES quest names to Grail for Retail
+## Version: 25901
+## Dependencies: Grail
+## LoadOnDemand: 1
+
+Grail-Quests-_retail_-esES.lua

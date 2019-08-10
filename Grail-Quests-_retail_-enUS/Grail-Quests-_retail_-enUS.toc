@@ -1,0 +1,9 @@
+## Interface: 80200
+## Title: Grail |cff69ccf0Quests |r|cff0000ffRetail|r|cff69ccf0 enUS|r
+## Author: Scott M Harrison
+## Notes: Provides localized enUS quest names to Grail for Retail
+## Version: 27178
+## Dependencies: Grail
+## LoadOnDemand: 1
+
+Grail-Quests-_retail_-enUS.lua

@@ -1,9 +1,0 @@
-## Interface: 80200
-## Title: Grail |r|cff69ccf0Quests deDE|r
-## Author: Scott M Harrison
-## Notes: Provides localized deDE quest names to Grail
-## Version: 29297
-## Dependencies: Grail
-## LoadOnDemand: 1
-
-Grail-Quests-deDE.lua
