@@ -924,7 +924,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.environment = "_ptr_"
 					end
 
-					self.existsClassic = (self.blizzardVersionAsNumber < 2000000)
+					self.existsClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)	-- was (self.blizzardVersionAsNumber < 2000000)
 					if self.existsClassic then
 						self.environment = "_classic_"
 					end
