@@ -1254,7 +1254,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 								name = friendName
 							end
 						end
-						self.reputationMapping[hexIndex] = name
+						if nil ~= name then
+							self.reputationMapping[hexIndex] = name
+						end
 					end
 					self.reverseReputationMapping = {}
 					for index, repName in pairs(self.reputationMapping) do
