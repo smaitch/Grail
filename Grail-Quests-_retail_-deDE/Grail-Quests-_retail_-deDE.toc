@@ -2,7 +2,7 @@
 ## Title: Grail |cff69ccf0Quests |r|cff0000ffRetail|r|cff69ccf0 deDE|r
 ## Author: Scott M Harrison
 ## Notes: Provides localized deDE quest names to Grail for Retail
-## Version: 29297
+## Version: 31478
 ## Dependencies: Grail
 ## LoadOnDemand: 1
 

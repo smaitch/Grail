@@ -2,7 +2,7 @@
 ## Title: Grail |cff69ccf0Quests |r|cff0000ffRetail|r
 ## Author: Scott M Harrison
 ## Notes: Provides quests to Grail for Retail
-## Version: 27178
+## Version: 31478
 ## Dependencies: Grail
 ## LoadOnDemand: 1
 
