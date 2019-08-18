@@ -1258,10 +1258,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						if nil == name and self.capabilities.usesFriendshipReputation then
 							local id, rep, maxRep, friendName, text, texture, reaction, threshold, nextThreshold = GetFriendshipReputation(reputationIndex)
 							if friendName == nil then
-								name = "*** UNKNOWN " .. reputationIndex .. " ***"
-								if self.reputationMapping[hexIndex] then
-									name = name .. " (" .. self.reputationMapping[hexIndex] .. ")"
-								end
+--								name = "*** UNKNOWN " .. reputationIndex .. " ***"
+--								if self.reputationMapping[hexIndex] then
+--									name = name .. " (" .. self.reputationMapping[hexIndex] .. ")"
+--								end
 							else
 								name = friendName
 							end
