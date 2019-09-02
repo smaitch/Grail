@@ -105,4 +105,51 @@ G[8830]='One Commendation Signet'
 G[8831]='Ten Commendation Signets'
 end
 
+if release >= 31650 then
+G[6]='Bounty on Garrick Padfoot'
+G[3102]='Encrypted Letter'
+G[3103]='Hallowed Letter'
+G[3903]='Milly Osworth'
+G[3904]="Milly's Harvest"
+end
+
+if release >= 31687 then
+G[11]='Riverpaw Gnoll Bounty'
+G[16]='Give Gerard a Drink'
+G[35]='Further Concerns'
+G[37]='Find the Lost Guards'
+G[39]="Deliver Thomas' Report"
+G[40]='A Fishy Peril'
+G[45]="Discover Rolf's Fate"
+G[46]='Bounty on Murlocs'
+G[52]='Protect the Frontier'
+G[59]='Cloth and Leather Armor'
+G[60]='Kobold Candles'
+G[61]='Shipment to Stormwind'
+G[71]='Report to Thomas'
+G[76]='The Jasperlode Mine'
+G[83]='Red Linen Goods'
+G[84]='Back to Billy'
+G[85]='Lost Necklace'
+G[86]='Pie for Billy'
+G[87]='Goldtooth'
+G[88]='Princess Must Die!'
+G[109]='Report to Gryan Stoutmantle'
+G[176]='Wanted:  "Hogger"'
+G[220]='Call of Water'
+G[239]='Westbrook Garrison Needs Help!'
+G[750]='The Hunt Continues'
+G[752]='A Humble Task'
+G[753]='A Humble Task'
+G[755]='Rites of the Earthmother'
+G[757]='Rite of Strength'
+G[763]='Rites of the Earthmother'
+G[1097]="Elmore's Task"
+G[1519]='Call of Earth'
+G[3094]='Verdant Note'
+G[3376]='Break Sharptusk!'
+G[8836]='One Commendation Signet'
+G[8837]='Ten Commendation Signets'
+end
+
 --	End of localized quest names

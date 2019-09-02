@@ -454,6 +454,9 @@
 --			Transforms GrailDatabase to use Grail.environment so _retail_ differs from _ptr_ differs from _classic_.
 --			Augments the mapping system because Blizzard API is a little wonky and does not report zones like Teldrassil in Kalimdor like one would expect.
 --			Adds support for quests to be marked only available during a WoW Anniversay event.
+--		101	Updates some quest/NPC information.
+--			Changes the code that detects group quests as Hogger in Classic returned a string vice a number.
+--			Changes IsPrimed() to no longer need the calendar to be checked in Classic.
 --
 --	Known Issues
 --
@@ -1759,7 +1762,11 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					local baseValue = 0
 					if isDaily then baseValue = baseValue + 2 end
 					if isWeekly then baseValue = baseValue + 4 end
-					if suggestedGroup and suggestedGroup > 1 then baseValue = baseValue + 512 end
+					if suggestedGroup then
+						if type(suggestedGroup) == "string" or suggestedGroup > 1 then
+							baseValue = baseValue + 512
+						end
+					end
 					if isTask then baseValue = baseValue + 32768 end	-- bonus objective
 					if self.capabilities.usesCampaignInfo then
 						if C_CampaignInfo.IsCampaignQuest(theQuestId) then baseValue = baseValue + 4096 end -- war campaign (recorded as legendary)
@@ -6894,7 +6901,14 @@ end
 		---
 		--	Returns whether Grail is ready to properly respond to status information about quests.
 		IsPrimed = function(self)
-			return self.receivedCalendarUpdateEventList and self.receivedQuestLogUpdate
+			local retval = true
+			if retval and self.capabilities.usesCalendar then
+				retval = self.receivedCalendarUpdateEventList
+			end
+			if retval then
+				retval = self.receivedQuestLogUpdate
+			end
+			return retval
 		end,
 
 		---
