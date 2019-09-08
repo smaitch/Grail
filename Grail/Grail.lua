@@ -1884,8 +1884,9 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 				--	If the questTitle is different from what we have recorded, note that as BadQuestData (even though it could just be a localization issue)
 				if self:DoesQuestExist(questId) and questTitle ~= self:QuestName(questId) then
-					errorString = errorString .. "|Title:" .. questTitle .. "|Locale:" .. self.playerLocale
-					self:_RecordBadQuestData(errorString)
+--					errorString = errorString .. "|Title:" .. questTitle .. "|Locale:" .. self.playerLocale
+--					self:_RecordBadQuestData(errorString)
+					self:_LearnQuestName(questId, questTitle)
 				end
 
 				--	If the level as reported by Blizzard API does not match our internal database we should note that fact
@@ -1965,10 +1966,11 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local titleText = GetTitleText()
 				self.completingQuest = self:QuestInQuestLogMatchingTitle(titleText)
 				self.completingQuestTitle = titleText
-				if nil == self.completingQuest then	-- if we still do not have it, mark it in the saved variables for possible future inclusion
-					if nil == GrailDatabase["SpecialQuests"] then GrailDatabase["SpecialQuests"] = { } end
-					if nil == GrailDatabase["SpecialQuests"][titleText] then GrailDatabase["SpecialQuests"][titleText] = self.blizzardRelease end
-				end
+-- Removing special quest processing as it is not working well in Classic
+--				if nil == self.completingQuest then	-- if we still do not have it, mark it in the saved variables for possible future inclusion
+--					if nil == GrailDatabase["SpecialQuests"] then GrailDatabase["SpecialQuests"] = { } end
+--					if nil == GrailDatabase["SpecialQuests"][titleText] then GrailDatabase["SpecialQuests"][titleText] = self.blizzardRelease end
+--				end
 				self:_UpdateQuestResetTime()
 			end,
 
@@ -4546,13 +4548,15 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 			-- Remove quests from SpecialQuests that have been marked as special in our internal database.
 			if nil ~= GrailDatabase["SpecialQuests"] then
-				for questName, _ in pairs(GrailDatabase["SpecialQuests"]) do
-					local questId = self:QuestWithName(questName)
---					if self.quests[questId] and  self.quests[questId]['SP'] then
-					if self.quests[questId] and bitband(self:CodeType(questId), self.bitMaskQuestSpecial) > 0 then
-						GrailDatabase["SpecialQuests"][questName] = nil
-					end
-				end
+-- We are just going to remove all the special quests as they are not working well in Classic.
+				GrailDatabase.SpecialQuests = nil
+--				for questName, _ in pairs(GrailDatabase["SpecialQuests"]) do
+--					local questId = self:QuestWithName(questName)
+----					if self.quests[questId] and  self.quests[questId]['SP'] then
+--					if self.quests[questId] and bitband(self:CodeType(questId), self.bitMaskQuestSpecial) > 0 then
+--						GrailDatabase["SpecialQuests"][questName] = nil
+--					end
+--				end
 			end
 
 			-- Remove quests from NewQuests that have been added to our internal database.
