@@ -457,6 +457,7 @@
 --		101	Updates some quest/NPC information.
 --			Changes the code that detects group quests as Hogger in Classic returned a string vice a number.
 --			Changes IsPrimed() to no longer need the calendar to be checked in Classic.
+--			Forces Classic to query for completed quests at startup because calendar processing is not done (where it was done as a side effect).
 --
 --	Known Issues
 --
@@ -1503,6 +1504,12 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self:RegisterObserver("Bags", self._BagUpdates)
 					self:RegisterObserver("QuestLogChange", self._QuestLogUpdate)
 					self:_UpdateTrackingObserver()
+
+					-- In Classic we need to get the completed quests because we have eliminated the
+					-- call as a result of calendar processing being removed from Classic.
+					if self.existsClassic then
+						QueryQuestsCompleted()
+					end
 
 					self.timings.AddonLoaded = 	debugprofilestop() - debugStartTime
 				end
