@@ -458,6 +458,7 @@
 --			Changes the code that detects group quests as Hogger in Classic returned a string vice a number.
 --			Changes IsPrimed() to no longer need the calendar to be checked in Classic.
 --			Forces Classic to query for completed quests at startup because calendar processing is not done (where it was done as a side effect).
+--			Creates an implementation of ProfessionExceeds() that works in Classic.
 --
 --	Known Issues
 --
@@ -8552,30 +8553,47 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 		ProfessionExceeds = function(self, professionCode, professionValue)
 			local retval = false
 			local skillLevel, ignore1, ignore2 = self.NO_SKILL, nil, nil
-			local skillName = nil
-			local prof1, prof2, archaeology, fishing, cooking, firstAid = GetProfessions();
-
-			if "X" == professionCode and nil ~= archaeology then
-				ignore1, ignore2, skillLevel = GetProfessionInfo(archaeology)
-			elseif "F" == professionCode and nil ~= fishing then
-				ignore1, ignore2, skillLevel = GetProfessionInfo(fishing)
-			elseif "C" == professionCode and nil ~= cooking then
-				ignore1, ignore2, skillLevel = GetProfessionInfo(cooking)
-			elseif "Z" == professionCode and nil ~= firstAid then
-				ignore1, ignore2, skillLevel = GetProfessionInfo(firstAid)
-			elseif "R" == professionCode then
-				skillLevel = self:_RidingSkillLevel()
-			else
-				local professionName = self.professionMapping[professionCode]
-				if nil ~= prof1 then
-					skillName, ignore1, skillLevel = GetProfessionInfo(prof1)
+			if self.existsClassic then
+				if "R" == professionCode then
+					skillLevel = self:_RidingSkillLevel()
+				else
+					local professionName = self.professionMapping[professionCode]
+					if nil ~= professionName then
+						local numSkills = GetNumSkillLines()
+						for i = 1, numSkills do
+							local skillName, header, isExpanded, skillRank, numTempPoints, skillModifier, skillMaxRank, isAbandonable, stepCost, rankCost, minLevel, skillCostType, skillDescription = GetSkillLineInfo(i)
+							if skillName == professionName then
+								skillLevel = skillRank
+							end
+						end
+					end
 				end
-				if skillName ~= professionName then
-					if nil ~= prof2 then
-						skillName, ignore1, skillLevel = GetProfessionInfo(prof2)
+			else
+				local skillName = nil
+				local prof1, prof2, archaeology, fishing, cooking, firstAid = GetProfessions()
+
+				if "X" == professionCode and nil ~= archaeology then
+					ignore1, ignore2, skillLevel = GetProfessionInfo(archaeology)
+				elseif "F" == professionCode and nil ~= fishing then
+					ignore1, ignore2, skillLevel = GetProfessionInfo(fishing)
+				elseif "C" == professionCode and nil ~= cooking then
+					ignore1, ignore2, skillLevel = GetProfessionInfo(cooking)
+				elseif "Z" == professionCode and nil ~= firstAid then
+					ignore1, ignore2, skillLevel = GetProfessionInfo(firstAid)
+				elseif "R" == professionCode then
+					skillLevel = self:_RidingSkillLevel()
+				else
+					local professionName = self.professionMapping[professionCode]
+					if nil ~= prof1 then
+						skillName, ignore1, skillLevel = GetProfessionInfo(prof1)
 					end
 					if skillName ~= professionName then
-						skillLevel = self.NO_SKILL
+						if nil ~= prof2 then
+							skillName, ignore1, skillLevel = GetProfessionInfo(prof2)
+						end
+						if skillName ~= professionName then
+							skillLevel = self.NO_SKILL
+						end
 					end
 				end
 			end
