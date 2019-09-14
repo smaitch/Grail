@@ -2450,7 +2450,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 		--	The reputation values are the actual faction values used by Blizzard.
 		reputationExpansionMapping = {
-			[1] = { 69, 54, 47, 72, 930, 1134, 530, 76, 81, 68, 911, 1133, 509, 890, 730, 510, 729, 889, 21, 577, 369, 470, 910, 609, 749, 990, 270, 529, 87, 909, 92, 989, 93, 349, 809, 70, 59, 576, 922, 967, 589, 469, 67, },
+			[1] = { 69, 54, 47, 72, 930, 1134, 530, 76, 81, 68, 911, 1133, 509, 890, 730, 510, 729, 889, 21, 577, 369, 470, 910, 609, 749, 990, 270, 529, 87, 909, 92, 989, 93, 349, 809, 70, 59, 576, 922, 967, 589, 469, 67, 471, 893, 550, 551, 549, 83, 86, },
 			[2] = { 942, 946, 978, 941, 1038, 1015, 970, 933, 947, 1011, 1031, 1077, 932, 934, 935, 1156, 1012, 936, },
 			[3] = { 1037, 1106, 1068, 1104, 1126, 1067, 1052, 1073, 1097, 1098, 1105, 1117, 1119, 1064, 1050, 1085, 1091, 1090, 1094, 1124, },
 			[4] = { 1158, 1173, 1135, 1171, 1174, 1178, 1172, 1177, 1204, },
@@ -2513,6 +2513,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["048"] = 'Stormwind',
 			["04C"] = 'Orgrimmar',
 			["051"] = 'Thunder Bluff',
+			["053"] = 'Leatherworking - Elemental',	-- Classic
+			["056"] = 'Leatherworking - Dragonscale',	-- Classic
 			["057"] = 'Bloodsail Buccaneers',
 			["05C"] = 'Gelkis Clan Centaur',
 			["05D"] = 'Magram Clan Centaur',
@@ -2522,10 +2524,14 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["171"] = 'Gadgetzan',
 			["1D5"] = 'Alliance',
 			["1D6"] = 'Ratchet',
+			["1D7"] = "Wildhammer Clan",	-- Classic
 			["1FD"] = 'The League of Arathor',
 			["1FE"] = 'The Defilers',
 			["211"] = 'Argent Dawn',
 			["212"] = 'Darkspear Trolls',
+			["225"] = 'Leatherworking - Tribal',	-- Classic
+			["226"] = "Engineering - Goblin",	-- Classic
+			["227"] = "Engineering - Gnome",	-- Classic
 			["240"] = 'Timbermaw Hold',
 			["241"] = 'Everlook',
 			["24D"] = 'Wintersaber Trainers',
@@ -2536,6 +2542,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["329"] = "Shen'dralar",
 			["379"] = 'Warsong Outriders',
 			["37A"] = 'Silverwing Sentinels',
+			["37D"] = "Revantusk Trolls",	-- Classic
 			["38D"] = 'Darkmoon Faire',
 			["38E"] = 'Brood of Nozdormu',
 			["38F"] = 'Silvermoon City',

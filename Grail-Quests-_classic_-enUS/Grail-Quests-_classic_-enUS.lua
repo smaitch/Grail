@@ -3250,4 +3250,37 @@ G[8862]="Elune's Candle"
 G[8893]='The Super Egg-O-Matic'
 end
 
+if release >= 31830 then
+G[859]='<UNUSED>'
+G[1288]="Vimes's Report"
+G[2522]="Kum'isha's Endeavors"
+G[3366]='The Glowing Shard'
+G[3646]='Membership Card Renewal'
+G[4121]='Precarious Predicament'
+G[4482]='Libram of Tenacity'
+G[5305]='Sweet Serenity'
+G[5513]='Mantles of the Dawn'
+G[5534]='Kim\'jael\'s "Missing" Equipment'
+G[6566]='What the Wind Carries'
+G[6567]='The Champion of the Horde'
+G[6568]='The Testament of Rexxar'
+G[6569]='Oculus Illusions'
+G[7486]="A Hero's Reward"
+G[7581]="The Prison's Bindings"
+G[7582]="The Prison's Casing"
+G[7621]='A Warning'
+G[7622]='The Balance of Light and Shadow'
+G[7650]='Enchanted Thorium Platemail: Volume II'
+G[7651]='Enchanted Thorium Platemail: Volume III'
+G[7761]="Blackhand's Command"
+G[7812]='Additional Runecloth'
+G[7832]='Additional Runecloth'
+G[7931]='5 Tickets - Minor Darkmoon Prize'
+G[8276]='Taking Back Silithus'
+G[8907]='An Earnest Proposition'
+G[9178]="Craftsman's Writ - Dense Weightstone"
+G[9188]="Craftsman's Writ - Brightcloth Pants"
+G[9197]="Craftsman's Writ - Gnomish Battle Chicken"
+end
+
 --	End of localized quest names
