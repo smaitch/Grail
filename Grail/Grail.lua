@@ -1506,12 +1506,6 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self:RegisterObserver("QuestLogChange", self._QuestLogUpdate)
 					self:_UpdateTrackingObserver()
 
-					-- In Classic we need to get the completed quests because we have eliminated the
-					-- call as a result of calendar processing being removed from Classic.
-					if self.existsClassic then
-						QueryQuestsCompleted()
-					end
-
 					self.timings.AddonLoaded = 	debugprofilestop() - debugStartTime
 				end
 
@@ -1999,6 +1993,11 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					C_Calendar.SetAbsMonth(month, year)
 					C_Calendar.OpenCalendar()
 					self:_AddWorldQuests()
+				end
+				-- In Classic we need to get the completed quests because we have eliminated the
+				-- call as a result of calendar processing being removed from Classic.
+				if self.existsClassic then
+					QueryQuestsCompleted()
 				end
 			end,
 
