@@ -7,3 +7,4 @@
 ## LoadOnDemand: 1
 
 Grail-Quests-_classic_-ruRU.lua
+Grail-Quests-_classic_-description-ruRU.lua

@@ -7,3 +7,4 @@
 ## LoadOnDemand: 1
 
 Grail-Quests-_classic_-deDE.lua
+Grail-Quests-_classic_-description-deDE.lua

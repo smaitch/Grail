@@ -2317,6 +2317,12 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				[600002]=GetMapNameByID(19)..' '..FACTION_HORDE..' '..REQUIREMENTS,
 				},
 
+			-- The localized description of the quest.
+			-- This is dynamically populated in Classic and only used there because Blizzard API does not allow us
+			-- access to the description in game.
+			description = {
+				},
+
 			},
 
 		-- A table whose keys represent situations where quests need to be invalidated, and whose values are

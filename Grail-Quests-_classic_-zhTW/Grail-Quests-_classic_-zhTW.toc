@@ -7,3 +7,4 @@
 ## LoadOnDemand: 1
 
 Grail-Quests-_classic_-zhTW.lua
+Grail-Quests-_classic_-description-zhTW.lua
