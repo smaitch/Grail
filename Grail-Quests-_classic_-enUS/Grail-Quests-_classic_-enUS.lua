@@ -3289,4 +3289,36 @@ G[9188]="Craftsman's Writ - Brightcloth Pants"
 G[9197]="Craftsman's Writ - Gnomish Battle Chicken"
 end
 
+if release >= 31882 then
+G[1036]='Avast Ye, Scallywag'
+G[4621]='Avast Ye, Admiral!'
+G[5504]='Mantles of the Dawn'
+G[5534]='Kim\'jael\'s "Missing" Equipment'
+G[5674]="Elune's Grace"
+G[6585]='The Test of Skulls, Axtroz'
+G[6601]='Ascension...'
+G[6602]='Blood of the Black Dragon Champion'
+G[7490]='Victory for the Horde'
+G[7495]='Victory for the Alliance'
+G[7496]='Celebrating Good Times'
+G[7497]='The Journey Has Just Begun'
+G[7507]="Foror's Compendium"
+G[7604]='A Binding Contract'
+G[7632]='The Ancient Leaf'
+G[7633]='An Introduction'
+G[7634]='Ancient Sinew Wrapped Lamina'
+G[7635]='A Proper String'
+G[7636]='Stave of the Ancients'
+G[7783]='The Lord of Blackrock'
+G[7785]='Examine the Vessel'
+G[8361]='Abyssal Contacts'
+G[8906]='An Earnest Proposition'
+G[8909]='An Earnest Proposition'
+G[8912]='An Earnest Proposition'
+G[8916]='An Earnest Proposition'
+G[9121]='The Dread Citadel - Naxxramas'
+G[9272]='Dressing the Part'
+G[9338]='Allegiance to Cenarion Circle'
+end
+
 --	End of localized quest names

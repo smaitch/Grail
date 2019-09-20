@@ -2059,7 +2059,6 @@ G[4542]='Bring the Urgent Message to Cliffwatcher Longhorn at Freewind Post.'
 G[4581]="Take Shindrell's Note to Kayneth Stillwind in Forest Song."
 G[4601]='Insert a Grime-Encrusted Item into the Sparklematic 5200, and be sure to have three silver coins to start the machine.'
 G[4602]='Insert a Grime-Encrusted Item into the Sparklematic 5200, and be sure to have three silver coins to start the machine.'
-G[4641]='Speak with Gornek. You recall Kaltunk marking your map with his location and mentioning that Gornek resided in the Den, a building to the west.'
 G[4642]='Bring a Merged Ooze Sample to Chemist Fuely in Undercity.'
 G[4681]="Recover the Sea Turtle Remains from the Skeletal Sea Turtle in the waters west of Auberdine, and then speak with Gwennyth Bly'Leggonde back in Auberdine."
 G[4701]='Travel to Blackrock Spire and destroy the source of the worg menace. As you left Helendis, he shouted a name: Halycon. It is what the orcs refer to in regards to the worg.'
@@ -2815,6 +2814,34 @@ G[9415]="Speak with Marshal Bluewall at the Alliance encampment near Hive'Zora."
 G[9416]="Speak with General Kirika at the Horde encampment near Hive'Regal."
 G[9419]="Find and deliver Silithyst to the Silithyst Extractor, then speak with Marshal Bluewall at the Alliance encampment near Hive'Zora."
 G[9422]="Find and deliver Silithyst to the Silithyst Extractor then speak with General Kirika at the Horde encampment near Hive'Regal."
+end
+
+if release >= 31882 then
+G[1036]='Speak with Fleet Master Firallon aboard the Crimson Vale off the coast of Stranglethorn Vale.'
+G[4621]='Slay Fleet Master Seahorn and Baron Revilgaz of Booty Bay, and then return to Fleet Master Firallon aboard the Crimson Veil off the coast of Stranglethorn Vale.'
+G[4641]='Speak with Gornek. You recall Kaltunk marking your map with his location and mentioning that Gornek resided in the Den, a building to the west. '
+G[5504]='Bring 10 Argent Dawn Valor Tokens to Quartermaster Hasana at the Bulwark, Western Plaguelands.'
+G[5674]='Speak to Priestess Alathea in Darnassus.'
+G[6585]='Travel to Grim Batol and track down Axtroz, drake champion of the Red Flight. Destroy him and take his skull. Return the skull to Emberstrife.'
+G[6601]='It would appear as if the charade is over. You know that the Amulet of Draconic Subversion that Myranda the Hag created for you will not function inside Blackrock Spire. Perhaps you should find Rexxar and explain your predicament. Show him the Dull Drakefire Amulet. Hopefully he will know what to do next.'
+G[6602]='Travel to Blackrock Spire and slay General Drakkisath. Gather his blood and return it to Rexxar.'
+G[7490]='Take the Head of Onyxia to Thrall in Orgrimmar.'
+G[7495]='Take the Head of Onyxia to Highlord Bolvar Fordragon in Stormwind.'
+G[7496]='Seek out Major Mattingly in the Valley of Heroes.'
+G[7507]="Return Foror's Compendium of Dragon Slaying to the Athenaeum."
+G[7604]='Turn the Thorium Brotherhood Contract in to Lokhtos Darkbargainer if you would like to receive the plans for Sulfuron.'
+G[7632]="Find the owner of the Ancient Petrified Leaf. Good luck, $N; It's a big world."
+G[7634]='Hastat the Ancient has asked that you bring him a Mature Blue Dragon Sinew. Should you find this sinew, return it to Hastat in Felwood.'
+G[7635]='Stoma the Ancient has asked that you bring him a Mature Black Dragon Sinew. Should you find this sinew, return it to Stoma in Felwood.'
+G[7636]='You must find and destroy these four demonic corrupters:$B$BSimone the Seductress.$B$BKlinfran the Crazed.$B$BSolenor the Slayer.$B$BArtorius the Doombringer.$B$BDestroy these creatures and return to Vartrus the Ancient in Felwood with their heads.$B$BRefer to the Petrified Bark in your inventory for clues as to their whereabouts.$B$BYou MUST complete this task by yourself.'
+G[7783]='Return the Head of Nefarian to Thrall in Orgrimmar.'
+G[7785]='Examine the Vessel of Rebirth and return it to Highlord Demitrian.'
+G[8361]='Bor Wildmane at Cenarion Hold in Silithus wants you to destroy an Abyssal Templar and bring him an Abyssal Crest as proof of the deed.'
+G[8906]="Acquire 15 Winterspring Blood Samples and 20 gold and bring them along with a set of Beaststalker's Bindings to Deliana in Ironforge."
+G[8909]='Acquire 15 Winterspring Blood Samples and 20 gold and bring them along with 1 set of Devout Bracers to Deliana in Ironforge.'
+G[8912]='Acquire 15 Winterspring Blood Samples and 20 gold and bring them along with a set of Bracers of Valor to Deliana in Ironforge.'
+G[8916]='Acquire 15 Silithus Venom Samples and 20 gold and bring them along with a set of Devout Bracers to Mokvar in Orgrimmar.'
+G[9121]="Archmage Angela Dosantos at Light's Hope Chapel in the Eastern Plaguelands wants 5 Arcane Crystals, 2 Nexus Crystals, 1 Righteous Orb and 60 gold pieces. You must also be Honored with the Argent Dawn."
 end
 
 --	End of localized quest descriptions
