@@ -2817,9 +2817,11 @@ G[9422]="Find and deliver Silithyst to the Silithyst Extractor then speak with G
 end
 
 if release >= 31882 then
+G[497]='Go to Tarren Mill and find out the status of the party sent by Thrall.'
 G[1036]='Speak with Fleet Master Firallon aboard the Crimson Vale off the coast of Stranglethorn Vale.'
 G[4621]='Slay Fleet Master Seahorn and Baron Revilgaz of Booty Bay, and then return to Fleet Master Firallon aboard the Crimson Veil off the coast of Stranglethorn Vale.'
 G[4641]='Speak with Gornek. You recall Kaltunk marking your map with his location and mentioning that Gornek resided in the Den, a building to the west. '
+G[5124]='Bring Malyfous Darkhammer 6 Enchanted Thorium Bars, 2 Essence of Fire, and 4 Star Rubies. You will also need to turn in your Unfired Plate Gauntlets.'
 G[5504]='Bring 10 Argent Dawn Valor Tokens to Quartermaster Hasana at the Bulwark, Western Plaguelands.'
 G[5674]='Speak to Priestess Alathea in Darnassus.'
 G[6585]='Travel to Grim Batol and track down Axtroz, drake champion of the Red Flight. Destroy him and take his skull. Return the skull to Emberstrife.'

@@ -3290,8 +3290,10 @@ G[9197]="Craftsman's Writ - Gnomish Battle Chicken"
 end
 
 if release >= 31882 then
+G[497]='<UNUSED>'
 G[1036]='Avast Ye, Scallywag'
 G[4621]='Avast Ye, Admiral!'
+G[5124]='Fiery Plate Gauntlets'
 G[5504]='Mantles of the Dawn'
 G[5534]='Kim\'jael\'s "Missing" Equipment'
 G[5674]="Elune's Grace"
@@ -3311,6 +3313,8 @@ G[7635]='A Proper String'
 G[7636]='Stave of the Ancients'
 G[7783]='The Lord of Blackrock'
 G[7785]='Examine the Vessel'
+G[7837]='Additional Runecloth'
+G[8228]='Could I get a Fishing Flier?'
 G[8361]='Abyssal Contacts'
 G[8906]='An Earnest Proposition'
 G[8909]='An Earnest Proposition'
