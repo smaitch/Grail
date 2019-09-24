@@ -2819,6 +2819,7 @@ end
 if release >= 31882 then
 G[497]='Go to Tarren Mill and find out the status of the party sent by Thrall.'
 G[1036]='Speak with Fleet Master Firallon aboard the Crimson Vale off the coast of Stranglethorn Vale.'
+G[4132]='Travel to Blackrock Depths and slay General Angerforge! Return to Warlord Goretooth when the task is complete.'
 G[4621]='Slay Fleet Master Seahorn and Baron Revilgaz of Booty Bay, and then return to Fleet Master Firallon aboard the Crimson Veil off the coast of Stranglethorn Vale.'
 G[4641]='Speak with Gornek. You recall Kaltunk marking your map with his location and mentioning that Gornek resided in the Den, a building to the west. '
 G[5124]='Bring Malyfous Darkhammer 6 Enchanted Thorium Bars, 2 Essence of Fire, and 4 Star Rubies. You will also need to turn in your Unfired Plate Gauntlets.'
@@ -2838,12 +2839,26 @@ G[7635]='Stoma the Ancient has asked that you bring him a Mature Black Dragon Si
 G[7636]='You must find and destroy these four demonic corrupters:$B$BSimone the Seductress.$B$BKlinfran the Crazed.$B$BSolenor the Slayer.$B$BArtorius the Doombringer.$B$BDestroy these creatures and return to Vartrus the Ancient in Felwood with their heads.$B$BRefer to the Petrified Bark in your inventory for clues as to their whereabouts.$B$BYou MUST complete this task by yourself.'
 G[7783]='Return the Head of Nefarian to Thrall in Orgrimmar.'
 G[7785]='Examine the Vessel of Rebirth and return it to Highlord Demitrian.'
+G[7788]='Enter Warsong Gulch and defeat the Horde, obtain a Warsong Gulch Mark of Honor, and return to Sentinel Farsong at the Silverwing Grove.'
+G[7789]="Enter Warsong Gulch and defeat the Alliance, gain a Warsong Gulch Mark of Honor, and bring it to Captain Shatterskull at the Mor'shan Base Camp."
+G[8155]='Win the battle for Arathi Basin, get an Arathi Resource Crate, and return it to Sergeant Maclear at Refuge Pointe.'
+G[8162]='Win the battle for Arathi Basin, get an Arathi Resource Crate, and return it to Deathstalker Mortis at Hammerfall.'
 G[8361]='Bor Wildmane at Cenarion Hold in Silithus wants you to destroy an Abyssal Templar and bring him an Abyssal Crest as proof of the deed.'
+G[8791]="Deliver the Head of Ossirian the Unscarred to Commander Mar'alith at Cenarion Hold in Silithus."
+G[8857]="Take the Colossus of Ashi's Husk to Oglethorpe Obnoticus in Booty Bay."
+G[8858]="Take the Colossus of Regal's Husk to Overseer Oilfist in Searing Gorge."
+G[8859]="Take the Colossus of Zora's Husk to Lord Maxwell Tyrosus at Light's Hope Chapel in the Eastern Plaguelands."
 G[8906]="Acquire 15 Winterspring Blood Samples and 20 gold and bring them along with a set of Beaststalker's Bindings to Deliana in Ironforge."
 G[8909]='Acquire 15 Winterspring Blood Samples and 20 gold and bring them along with 1 set of Devout Bracers to Deliana in Ironforge.'
+G[8910]='Acquire 15 Winterspring Blood Samples and 20 gold and bring them along with a set of Shadowcraft Bracers to Deliana in Ironforge.'
 G[8912]='Acquire 15 Winterspring Blood Samples and 20 gold and bring them along with a set of Bracers of Valor to Deliana in Ironforge.'
 G[8916]='Acquire 15 Silithus Venom Samples and 20 gold and bring them along with a set of Devout Bracers to Mokvar in Orgrimmar.'
 G[9121]="Archmage Angela Dosantos at Light's Hope Chapel in the Eastern Plaguelands wants 5 Arcane Crystals, 2 Nexus Crystals, 1 Righteous Orb and 60 gold pieces. You must also be Honored with the Argent Dawn."
+G[9179]="Deliver 3 Imperial Plate Chests and the Craftsman's Writ - Imperial Plate Chest - to Packmaster Stonebruiser at Light's Hope Chapel in the Eastern Plaguelands."
+G[9182]="Deliver 3 Huge Thorium Battleaxes and the Craftsman's Writ - Huge Thorium Battleaxe - to Packmaster Stonebruiser at Light's Hope Chapel in the Eastern Plaguelands."
+G[9195]="Deliver 20 Goblin Sapper Charges and the Craftsman's Writ - Goblin Sapper Charge - to Packmaster Stonebruiser at Light's Hope Chapel in the Eastern Plaguelands."
+G[9201]="Deliver 15 Greater Arcane Protection Potions and the Craftsman's Writ - Greater Arcane Protection Potion - to Packmaster Stonebruiser at Light's Hope Chapel in the Eastern Plaguelands."
+G[9206]="Deliver 30 Lightning Eel and the Craftsman's Writ - Lightning Eel - to Packmaster Stonebruiser at Light's Hope Chapel in the Eastern Plaguelands."
 end
 
 --	End of localized quest descriptions
