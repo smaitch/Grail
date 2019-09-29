@@ -7597,12 +7597,14 @@ end
 				if 'Horde' == soughtFaction then
 					soughtFactionCode = 'H'
 				end
-				local foundAvailableNPC = false
 				local targetNPCs = self:QuestNPCAccepts(questId)
-				for _, npcId in pairs(targetNPCs) do
-					local factionCode = self:_NPCFaction(npcId)
-					if nil == factionCode or soughtFactionCode == factionCode then
-						foundAvailableNPC = true
+				local foundAvailableNPC = (nil == targetNPCs)
+				if not foundAvailableNPC then
+					for _, npcId in pairs(targetNPCs) do
+						local factionCode = self:_NPCFaction(npcId)
+						if nil == factionCode or soughtFactionCode == factionCode then
+							foundAvailableNPC = true
+						end
 					end
 				end
 				retval = foundAvailableNPC
