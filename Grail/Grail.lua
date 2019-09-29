@@ -459,6 +459,7 @@
 --			Changes IsPrimed() to no longer need the calendar to be checked in Classic.
 --			Forces Classic to query for completed quests at startup because calendar processing is not done (where it was done as a side effect).
 --			Creates an implementation of ProfessionExceeds() that works in Classic.
+--		102	Updates some quest/NPC information.
 --
 --	Known Issues
 --
@@ -509,7 +510,6 @@ local GetContainerNumSlots				= GetContainerNumSlots
 local GetCurrentMapDungeonLevel			= GetCurrentMapDungeonLevel
 local GetCVar							= GetCVar
 local GetFactionInfoByID				= GetFactionInfoByID
-local GetGuildLevel						= GetGuildLevel
 local GetInstanceInfo					= GetInstanceInfo
 local GetLocale							= GetLocale
 local GetMapContinents					= GetMapContinents
@@ -1327,7 +1327,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						else
 							mapName = self:_GetMapNameByID(mapId)
 							if "" ~= mapName then
-								nameToUse = mapName
+								local nameToUse = mapName
 								while nil ~= self.zoneNameMapping[nameToUse] do
 									nameToUse = nameToUse .. ' '
 								end
@@ -1826,7 +1826,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						end
 						local link
 						for counter = 1, GetNumQuestLogRewards() do
-							itemId = string.match(GetQuestLogItemLink("reward", counter) or '', 'item:(%d+):')
+							local itemId = string.match(GetQuestLogItemLink("reward", counter) or '', 'item:(%d+):')
 							if itemId then
 								local _, _, numberItems = GetQuestLogRewardInfo(counter)
 								rewardString = rewardString .. ":R" .. itemId .. "-" .. numberItems
@@ -1834,13 +1834,13 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						end
 -- TODO: Figure out how to handle current rewards (like Apexis Crystals)
 --						for counter = 1, GetNumQuestLogRewardCurrencies() do
---							itemId = string.match(GetQuestLogItemLink("reward", counter) or '', 'item:(%d+):')
+--							local itemId = string.match(GetQuestLogItemLink("reward", counter) or '', 'item:(%d+):')
 --							if itemId then
 --								rewardString = rewardString .. ":O" .. itemId
 --							end
 --						end
 						for counter = 1, GetNumQuestLogChoices() do
-							itemId = string.match(GetQuestLogItemLink("choice", counter) or '', 'item:(%d+):')
+							local itemId = string.match(GetQuestLogItemLink("choice", counter) or '', 'item:(%d+):')
 							if itemId then
 								rewardString = rewardString .. ":C" .. itemId
 							end
@@ -4988,7 +4988,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 							elseif 'X' == code then
 								--	The inherent nature of an X code makes is such that only one has meaning, and C codes should not be combined
 								bitValue = self.classToBitMapping[codeValue]
-								if nil ~= bitValue and not founcCCode then
+								if nil ~= bitValue and not foundCCode then
 --									obtainersValue = bitband(obtainersValue, bitbnot(self.bitMaskClassAll))
 --									obtainersValue = obtainersValue + self.bitMaskClassAll - bitValue
 									foundXCode = true
@@ -7588,7 +7588,26 @@ end
 		--	@return A table of failures if any, nil otherwise.
 		--	@see StatusCode
 		MeetsRequirementFaction = function(self, questId, soughtFaction)
-			return self:_MeetsRequirement(questId, 'F', soughtFaction)
+			local retval = self:_MeetsRequirement(questId, 'F', soughtFaction)
+			if retval then
+				if nil == soughtFaction then
+					soughtFaction = self.playerFaction
+				end
+				local soughtFactionCode = 'A'
+				if 'Horde' == soughtFaction then
+					soughtFactionCode = 'H'
+				end
+				local foundAvailableNPC = false
+				local targetNPCs = self:QuestNPCAccepts(questId)
+				for _, npcId in pairs(targetNPCs) do
+					local factionCode = self:_NPCFaction(npcId)
+					if nil == factionCode or soughtFactionCode == factionCode then
+						foundAvailableNPC = true
+					end
+				end
+				retval = foundAvailableNPC
+			end
+			return retval
 		end,
 
 		---
@@ -8298,7 +8317,7 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 		--	contents.  The support routine uses a mapping to take quest codes and assign them to the proper internal table
 		--	entries.
 		_ProcessQuestsForHandlers = function(self, questId, tableOrString, destinationTable)
-			local controlTable = { questId = questId, output1 = desinationTable, func = self._ProcessQuestsForHandlersSupport }
+			local controlTable = { questId = questId, output1 = destinationTable, func = self._ProcessQuestsForHandlersSupport }
 			self._ProcessCodeTable(tableOrString, controlTable)
 		end,
 
