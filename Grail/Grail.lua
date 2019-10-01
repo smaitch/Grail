@@ -460,6 +460,7 @@
 --			Forces Classic to query for completed quests at startup because calendar processing is not done (where it was done as a side effect).
 --			Creates an implementation of ProfessionExceeds() that works in Classic.
 --		102	Updates some quest/NPC information.
+--			Adds the NPCComment() function to give access to NPC comments.
 --
 --	Known Issues
 --
@@ -7810,6 +7811,11 @@ end
 --			if nil ~= failures then failures = {failures} end
 --			return retval, failures
 --		end,
+
+		NPCComment = function(self, npcId)
+			npcId = tonumber(npcId)
+			return nil ~= npcId and self.npc.comment[npcId] or nil
+		end,
 
 		_NPCFaction = function(self, npcId)
 			npcId = tonumber(npcId)
