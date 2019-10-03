@@ -462,6 +462,9 @@
 --		102	Updates some quest/NPC information.
 --			Adds the NPCComment() function to give access to NPC comments.
 --			Fixes a Lua error associated with quests requiring garrison buildings.
+--		103	Updates some quest/NPC information.
+--			Removes reimplementation of GetMapNameByID().
+--			Removes call to load Blizzard_ArtifactUI since ElvUI has problems.
 --
 --	Known Issues
 --
@@ -561,18 +564,6 @@ local _, _, versionValueFromToc = strfind(versionFromToc, "(%d+)")
 local Grail_File_Version = tonumber(versionValueFromToc)
 
 if nil == Grail or Grail.versionNumber < Grail_File_Version then
-
-	-- Blizzard is removing GetMapNameByID in the 8.x release
-	-- so instead of rewriting all the code that makes use of
-	-- it, I am reimplemting it here.  It is done here before
-	-- the setup of Grail because it is used in setting up of
-	-- some faux quest names.
-	if nil == GetMapNameByID then
-		GetMapNameByID = function(mapId)
-			local mapInfo = mapId and C_Map.GetMapInfo(mapId) or nil
-			return mapInfo and mapInfo.name or ""
-		end
-	end
 
 	--	Grail uses self.inCombat to determine whether the player is in combat.  This
 	--	is set true when PLAYER_REGEN_DISABLED is received, and cleared when
@@ -974,6 +965,12 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					-- We have loaded GrailDatabase at this point, but we need to ensure the structure is set up for first-time players as we rely on at least an empty structure existing
 					GrailDatabasePlayer = GrailDatabasePlayer or {}
 
+					self.quest.name = {
+						[600000]=Grail:_GetMapNameByID(19)..' '..REQUIREMENTS,
+						[600001]=Grail:_GetMapNameByID(19)..' '..FACTION_ALLIANCE..' '..REQUIREMENTS,
+						[600002]=Grail:_GetMapNameByID(19)..' '..FACTION_HORDE..' '..REQUIREMENTS,
+						}
+
 					if self.battleForAzeroth then
 						self.zonesForLootingTreasure = {
 							[14]  = true, -- Arathi
@@ -1017,12 +1014,12 @@ experimental = false,	-- currently this implementation does not reduce memory si
  							[1462] = true, -- Mechagon Island 8.2
 							}
 						self.quest.name = {
-							[51570]=GetMapNameByID(862),	-- Zuldazar
-							[51571]=GetMapNameByID(863),	-- Nazmir
-							[51572]=GetMapNameByID(864),	-- Vol'dun
-							[600000]=GetMapNameByID(17)..' '..REQUIREMENTS,
-							[600001]=GetMapNameByID(17)..' '..FACTION_ALLIANCE..' '..REQUIREMENTS,
-							[600002]=GetMapNameByID(17)..' '..FACTION_HORDE..' '..REQUIREMENTS,
+							[51570]=Grail:_GetMapNameByID(862),	-- Zuldazar
+							[51571]=Grail:_GetMapNameByID(863),	-- Nazmir
+							[51572]=Grail:_GetMapNameByID(864),	-- Vol'dun
+							[600000]=Grail:_GetMapNameByID(17)..' '..REQUIREMENTS,
+							[600001]=Grail:_GetMapNameByID(17)..' '..FACTION_ALLIANCE..' '..REQUIREMENTS,
+							[600002]=Grail:_GetMapNameByID(17)..' '..FACTION_HORDE..' '..REQUIREMENTS,
 							}
 					end
 
@@ -1069,9 +1066,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					if self.forceLocalizedQuestNameLoad then
 						self:LoadLocalizedQuestNames()
 					end
-					if self.capabilities.usesArtifacts then
-						self:LoadAddOn("Blizzard_ArtifactUI")
-					end
+-- This was causing problems with ElvUI and is removed since we don't do this.
+--					if self.capabilities.usesArtifacts then
+--						self:LoadAddOn("Blizzard_ArtifactUI")
+--					end
 
 					--
 					--	Create the tooltip that we use for getting information like NPC name
@@ -2314,9 +2312,6 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			--	[600000]='Blasted Lands Phase Requirements'
 			--	[600001]='Blasted Lands Alliance Phase Requirements'
 			--	[600002]='Blasted Lands Horde Phase Requirements'
-				[600000]=GetMapNameByID(19)..' '..REQUIREMENTS,
-				[600001]=GetMapNameByID(19)..' '..FACTION_ALLIANCE..' '..REQUIREMENTS,
-				[600002]=GetMapNameByID(19)..' '..FACTION_HORDE..' '..REQUIREMENTS,
 				},
 
 			-- The localized description of the quest.
@@ -4194,7 +4189,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				end
 				if nil ~= self.GDE.learned.QUEST_NAME then
 					for _, questNameLine in pairs(self.GDE.learned.QUEST_NAME) do
-						local locale, release, questId, questName = strsplit('|', questNameLine)
+						local loc, release, questId, questName = strsplit('|', questNameLine)
 						if loc == locale and nil ~= questId and (nil == self.quest.name[questId] or self.quest.name[questId] ~= questName) then
 							self.quest.name[questId] = questName
 						end
@@ -6289,7 +6284,19 @@ end
 
 		--	This is just a front for the Blizzard routine except with our special processing for our fake zones
 		_GetMapNameByID = function(self, mapId)
-			return 1 == mapId and ADVENTURE_JOURNAL or GetMapNameByID(mapId)
+			local retval = ""
+			if 1 == mapId then
+				retval = ADVENTURE_JOURNAL
+			elseif GetMapNameByID then
+				retval = GetMapNameByID(mapId)
+			else
+				-- Blizzard is removing GetMapNameByID in the 8.x release
+				-- so its functionality is reproduced here with more modern
+				-- API usage.
+				local mapInfo = mapId and C_Map.GetMapInfo(mapId) or nil
+				retval = mapInfo and mapInfo.name or ""
+			end
+			return retval
 		end,
 
 		---
