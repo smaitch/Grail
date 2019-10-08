@@ -2868,4 +2868,31 @@ G[9206]="Deliver 30 Lightning Eel and the Craftsman's Writ - Lightning Eel - to 
 G[9665]="Capture Crown Guard Tower, Eastwall Tower, Northpass Tower and Plaguewood Tower in the Eastern Plaguelands, then return to Emmisary Gormok at Light's Hope Chapel."
 end
 
+if release >= 32089 then
+G[8496]='Bring 30 Heavy Runecloth Bandages, 30 Heavy Silk Bandages and 30 Heavy Mageweave Bandages to Windcaller Proudhorn at Cenarion Hold in Silithus.  You must also bring Logistics Task Briefing X in order to complete this quest.'
+G[8497]='Bring 4 Globes of Water, 4 Powerful Anti-Venom and 4 Smoked Desert Dumplings to Calandrath at the inn in Cenarion Hold in Silithus.  You must also bring Logistics Task Briefing I in order to complete this quest.'
+G[8507]="Report for duty at the Ironforge Brigade post near Hive'Zora.  Prepare your Unsigned Field Duty Papers and obtain Signed Field Duty Papers from Captain Blackanvil and return to Windcaller Kaldon at Cenarion Hold in Silithus.$B$BNote: Healing or casting beneficial spells on a member of the Ironforge Brigade will flag you for PvP."
+G[8534]="Contact Cenarion Scout Azenel inside Hive'Zora and return the Hive'Zora Scout Report to Windcaller Proudhorn at Cenarion Hold.  You must also bring Tactical Task Briefing VI in order to complete this quest."
+G[8535]='Summon and slay a Hoary Templar and report back to Bor Wildmane in Cenarion Hold.  You must also bring Tactical Task Briefing IV in order to complete this quest.'
+G[8536]='Summon and slay an Earthen Templar and report back to Bor Wildmane in Cenarion Hold.  You must also bring Tactical Task Briefing III in order to complete this quest.'
+G[8537]='Summon and slay a Crimson Templar and report back to Bor Wildmane in Cenarion Hold.  You must also bring Tactical Task Briefing II in order to complete this quest.'
+G[8540]='Bring 3 Ornate Mithril Boots to Vish Kozus, Captain of the Guard at Cenarion Hold in Silithus.  You must also bring Logistics Task Briefing II in order to complete this quest.'
+G[8541]='Bring 10 Dense Grinding Stones, 10 Solid Grinding Stones and 10 Heavy Grinding Stones to Vish Kozus, Captain of the Guard at Cenarion Hold in Silithus.  You must also bring Logistics Task Briefing III in order to complete this quest.'
+G[8737]='Summon and slay an Azure Templar and report back to Bor Wildmane in Cenarion Hold.  You must also bring Tactical Task Briefing I in order to complete this quest.'
+G[8738]="Contact Cenarion Scout Landion inside Hive'Regal and return the Hive'Regal Scout Report to Windcaller Proudhorn at Cenarion Hold.  You must also bring Tactical Task Briefing VII in order to complete this quest."
+G[8739]="Contact Cenarion Scout Jalia inside Hive'Ashi and return the Hive'Ashi Scout Report to Windcaller Proudhorn at Cenarion Hold.  You must also bring Tactical Task Briefing VIII in order to complete this quest."
+G[8781]="Bring 2 Moonsteel Broadswords to Janela Stouthammer at the Ironforge Brigade Outpost outside of Hive'Zora.  You must also bring Logistics Task Briefing VI in order to complete this quest."
+G[8783]='Bring 2 Enchanted Thorium Bars and 2 Enchanted Leather to Vargus at Cenarion Hold in Silithus.  You must also bring Logistics Task Briefing IX in order to complete this quest.'
+G[8786]="Bring 3 Massive Iron Axes to Merok Longstride at the Orgrimmar Legion camp outside of Hive'Regal.  You must also bring Logistics Task Briefing VI in order to complete this quest."
+G[8787]="Bring 8 Rugged Armor Kits and 8 Heavy Armor Kits to Merok Longstride near Hive'Regal.  You must also bring Logistics Task Briefing VII in order to complete this quest."
+G[8800]='Talk to Vargus at Cenarion Hold in Silithus.'
+G[8804]='Bring 4 Globes of Water, 4 Powerful Anti-Venom and 4 Smoked Desert Dumplings to Calandrath at the inn in Cenarion Hold in Silithus.  You must also bring Logistics Task Briefing I in order to complete this quest.'
+G[8805]='Bring 3 Ornate Mithril Boots to Vish Kozus, Captain of the Guard at Cenarion Hold in Silithus.  You must also bring Logistics Task Briefing II in order to complete this quest.'
+G[8806]='Bring 10 Dense Grinding Stones, 10 Solid Grinding Stones and 10 Heavy Grinding Stones to Vish Kozus, Captain of the Guard at Cenarion Hold in Silithus.  You must also bring Logistics Task Briefing III in order to complete this quest.'
+G[8809]='Bring 2 Enchanted Thorium Bars and 2 Enchanted Leather to Vargus at Cenarion Hold in Silithus.  You must also bring Logistics Task Briefing IX in order to complete this quest.'
+G[8810]='Bring 30 Heavy Runecloth Bandages, 30 Heavy Silk Bandages and 30 Heavy Mageweave Bandages to Windcaller Proudhorn at Cenarion Hold in Silithus.  You must also bring Logistics Task Briefing X in order to complete this quest.'
+G[8905]='Acquire 15 Winterspring Blood Samples and 20 gold and bring them along with a set of Wildheart Bracers to Deliana in Ironforge.'
+G[8911]='Acquire 15 Winterspring Blood Samples and 20 gold and bring them along with a set of Dreadmist Bracers to Deliana in Ironforge.'
+end
+
 --	End of localized quest descriptions

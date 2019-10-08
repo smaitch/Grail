@@ -3356,4 +3356,33 @@ G[9338]='Allegiance to Cenarion Circle'
 G[9665]='Bolstering Our Defenses'
 end
 
+if release >= 32089 then
+G[5534]='Kim\'jael\'s "Missing" Equipment'
+G[8229]='Could I get a Fishing Flier?'
+G[8496]='Bandages for the Field'
+G[8497]='Desert Survival Kits'
+G[8507]='Field Duty'
+G[8534]="Hive'Zora Scout Report"
+G[8535]='Hoary Templar'
+G[8536]='Earthen Templar'
+G[8537]='Crimson Templar'
+G[8540]='Boots for the Guard'
+G[8541]='Grinding Stones for the Guard'
+G[8737]='Azure Templar'
+G[8738]="Hive'Regal Scout Report"
+G[8739]="Hive'Ashi Scout Report"
+G[8781]='Arms for the Field'
+G[8783]='Extraordinary Materials'
+G[8786]='Arms for the Field'
+G[8787]='Armor Kits for the Field'
+G[8800]='Cenarion Battlegear'
+G[8804]='Desert Survival Kits'
+G[8805]='Boots for the Guard'
+G[8806]='Grinding Stones for the Guard'
+G[8809]='Extraordinary Materials'
+G[8810]='Bandages for the Field'
+G[8905]='An Earnest Proposition'
+G[8911]='An Earnest Proposition'
+end
+
 --	End of localized quest names
