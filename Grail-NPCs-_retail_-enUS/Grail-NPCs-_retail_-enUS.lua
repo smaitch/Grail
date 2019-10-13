@@ -1176,7 +1176,6 @@ if release >= 28153 then
 G[1293119]='Seaweed'
 end
 
-
 if release >= 30993 then
 G[1325659]='Mechanized Chest'
 G[1325660]='Mechanized Chest'
