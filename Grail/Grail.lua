@@ -465,6 +465,8 @@
 --		103	Updates some quest/NPC information.
 --			Removes reimplementation of GetMapNameByID().
 --			Removes call to load Blizzard_ArtifactUI since ElvUI has problems.
+--			Makes it so holiday codes for quests do not cause Lua errors in Classic, though still do not work as there is no Classic calendar.
+--			Adds support for Mechagnome and Vulpera races.
 --
 --	Known Issues
 --
@@ -770,8 +772,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 			bitMaskRaceUnused7			=	0x00000400,
 			bitMaskRaceUnused8			=	0x00000800,
 			bitMaskRaceUnused9			=	0x00001000,
-			bitMaskRaceUnused10			=	0x00002000,
-			bitMaskRaceUnused11			=	0x00004000,
+		bitMaskRaceMechagnome			=	0x00002000,
+		bitMaskRaceVulpera				=	0x00004000,
 		bitMaskRaceHuman				=	0x00008000,
 		bitMaskRaceDwarf				=	0x00010000,
 		bitMaskRaceNightElf				=	0x00020000,
@@ -790,7 +792,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		bitMaskRaceLightforgedDraenei	=	0x40000000,
 		bitMaskKulTiran					=	0x80000000,
 		-- Convenience values
-		bitMaskRaceAll			=	0xffff800f,
+		bitMaskRaceAll			=	0xffffe00f,
 
 		-- Enf of bit mask values
 
@@ -970,6 +972,25 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						[600001]=Grail:_GetMapNameByID(19)..' '..FACTION_ALLIANCE..' '..REQUIREMENTS,
 						[600002]=Grail:_GetMapNameByID(19)..' '..FACTION_HORDE..' '..REQUIREMENTS,
 						}
+
+					if self.existsClassic then	-- redefine races that are available
+						self.races = {
+							-- [1] is Blizzard API return (non-localized)
+							-- [2] is localized male
+							-- [3] is localized female
+							-- [4] is bitmap value
+							['E'] = { 'NightElf', 'Night Elf', 'Night Elf', 0x00020000 },
+							['F'] = { 'Dwarf',    'Dwarf',     'Dwarf',     0x00010000 },
+							['H'] = { 'Human',    'Human',     'Human',     0x00008000 },
+							['L'] = { 'Troll',    'Troll',     'Troll',     0x01000000 },
+							['N'] = { 'Gnome',    'Gnome',     'Gnome',     0x00040000 },
+							['O'] = { 'Orc',      'Orc',       'Orc',       0x00200000 },
+-- Do not ever use P because it will interfere with SP quest code
+							['T'] = { 'Tauren',   'Tauren',    'Tauren',    0x00800000 },
+							['U'] = { 'Scourge',  'Undead',    'Undead',    0x00400000 },
+							}
+						self.bitMaskRaceAll = 0x01e78000
+					end
 
 					if self.battleForAzeroth then
 						self.zonesForLootingTreasure = {
@@ -2428,7 +2449,9 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			['N'] = { 'Gnome',    'Gnome',     'Gnome',     0x00040000 },
 			['O'] = { 'Orc',      'Orc',       'Orc',       0x00200000 },
 -- Do not ever use P because it will interfere with SP quest code
+			['Q'] = { 'Mechagnome', 'Mechagnome', 'Mechagnome', 0x00002000 },
 			['R'] = { 'Nightborne', 'Nightborne', 'Nightborne', 0x00000002 },
+			['S'] = { 'Vulpera', 'Vulpera', 'Vulpera', 0x00004000 },
 			['T'] = { 'Tauren',   'Tauren',    'Tauren',    0x00800000 },
 			['U'] = { 'Scourge',  'Undead',    'Undead',    0x00400000 },
 			['V'] = { 'VoidElf',  'Void Elf',  'Void Elf',	0x20000000 },
@@ -3816,7 +3839,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				soughtHolidayName = self.holidayMapping['f']
 			end
 			-- sometime between release 23478 and 23578 CalendarGetDayEvent was removed, replaced with C_Calendar.GetDayEvent which returns a table
-			local CalendarGetNumDayEvents = self.battleForAzeroth and C_Calendar.GetNumDayEvents or CalendarGetNumDayEvents
+			local CalendarGetNumDayEvents = (self.existsClassic and function() return 0 end) or (self.battleForAzeroth and C_Calendar.GetNumDayEvents) or CalendarGetNumDayEvents
 			local numEvents = CalendarGetNumDayEvents(0, day)
 			local title, calHour, calMinute, calendarType, sequenceType, eventType, texture, modStatus, inviteStatus, invitedBy, difficulty, inviteType
 			for i = 1, numEvents do
@@ -10287,6 +10310,26 @@ if locale == "deDE" then
 		G['G'][3] = 'Goblin'
 		G['A'][2] = 'Pandaren'
 		G['A'][3] = 'Pandaren'
+	G['C'][2] = 'Dunkeleisenzwerg'
+	G['C'][3] = 'Dunkeleisenzwergin'
+	G['I'][2] = 'Lichtgeschmiedeter Draenei'
+	G['I'][3] = 'Lichtgeschmiedete Draenei'
+	G['J'][2] = "Mag'har"
+	G['J'][3] = "Mag'har"
+	G['K'][2] = 'Kul Tiraner'
+	G['K'][3] = 'Kul Tiranerin'
+	G['M'][2] = 'Hochbergtauren'
+	G['M'][3] = 'Hochbergtauren'
+	G['Q'][2] = 'Mechagnom'
+	G['Q'][3] = 'Mechagnom'
+	G['R'][2] = 'Nachtgeborener'
+	G['R'][3] = 'Nachtgeborene'
+		G['S'][2] = 'Vulpera'
+		G['S'][3] = 'Vulpera'
+	G['V'][2] = 'Leerenelf'
+	G['V'][3] = 'Leerenelfe'
+	G['Z'][2] = 'Zandalaritroll'
+	G['Z'][3] = 'Zandalaritroll'
 elseif locale == "esES" then
 	me.bodyGuardLevel = { 'Guardaespaldas', 'Escolta leal', 'Compañero del alma' }
 	me.friendshipLevel = { 'Extraño', 'Conocido', 'Colega', 'Amigo', 'Buen amigo', 'Mejor amigo' }

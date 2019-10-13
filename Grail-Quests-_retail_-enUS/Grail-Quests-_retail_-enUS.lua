@@ -31344,4 +31344,27 @@ G[57917]='[DNT] Test - JAM'
 G[58089]='Test Quest'
 end
 
+if release >= 32144 then
+G[40395]='LFGDungeons - Timewalking "Heroic" Random - Nth'
+G[40537]='Drawing Blood'
+G[40829]='LFGDungeons - Draenor 6.2 - Raid Finder - 1st'
+G[41455]='Gleaming Leystone Outcropping'
+G[42897]='LFGDungeons - Legion - Heroic Random - 1st'
+G[42899]='LFGDungeons - Legion - Heroic Random - Nth'
+G[42901]='LFGDungeons - Legion - Normal Random - 1st'
+G[42903]='LFGDungeons - Legion - Normal Random - Nth'
+G[42904]='LFGDungeons - Legion - Raid Finder - 1st'
+G[42905]='LFGDungeons - Legion - Raid Finder - Nth'
+G[42912]='LFGDungeons - Legion - Dungeon Normal - 1st'
+G[42913]='LFGDungeons - Legion - Dungeon Normal - Nth'
+G[42915]='LFGDungeons - Legion - Dungeon Heroic - 1st'
+G[42916]='LFGDungeons - Legion - Dungeon Heroic - Nth'
+G[53255]='Arathi Donations: Gloom Dust'
+end
+
+if release >= 32151 then
+G[58146]='For the Alliance'
+G[58147]='Stranger in a Strange Land'
+end
+
 --	End of localized quest names
