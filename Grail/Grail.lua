@@ -467,6 +467,7 @@
 --			Removes call to load Blizzard_ArtifactUI since ElvUI has problems.
 --			Makes it so holiday codes for quests do not cause Lua errors in Classic, though still do not work as there is no Classic calendar.
 --			Adds support for Mechagnome and Vulpera races.
+--			Adds support for the "/grail eraseAndReloadCompletedQuests" slash command.
 --
 --	Known Issues
 --
@@ -1463,6 +1464,14 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						end
 					end)
 					self:RegisterSlashOption("clearstatuses", "|cFF00FF00clearstatuses|r => clears the status of all quests allowing them to be recomputed", function()
+						wipe(self.questStatuses)
+						self.questStatuses = {}
+						self:_CoalesceDelayedNotification("Status", 0)
+					end)
+					self:RegisterSlashOption("eraseAndReloadCompletedQuests", "|cFF00FF00eraseAndReloadCompletedQuests|r => reloads the completed quest list from Blizzard erasing the current list", function()
+						GrailDatabasePlayer["completedQuests"] = {}
+						QueryQuestsCompleted()
+						-- And the following code is the same as the clearstatuses command...
 						wipe(self.questStatuses)
 						self.questStatuses = {}
 						self:_CoalesceDelayedNotification("Status", 0)
