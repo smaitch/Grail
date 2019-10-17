@@ -30223,7 +30223,6 @@ G[25295]='Press Fire'
 G[25384]='Raw Materials'
 G[25393]='Operation: Gnomeregan'
 G[25413]='Change of Plans'
-G[25432]='It\'s Not "Ogre" Yet'
 G[25435]='Pressure is Mounting'
 G[25446]='Frogs Away!'
 G[25461]="Trollin' For Volunteers"
@@ -31345,6 +31344,7 @@ G[58089]='Test Quest'
 end
 
 if release >= 32144 then
+G[148]='Supplies from Darkshire'
 G[40395]='LFGDungeons - Timewalking "Heroic" Random - Nth'
 G[40537]='Drawing Blood'
 G[40829]='LFGDungeons - Draenor 6.2 - Raid Finder - 1st'
@@ -31365,6 +31365,11 @@ end
 if release >= 32151 then
 G[58146]='For the Alliance'
 G[58147]='Stranger in a Strange Land'
+end
+
+if release >= 32185 then
+G[25563]='Hammering It Out'
+G[56019]='Runelocked Chest'
 end
 
 --	End of localized quest names

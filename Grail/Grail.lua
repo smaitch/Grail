@@ -468,6 +468,7 @@
 --			Makes it so holiday codes for quests do not cause Lua errors in Classic, though still do not work as there is no Classic calendar.
 --			Adds support for Mechagnome and Vulpera races.
 --			Adds support for the "/grail eraseAndReloadCompletedQuests" slash command.
+--		104	Updates some quest/NPC information.
 --
 --	Known Issues
 --
