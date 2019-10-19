@@ -89,6 +89,7 @@ G[1176191]='Beached Sea Turtle'
 G[1176196]='Beached Sea Turtle'
 G[1176197]='Beached Sea Turtle'
 G[1176198]='Beached Sea Turtle'
+G[1180570]='Keg'
 end
 
 --	End of localized NPC names
