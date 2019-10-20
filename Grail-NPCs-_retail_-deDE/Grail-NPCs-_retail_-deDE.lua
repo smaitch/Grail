@@ -361,4 +361,44 @@ G[100128231]='Ausstattungsbaupläne: Abgerichtete Haie'
 G[100128232]='Ausstattungsbaupläne: Hochleistungsnebelleuchten'
 end
 
+if release >= 31429 then
+G[1322762]='Zerstörter Sicherheitsalarm'
+G[1325662]='Mechanisierte Truhe'
+G[1325665]='Mechanisierte Truhe'
+G[1327576]='Glitzernde Truhe'
+G[1327577]='Glitzernde Truhe'
+G[1327578]='Glitzernde Truhe'
+G[1332623]='Mechanisierte Truhe'
+end
+
+if release >= 31478 then
+G[1326395]='Leuchtende arkane Truhe'
+end
+
+if release >= 32028 then
+G[1035591]='Glitzernder Teich'
+G[1226976]='Deceptias schwelende Stiefel'
+G[1227951]='Rooks Angelzubehör'
+G[1227953]='Krug gealterten Eisenweins'
+G[1227954]='Sàmirâ, Veteranin des Vierten Krieges'
+G[1228012]='Verkohltes Schwert'
+G[1228014]='Relikt von Aruuna'
+G[1228016]='Fass mit Fischen'
+G[1228025]='Keluu'
+G[1228026]='Purer Kristallstaub'
+G[1228570]='Ketyas Vorratskiste'
+G[1230725]="Schatz von Kull'krosh"
+G[1233132]='Süßwassermuschel'
+G[1233521]='Vorräte des Kriegshymnenklans'
+G[1233560]="Oshu'gunfragment"
+G[1233641]='Wasserdichter Sack'
+G[1233645]='Helm des Kriegshymnenklans'
+G[1293897]='Allianzkopfgeld'
+G[1325659]='Mechanisierter Schrotthund'
+G[1326411]='Arkane Truhe'
+G[1326417]='Arkane Truhe'
+G[1327569]='Piratentruhe'
+G[1327620]='Familienjuwelen'
+end
+
 --	End of localized NPC names
