@@ -31369,7 +31369,37 @@ end
 
 if release >= 32185 then
 G[25563]='Hammering It Out'
+G[52372]='Work Order: XA-1000 Surface Skimmer'
+G[53878]='Emergency Extrication'
+G[53950]='Explosive Relief'
+G[54006]='A New Hope'
+G[54089]='Omgar Doombow'
+G[54146]='Strong New Allies'
+G[54295]='Artillery Master Goodwin'
+G[54308]='Mine Your Business'
+G[54329]='Darkshore Donations: War Resources'
+G[54333]='Darkshore Donations: Storm Silver Ore'
+G[54339]='Darkshore Donations: Potion of Rising Death'
+G[54346]='Darkshore Donations: Gold'
+G[54355]='Darkshore Donations: Mistscale'
+G[54358]='Darkshore Donations: Scarlet Diamond'
+G[54359]='Darkshore Donations: Sand Shifter'
+G[54362]='Darkshore Donations: Seasoned Steak and Potatoes'
+G[54504]='Scout Captain Grizzleknob'
+G[54521]='Stolen Sorcery'
+G[54612]='Blood and Ashes'
+G[54686]='Medical Emergency'
+G[54693]='Pterror of the Horde'
+G[54794]='Soggoth the Slitherer'
+G[54801]="Stonebinder Ssra'vess"
+G[54810]='Grimhorn'
+G[54812]='Shadowclaw'
+G[55379]='Rustbolt Requisitions: Star Moss'
+G[55383]='Rustbolt Requisitions: Star Moss'
 G[56019]='Runelocked Chest'
+G[56080]='March of the Murlocs'
+G[56754]='Rustbolt Requisitions: Monelite Ore'
+G[56755]='Rustbolt Requisitions: Monelite Ore'
 end
 
 --	End of localized quest names
