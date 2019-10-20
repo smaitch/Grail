@@ -56,8 +56,6 @@ G[1002382]="Embalmer's Heart"
 G[1002553]='A Soggy Scroll'
 G[1002555]='Musty Scroll'
 G[1002556]="Cortello's Treasure"
-  
-  
 G[1002560]='Half-Buried Bottle'
 G[1002652]="Ebenezer Rustlocke's Corpse"
 G[1002688]='Keystone'
