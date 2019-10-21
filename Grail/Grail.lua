@@ -870,6 +870,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		--                ['h'] =   0x01000000,
 		--                ['i'] =   0x02000000,
 		bitMaskHolidayAnniversary = 0x04000000,	-- WoW Anniversary event
+		bitMaskHolidayAQ		=	0x08000000,
 		-- End of bit mask values
 
 		bodyGuardLevel = { 'Bodyguard', 'Trusted Bodyguard', 'Personal Wingman' },
@@ -2235,10 +2236,10 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		genderMapping = { ['M'] = 2, ['F'] = 3, },
 		gossipNPCs = {},
 		holidayMapping = { ['A'] = 'Love is in the Air', ['B'] = 'Brewfest', ['C'] = "Children's Week", ['D'] = 'Day of the Dead', ['E'] = 'WoW Anniversary', ['F'] = 'Darkmoon Faire',
-				['H'] = 'Harvest Festival', ['K'] = "Kalu'ak Fishing Derby", ['L'] = 'Lunar Festival', ['M'] = 'Midsummer Fire Festival', ['N'] = 'Noblegarden', ['P'] = "Pirates' Day",
+				['H'] = 'Harvest Festival', ['K'] = "Kalu'ak Fishing Derby", ['L'] = 'Lunar Festival', ['M'] = 'Midsummer Fire Festival', ['N'] = 'Noblegarden', ['P'] = "Pirates' Day", ['Q'] = "AQ",
 				['U'] = 'New Year', ['V'] = 'Feast of Winter Veil', ['W'] = "Hallow's End", ['X'] = 'Stranglethorn Fishing Extravaganza', ['Y'] = "Pilgrim's Bounty", ['Z'] = "Christmas Week", ['a'] = 'Apexis Bonus Event', ['b'] ='Arena Skirmish Bonus Event', ['c'] = 'Battleground Bonus Event', ['d'] = 'Draenor Dungeon Event', ['e'] = 'Pet Battle Bonus Event', ['f'] = 'Timewalking Dungeon Event', ['g'] = 'Legion Dungeon Event', },
 		holidayToBitMapping = { ['A'] = 0x00000001, ['B'] = 0x00000002, ['C'] = 0x00000004, ['D'] = 0x00000008, ['E'] = 0x04000000, ['F'] = 0x00000010,
-				['H'] = 0x00000020, ['K'] = 0x00010000, ['L'] = 0x00000040, ['M'] = 0x00000080, ['N'] = 0x00000100, ['P'] = 0x00000200,
+				['H'] = 0x00000020, ['K'] = 0x00010000, ['L'] = 0x00000040, ['M'] = 0x00000080, ['N'] = 0x00000100, ['P'] = 0x00000200, ['Q'] = 0x08000000,
 				['U'] = 0x00000400, ['V'] = 0x00000800, ['W'] = 0x00001000, ['X'] = 0x00008000, ['Y'] = 0x00002000, ['Z'] = 0x00004000, ['a'] = 0x00020000, ['b'] = 0x00040000, ['c'] = 0x00080000, ['d'] = 0x00100000, ['e'] = 0x00200000, ['f'] = 0x00400000, ['g'] = 0x00800000, ['h'] = 0x01000000, ['i'] = 0x02000000, },
 		holidayToMapAreaMapping = { ['HA'] = 100001, ['HB'] = 100002, ['HC'] = 100003, ['HD'] = 100004, ['HE'] = 100005, ['HF'] = 100006, ['HH'] = 100008, ['HK'] = 100011, ['HL'] = 100012, ['HM'] = 100013,
 				['HN'] = 100014, ['HP'] = 100016, ['HQ'] = 100017, ['HU'] = 100021, ['HV'] = 100022, ['HW'] = 100023, ['HX'] = 100024, ['HY'] = 100025, ['HZ'] = 100026, ['Ha'] = 100027, ['Hb'] = 100028, ['Hc'] = 100029, ['Hd'] = 100030, ['He'] = 100031, ['Hf'] = 100032, ['Hg'] = 100033, ['Hh'] = 100034, ['Hi'] = 100035, },
@@ -3831,9 +3832,53 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		end,
 
 		---
+		--	This returns true if the specified holiday is currently being celebrated based on the calendar event.
+		_CelebratingHolidayDayEventProcessor = function(self, soughtHolidayName, calendarEvent)
+			local retval = false
+			if event.calendarType == 'HOLIDAY' and event.title == soughtHolidayName then
+				local shouldContinue = true
+				local holidayCode = self.reverseHolidayMapping[soughtHolidayName]
+				if holidayCode == 'g' or holidayCode == 'h' or holidayCode == 'i' then
+-- TODO: It looks like texture has been replaced with iconTexture which is number
+					local texture = event.texture
+					if holidayCode == 'g' and texture ~= 'calendar_weekendburningcrusade' then
+						shouldContinue = false
+					end
+					if holidayCode == 'h' and texture ~= 'calendar_weekendwrathofthelichking' then
+						shouldContinue = false
+					end
+					if holidayCode == 'i' and texture ~= 'calendar_weekendcataclysm' then
+						shouldContinue = false
+					end
+				end
+				if shouldContinue then
+					local sequenceType = event.sequenceType
+					if sequenceType == 'ONGOING' then
+						retval = true
+					else
+						local weekday, month, day, year, hour, minute = self:CurrentDateTime()
+						local elapsedMinutes = hour * 60 + minute
+						local date = (sequenceType == "END") and event.endTime or event.startTime
+						local eventMinutes = date.hour * 60 + date.minute
+						if sequenceType == 'START' and elapsedMinutes >= eventMinutes then
+							retval = true
+						end
+						if sequenceType == 'END' and elapsedMinutes < eventMinutes then
+							retval = true
+						end
+					end
+				end
+			end
+			return retval
+		end,
+
+-- Hallows 10/18 10h00 -> 11/01 11h00
+
+		---
 		--	Determines whether the soughtHolidayName is currently being celebrated.
 		--	@param soughtHolidayName The localized name of a holiday, like Brewfest or Darkmoon Faire.
 		--	@return true if the holiday is being celebrated currently, or false otherwise
+-- TODO: Contemplate caching the results of this call as long as we store the holiday name and the date and time.  If the date/time changes then we cannot use the cache for that holiday, otherwise we should be able to.
 		CelebratingHoliday = function(self, soughtHolidayName)
 			local retval = false
 			local weekday, month, day, year, hour, minute = self:CurrentDateTime()
