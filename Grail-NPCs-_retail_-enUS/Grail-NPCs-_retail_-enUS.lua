@@ -1136,6 +1136,7 @@ G[1292676]='A Damp Scroll'
 G[1292677]='A Damp Scroll'
 G[1292686]='Ominous Altar'
 G[1292783]='Zandalari Water Jugs'
+G[1293119]='Seaweed'
 G[1293349]='Discarded Lunchbox'
 G[1293350]='Carved Wooden Chest'
 G[1293568]='Wanted Poster'
@@ -1170,34 +1171,24 @@ G[1298920]='Stolen Thornspeaker Cache'
 G[1303039]='Curious Grain Sack'
 G[1319222]='Darkshore Cache'
 G[1322533]='Tome of the Elements'
-end
-
-if release >= 28153 then
-G[1293119]='Seaweed'
-end
-
-if release >= 30993 then
+G[1322803]='Kelpberry'
 G[1325659]='Mechanized Chest'
 G[1325660]='Mechanized Chest'
 G[1325661]='Mechanized Chest'
 G[1325662]='Mechanized Chest'
+G[1325664]='Mechanized Chest'
 G[1325667]='Mechanized Chest'
 G[1325668]='Mechanized Chest'
+G[1325976]='Golden Cogpaste'
 G[1326216]='Azerite Trident'
 G[1326401]='Arcane Chest'
 G[1327548]='Powerpack Blueprints'
 G[1327576]='Glimmering Chest'
 G[1327577]='Glimmering Chest'
 G[1327578]='Glimmering Chest'
-G[1330194]='Prismatic Crystal'
-end
-
-if release >= 31229 then
-G[1322803]='Kelpberry'
-G[1325664]='Mechanized Chest'
-G[1325976]='Golden Cogpaste'
 G[1327586]='Scrap Pile'
 G[1327597]='Old Rusty Chest'
+G[1330194]='Prismatic Crystal'
 end
 
 --	End of localized NPC names
