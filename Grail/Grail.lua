@@ -471,6 +471,7 @@
 --		104	Updates some quest/NPC information.
 --			Fixes the implementation of CurrentDateTime() because the month and day were reversed.
 --			Corrects CelebratingHoliday() to behave and perform better.
+--			Sets faction obtainers to account for quest giver faction.
 --
 --	Known Issues
 --
@@ -3887,11 +3888,15 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		--	This returns true if the specified holiday is currently being celebrated based on the calendar event.
 		_CelebratingHolidayDayEventProcessor = function(self, soughtHolidayName, event)
 			local retval = false
-			if event.calendarType == 'HOLIDAY' and event.title == soughtHolidayName then
+			local holidayNameToUse = soughtHolidayName
+			local holidayCode = self.reverseHolidayMapping[soughtHolidayName]
+			if nil ~= self.celebratingHolidayEventIdMapping[holidayCode] then
+				holidayNameToUse = self.holidayMapping['f']
+			end
+			if event.calendarType == 'HOLIDAY' and event.title == holidayNameToUse then
 				local shouldContinue = true
-				local holidayCode = self.reverseHolidayMapping[soughtHolidayName]
 				local possibleEventId = self.celebratingHolidayEventIdMapping[holidayCode]
-				if nil ~= possibleEventId and tonumber(event.eventId) ~= possibleEventId then
+				if nil ~= possibleEventId and tonumber(event.eventID) ~= possibleEventId then
 					shouldContinue = false
 				end
 				if shouldContinue then
@@ -3956,10 +3961,6 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					retval = true
 				end
 			else
-				local holidayNameToUse = soughtHolidayName
-				if nil ~= self.celebratingHolidayEventIdMapping[holidayCode] then
-					holidayNameToUse = self.holidayMapping['f']
-				end
 				if self.capabilities.usesCalendar then
 					C_Calendar.SetAbsMonth(month, year)
 					C_Calendar.OpenCalendar()
@@ -3968,7 +3969,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local numEvents = CalendarGetNumDayEvents(0, day)
 				for i = 1, numEvents do
 					local event = C_Calendar.GetDayEvent(0, day, i)
-					retval = self:_CelebratingHolidayDayEventProcessor(holidayNameToUse, event)
+					retval = self:_CelebratingHolidayDayEventProcessor(soughtHolidayName, event)
 					if retval then break end
 				end
 			end
@@ -5253,7 +5254,16 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						--	Since the assumption is if there is a lack of code present to limit those permitted to
 						--	obtain quests, checks must be done to see whether any limitations are present, and if
 						--	none, the values need to be altered to permit all of those subset.
-						if 0 == bitband(obtainersValue, self.bitMaskFactionAll) then obtainersValue = obtainersValue + self.bitMaskFactionAll end
+						if 0 == bitband(obtainersValue, self.bitMaskFactionAll) then
+							local questGiversFactions = self:_FactionsFromQuestGivers(questId)
+							if 'B' == questGiversFactions then
+								obtainersValue = obtainersValue + self.bitMaskFactionAll
+							elseif 'A' == questGiversFactions then
+								obtainersValue = obtainersValue + self.bitMaskFactionAlliance
+							elseif 'H' == questGiversFactions then
+								obtainersValue = obtainersValue + self.bitMaskFactionHorde
+							end
+						end
 --						if 0 == bitband(obtainersValue, self.bitMaskClassAll) then obtainersValue = obtainersValue + self.bitMaskClassAll end
 						if 0 == bitband(obtainersValue, self.bitMaskGenderAll) then obtainersValue = obtainersValue + self.bitMaskGenderAll end
 						if 0 == bitband(obtainersRaceValue, self.bitMaskRaceAll) then obtainersRaceValue = self.bitMaskRaceAll end
@@ -7664,6 +7674,33 @@ end
 		end,
 
 		---
+		--	Returns the factions associated with quest givers.
+		--	A for Alliance, H for Horde, B for both
+		_FactionsFromQuestGivers = function(self, questId)
+			local retval = 'B'
+			local foundAlliance, foundHorde = false, false
+			local targetNPCs = self:QuestNPCAccepts(questId)
+			if nil ~= targetNPCs then
+				for _, npcId in pairs(targetNPCs) do
+					local factionCode = self:_NPCFaction(npcId)
+					if nil == factionCode then
+						-- ignore this
+					elseif 'A' == factionCode then
+						foundAlliance = true
+					elseif 'H' == factionCode then
+						foundHorde = true
+					end
+				end
+			end
+			if foundAlliance and not foundHorde then
+				retval = 'A'
+			elseif foundHorde and not foundAlliance then
+				retval = 'H'
+			end
+			return retval
+		end,
+
+		---
 		--	Returns whether the character meets faction requirements for the specified quest.
 		--	@param questId The standard numeric questId representing a quest.
 		--	@soughtFaction The desired faction to be matched, or if nil the player's faction will be used
@@ -7680,17 +7717,8 @@ end
 				if 'Horde' == soughtFaction then
 					soughtFactionCode = 'H'
 				end
-				local targetNPCs = self:QuestNPCAccepts(questId)
-				local foundAvailableNPC = (nil == targetNPCs)
-				if not foundAvailableNPC then
-					for _, npcId in pairs(targetNPCs) do
-						local factionCode = self:_NPCFaction(npcId)
-						if nil == factionCode or soughtFactionCode == factionCode then
-							foundAvailableNPC = true
-						end
-					end
-				end
-				retval = foundAvailableNPC
+				local questGiversFactions = self:_FactionsFromQuestGivers(questId)
+				retval = ('B' == questGiversFactions) or (soughtFactionCode == questGiversFactions)
 			end
 			return retval
 		end,
