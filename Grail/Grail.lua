@@ -9272,17 +9272,15 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 		--	@param soughtName The localized name of the quest.  If nil this will raise.
 		--	@return The questId of the quest or nil if no quest with that name found.
 		QuestWithName = function(self, soughtName)
-			assert((nil ~= soughtName), "Grail Error: sought name cannot be nil")
-			local retval = nil
+			if not soughtName then return nil end
 -- With the change to have dynamic quest name lookups, this API is only going to give names that
 -- have already been seen (unless a loadable addon of names has been loaded).
 			for questId, questName in pairs(self.quest.name) do
 				if questName == soughtName then
-					retval = questId
--- TODO: Think about breaking out of the loop when retval is set...basically return the first match instead of the last match
+					return questId
 				end
 			end
-			return retval
+            return nil
 		end,
 
 		--	Returns a table of NPC records where each record indicates the location
