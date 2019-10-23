@@ -9182,6 +9182,21 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 			end
 			return retval
 		end,
+        
+        ---
+		--	Returns all questIds for quests with the specified name.
+		--	@param soughtName The localized name of the quest.
+		--	@return a table, where the keys are the questIDs or an empty table, if no questID was found
+        QuestsWithName = function(self, soughtName)
+			if not soughtName then return {} end
+            local questIDs = {}
+			for questId, questName in pairs(self.quest.name) do
+				if questName == soughtName then
+					questIDs[questId] = true
+				end
+			end
+            return questIDs
+		end,
 
 		--	Returns a table of NPC records where each record indicates the location
 		--	of the NPC.  Each record can contain information as described in the
