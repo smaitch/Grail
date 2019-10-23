@@ -472,6 +472,8 @@
 --			Fixes the implementation of CurrentDateTime() because the month and day were reversed.
 --			Corrects CelebratingHoliday() to behave and perform better.
 --			Sets faction obtainers to account for quest giver faction.
+--			Corrects IsNPCAvailable() to properly use holiday markers for NPCs.
+--			Augments QuestsInMap() to allow quests in the log whose turn in is in the map to be included.
 --
 --	Known Issues
 --
@@ -6991,7 +6993,7 @@ end
 			npcId = tonumber(npcId)
 			if nil ~= npcId then
 				retval = true
-				local codes = self.npc.holiday
+				local codes = self.npc.holiday[npcId]
 				if nil ~= codes then
 					retval = false	-- Assume we fail all holidays unless proven otherwise
 					for i = 1, strlen(codes) do
@@ -9211,7 +9213,7 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 		--	@param useDungeonAlso If true, dungeon quests inside the map area will also be included.
 		--	@param useLoremasterOnly If true, only Loremaster quests will be used for the area, ignoring the normal entire quest list and ignoring the useDungeonAlso parameter.
 		--	@return A table of questIds for quests that start in the map area or nil if none.
-		QuestsInMap = function(self, mapId, useDungeonAlso, useLoremasterOnly)
+		QuestsInMap = function(self, mapId, useDungeonAlso, useLoremasterOnly, useQuestsInLogThatEndInMap)
 			local retval = {}
 			local mapIdToUse = mapId or Grail.GetCurrentDisplayedMapAreaID()
 
@@ -9261,6 +9263,15 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 						end
 					end
 				end
+				--	Here we add quests to the return value if there is a turnin NPC in the map.
+				if useQuestsInLogThatEndInMap then
+					local quests = self:_QuestsInLog()
+					for questId, t in pairs(quests) do
+						if nil ~= self:QuestLocationsTurnin(questId, true, false, true, mapId) then
+							if not tContains(retval, questId) then tinsert(retval, questId) end
+						end
+					end
+				end
 			end
 
 			if nil ~= retval and 0 == #retval then retval = nil end
@@ -9269,7 +9280,7 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 
 		---
 		--	Returns the questId for the quest with the specified name.
-		--	@param soughtName The localized name of the quest.  If nil this will raise.
+		--	@param soughtName The localized name of the quest.
 		--	@return The questId of the quest or nil if no quest with that name found.
 		QuestWithName = function(self, soughtName)
 			if not soughtName then return nil end
