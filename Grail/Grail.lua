@@ -476,6 +476,8 @@
 --			Augments QuestsInMap() to allow quests in the log whose turn in is in the map to be included.
 --		105	Fixes problem where AQ quests cause Lua error in non-English locales.
 --			Updates some quest/NPC information.
+--		106	Updates some quest/NPC information.
+--			Corrects a problem where lack of quests in a zone causes a Lua issue when quests in the log turnin in that zone.
 --
 --	Known Issues
 --
@@ -9267,6 +9269,7 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 				end
 				--	Here we add quests to the return value if there is a turnin NPC in the map.
 				if useQuestsInLogThatEndInMap then
+					retval = retval or {}
 					local quests = self:_QuestsInLog()
 					for questId, t in pairs(quests) do
 						if nil ~= self:QuestLocationsTurnin(questId, true, false, true, mapId) then
