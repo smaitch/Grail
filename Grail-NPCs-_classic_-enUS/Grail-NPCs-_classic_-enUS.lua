@@ -91,11 +91,17 @@ G[1175226]='Beached Sea Creature'
 G[1175227]='Beached Sea Creature'
 G[1175233]='Beached Sea Creature'
 G[1175524]='Mysterious Red Crystal'
+G[1175894]="Janice's Parcel"
+G[1175925]='Outhouse'
 G[1176190]='Beached Sea Turtle'
 G[1176191]='Beached Sea Turtle'
 G[1176196]='Beached Sea Turtle'
 G[1176197]='Beached Sea Turtle'
 G[1176198]='Beached Sea Turtle'
+G[1176361]='Scourge Cauldron'
+G[1176392]='Scourge Cauldron'
+G[1177491]='Termite Barrel'
+G[1179485]='Broken Trap'
 G[1180570]='Keg'
 end
 
