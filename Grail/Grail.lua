@@ -9272,7 +9272,7 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 					retval = retval or {}
 					local quests = self:_QuestsInLog()
 					for questId, t in pairs(quests) do
-						if nil ~= self:QuestLocationsTurnin(questId, true, false, true, mapId) then
+						if nil ~= self:QuestLocationsTurnin(questId, true, false, true, mapIdToUse) then
 							if not tContains(retval, questId) then tinsert(retval, questId) end
 						end
 					end
