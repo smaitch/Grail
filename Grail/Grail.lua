@@ -3955,8 +3955,10 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					retval = true
 				end
 			elseif 'K' == holidayCode then
-				-- Kalu'ak Fishing Derby quest giver appears on Sunday between 14h00 and 16h00 server
+				-- Kalu'ak Fishing Derby quest giver appears on Saturday between 14h00 and 16h00 server
+				-- This seems to have been removed in 5.1.0 but code remains
 				if weekday == 7 then
+					local elapsedMinutes = hour * 60 + minute
 					if elapsedMinutes >= (14 * 60) and elapsedMinutes <= (16 * 60) then
 						retval = true
 					end
