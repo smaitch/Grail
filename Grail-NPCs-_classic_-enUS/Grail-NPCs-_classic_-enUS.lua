@@ -65,7 +65,6 @@ G[1002734]='Waterlogged Chest'
 G[1002908]='Sealed Supply Crate'
 G[1003080]='Candle of Beckoning'
 G[1003238]="Chen's Empty Keg"
-G[1003239]="Benedict's Chest"
 G[1003643]='Old Footlocker'
 G[1003972]='WANTED'
 G[1004141]='Control Console'
