@@ -33,64 +33,12 @@
 --
 --	Known issues
 --
---
---	Alliance Garrison small plot top step locations:
---		18:	971:46.99,59.27
---		19:	971:50.03,57.75
---		20:	971:51.19,63.58
---	Alliance Garrison medium plot basic entrance locations:
---		22:	971:35.53,49.36
---		25: 971:51.21,47.04
---	Alliance Garrison large plot basic entrance locations:
---		23:	971:45.25,42.49
---		24:	971:40.09,56.58
---
---	Horde Garrison small plot top step locations:
---		18:	976:52.44,37.06
---		19:	976:48.38,33.59
---		20: 976:52.59,40.81
---	Horde Garrison medium plot basic entrance locations:
---		22: 976:51.43,57.39
---		25:	976:57.75,28.14
---	Horde Garrison large plot basic entrance locations:
---		23: 976:58.88,49.06
---		24: 976:60.36,36.51
---
---	Dungeon entrances:
---		Ulduar					495:41.57,17.83
---		Thunder					928:63.73,32.23
---		SM Graveyard 762[1]		20:84.87,30.61
---		SM Cathedral 762[4]		20:85.35,30.62
---		SM Library 762[2]		20:85.29,32.14
---		SM Armory 762[3]		20:85.62,31.59
---		Mechanar				479:70.59,69.73
---		Tempest Keep			479:73.73,63.74
---		Botanica				479:71.72,55.02
---		Arcatraz				479:74.37,57.74
---		Auchanai Crypts			478:34.34,65.61
---		Sethekk Halls			478:44.91,65.61
---		Shadow Labyrinth		478:39.63,73.54
---		Mana Tombs				478:39.63,57.67
---		Blood Furnace			465:46.03,51.79
---		Shattered Halls			465:47.68,51.99
---		Hellfire Ramparts		465:47.63,53.57
---		Black Temple			473:71.05,46.45
---		Grim Batol				700:19.18,54.01
---		Gate of the Setting Sun	811:15.84,74.39
---		Shado-Pan Monastery		809:36.66,47.33
---		Temple of Jade Serpent	806:56.18,57.87
---		Auchindoun				946:46.31,73.93
---		Bloodmaul Slag Mines	941:49.85,24.75
---		Zul Aman				463:82.14,64.35
---
 --	UTF-8 file
 --
 Grail_NPCs_File_Version = 015
 
 if Grail.npcsVersionNumber >= Grail_NPCs_File_Version then return end
 Grail.npcsVersionNumber = Grail_NPCs_File_Version
-
-local originalMem = gcinfo()
 
 Grail.npcs = {}
 
@@ -382,9 +330,16 @@ G[2097]={'FA 1437:10.82,55.80'}
 G[2104]={'FA 1437:9.86,57.49'}
 G[2107]={'FA 1438:66.26,58.52'}
 G[2111]={'FA 1437:11.79,57.99'}
+G[2119]={'FH 1420:32.68,65.56'} -- Dannal Stern
 G[2121]={'FH 1421:43.98,40.93'} -- Shadow Priest Allister
+G[2122]={'FH 1420:32.53,65.66'} -- David Trias
+G[2123]={'FH 1420:31.11,66.03'} -- Dark Cleric Duesten
+G[2124]={'FH 1420:30.93,66.06'} -- Isabella
 G[2126]={'FH 1420:30.91,66.33'}
+G[2128]={'FH 1420:61.96,52.47'} -- Cain Firesong
 G[2129]={'FH 1420:61.58,52.19'} -- Dark Cleric Beryl
+G[2130]={'FH 1420:61.75,52.00'} -- Marion Call
+G[2131]={'FH 1420:61.85,52.54'} -- Austil de Mon
 G[2150]={'FA 1438:60.49,56.17'}
 G[2151]={'FA 1438:55.81,58.31'}
 G[2207]={'1439:31.22,87.44'}
@@ -555,7 +510,7 @@ G[3516]={'FA 1457:34.82,8.70'}
 G[3517]={'FA 1457:38.21,21.63'}
 G[3519]={'FA 1438:38.29,34.44'}
 G[3520]={'FA 1453:52.49,41.90'}
-G[3567]={'FA 1438:55.52,56.92'}
+G[3567]={'FA 1438:55.57,56.95'} -- Tallonkai Swiftroot
 G[3568]={'FA 1438:31.52,31.52'}
 G[3583]={'FA 1439:37.32,43.65'}
 G[3584]={'FA 1439:38.62,87.39'}
@@ -695,6 +650,8 @@ G[6179]={'FA 1455:27.52,12.05'}
 G[6286]={'FA 1438:57.09,61.29'}
 G[6301]={'FA 1439:38.11,41.17'}
 G[6389]={'FH 1421:43.44,41.67'}
+G[6467]={'FH 1458:83.50,69.09'} -- Mennet Carkad
+G[6522]={'FH 1458:54.83,76.31'} -- Andron Gant
 G[6569]={'FA 1455:69.21,50.56'}
 G[6577]={'FA 1432:63.56,47.92'}
 G[6579]={'FA 1453:55.51,12.53'}
@@ -747,6 +704,8 @@ G[8026]={'FA 1457:61.93,39.14'}
 G[8125]={'1446:52.60,28.11'}
 G[8216]={'1425:47.60,66.60 1425:50.80,62.60 1425:51.20,66.60'} -- Retherokk the Berserker
 G[8359]={'FH 1456:45.73,55.86'}
+G[8390]={'FH 1458:48.69,71.42'} -- Chemist Cuely
+G[8393]={'FH 1458:49.05,70.78'} -- Thersa Windsong
 G[8416]={'FA 1426:28.48,67.67'}
 G[8582]={'FH 1413:48.12,5.42','Up tower'}
 G[8583]={'FA 1438:60.90,41.96'}
@@ -765,8 +724,8 @@ G[10216]={'FA 1439:36.10,44.93'}
 G[10219]={'FA 1439:36.62,45.59'}
 G[10260]={'1428:65.91,22.01'}
 G[10616]={'FA 1429:81.40,66.09'}
-G[10665]={'FH 1420:57.67,48.96','Walks around graveyard'}
-G[10666]={'FH 1420:43.75,54.13','Walks along road'}
+G[10665]={'FH 1420:57.34,49.04 1420:57.34,49.04','Walks around graveyard'} -- Junior Apothecary Holland
+G[10666]={'FH 1420:56.08,52.48 1420:51.71,55.63 1420:47.64,57.42 1420:40.95,54.58','Frequently off the road'}-- Gordo
 G[10667]={'1422:39.44,66.79'}
 G[10739]={'1422:53.71,64.75'}
 G[10778]={'1422:38.36,54.08'}
@@ -802,6 +761,7 @@ G[11814]={'FH 1411:56.12,74.24'} -- Kali Remik
 G[11833]={'FH 1456:70.53,31.80'}
 G[11857]={'FH 1413:35.19,27.79'}
 G[11863]={'1443:38.91,27.22'}
+-- G[11945]={'FH 1420:32.13,66.52'} -- Claire Willower NOTE only available to those who purchased the Original WoW Collectors Edition and have it tied to their account.
 G[12277]={'1443:33.86,53.59'}
 G[12384]={'1423:14.46,33.56'}
 G[12676]={'1440:77.70,66.20 1440:75.90,69.70 1440:73.20,70.70 1440:70.30,73.80'} -- Sharptalon
@@ -916,6 +876,7 @@ G[1001561]={'1453:29.46,61.52'}
 G[1001585]={'1432:50.57,14.39'}
 G[1001586]={'1420:68.16,42.02'} -- Crate of Candles
 G[1001593]={'1421:58.38,34.81'} -- Corpse Laden Boat
+G[1001599]={'1421:67.87,24.85'}
 G[1001609]={'1437:47.40,46.90'}
 G[1001627]={'1421:49.90,60.33'} -- Dalaran Crate
 G[1001728]={'1424:62.81,18.73'} -- Dusty Rug
@@ -1009,118 +970,10 @@ G[100005103]={'D:3472 Q:885'}
 G[100008524]={'FH Preowned Q:654'} -- Model 4711-FTZ Power Source
 G[100008623]={'D:5469,7797,7606,7269,7608,7605,5459,5475,5647,7858 Q:351',"Can drop off most NPCs in Tanaris and Zul'Farrak"} -- OOX-17/TN Distress Beacon
 G[100008704]={'D:8216 2693 2643 4465 2640 2645 2694 2648 Q:485','Can drop off most NPCs in The Hinterlands'} -- OOX-09/HL Distress Beacon
+G[100014651]={'Preowned Q:5847'}	-- only available to owners who have bought WoW Collector's Edition
 G[100016303]={'D:12678 Q:184'}
 G[100016304]={'D:12677 Q:24'}
 G[100016305]={'D:12676 Q:2'}
 end
 
-local N = Grail.npc
-for key, value in pairs(Grail.npcs) do
-	if value[1] then
-		N.locations[key] = {}
-		local codeArray = { strsplit(" ", value[1]) }
-		local controlCode
-		for _, code in pairs(codeArray) do
-			controlCode = strsub(code, 1, 1)
-			if 'A' == controlCode then
-				if 2 < strlen(code) and ':' == strsub(code, 2, 2) then
-					local alias = tonumber(strsub(code, 3))
-					if nil ~= alias then
-						N.nameIndex[key] = alias
-						N.aliases[alias] = N.aliases[alias] or {}
-						tinsert(N.aliases[alias], key)
-					else
-						print("*** NPC processing of",key,"has improper alias")
-					end
-				end
-			elseif 'C' == controlCode then
-				tinsert(N.locations[key], { created = true })
-			elseif 'D' == controlCode then
-				if 2 < strlen(code) and ':' == strsub(code, 2, 2) then
-					N.droppedBy[key] = N.droppedBy[key] or {}
-					local npcIds = { strsplit(',', strsub(code, 3)) }
-					for _, anNPCId in pairs(npcIds) do
-						local npcNumber = tonumber(anNPCId)
-						if nil ~= npcNumber then
-							tinsert(N.droppedBy[key], npcNumber)
-							N.has[npcNumber] = N.has[npcNumber] or {}
-							tinsert(N.has[npcNumber], key)
-						end
-					end
-				end
-			elseif 'F' == controlCode then
-				if 1 < strlen(code) then
-					N.faction[key] = strsub(code, 2, 2)
-				end
-			elseif 'H' == controlCode then
-				-- the "has" codes are deprecated as we will populate the data based on "drop" codes instead
-				if 2 < strlen(code) then
-					local subcode = strsub(code, 2, 2)
-					if ':' ~= subcode then
-						local holidays = N.holiday[key]
-						if nil == holidays then
-							holidays = ''
-						end
-						N.holiday[key] = holidays .. subcode
-					end
-				end
-			elseif 'K' == controlCode then
-				if 2 < strlen(code) and ':' == strsub(code, 2, 2) then
-					N.kill[key] = N.kill[key] or {}
-					local questList = { strsplit(',', strsub(code, 3)) }
-					for _, questId in pairs(questList) do
-						tinsert(N.kill[key], tonumber(questId))
-					end
-				end
-			elseif 'M' == controlCode then
-				local t1 = { mailbox = true }
-				if 7 < strlen(code) then
-					t1.mapArea = tonumber(strsub(code, 8))
-				end
-				tinsert(N.locations[key], t1)
-			elseif 'N' == controlCode then
-				if 2 < strlen(code) and ':' == strsub(code, 2, 2) then
-					local nameIndexToUse = tonumber(strsub(code, 3))
-					N.nameIndex[key] = nameIndexToUse
-				else
-					local t1 = { near = true }
-					if 4 < strlen(code) then
-						t1.mapArea = tonumber(strsub(code, 5))
-					end
-					tinsert(N.locations[key], t1)
-				end
-			elseif 'P' == controlCode then
-				-- we do nothing special for "Preowned" at the moment
-			elseif 'Q' == controlCode then
-				if 2 < strlen(code) and ':' == strsub(code, 2, 2) then
-					N.questAssociations[key] = N.questAssociations[key] or {}
-					local questList = { strsplit(',', strsub(code, 3)) }
-					for _, questId in pairs(questList) do
-						tinsert(N.questAssociations[key], tonumber(questId))
-					end
-				end
-			elseif 'S' == controlCode then
-				-- we do nothing special for "Self" at the moment
-			elseif 'X' == controlCode then
-				N.heroic[key] = true
-			elseif 'Z' == controlCode then
-				tinsert(N.locations[key], { ["mapArea"]=tonumber(strsub(code, 2)) })
-			else	-- a real coordinate
-				tinsert(N.locations[key], Grail:_LocationStructure(code))
-			end
-		end
-	end
-	if value[2] then N.comment[key] = value[2] end
-	if value[3] then N.faction[key] = value[3] end
-
-end
--- TODO: Go through all the Grail.npc.droppedBy values and make sure the locations for the NPCs are added to those keys
-
-Grail.npcs = nil
---	18.84/19.29 idle after a couple minutes at startup without these changes.
---	18.25/18.69	idle after a couple minutes at startup WITH these changes.
-
-Grail.memoryUsage.NPCs = gcinfo() - originalMem
-
--- 81152 garrison level 1: 582:46.56,54.33 539:30.46,18.28
-
+-- End of NPCs

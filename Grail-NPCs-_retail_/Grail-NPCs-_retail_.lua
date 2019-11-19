@@ -90,8 +90,6 @@ Grail_NPCs_File_Version = 015
 if Grail.npcsVersionNumber >= Grail_NPCs_File_Version then return end
 Grail.npcsVersionNumber = Grail_NPCs_File_Version
 
-local originalMem = gcinfo()
-
 Grail.npcs = {}
 
 local _, release, _, interface = GetBuildInfo()
@@ -2970,7 +2968,7 @@ G[11858]={'FA 65:72.2,83.9'}
 G[11941]={'FA 27:54.6,50.3'}
 G[11943]={'FH 1:51.4,41.5 1:51.5,41.5'}
 G[12029]={'80:53.33,42.70'}
-G[12031]={'FH 66:22.7,72.1'}
+G[12031]={'FH 66:22.64,71.97'}
 G[12032]={'FH 66:22.7,72.5 66:22.8,72.4 202:54.9,16.6'}
 G[12042]={'80:52.51,40.55'}
 G[12096]={'FA 91:43.12,17.61'}
@@ -19088,113 +19086,4 @@ G[200033529]={100046544,''}
 G[200033530]={100046545,''}
 end
 
-local N = Grail.npc
-for key, value in pairs(Grail.npcs) do
-	if value[1] then
-		N.locations[key] = {}
-		local codeArray = { strsplit(" ", value[1]) }
-		local controlCode
-		for _, code in pairs(codeArray) do
-			controlCode = strsub(code, 1, 1)
-			if 'A' == controlCode then
-				if 2 < strlen(code) and ':' == strsub(code, 2, 2) then
-					local alias = tonumber(strsub(code, 3))
-					if nil ~= alias then
-						N.nameIndex[key] = alias
-						N.aliases[alias] = N.aliases[alias] or {}
-						tinsert(N.aliases[alias], key)
-					else
-						print("*** NPC processing of",key,"has improper alias")
-					end
-				end
-			elseif 'C' == controlCode then
-				tinsert(N.locations[key], { created = true })
-			elseif 'D' == controlCode then
-				if 2 < strlen(code) and ':' == strsub(code, 2, 2) then
-					N.droppedBy[key] = N.droppedBy[key] or {}
-					local npcIds = { strsplit(',', strsub(code, 3)) }
-					for _, anNPCId in pairs(npcIds) do
-						local npcNumber = tonumber(anNPCId)
-						if nil ~= npcNumber then
-							tinsert(N.droppedBy[key], npcNumber)
-							N.has[npcNumber] = N.has[npcNumber] or {}
-							tinsert(N.has[npcNumber], key)
-						end
-					end
-				end
-			elseif 'F' == controlCode then
-				if 1 < strlen(code) then
-					N.faction[key] = strsub(code, 2, 2)
-				end
-			elseif 'H' == controlCode then
-				-- the "has" codes are deprecated as we will populate the data based on "drop" codes instead
-				if 2 < strlen(code) then
-					local subcode = strsub(code, 2, 2)
-					if ':' ~= subcode then
-						local holidays = N.holiday[key]
-						if nil == holidays then
-							holidays = ''
-						end
-						N.holiday[key] = holidays .. subcode
-					end
-				end
-			elseif 'K' == controlCode then
-				if 2 < strlen(code) and ':' == strsub(code, 2, 2) then
-					N.kill[key] = N.kill[key] or {}
-					local questList = { strsplit(',', strsub(code, 3)) }
-					for _, questId in pairs(questList) do
-						tinsert(N.kill[key], tonumber(questId))
-					end
-				end
-			elseif 'M' == controlCode then
-				local t1 = { mailbox = true }
-				if 7 < strlen(code) then
-					t1.mapArea = tonumber(strsub(code, 8))
-				end
-				tinsert(N.locations[key], t1)
-			elseif 'N' == controlCode then
-				if 2 < strlen(code) and ':' == strsub(code, 2, 2) then
-					local nameIndexToUse = tonumber(strsub(code, 3))
-					N.nameIndex[key] = nameIndexToUse
-				else
-					local t1 = { near = true }
-					if 4 < strlen(code) then
-						t1.mapArea = tonumber(strsub(code, 5))
-					end
-					tinsert(N.locations[key], t1)
-				end
-			elseif 'P' == controlCode then
-				-- we do nothing special for "Preowned" at the moment
-			elseif 'Q' == controlCode then
-				if 2 < strlen(code) and ':' == strsub(code, 2, 2) then
-					N.questAssociations[key] = N.questAssociations[key] or {}
-					local questList = { strsplit(',', strsub(code, 3)) }
-					for _, questId in pairs(questList) do
-						tinsert(N.questAssociations[key], tonumber(questId))
-					end
-				end
-			elseif 'S' == controlCode then
-				-- we do nothing special for "Self" at the moment
-			elseif 'X' == controlCode then
-				N.heroic[key] = true
-			elseif 'Z' == controlCode then
-				tinsert(N.locations[key], { ["mapArea"]=tonumber(strsub(code, 2)) })
-			else	-- a real coordinate
-				tinsert(N.locations[key], Grail:_LocationStructure(code))
-			end
-		end
-	end
-	if value[2] then N.comment[key] = value[2] end
-	if value[3] then N.faction[key] = value[3] end
-
-end
--- TODO: Go through all the Grail.npc.droppedBy values and make sure the locations for the NPCs are added to those keys
-
-Grail.npcs = nil
---	18.84/19.29 idle after a couple minutes at startup without these changes.
---	18.25/18.69	idle after a couple minutes at startup WITH these changes.
-
-Grail.memoryUsage.NPCs = gcinfo() - originalMem
-
--- 81152 garrison level 1: 582:46.56,54.33 539:30.46,18.28
-
+-- End of NPCs
