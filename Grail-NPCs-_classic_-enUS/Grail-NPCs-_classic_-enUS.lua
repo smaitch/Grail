@@ -32,6 +32,7 @@ G[1000261]='Damaged Crate'
 G[1000269]='Guarded Thunder Ale Barrel'
 G[1000270]='Unguarded Thunder Ale Barrel'
 G[1000287]="Bookie Herod's Records"
+G[1000288]="Bookie Herod's Strongbox"
 G[1000711]='Wanted!'
 G[1001557]="Lillith's Dinner Table"
 G[1001561]='Sealed Crate'
