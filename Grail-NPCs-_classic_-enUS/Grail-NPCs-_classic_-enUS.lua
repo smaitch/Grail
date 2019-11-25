@@ -109,6 +109,7 @@ G[1177786]="Rackmore's Chest"
 G[1177787]="Rackmore's Log"
 G[1179485]='Broken Trap'
 G[1180570]='Keg'
+G[1180633]='Crystalline Tear'
 end
 
 --	End of localized NPC names
