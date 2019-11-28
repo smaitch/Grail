@@ -11,7 +11,6 @@ interface = tonumber(interface)
 
 if release >= 0 then
 G[0]='자신'
-G[1]=ADVENTURE_JOURNAL
 G[500022]='사탕 바구니'
 G[500032]='노즈도르무'
 G[562180]='시초자 코르벤'

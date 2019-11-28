@@ -1330,6 +1330,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self:LoadAddOn("Grail-NPCs-" .. environmentToUse)
 					self:_ProcessNPCs(originalMem)
 					self:LoadAddOn("Grail-NPCs-" .. environmentToUse .. "-" .. self.playerLocale)
+					self.npc.name[1] = ADVENTURE_JOURNAL
 
 					-- Now we need to update some information based on the server to which we are connected
 					if self.portal == "eu" or self.portal == "EU" then
