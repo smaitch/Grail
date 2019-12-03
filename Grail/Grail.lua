@@ -1516,18 +1516,15 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end
 					frame:RegisterEvent("LOOT_OPENED")		-- support for Timeless Isle chests
 					frame:RegisterEvent("PLAYER_ENTERING_WORLD")
--- Normal startup BfA beta 26585
---	ADDON_LOADED
---	SPELLS_CHANGED
---	PLAYER_LOGIN
---	PLAYER_ENTERING_WORLD
---	QUEST_LOG_UPDATE
--- ReloadUI BfA beta 26585
---	ADDON_LOADED
---	PLAYER_LOGIN
---	PLAYER_ENTERING_WORLD
---	QUEST_LOG_UPDATE
---	SPELLS_CHANGED
+
+-- ReloadUI in Classic same as startup
+-- Normal startup in Classic		startup in Retail		ReloadUI in Retail
+-- ADDON_LOADED						ADDON_LOADED			ADDON_LOADED
+--									SPELLS_CHANGED
+-- PLAYER_LOGIN						PLAYER_LOGIN			PLAYER_LOGIN
+-- PLAYER_ENTERING_WORLD			PLAYER_ENTERING_WORLD	PLAYER_ENTERING_WORLD
+-- QUEST_LOG_UPDATE					QUEST_LOG_UPDATE		QUEST_LOG_UPDATE
+-- SPELLS_CHANGED					SPELLS_CHANGED			SPELLS_CHANGED
 
 					frame:RegisterEvent("PLAYER_LEVEL_UP")	-- needed for quest status caching
 					frame:RegisterEvent("PLAYER_REGEN_ENABLED")
