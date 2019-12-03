@@ -68,6 +68,7 @@ G[1002875]='Ramponiertes Zwergenskelett'
 G[1002908]='Versiegelte Vorratskiste'
 G[1003080]='Objekte'
 G[1003238]='Chens leeres Fässchen'
+G[1003239]='Benedicts Truhe'
 G[1003643]='Alte Schließkiste'
 G[1003972]='GESUCHT'
 G[1004141]='Steuerkonsole'
@@ -120,6 +121,7 @@ G[1177786]='Rackmores Truhe'
 G[1177787]='Rackmores Logbuch'
 G[1179485]='Beschädigte Falle'
 G[1180570]='Bierfässchen'
+G[1180633]='Kristallträne'
 end
 
 --	End of localized NPC names

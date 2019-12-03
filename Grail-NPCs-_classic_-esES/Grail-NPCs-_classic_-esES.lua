@@ -68,6 +68,7 @@ G[1002875]='Esqueleto de enano maltrecho'
 G[1002908]='Cajón de provisiones sellado'
 G[1003080]='Entidades'
 G[1003238]='Barril vacío de Chen'
+G[1003239]='Cofre de Benedicto'
 G[1003643]='Baúl antiguo'
 G[1003972]='SE BUSCA'
 G[1004141]='Consola de control'
@@ -120,6 +121,7 @@ G[1177786]='Cofre de Rackmore'
 G[1177787]='Cuaderno de bitácora de Rackmore'
 G[1179485]='Trampa rota'
 G[1180570]='Doodad_BeerKeg101'
+G[1180633]='Lágrima cristalina'
 end
 
 --	End of localized NPC names

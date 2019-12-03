@@ -68,6 +68,7 @@ G[1002875]='Battered Dwarven Skeleton'
 G[1002908]='Sealed Supply Crate'
 G[1003080]='Candle of Beckoning'
 G[1003238]="Chen's Empty Keg"
+G[1003239]="Benedict's Chest"
 G[1003643]='Old Footlocker'
 G[1003972]='WANTED'
 G[1004141]='Control Console'
@@ -120,6 +121,7 @@ G[1177786]="Rackmore's Chest"
 G[1177787]="Rackmore's Log"
 G[1179485]='Broken Trap'
 G[1180570]='Keg'
+G[1180633]='Crystalline Tear'
 end
 
 --	End of localized NPC names

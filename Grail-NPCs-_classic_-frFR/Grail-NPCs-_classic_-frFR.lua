@@ -68,6 +68,7 @@ G[1002875]='Squelette de nain décrépi'
 G[1002908]='Caisse de ravitaillements scellée'
 G[1003080]='Entités'
 G[1003238]='Tonneau vide de Chen'
+G[1003239]='Coffre de Benedict'
 G[1003643]='Vieille Cantine'
 G[1003972]='ON RECHERCHE'
 G[1004141]='Console de contrôle'
@@ -120,6 +121,7 @@ G[1177786]='Coffre de Rackmore'
 G[1177787]='Journal de Rackmore'
 G[1179485]='Piège cassé'
 G[1180570]='Baril'
+G[1180633]='Larme cristalline'
 end
 
 --	End of localized NPC names

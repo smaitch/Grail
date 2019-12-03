@@ -68,6 +68,7 @@ G[1002875]='Esqueleto de Anão Danificado'
 G[1002908]='Caixote de Suprimentos Lacrado'
 G[1003080]='Objetos'
 G[1003238]='Barril Vazio do Chen'
+G[1003239]='Baú do Bento'
 G[1003643]='Maleta Velha'
 G[1003972]='PROCURA-SE'
 G[1004141]='Painel de Controle'
@@ -120,6 +121,7 @@ G[1177786]='Baú de Rodovalho'
 G[1177787]='Diário de Rodovalho'
 G[1179485]='Armadilha Quebrada'
 G[1180570]='Barril'
+G[1180633]='[Crystalline Tear]'
 end
 
 --	End of localized NPC names
