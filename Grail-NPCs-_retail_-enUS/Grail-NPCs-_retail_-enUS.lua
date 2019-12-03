@@ -13,7 +13,6 @@ interface = tonumber(interface)
 
 if release >= 0 then
 G[0]='Self'
-G[1]=ADVENTURE_JOURNAL
 G[500022]='Candy Bucket'
 G[500024]="Anson's Crate"
 G[500025]="Edgar's Crate"

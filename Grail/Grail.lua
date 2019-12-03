@@ -1326,8 +1326,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						environmentToUse = "_retail_"
 					end
 					self:LoadAddOn("Grail-Quests-" .. environmentToUse)
+					local originalMem = gcinfo()
 					self:LoadAddOn("Grail-NPCs-" .. environmentToUse)
+					self:_ProcessNPCs(originalMem)
 					self:LoadAddOn("Grail-NPCs-" .. environmentToUse .. "-" .. self.playerLocale)
+					self.npc.name[1] = ADVENTURE_JOURNAL
 
 					-- Now we need to update some information based on the server to which we are connected
 					if self.portal == "eu" or self.portal == "EU" then
@@ -1513,18 +1516,15 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end
 					frame:RegisterEvent("LOOT_OPENED")		-- support for Timeless Isle chests
 					frame:RegisterEvent("PLAYER_ENTERING_WORLD")
--- Normal startup BfA beta 26585
---	ADDON_LOADED
---	SPELLS_CHANGED
---	PLAYER_LOGIN
---	PLAYER_ENTERING_WORLD
---	QUEST_LOG_UPDATE
--- ReloadUI BfA beta 26585
---	ADDON_LOADED
---	PLAYER_LOGIN
---	PLAYER_ENTERING_WORLD
---	QUEST_LOG_UPDATE
---	SPELLS_CHANGED
+
+-- ReloadUI in Classic same as startup
+-- Normal startup in Classic		startup in Retail		ReloadUI in Retail
+-- ADDON_LOADED						ADDON_LOADED			ADDON_LOADED
+--									SPELLS_CHANGED
+-- PLAYER_LOGIN						PLAYER_LOGIN			PLAYER_LOGIN
+-- PLAYER_ENTERING_WORLD			PLAYER_ENTERING_WORLD	PLAYER_ENTERING_WORLD
+-- QUEST_LOG_UPDATE					QUEST_LOG_UPDATE		QUEST_LOG_UPDATE
+-- SPELLS_CHANGED					SPELLS_CHANGED			SPELLS_CHANGED
 
 					frame:RegisterEvent("PLAYER_LEVEL_UP")	-- needed for quest status caching
 					frame:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -8434,6 +8434,112 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 				controlToAdd = ","
 			end
 			controlTable.something = controlTable.something .. controlToAdd .. stringToAdd
+		end,
+
+		--	Internal Use.
+		_ProcessNPCs = function(self, originalMem)
+			local N = self.npc
+			for key, value in pairs(self.npcs) do
+				if value[1] then
+					N.locations[key] = {}
+					local codeArray = { strsplit(" ", value[1]) }
+					local controlCode
+					for _, code in pairs(codeArray) do
+						controlCode = strsub(code, 1, 1)
+						if 'A' == controlCode then
+							if 2 < strlen(code) and ':' == strsub(code, 2, 2) then
+								local alias = tonumber(strsub(code, 3))
+								if nil ~= alias then
+									N.nameIndex[key] = alias
+									N.aliases[alias] = N.aliases[alias] or {}
+									tinsert(N.aliases[alias], key)
+								else
+									print("*** NPC processing of",key,"has improper alias")
+								end
+							end
+						elseif 'C' == controlCode then
+							tinsert(N.locations[key], { created = true })
+						elseif 'D' == controlCode then
+							if 2 < strlen(code) and ':' == strsub(code, 2, 2) then
+								N.droppedBy[key] = N.droppedBy[key] or {}
+								local npcIds = { strsplit(',', strsub(code, 3)) }
+								for _, anNPCId in pairs(npcIds) do
+									local npcNumber = tonumber(anNPCId)
+									if nil ~= npcNumber then
+										tinsert(N.droppedBy[key], npcNumber)
+										N.has[npcNumber] = N.has[npcNumber] or {}
+										tinsert(N.has[npcNumber], key)
+									end
+								end
+							end
+						elseif 'F' == controlCode then
+							if 1 < strlen(code) then
+								N.faction[key] = strsub(code, 2, 2)
+							end
+						elseif 'H' == controlCode then
+							-- the "has" codes are deprecated as we will populate the data based on "drop" codes instead
+							if 2 < strlen(code) then
+								local subcode = strsub(code, 2, 2)
+								if ':' ~= subcode then
+									local holidays = N.holiday[key]
+									if nil == holidays then
+										holidays = ''
+									end
+									N.holiday[key] = holidays .. subcode
+								end
+							end
+						elseif 'K' == controlCode then
+							if 2 < strlen(code) and ':' == strsub(code, 2, 2) then
+								N.kill[key] = N.kill[key] or {}
+								local questList = { strsplit(',', strsub(code, 3)) }
+								for _, questId in pairs(questList) do
+									tinsert(N.kill[key], tonumber(questId))
+								end
+							end
+						elseif 'M' == controlCode then
+							local t1 = { mailbox = true }
+							if 7 < strlen(code) then
+								t1.mapArea = tonumber(strsub(code, 8))
+							end
+							tinsert(N.locations[key], t1)
+						elseif 'N' == controlCode then
+							if 2 < strlen(code) and ':' == strsub(code, 2, 2) then
+								local nameIndexToUse = tonumber(strsub(code, 3))
+								N.nameIndex[key] = nameIndexToUse
+							else
+								local t1 = { near = true }
+								if 4 < strlen(code) then
+									t1.mapArea = tonumber(strsub(code, 5))
+								end
+								tinsert(N.locations[key], t1)
+							end
+						elseif 'P' == controlCode then
+							-- we do nothing special for "Preowned" at the moment
+						elseif 'Q' == controlCode then
+							if 2 < strlen(code) and ':' == strsub(code, 2, 2) then
+								N.questAssociations[key] = N.questAssociations[key] or {}
+								local questList = { strsplit(',', strsub(code, 3)) }
+								for _, questId in pairs(questList) do
+									tinsert(N.questAssociations[key], tonumber(questId))
+								end
+							end
+						elseif 'S' == controlCode then
+							-- we do nothing special for "Self" at the moment
+						elseif 'X' == controlCode then
+							N.heroic[key] = true
+						elseif 'Z' == controlCode then
+							tinsert(N.locations[key], { ["mapArea"]=tonumber(strsub(code, 2)) })
+						else	-- a real coordinate
+							tinsert(N.locations[key], Grail:_LocationStructure(code))
+						end
+					end
+				end
+				if value[2] then N.comment[key] = value[2] end
+				if value[3] then N.faction[key] = value[3] end
+			end
+			-- TODO: Go through all the Grail.npc.droppedBy values and make sure the locations for the NPCs are added to those keys
+			self.npcs = nil
+			self.memoryUsage.NPCs = gcinfo() - originalMem
 		end,
 
 		--	Internal Use.

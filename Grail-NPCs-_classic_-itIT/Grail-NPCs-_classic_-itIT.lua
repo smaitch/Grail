@@ -11,7 +11,6 @@ interface = tonumber(interface)
 
 if release >= 0 then
 G[0]='Se stesso'
-G[1]=ADVENTURE_JOURNAL
 end
 
 --	End of localized NPC names
