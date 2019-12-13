@@ -1,4 +1,4 @@
-## Interface: 11302
+## Interface: 11303
 ## Title: Grail |cff69ccf0Quests |r|cffeda55fClassic|r|cff69ccf0 esES|r
 ## Author: Scott M Harrison
 ## Notes: Provides localized esES quest names to Grail for Classic
