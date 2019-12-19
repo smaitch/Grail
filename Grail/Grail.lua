@@ -925,8 +925,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 				end
 			end,
 
-			['ADDON_LOADED'] = function(self, frame, arg1)
-				if "Grail" == arg1 then
+			['PLAYER_LOGIN'] = function(self, frame, arg1)
+--				if "Grail" == arg1 then
 
 					local debugStartTime = debugprofilestop()
 					--
@@ -1554,7 +1554,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self:_UpdateTrackingObserver()
 
 					self.timings.AddonLoaded = 	debugprofilestop() - debugStartTime
-				end
+--				end
 
 			end,
 
@@ -3941,6 +3941,10 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			local holidayCode = self.reverseHolidayMapping[soughtHolidayName]
 			if self.celebratingHolidayCache[soughtHolidayName] and self.celebratingHolidayCache[soughtHolidayName][datetimeKey] then
 				retval = (self.celebratingHolidayCache[soughtHolidayName][datetimeKey] == 1)
+			elseif 'V' == holidayCode and self.existsClassic then
+				if 2019 == year and 12 == month and day >= 17 then
+					retval = true
+				end
 			elseif 'Z' == holidayCode then
 				if 12 == month and day >= 25 then
 					retval = true
@@ -4090,6 +4094,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					retval = self:ArtifactLevelMeetsOrExceeds(subcode, numeric) and 'C' or 'P'
 				elseif '#' == code then
 					retval = self:IsMissionAvailable(numeric) and 'C' or 'P'
+				elseif 'h' == code then
+					retval = (bitband(questBitMask, self.bitMaskEverCompleted) > 0) and 'P' or 'C'
 				else	-- A, B, C, D, E, H, O, X
 					local questBitMask = self:StatusCode(numeric)
 					local questTypeMask = self:CodeType(numeric)
@@ -5837,7 +5843,7 @@ end
 				local questId = p and p.q or nil
 				local dangerous = p and p.d or false
 				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local code, value, position, subcode
 				local forcingProfessionOnly, forcingReputationOnly = false, false
 
@@ -5924,6 +5930,7 @@ end
 				elseif code == 'F' then checkFaction = true
 				elseif code == 'G' then checkGarrisonBuilding = true
 				elseif code == 'H' then	checkEver = true
+				elseif code == 'h' then checkNever = true
 				elseif code == 'I' then	checkSpell = true
 				elseif code == 'i' then	checkNotSpell = true
 				elseif code == 'J' then	checkAchievement = true
@@ -5966,6 +5973,7 @@ end
 				if shouldCheckTurnin or checkNotCompleted or checkNotTurnin then questCompleted = Grail:IsQuestCompleted(value) end
 				if checkLog or checkStatusComplete or checkStatusNotComplete or checkNotLog then questInLog, questStatus = Grail:IsQuestInQuestLog(value) end
 				if checkEver then questEverCompleted = Grail:HasQuestEverBeenCompleted(value) end
+				if checkNever then questEverCompleted = not Grail:HasQuestEverBeenCompleted(value) end
 				if (shouldCheckTurnin and questCompleted) or (checkEver and questEverCompleted) then
 --	TODO:	Solve this issue:
 --		We have quest 30727 that has I:H30727 that seems to be causing the quest to be marked as invalidated.  This I assume is because the previous quest
@@ -6057,6 +6065,7 @@ end
 					(not needsMatchBoth and checkNotCompleted and not questCompleted) or
 					(checkLog and questInLog) or
 					(checkEver and questEverCompleted and canAcceptQuest) or
+					(checkNever and not questEverCompleted) or
 					(checkStatusComplete and questInLog and questStatus ~= nil and questStatus > 0) or
 					(not needsMatchBoth and checkStatusNotComplete and questInLog and (questStatus == nil or questStatus == 0)) or
 					(needsMatchBoth and checkStatusNotComplete and questInLog and (questStatus == nil or questStatus == 0) and checkNotCompleted and not questCompleted) or
@@ -8029,6 +8038,9 @@ end
 					frame:SetHyperlink(hyperlinkFormat)
 					local numLines = frame:NumLines()
 					if nil ~= numLines and 0 ~= numLines then
+-- TODO: Instead of creating the tooltip with the name com_mithrandir_grailTooltipNPC and then looking in the global
+--		space for the name of the tooltip with TextLeft1 appended, is there any other way to read the contents of the
+--		tooltip such that I do not need to pullute the global namespace with a tooltip?
 						local text = _G["com_mithrandir_grailTooltipNPCTextLeft1"]
 						if text then
 							retval = text:GetText()
@@ -10885,7 +10897,7 @@ end
 --	notifications from the Blizzard system
 me.notificationFrame = CreateFrame("Frame")
 me.notificationFrame:SetScript("OnEvent", function(frame, event, ...) Grail:_Tooltip_OnEvent(frame, event, ...) end)
-me.notificationFrame:RegisterEvent("ADDON_LOADED")
+me.notificationFrame:RegisterEvent("PLAYER_LOGIN")
 
 end
 
