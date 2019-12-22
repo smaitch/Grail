@@ -96,6 +96,7 @@ G[1112888]='Etagère poussiéreuse'
 G[1112948]="Coffre verrouillé de l'Intrépide"
 G[1113791]="Brasero d'Everfount"
 G[1138492]='Fragments de Myzrael'
+G[1142071]='Oeuf-O-Matic'
 G[1142151]='Tonneau scellé'
 G[1142179]='Belvédère de Solarsal'
 G[1144063]="Monolithe d'Equinex"

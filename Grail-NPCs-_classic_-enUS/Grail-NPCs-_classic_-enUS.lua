@@ -96,6 +96,7 @@ G[1112888]='Dusty Shelf'
 G[1112948]="Intrepid's Locked Strongbox"
 G[1113791]='Brazier of Everfount'
 G[1138492]='Shards of Myzrael'
+G[1142071]='Egg-O-Matic'
 G[1142151]='Sealed Barrel'
 G[1142179]='Solarsal Gazebo'
 G[1144063]='Equinex Monolith'
