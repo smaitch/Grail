@@ -126,6 +126,7 @@ G[1177787]='Journal de Rackmore'
 G[1179485]='Piège cassé'
 G[1180570]='Baril'
 G[1180633]='Larme cristalline'
+G[1180715]='Préservateur de houx'
 G[1180743]='Cadeau soigneusement emballé'
 G[1180746]='Cadeau secoué doucement'
 G[1180747]="Cadeau à l'emballage multicolore"
