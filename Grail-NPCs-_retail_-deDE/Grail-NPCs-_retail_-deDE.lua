@@ -361,6 +361,7 @@ G[1297880]='Bezauberte Truhe'
 G[1297891]='Runengebundene Truhe'
 G[1297893]='Runengebundene Lade'
 G[1298920]='Gestohlener Dornsprecherschatz'
+G[1316754]='Eimer mit Süßigkeiten'
 G[1322762]='Zerstörter Sicherheitsalarm'
 G[1325659]='Mechanisierter Schrotthund'
 G[1325662]='Mechanisierte Truhe'
@@ -388,6 +389,66 @@ G[100122417]='Späherbericht: Nachtflutnest'
 G[100122420]='Späherbericht: Gorianisches Übungsgelände'
 G[100128231]='Ausstattungsbaupläne: Abgerichtete Haie'
 G[100128232]='Ausstattungsbaupläne: Hochleistungsnebelleuchten'
+end
+
+if release >= 32144 then
+G[1226994]='Grimmfrostschatz'
+G[1233134]='Goldkaliriei'
+G[1233218]='Bündel eines Abenteurers'
+G[1233511]='Zertrampelter Abenteurer'
+G[1233613]='Verteidigungsschild von Telaar'
+G[1233618]='Ogerperlen'
+G[1233649]='Beutel des Glücksspielers'
+G[1233975]='Scubis Du-Du'
+G[1234154]='Verlegte Schriftrollen'
+G[1234155]='Relikte der Ausgestoßenen'
+G[1234432]='Ogronbeute'
+G[1234451]='Relikte der Ausgestoßenen'
+G[1234471]='Spray-o-Mat 5000 XT'
+G[1235103]='Garnisonsvorräte'
+G[1235104]='Sonnenberührte Truhe'
+G[1235172]='Ausgestoßener des Akrazverstecks'
+end
+
+if release >= 32185 then
+G[1224754]='Vollgelaufene Truhe'
+G[1322358]='Durchnässte Allianzkiste'
+G[1326404]='Arkane Truhe'
+G[1326409]='Arkane Truhe'
+end
+
+if release >= 32305 then
+G[1035591]='Schwimmer'
+G[1284412]='Dragoner der Sturmschlangen'
+G[1325666]='Mechanisierte Truhe'
+G[1326401]='Arkane Truhe'
+G[1326419]='Arkane Truhe'
+G[1327586]='Mechanisierter Schrotthund'
+G[1329909]='Zuckender Haufen'
+G[1332631]='Geborgener Kanister'
+end
+
+if release >= 32494 then
+G[1278476]='Archäologischer Fund der Zandalari'
+G[1297897]='Kriegskasse'
+G[1325660]='Ross des kopflosen Reiters'
+G[1325661]='Rostiger Mechanokrabbler'
+G[1325664]='Ross des kopflosen Reiters'
+G[1326398]='Leuchtende arkane Truhe'
+G[1326407]='Arkane Truhe'
+G[1326410]='Arkane Truhe'
+G[1326418]='Arkane Truhe'
+G[1327673]='Gestohlenes Öl'
+G[1329714]='Kaputtes Flammengeschütz'
+G[1334734]='Glitzernde Truhe'
+end
+
+if release >= 32638 then
+G[1035591]='Abgrundflügelbutt'
+end
+
+if release >= 32750 then
+G[1325662]='Defekter Schrotthund'
 end
 
 --	End of localized NPC names
