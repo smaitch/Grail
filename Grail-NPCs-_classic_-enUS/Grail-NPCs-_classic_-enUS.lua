@@ -126,6 +126,7 @@ G[1177787]="Rackmore's Log"
 G[1179485]='Broken Trap'
 G[1180570]='Keg'
 G[1180633]='Crystalline Tear'
+G[1180715]='Holly Preserver'
 G[1180743]='Carefully Wrapped Present'
 G[1180746]='Gently Shaken Gift'
 G[1180747]='Gaily Wrapped Present'
