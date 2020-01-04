@@ -28885,4 +28885,10 @@ G[529411]='Was jetzt?'
 G[529428]='Was jetzt?'
 end
 
+if release >= 32750 then
+G[56012]='Runenverriegelte Truhe'
+G[56746]='Direktverbindung'
+G[57165]='Tracking Quest'
+end
+
 --	End of localized quest names
