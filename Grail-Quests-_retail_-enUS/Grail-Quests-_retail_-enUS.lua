@@ -32644,4 +32644,15 @@ G[57589]='Spirit Drinker'
 G[58861]="The Mantids' Mettle"
 end
 
+if release >= 33084 then
+G[58010]='More Bits, More Bits!'
+end
+
+if release >= 33115 then
+G[45639]='Chilled Meat'
+G[45641]='Raw Tiger Steaks'
+G[45642]='Raw Clefthoof Meat'
+G[45643]='Lean Shanks'
+end
+
 --	End of localized quest names

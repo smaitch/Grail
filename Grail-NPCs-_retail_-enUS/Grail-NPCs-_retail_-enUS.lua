@@ -712,6 +712,7 @@ G[1242649]='Fel-Tainted Apexis Formation'
 G[1242657]="Lyndras' Runic Catgut"
 G[1242665]='Addie Fizzlebog'
 G[1243334]='Withered Herb'
+G[1243392]='Alchemy Book'
 G[1243402]="Navarrogg's Cage"
 G[1243639]='Siphoning Crystal'
 G[1243688]='Treasure Chest'
@@ -798,6 +799,7 @@ G[1248027]='Brambly Fjarnskaggl'
 G[1248080]='Needle Coral'
 G[1248091]="Lyndras' Threading Needles"
 G[1248093]='Box of Bear Fur'
+G[1248398]='Ethereal Communication Device'
 G[1248407]="Kel'danath's Manaflask"
 G[1248534]='Tears of Elune'
 G[1248554]='Nightborne Artifact Cache'
@@ -1091,6 +1093,7 @@ G[1284454]="Da White Shark's Bounty"
 G[1284455]="The Exile's Lament"
 G[1286016]="Ship's Log"
 G[1286953]='Rod of Tides'
+G[1287185]="Wanted: Darkspeaker Jo'la"
 G[1287189]='Wanted: Dangerous Beasts'
 G[1287228]='Wanted: Dark Chronicler'
 G[1287232]='Scouting Report'
@@ -1168,6 +1171,14 @@ G[1297892]='Runebound Chest'
 G[1297893]='Runebound Coffer'
 G[1298920]='Stolen Thornspeaker Cache'
 G[1303039]='Curious Grain Sack'
+G[1307277]='Old Jug'
+G[1307340]='Locked Chest'
+G[1311218]="Xal'atath, Blade of the Black Empire"
+G[1311885]="Xal'atath, Blade of the Black Empire"
+G[1316443]="Xal'atath, Blade of the Black Empire"
+G[1316795]='Horde Bonfire'
+G[1316796]='Horde Bonfire'
+G[1316801]='Horde Bonfire'
 G[1319222]='Darkshore Cache'
 G[1322533]='Tome of the Elements'
 G[1322803]='Kelpberry'
@@ -1180,6 +1191,7 @@ G[1325667]='Mechanized Chest'
 G[1325668]='Mechanized Chest'
 G[1325869]='Empty Cask'
 G[1325976]='Golden Cogpaste'
+G[1326026]='Void Cache'
 G[1326027]='Recyclerizer DX-82'
 G[1326142]='Bounty Board'
 G[1326216]='Azerite Trident'
@@ -1191,6 +1203,309 @@ G[1327578]='Glimmering Chest'
 G[1327586]='Scrap Pile'
 G[1327597]='Old Rusty Chest'
 G[1330194]='Prismatic Crystal'
+end
+
+if release >= 26972 then
+G[1240586]='Cursed Bones'
+G[1243952]='Twisted Root'
+G[1245324]='Rich Leystone Deposit'
+G[1255344]='Felslate Seam'
+G[1255963]='Vrykul Ancestral Chest'
+G[1260247]='Theryn'
+end
+
+if release >= 27178 then
+G[1035591]='Highmountain Salmon School'
+G[1247959]='Brimstone Destroyer Core'
+G[1247963]='Brimstone Destroyer Core'
+G[1247969]='Brimstone Destroyer Core'
+G[1268572]='Curious Wyrmtongue Cache'
+G[1271099]="Spoils of the Legion's Fall"
+G[1271979]='The Sigil of Awakening'
+G[1272768]='Empyrium Deposit'
+G[1272778]='Rich Empyrium Deposit'
+end
+
+if release >= 27219 then
+G[1271114]='Eredar Bones'
+G[1272009]='Preserved Crystal Collection'
+G[1272780]='Empyrium Seam'
+G[1276396]='Cache of Wit'
+end
+
+if release >= 27326 then
+G[1250240]='Bottle of Arcwine'
+end
+
+if release >= 27356 then
+G[1035591]='Frenzied Fangtooth School'
+G[1273798]='Jar of Blubber'
+G[1276257]='"Ancient Potsherds"'
+G[1276258]='"Genuine Titan Disc"'
+G[1276616]='Monelite Deposit'
+G[1280802]='Silver Nugget'
+G[1282432]='Dresser'
+G[1284473]='Plundered Supplies'
+end
+
+if release >= 27366 then
+G[1035591]='Lane Snapper School'
+G[1280754]='Honey Soaked Boot'
+G[1290134]='War Supply Chest'
+end
+
+if release >= 27377 then
+G[1275071]='Sea Stalks'
+G[1276616]='Coral Snapper'
+G[1276617]='Platinum Deposit'
+G[1277333]='Ancient Sarcophagus'
+G[1277897]='Seething Cache'
+G[1279302]="Zeth'jir Harpoon"
+G[1279378]='Reanimated Monstrosity'
+G[1281722]='Grimy Scroll'
+G[1281832]='Tidal Beacon'
+G[1284408]='Treasure Chest'
+G[1287468]='Restless Stone'
+G[1291201]='Frenzied Fangtooth School'
+G[1291260]="Myra's Favorite Pick"
+G[1293898]='Horde Bounty'
+G[1294126]='Abyssal Beacon'
+G[1294176]='Tidal Kris'
+G[1294542]='Raw Azerite Sample'
+G[1296159]='Washed Up Cargo'
+G[1296582]="Julien's Left Boot"
+G[1297471]='Dense Storm Silver Deposit'
+G[1297622]='Coarse Storm Silver Deposit'
+end
+
+if release >= 27404 then
+G[1276616]='Monelite Deposit'
+G[1278231]='Amphibious Lab Enclosure'
+G[1278339]='Steam Shard'
+G[1278721]='Snow Mound'
+G[1281361]='Ritual Powder'
+G[1281903]='Brutosaur'
+G[1282722]='Blood Rage'
+G[1287052]='Xibalan Fossil'
+G[1292784]='Zandalari Dunemelons'
+G[1293773]='Lost Supplies'
+G[1293800]='Evermoss'
+G[1294311]='Skittering Cliffwalker'
+G[1296159]='Wailing Siren'
+G[1296252]='Azerite-Dusted Blade'
+G[1296573]="Jason's Rusty Blade"
+G[1297470]='Coarse Storm Silver Deposit'
+G[1297621]='Rough Monelite Deposit'
+G[1297825]='Bilefang Skitterer'
+end
+
+if release >= 27481 then
+G[1282481]='Ransacked Supplies'
+G[1284421]='Treasure Chest'
+G[1291154]='Large Azerite Sack'
+G[1293772]='Lost Supplies'
+G[1296580]="Ofer's Bound Journal"
+G[1302770]='Lost Supplies'
+end
+
+if release >= 27547 then
+G[1276617]='Blackthorne'
+G[1281312]='Stolen Supplies'
+G[1284409]='Treasure Chest'
+G[1286952]='Lichen-Covered Chest'
+end
+
+if release >= 27602 then
+G[1276234]='Storm Silver Deposit'
+G[1276240]='Coral Snapper'
+G[1276620]='Storm Silver Seam'
+G[1276621]='Grotesque Thrall'
+G[1278716]='Squallfin Sailsplitter'
+G[1281905]='Toki'
+G[1291135]='Bundle of Dynamite'
+G[1291229]='Power Word: Fortitude'
+G[1292813]="Zeth'jir Weapon Rack"
+G[1297466]='Luminous Monelite Deposit'
+G[1297619]='Gleaming Storm Silver Deposit'
+G[1297625]='Dense Storm Silver Deposit'
+end
+
+if release >= 27843 then
+G[1276234]='Riverbud'
+G[1276237]="Akunda's Bite"
+G[1276238]='Monelite Deposit'
+G[1276239]="Siren's Sting"
+G[1276240]='Sea Stalks'
+G[1281079]='Star Moss'
+G[1281867]='Star Moss'
+G[1281870]='Tortaka Refugee'
+G[1289322]='Flotsam'
+end
+
+if release >= 27980 then
+G[1276242]='Alluring Siren'
+G[1281079]='Bashmu'
+G[1281868]='Star Moss'
+G[1281869]='Erak the Aloof'
+G[1281872]='Sea Stalks'
+G[1297061]='Flourishing Riverbud'
+end
+
+if release >= 28153 then
+G[1290975]='Silver Nugget'
+end
+
+if release >= 30706 then
+G[1281252]='Hearthbloom'
+G[1284411]='Treasure Chest'
+G[1309657]='Gunpowder Keg'
+G[1311163]='Void Stone'
+G[1312227]='Highborne Relic'
+end
+
+if release >= 30920 then
+G[1281870]='Child of Jani'
+end
+
+if release >= 30948 then
+G[1276242]='Anchor Weed'
+G[1276616]='Monelite Deposit'
+G[1291224]='Heartsbane Disciple'
+G[1296575]="Julie's Cracked Dish"
+G[1296588]='Portrait of Commander Martens'
+G[1312184]="Grizzek's Rocket Hop"
+end
+
+if release >= 30993 then
+G[1276621]='Restless Pebbles'
+G[1278476]='Zandalari Archaeology Find'
+G[1278477]='Drust Archaeology Find'
+G[1291213]='Disturbed Spirit'
+G[1291222]='Heartsbane Scroll'
+G[1291225]='Gorged Boar'
+G[1291254]='Bolstered Tideguard'
+G[1294125]='Anchor Weed'
+G[1296579]="Brian's Broken Compass"
+G[1296581]='Jenoh'
+G[1296585]='Faithless Slaver'
+G[1296586]="Rachel's Flute"
+G[1296587]="Josh's Fang Necklace"
+G[1296589]="Kurt's Ornate Key"
+G[1297069]='Dresser'
+G[1297617]='Blood Belch'
+G[1297933]='Dusty Songbook'
+G[1307486]='Azerite Chunk'
+G[1307487]='Azerite Chunk'
+G[1307488]='Azerite Chunk'
+G[1315934]="Grizzek's Rocket Hop"
+G[1316776]='Secret Supply Chest'
+G[1316781]='Secret Supply Chest'
+end
+
+if release >= 31229 then
+G[1276236]='Star Moss'
+G[1276242]='Anchor Weed'
+G[1281870]='Riverbud'
+G[1288646]='Saltspine Krolusk'
+G[1291223]='Forest Viper'
+G[1298774]="Raimond's Secret Ingredient"
+G[1316778]='Secret Supply Chest'
+G[1322620]='Storeroom Keys'
+G[1322638]='Writhing Cocoon'
+G[1324052]='War Supply Chest'
+G[1325490]='Deathshroom'
+end
+
+if release >= 31429 then
+G[1240641]='Eternal Bride'
+G[1241665]='Stonescar River-Thresher'
+G[1244775]='Nightborne Flask'
+G[1248931]='Smolderhide Firewater'
+G[1268450]='Highmountain Tauren Archaeology Find'
+G[1281869]="Siren's Sting"
+G[1307028]='Azerite Grenades'
+G[1312047]='X52 Delevitator'
+G[1324051]='War Supply Chest'
+end
+
+if release >= 31478 then
+G[1244446]='Actually Safe Treasure Chest'
+G[1281869]='SI:7 Infiltrator'
+G[1324049]='War Supply Chest'
+end
+
+if release >= 32494 then
+G[1326598]="Zin'anthid"
+G[1327652]='War Supply Chest'
+end
+
+if release >= 32638 then
+G[1242657]="Lyndras' Finishing Table"
+G[1249739]='Empyrean Fel Tome'
+G[1252069]="Alaina's Belongings"
+G[1252408]='Llorian'
+G[1255341]='Luniel'
+G[1307091]='Ominous Whispering Dagger'
+G[1321845]='Tri-dimensional Coordinates'
+G[1322357]='Battered Horde Crate'
+G[1324050]='War Supply Chest'
+G[1325482]='Gnimo'
+G[1326398]='Glowing Arcane Trunk'
+G[1326404]='Arcane Chest'
+G[1329783]='Glowing Arcane Trunk'
+G[1332623]='Christy Punchcog'
+end
+
+if release >= 32722 then
+G[1326598]="Zin'anthid"
+end
+
+if release >= 32750 then
+G[1194089]='Highborne Relic'
+G[1194100]='Maddened Blackwood'
+G[1194107]='Encrusted Clam'
+G[1195021]='Glittering Shell'
+G[1195055]='Buried Debris'
+G[1242250]='Zangmon'
+G[1244689]='Foul Felstalker'
+G[1244691]="Mo'arg Brute"
+G[1244698]='Small Treasure Chest'
+G[1244699]='Small Treasure Chest'
+G[1244701]='Small Treasure Chest'
+G[1244778]='The Nightfallen'
+G[1245316]='Small Treasure Chest'
+G[1246147]='Small Treasure Chest'
+G[1246249]='Small Treasure Chest'
+G[1250239]='Bottle of Arcwine'
+G[1252054]='Scepter of Sargeras'
+G[1255341]='Llorian'
+G[1255953]='Everburning Crystal'
+G[1268451]='Demonic Archaeology Find'
+G[1297617]='Overgrown Anchor Weed'
+G[1326598]="Zin'anthid"
+G[1334751]="Zanj'ir Weapon Rack"
+end
+
+if release >= 32978 then
+G[1327673]='Stolen Oil'
+end
+
+if release >= 33062 then
+G[1324413]='Amathet Cache'
+G[1325973]='Amathet Cache'
+G[1325974]='Amathet Cache'
+G[1325981]='Amathet Cache'
+G[1325984]='Amathet Cache'
+end
+
+if release >= 33084 then
+G[1339248]='Infested Cache'
+end
+
+if release >= 33115 then
+G[1334227]='Mogu Plunder'
+G[1334228]='Mogu Plunder'
+G[1334238]='Mogu Plunder'
 end
 
 --	End of localized NPC names
