@@ -482,6 +482,7 @@
 --			Works around a problem where learned quest information could cause Lua strsplit errors.
 --			Changes interface to 80300.
 --			Adds support for threat quests.
+--			Adds support for Heart of Azeroth level requirements.
 --
 --	Known Issues
 --
@@ -3889,6 +3890,15 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			return retval
 		end,
 
+		AzeriteLevelMeetsOrExceeds = function(self, soughtLevel)
+			local retval = false
+			local currentLevel = C_AzeriteItem.GetPowerLevel(C_AzeriteItem.FindActiveAzeriteItem())
+			if nil ~= currentLevel and currentLevel >= soughtLevel then
+				retval = true
+			end
+			return retval
+		end,
+
 		IsMissionAvailable = function(self, missionId, missionType)
 			local retval = false
 			if nil ~= missionId then
@@ -4176,12 +4186,14 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					retval = self:_PhaseMatches(code, subcode, numeric) and 'C' or 'P'
 				elseif 'Q' == code or 'q' == code then
 					retval = self:_iLvlMatches(code, numeric) and 'C' or 'P'
-				elseif 'a' == code then
+				elseif 'a' == code or 'b' == code then
 					retval = self:IsAvailable(numeric) and 'C' or 'P'
 				elseif '@' == code then
 					retval = self:ArtifactLevelMeetsOrExceeds(subcode, numeric) and 'C' or 'P'
 				elseif '#' == code then
 					retval = self:IsMissionAvailable(numeric) and 'C' or 'P'
+				elseif '&' == code then
+					retval = self:AzeriteLevelMeetsOrExceeds(numeric) and 'C' or 'P'
 				elseif 'h' == code then
 					retval = (bitband(questBitMask, self.bitMaskEverCompleted) > 0) and 'P' or 'C'
 				else	-- A, B, C, D, E, H, O, X
@@ -5934,8 +5946,8 @@ end
 			if nil ~= codeString then
 				local questId = p and p.q or nil
 				local dangerous = p and p.d or false
-				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local code, value, position, subcode
 				local forcingProfessionOnly, forcingReputationOnly = false, false
 
@@ -6060,6 +6072,7 @@ end
 					   code == '>' then checkPhase = true
 				elseif code == '@' then checkArtifactLevel = true
 				elseif code == '#' then checkMission = true
+				elseif code == '&' then checkAzeriteLevel = true
 				else print("|cffff0000Grail|r _EvaluateCodeAsPrerequisite cannot process code", codeString)
 				end
 
@@ -6154,6 +6167,9 @@ end
 				if checkThreatQuestAvailable then
 					threatQuestAvailable = Grail:IsAvailable(value)
 				end
+				if checkAzeriteLevel then
+					azeriteLevelMatches = Grail:AzeriteLevelMeetsOrExceeds(value)
+				end
 
 				good =
 					(code == ' ') or
@@ -6201,7 +6217,8 @@ end
 					(checkWorldQuestAvailable and worldQuestAvailable) or
 					(checkArtifactLevel and artifactLevelMatches) or
 					(checkMission and missionMatches) or
-					(checkThreatQuestAvailable and threatQuestAvailable)
+					(checkThreatQuestAvailable and threatQuestAvailable) or
+					(checkAzeriteLevel and azeriteLevelMatches)
 				if not good then tinsert(failures, codeString) end
 			end
 
@@ -6275,6 +6292,7 @@ end
 					and 'L' ~= code
 					and 'l' ~= code
 					and 'a' ~= code
+					and 'b' ~= code
 					and 'c' ~= code
 					then
 
