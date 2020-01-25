@@ -1502,4 +1502,10 @@ if release >= 33084 then
 G[1339248]='Infested Cache'
 end
 
+if release >= 33115 then
+G[1334227]='Mogu Plunder'
+G[1334228]='Mogu Plunder'
+G[1334238]='Mogu Plunder'
+end
+
 --	End of localized NPC names
