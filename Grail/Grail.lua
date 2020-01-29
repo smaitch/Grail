@@ -3365,7 +3365,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
-			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, }
+			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1527, 1530 }
 			
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
@@ -3443,7 +3443,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --	266 Combat Ally Quest
 
 
-						self:_LearnWorldQuest(v.questId, mapId, v.x, v.y)
+						self:_LearnWorldQuest(v.questId, v.mapID, v.x, v.y, v.isDaily)
 --						self.availableWorldQuests[v.questId] = true
 						tinsert(self.invalidateControl[self.invalidateGroupCurrentWorldQuests], v.questId)
 						C_TaskQuest.GetQuestTimeLeftMinutes(v.questId)	-- attempting to prime the system, because first calls do not work
@@ -3500,19 +3500,20 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			end
 		end,
 
-		_LearnWorldQuest = function(self, questId, mapId, x, y)
+		_LearnWorldQuest = function(self, questId, mapId, x, y, isDaily)
 			questId = tonumber(questId)
 			if nil == questId then return end
 			self.GDE.learned = self.GDE.learned or {}
 			self.GDE.learned.QUEST = self.GDE.learned.QUEST or {}
 			local currentLine = self.GDE.learned.QUEST[questId]
+			local tagId = GetQuestTagInfo(questId)	-- only non-nil if actually a world quest
 			local needToAddKCode, needToAddLCode, needToAddPCode, needToAddTCode, needToAddACode = false, false, false, false, false
 			local kCodeToAdd, lCodeToAdd, pCodeToAdd, tCodeToAdd, aCodeToAdd = 'K000', 'L098', 'P:a'..questId, 'T:-'..mapId, ''
 			local levelToCompareAgainst = 110
 			local tagId, tagName = GetQuestTagInfo(questId)
 			local professionRequirement = self._LearnedWorldQuestProfessionMapping[tagId]
 			local typeModifier = self._LearnedWorldQuestTypeMapping[tagId]
-			local typeValue = 262144
+			local typeValue = tagId and 262144 or (isDaily and 2 or 0)
 
 --			-- Alter the minimum level based on the zone
 --			local zonesFor120 = { 862, 863, 864, 895, 896, 942, }
