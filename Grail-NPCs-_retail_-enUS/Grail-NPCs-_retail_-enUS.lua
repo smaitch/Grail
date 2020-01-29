@@ -1506,6 +1506,9 @@ if release >= 33115 then
 G[1334227]='Mogu Plunder'
 G[1334228]='Mogu Plunder'
 G[1334238]='Mogu Plunder'
+G[1335711]='Black Empire Cache'
+G[1335712]='Black Empire Cache'
+G[1335717]='Black Empire Cache'
 end
 
 --	End of localized NPC names
