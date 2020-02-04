@@ -1511,4 +1511,8 @@ G[1335712]='Black Empire Cache'
 G[1335717]='Black Empire Cache'
 end
 
+if release >= 33169 then
+G[1334215]='Black Empire Cache'
+end
+
 --	End of localized NPC names
