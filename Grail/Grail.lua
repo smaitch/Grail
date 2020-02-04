@@ -1055,6 +1055,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[1355] = true, -- Nazjatar 8.2
  							[1462] = true, -- Mechagon Island 8.2
 							--
+							[1469] = true, -- Horrific Vision of Ogrimmar 8.3
 							[1527] = true, -- Uldum 8.3
  							[1530] = true, -- Valley of Eternal Blossoms 8.3
 							}
