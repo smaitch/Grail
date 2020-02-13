@@ -92,10 +92,12 @@ G[1032569]="Galen's Strongbox"
 G[1035251]="Karnitol's Chest"
 G[1050961]='Malem Chest'
 G[1051708]="Eliza's Grave Dirt"
+G[1089931]="Bath'rah's Cauldron"
 G[1112888]='Dusty Shelf'
 G[1112948]="Intrepid's Locked Strongbox"
 G[1113791]='Brazier of Everfount'
 G[1138492]='Shards of Myzrael'
+G[1141980]='Spectral Lockbox'
 G[1142071]='Egg-O-Matic'
 G[1142151]='Sealed Barrel'
 G[1142179]='Solarsal Gazebo'
@@ -132,10 +134,16 @@ G[1176197]='Beached Sea Turtle'
 G[1176198]='Beached Sea Turtle'
 G[1176361]='Scourge Cauldron'
 G[1176392]='Scourge Cauldron'
+G[1176393]='Scourge Cauldron'
+G[1177289]='Scourge Cauldron'
 G[1177491]='Termite Barrel'
 G[1177786]="Rackmore's Chest"
 G[1177787]="Rackmore's Log"
 G[1179485]='Broken Trap'
+G[1180024]='Mysterious Deadmines Chest'
+G[1180025]='Mysterious Eastvale Haystack'
+G[1180055]='Mysterious Wailing Caverns Chest'
+G[1180056]='Mysterious Tree Stump'
 G[1180570]='Keg'
 G[1180633]='Crystalline Tear'
 G[1180715]='Holly Preserver'
@@ -144,6 +152,7 @@ G[1180746]='Gently Shaken Gift'
 G[1180747]='Gaily Wrapped Present'
 G[1180748]='Ticking Present'
 G[1180793]='Festive Gift'
+G[1181073]='Fragrant Cauldron'
 end
 
 --	End of localized NPC names
