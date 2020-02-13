@@ -25308,20 +25308,4 @@ G[529411]='現在怎樣?'
 G[529428]='現在怎樣?'
 end
 
-if release >= 31478 then
-G[50625]='Daily Normal Random (Nth) (BfA)'
-G[50626]='Daily Normal Random (1st) (BfA)'
-G[53339]='BFA Island Expedition - Heroic'
-G[53341]='BFA Island Expedition - PVP'
-G[56327]='被切碎的機器人'
-end
-
-if release >= 32861 then
-G[50625]='LFGDungeons - BFA - 普通隨機 - 第N次'
-G[50626]='LFGDungeons - BFA - 普通隨機 - 第1次'
-G[53339]='LFG  - BFA - Island Expedition - Heroic Win - Nth'
-G[53341]='LFG  - BFA - Island Expedition - PvP Win - Nth'
-G[56327]='支離破碎的機器人'
-end
-
 --	End of localized quest names
