@@ -1055,6 +1055,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[1355] = true, -- Nazjatar 8.2
  							[1462] = true, -- Mechagon Island 8.2
 							--
+							[1469] = true, -- Horrific Vision of Ogrimmar 8.3
 							[1527] = true, -- Uldum 8.3
  							[1530] = true, -- Valley of Eternal Blossoms 8.3
 							}
@@ -4036,6 +4037,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		CelebratingHoliday = function(self, soughtHolidayName)
 			local retval = false
 			local weekday, month, day, year, hour, minute = self:CurrentDateTime()
+			local elapsedMinutes = hour * 60 + minute
 			local datetimeKey = strformat("%4d-%02d-%02d %02d:%02d", year, month, day, hour, minute)
 			local holidayCode = self.reverseHolidayMapping[soughtHolidayName]
 			if self.celebratingHolidayCache[soughtHolidayName] and self.celebratingHolidayCache[soughtHolidayName][datetimeKey] then
@@ -4043,6 +4045,39 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			elseif 'V' == holidayCode and self.existsClassic then
 				if 2019 == year and 12 == month and day >= 17 then
 					retval = true
+				end
+			elseif 'L' == holidayCode and self.existsClassic then
+				-- Lunar Festival 2/1 -> 2/7 10h00
+				if 2020 == year and 2 == month and (day <= 6 or (7 == day and (elapsedMinutes <= 10 * 60))) then
+					retval = true
+				end
+			elseif 'A' == holidayCode and self.existsClassic then
+				-- Love is in the Air 2/8 -> 2/21
+				if 2020 == year and 2 == month and day >= 8 and day <= 21 then
+					retval = true
+				end
+			elseif 'N' == holidayCode and self.existsClassic then
+				-- Noble Garden 4/13 -> 4/19
+				if 2020 == year and 4 == month and day >= 13 and day <= 19 then
+					retval = true
+				end
+			elseif 'C' == holidayCode and self.existsClassic then
+				-- Children's Week 5/1 -> 5/7
+				if 2020 == year and 5 == month and day <= 7 then
+					retval = true
+				end
+			elseif 'C' == holidayCode and self.existsClassic then
+				-- Midsummer Fire Festival 6/21 10h00 -> 7/5 10h00
+				if 2020 == year then
+					if 6 == month then
+						if day >= 22 or (day == 21 and (elapsedMinutes >= 10 * 60)) then
+							retval = true
+						end
+					elseif 7 == month then
+						if day <= 4 or (day == 5 and (elapsedMinutes <= 10 * 60)) then
+							retval = true
+						end
+					end
 				end
 			elseif 'Z' == holidayCode then
 				if 12 == month and day >= 25 then
@@ -4061,7 +4096,6 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				-- Kalu'ak Fishing Derby quest giver appears on Saturday between 14h00 and 16h00 server
 				-- This seems to have been removed in 5.1.0 but code remains
 				if weekday == 7 then
-					local elapsedMinutes = hour * 60 + minute
 					if elapsedMinutes >= (14 * 60) and elapsedMinutes <= (16 * 60) then
 						retval = true
 					end
@@ -8302,7 +8336,8 @@ end
 --					currentPhase = C_MapBar.GetPhaseIndex() + 1	-- it starts with 0 for phase 1 (just like C)
 --				end
 --			else
-			if (not self.battleForAzeroth and (971 == phaseCode or 976 == phaseCode)) or (self.battleForAzeroth and (581 == phaseCode or 587 == phaseCode)) then
+--			if (not self.battleForAzeroth and (971 == phaseCode or 976 == phaseCode)) or (self.battleForAzeroth and (581 == phaseCode or 587 == phaseCode)) then
+			if 971 == phaseCode or 976 == phaseCode or 581 == phaseCode or 587 == phaseCode then
 				currentPhase = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0	-- the API returns nil when there is no garrison
 			end
 			if nil ~= currentPhase then
