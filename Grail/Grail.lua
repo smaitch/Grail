@@ -483,6 +483,21 @@
 --			Changes interface to 80300.
 --			Adds support for threat quests.
 --			Adds support for Heart of Azeroth level requirements.
+--		108	Updates Classic Wetlands and Duskwood NPC information.
+--			Updates Retail horror quest information.
+--			Works around a problem learning world quests where the mapId is not defined.
+--			Corrects the Classic holiday code for Midsummer Fire Festival.
+--			Adds support for detecting Darkmoon Faire in Classic.
+--			Works around a problem where a holiday is not known.
+--			Corrects issue where CurrentDateTime() did not return weekday in Classic.
+--			Adds support for phase code 0000 in Classic for Darkmoon Faire location.  See _PhaseMatches() comments for specifics.
+--			Updates some Retail quest information.
+--			Corrects a Lua issue with localized French Classic quest names.
+--			Adds protection to ensure processing of NPCs does not occur if NPCs are not loaded.
+--			Adds protection to ensure loremaster quests can be handled if addons load out of order.
+--			Adds protection to ensure C_Reputation is not accessed on Classic.
+--			Corrects an improper prerequisite associated with the Classic quest "Filling the Soul Gem".
+--			Adds more Classic holiday quests and NPCs.
 --
 --	Known Issues
 --
@@ -957,7 +972,6 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.environment = "_ptr_"
 					end
 
-					self.existsClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)	-- was (self.blizzardVersionAsNumber < 2000000)
 					if self.existsClassic then
 						self.environment = "_classic_"
 					end
@@ -1337,8 +1351,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end
 					self:LoadAddOn("Grail-Quests-" .. environmentToUse)
 					local originalMem = gcinfo()
-					self:LoadAddOn("Grail-NPCs-" .. environmentToUse)
-					self:_ProcessNPCs(originalMem)
+					if self:LoadAddOn("Grail-NPCs-" .. environmentToUse) then
+						self:_ProcessNPCs(originalMem)
+					end
 					self:LoadAddOn("Grail-NPCs-" .. environmentToUse .. "-" .. self.playerLocale)
 					self.npc.name[1] = ADVENTURE_JOURNAL
 
@@ -2171,6 +2186,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --			end,
 
 			},
+		existsClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC),
 		factionMapping = { ['A'] = 'Alliance', ['H'] = 'Horde', },
 		followerMapping = {},
 		forceLocalizedQuestNameLoad = true,
@@ -2309,6 +2325,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		indexedQuestsExtra = {},
 		levelingLevel = nil,	-- this is set during the PLAYER_LEVEL_UP event because UnitLevel() does not work during it
 		locationCloseness = 1.55,
+		loremasterQuests = {},
 		mapAreaBaseAchievement = 500000,
 		mapAreaBaseClass = 200000,
 		mapAreaBaseDaily = 400000,
@@ -3078,7 +3095,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			},
 
 		slashCommandOptions = {},
-		specialQuests = { },
+		specialQuests = {},
 		statusMapping = { ['C'] = "Completed", ['F'] = 'Faction', ['G'] = 'Gender', ['H'] = 'Holiday', ['I'] = 'Invalidated', ['L'] = "InLog",
 			['P'] = 'Profession', ['Q'] = 'Prerequisites', ['R'] = 'Race', ['S'] = 'Class', ['T'] = 'Reputation', ['V'] = "Level", },
 		timeSinceLastUpdate = 0,
@@ -3086,6 +3103,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		tooltip = nil,
 		tracking = false,
 		trackingStarted = false,
+		unnamedZones = {},
 		useAncestor = true,
 		verifyTable = {},
 		verifyTableCount = 0,
@@ -3571,7 +3589,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				needToAddTCode = true
 			end
 
-			if nil == self.quests[questId] or (nil == self.quests[questId]['A'] and nil == self.quests[questId]['AP']) then
+			if (nil == self.quests[questId] or (nil == self.quests[questId]['A'] and nil == self.quests[questId]['AP'])) and nil ~= mapId then
 				local coordinates = strformat("%.2f,%.2f", x * 100 , y * 100)
 				local npcId = self._worldQuestSelfNPCs[mapId][coordinates]
 				if nil == npcId then
@@ -4039,11 +4057,18 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			local weekday, month, day, year, hour, minute = self:CurrentDateTime()
 			local elapsedMinutes = hour * 60 + minute
 			local datetimeKey = strformat("%4d-%02d-%02d %02d:%02d", year, month, day, hour, minute)
-			local holidayCode = self.reverseHolidayMapping[soughtHolidayName]
+			local holidayCode = self.reverseHolidayMapping[soughtHolidayName] or '?'
 			if self.celebratingHolidayCache[soughtHolidayName] and self.celebratingHolidayCache[soughtHolidayName][datetimeKey] then
 				retval = (self.celebratingHolidayCache[soughtHolidayName][datetimeKey] == 1)
 			elseif 'V' == holidayCode and self.existsClassic then
 				if 2019 == year and 12 == month and day >= 17 then
+					retval = true
+				end
+			elseif 'F' == holidayCode and self.existsClassic then
+				-- Darkmoon Faire - first week from Monday to Sunday following first Friday in month
+				local weekdayToUse = (weekday == 0) and 8 or weekday
+				local thisOrLastMonday = day - weekdayToUse + 2
+				if thisOrLastMonday >= 4 and thisOrLastMonday <= 10 then
 					retval = true
 				end
 			elseif 'L' == holidayCode and self.existsClassic then
@@ -4066,7 +4091,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				if 2020 == year and 5 == month and day <= 7 then
 					retval = true
 				end
-			elseif 'C' == holidayCode and self.existsClassic then
+			elseif 'M' == holidayCode and self.existsClassic then
 				-- Midsummer Fire Festival 6/21 10h00 -> 7/5 10h00
 				if 2020 == year then
 					if 6 == month then
@@ -5914,6 +5939,7 @@ end
 			if self.existsClassic then
 				date = C_DateAndTime.GetTodaysDate()
 				date.monthDay = date.day
+				date.weekday = date.weekDay	-- don't you just hate it when Blizzard API uses different capitalization!
 				date.hour, date.minute = GetGameTime()
 			else
 				date = C_DateAndTime.GetCurrentCalendarTime()
@@ -8340,6 +8366,17 @@ end
 			if 971 == phaseCode or 976 == phaseCode or 581 == phaseCode or 587 == phaseCode then
 				currentPhase = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0	-- the API returns nil when there is no garrison
 			end
+			--	We are using phaseCode 0 to mean the Classic Darkmoon Faire location.
+			--	We assume perfect swapping back and forth between locations with Elwynn being in odd months.
+			--	The results should be phase 1 for Elwynn Forest and 2 for Mulgore
+			if 0 == phaseCode and self.existsClassic then
+				local weekday, month, day, year, hour, minute = self:CurrentDateTime()
+				if month == 1 or month == 3 or month == 5 or month == 7 or month == 9 or month == 11 then
+					currentPhase = 1
+				else
+					currentPhase = 2
+				end
+			end
 			if nil ~= currentPhase then
 				if ('=' == typeOfMatch and currentPhase == phaseNumber) or
 					('<' == typeOfMatch and currentPhase < phaseNumber) or
@@ -8610,6 +8647,10 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 		--	Internal Use.
 		_ProcessNPCs = function(self, originalMem)
 			local N = self.npc
+			if nil == self.npcs then
+				print("|cFFFF0000Grail|r: abandoned NPC processing because none loaded")
+				return
+			end
 			for key, value in pairs(self.npcs) do
 				if value[1] then
 					N.locations[key] = {}
@@ -9286,7 +9327,7 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 --					for npcId, prereqs in pairs(npcCodes) do
 						if isStartup or self:_AnyEvaluateTrueF(prereqs, nil, Grail._EvaluateCodeAsPrerequisite) then
 							local locations = self:NPCLocations(npcId, requiresNPCAvailable, onlySingleReturn, onlyMapAreaReturn, preferredMapId, dungeonLevel)
-							if nil ~= locations and 0 == #retval then
+							if nil ~= locations then
 								for _, npc in pairs(locations) do
 									tinsert(retval, npc)
 								end
@@ -9882,7 +9923,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 				local name, description, standingId, barMin, barMax, barValue = GetFactionInfoByID(factionId)
 				if name then
 					actualEarnedValue = barValue + 42000	-- the reputationValue is stored with 42000 added to it so we do not have to deal with negative numbers, so we normalize here
-                    if C_Reputation.IsFactionParagon(factionId) then
+                    if C_Reputation and C_Reputation.IsFactionParagon(factionId) then
 						local paraValue, paraThreshold, paraQuestId, paraRewardPending = C_Reputation.GetFactionParagonInfo(factionId)
 						if paraValue and paraThreshold then
 							actualEarnedValue = actualEarnedValue + (paraValue % paraThreshold)
