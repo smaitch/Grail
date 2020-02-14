@@ -1025,6 +1025,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							['U'] = { 'Scourge',  'Undead',    'Undead',    0x00400000 },
 							}
 						self.bitMaskRaceAll = 0x01e78000
+						
+						--	To make things a little prettier, because we are using phase 0000 to represent the location of the Darkmoon Faire we
+						--	define the map area for 0000 to be that.
+						self.mapAreaMapping[0] = self.holidayMapping['F']
+						
 					end
 
 					if self.battleForAzeroth then
@@ -2613,6 +2618,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 									[93999] = 8010000,
 									-- And now for 7th Legion
 									[49499] = 5004500, [53999] = 6003000, [58499] = 6007500,
+									-- And now for Darmnoon Faire in Classic
+									[42499] = 4000500, [43099] = 4001100, [43699] = 4001700, [44499] = 4002500,
 									},
 
 		--	The keys are the actual faction values used by Blizzard converted into a 3-character hexidecimal value.
