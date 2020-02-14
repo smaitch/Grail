@@ -93,6 +93,7 @@ G[1035251]="Karnitol's Chest"
 G[1050961]='Malem Chest'
 G[1051708]="Eliza's Grave Dirt"
 G[1089931]="Bath'rah's Cauldron"
+G[1061934]='Brazier of the Dormant Flame'
 G[1112888]='Dusty Shelf'
 G[1112948]="Intrepid's Locked Strongbox"
 G[1113791]='Brazier of Everfount'
