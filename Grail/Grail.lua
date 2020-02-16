@@ -4144,8 +4144,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					retval = true
 				end
 			elseif 'A' == holidayCode and self.existsClassic then
-				-- Love is in the Air 2/8 -> 2/21
-				if 2020 == year and 2 == month and day >= 8 and day <= 21 then
+				-- Love is in the Air 2/11 -> 2/16
+				if 2020 == year and 2 == month and day >= 11 and day <= 16 then
 					retval = true
 				end
 			elseif 'N' == holidayCode and self.existsClassic then
