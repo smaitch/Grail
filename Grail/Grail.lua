@@ -498,6 +498,8 @@
 --			Adds protection to ensure C_Reputation is not accessed on Classic.
 --			Corrects an improper prerequisite associated with the Classic quest "Filling the Soul Gem".
 --			Adds more Classic holiday quests and NPCs.
+--		109	Updates some Classic NPC information.
+--			Works around a problem in Retail where world quests can appear in Blizzard's API in different zones.
 --
 --	Known Issues
 --
@@ -3510,6 +3512,9 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --	266 Combat Ally Quest
 
 
+						if nil ~= v.mapID and not tContains(mapIdsForWorldQuests, v.mapID) then
+							self:_PrepareWorldQuestSelfNPCs(v.mapID)
+						end
 						self:_LearnWorldQuest(v.questId, v.mapID, v.x, v.y, v.isDaily)
 --						self.availableWorldQuests[v.questId] = true
 						tinsert(self.invalidateControl[self.invalidateGroupCurrentWorldQuests], v.questId)
@@ -3639,14 +3644,16 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 			if (nil == self.quests[questId] or (nil == self.quests[questId]['A'] and nil == self.quests[questId]['AP'])) and nil ~= mapId then
 				local coordinates = strformat("%.2f,%.2f", x * 100 , y * 100)
-				local npcId = self._worldQuestSelfNPCs[mapId][coordinates]
-				if nil == npcId then
-					npcId = self._worldQuestSelfNPCs['nextToUse'][mapId]
-					self:LearnNPCLocation(npcId, mapId..':'..coordinates..' N:0')
-					self._worldQuestSelfNPCs['nextToUse'][mapId] = npcId - 10000
+				if nil ~= coordinates then
+					local npcId = self._worldQuestSelfNPCs[mapId][coordinates]
+					if nil == npcId then
+						npcId = self._worldQuestSelfNPCs['nextToUse'][mapId]
+						self:LearnNPCLocation(npcId, mapId..':'..coordinates..' N:0')
+						self._worldQuestSelfNPCs['nextToUse'][mapId] = npcId - 10000
+					end
+					aCodeToAdd = 'A:'..npcId
+					needToAddACode = true
 				end
-				aCodeToAdd = 'A:'..npcId
-				needToAddACode = true
 			end
 
 			local newLine = currentLine or ''
