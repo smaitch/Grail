@@ -3376,18 +3376,20 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		--	This looks at the current NPCs for self in the mapId and creates a structure of them
 		--	so they can be looked up based on coordinates.
 		_PrepareWorldQuestSelfNPCs = function(self, mapId)
-			self._worldQuestSelfNPCs[mapId] = {}
-			local currentNPCId = -100000 - mapId
-			while Grail.npc.locations[currentNPCId] and Grail.npc.locations[currentNPCId][1] and Grail.npc.locations[currentNPCId][1].x do
-				local coordinates = strformat("%.2f,%.2f", Grail.npc.locations[currentNPCId][1].x, Grail.npc.locations[currentNPCId][1].y)
-				self._worldQuestSelfNPCs[mapId][coordinates] = currentNPCId
-				currentNPCId = currentNPCId - 10000
-			end
+			if nil == self._worldQuestSelfNPCs[mapId] then
+				self._worldQuestSelfNPCs[mapId] = {}
+				local currentNPCId = -100000 - mapId
+				while Grail.npc.locations[currentNPCId] and Grail.npc.locations[currentNPCId][1] and Grail.npc.locations[currentNPCId][1].x do
+					local coordinates = strformat("%.2f,%.2f", Grail.npc.locations[currentNPCId][1].x, Grail.npc.locations[currentNPCId][1].y)
+					self._worldQuestSelfNPCs[mapId][coordinates] = currentNPCId
+					currentNPCId = currentNPCId - 10000
+				end
 -- We do not need to know what one is next because we are going to start counting at 6000000 and we will create new NPCs no matter
 -- what mapId they are in for all new NPCs.
 -- TODO: Comment out the next two lines when we switch to 60000000 thing
-			self._worldQuestSelfNPCs['nextToUse'] = self._worldQuestSelfNPCs['nextToUse'] or {}
-			self._worldQuestSelfNPCs['nextToUse'][mapId] = currentNPCId
+				self._worldQuestSelfNPCs['nextToUse'] = self._worldQuestSelfNPCs['nextToUse'] or {}
+				self._worldQuestSelfNPCs['nextToUse'][mapId] = currentNPCId
+			end
 		end,
 
 		_PrepareWorldQuestSelfNewNPCs = function(self)
@@ -3513,7 +3515,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --	266 Combat Ally Quest
 
 
-						if nil ~= v.mapID and not tContains(mapIdsForWorldQuests, v.mapID) then
+						if nil ~= v.mapID and v.mapID ~= mapId then
 							self:_PrepareWorldQuestSelfNPCs(v.mapID)
 						end
 						self:_LearnWorldQuest(v.questId, v.mapID, v.x, v.y, v.isDaily)
