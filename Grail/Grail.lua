@@ -4508,7 +4508,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				if nil ~= self.GDE.learned.NPC_LOCATION then
 					for _, npcLine in pairs(self.GDE.learned.NPC_LOCATION) do
 						local ver, loc, npcId, npcLoc, aliasId = strsplit('|', npcLine)
-						if not self:_LocationKnown(npcId, npcLoc, aliasId) then
+						if nil ~= npcId and not self:_LocationKnown(npcId, npcLoc, aliasId) then
 							self:_AddNPCLocation(npcId, npcLoc, aliasId)
 						end
 					end
@@ -4607,7 +4607,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					local newNPCLocations = {}
 					for _, npcLine in pairs(learnedNPCLocations) do
 						local ver, loc, npcId, npcLoc, aliasId = strsplit('|', npcLine)
-						if not self:_LocationKnown(npcId, npcLoc, aliasId) then
+						if nil ~= npcId and not self:_LocationKnown(npcId, npcLoc, aliasId) then
 							tinsert(newNPCLocations, npcLine)
 						end
 					end
