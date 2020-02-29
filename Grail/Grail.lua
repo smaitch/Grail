@@ -7528,6 +7528,7 @@ end
 
 		_AddNPCLocation = function(self, npcId, npcLocation, aliasNPCId)
 			npcId = tonumber(npcId)
+			if nil == npcId then return end
 			self.npc.locations[npcId] = self.npc.locations[npcId] or {}
 			tinsert(self.npc.locations[npcId], Grail:_LocationStructure(npcLocation))
 			aliasNPCId = tonumber(aliasNPCId)
@@ -7593,6 +7594,7 @@ end
 		_LocationKnown = function(self, npcId, locationString, possibleAliasId)
 			local retval = false
 			npcId = tonumber(npcId)
+			if nil == npcId then return retval end
 			local t = self.npc.locations[npcId]
 			if npcId >= 3000000 and npcId < 4000000 and nil ~= possibleAliasId then
 				possibleAliasId = tonumber(possibleAliasId)
