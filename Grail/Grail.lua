@@ -498,6 +498,8 @@
 --			Adds protection to ensure C_Reputation is not accessed on Classic.
 --			Corrects an improper prerequisite associated with the Classic quest "Filling the Soul Gem".
 --			Adds more Classic holiday quests and NPCs.
+--		109	Updates some Classic NPC information.
+--			Works around a problem in Retail where world quests can appear in Blizzard's API in different zones.
 --
 --	Known Issues
 --
@@ -1078,6 +1080,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
  							[1462] = true, -- Mechagon Island 8.2
 							--
 							[1469] = true, -- Horrific Vision of Ogrimmar 8.3
+							[1470] = true, -- Horrific Vision of Stormwind 8.3
 							[1527] = true, -- Uldum 8.3
  							[1530] = true, -- Valley of Eternal Blossoms 8.3
 							}
@@ -3373,18 +3376,20 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		--	This looks at the current NPCs for self in the mapId and creates a structure of them
 		--	so they can be looked up based on coordinates.
 		_PrepareWorldQuestSelfNPCs = function(self, mapId)
-			self._worldQuestSelfNPCs[mapId] = {}
-			local currentNPCId = -100000 - mapId
-			while Grail.npc.locations[currentNPCId] and Grail.npc.locations[currentNPCId][1] and Grail.npc.locations[currentNPCId][1].x do
-				local coordinates = strformat("%.2f,%.2f", Grail.npc.locations[currentNPCId][1].x, Grail.npc.locations[currentNPCId][1].y)
-				self._worldQuestSelfNPCs[mapId][coordinates] = currentNPCId
-				currentNPCId = currentNPCId - 10000
-			end
+			if nil == self._worldQuestSelfNPCs[mapId] then
+				self._worldQuestSelfNPCs[mapId] = {}
+				local currentNPCId = -100000 - mapId
+				while Grail.npc.locations[currentNPCId] and Grail.npc.locations[currentNPCId][1] and Grail.npc.locations[currentNPCId][1].x do
+					local coordinates = strformat("%.2f,%.2f", Grail.npc.locations[currentNPCId][1].x, Grail.npc.locations[currentNPCId][1].y)
+					self._worldQuestSelfNPCs[mapId][coordinates] = currentNPCId
+					currentNPCId = currentNPCId - 10000
+				end
 -- We do not need to know what one is next because we are going to start counting at 6000000 and we will create new NPCs no matter
 -- what mapId they are in for all new NPCs.
 -- TODO: Comment out the next two lines when we switch to 60000000 thing
-			self._worldQuestSelfNPCs['nextToUse'] = self._worldQuestSelfNPCs['nextToUse'] or {}
-			self._worldQuestSelfNPCs['nextToUse'][mapId] = currentNPCId
+				self._worldQuestSelfNPCs['nextToUse'] = self._worldQuestSelfNPCs['nextToUse'] or {}
+				self._worldQuestSelfNPCs['nextToUse'][mapId] = currentNPCId
+			end
 		end,
 
 		_PrepareWorldQuestSelfNewNPCs = function(self)
@@ -3510,6 +3515,9 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --	266 Combat Ally Quest
 
 
+						if nil ~= v.mapID and v.mapID ~= mapId then
+							self:_PrepareWorldQuestSelfNPCs(v.mapID)
+						end
 						self:_LearnWorldQuest(v.questId, v.mapID, v.x, v.y, v.isDaily)
 --						self.availableWorldQuests[v.questId] = true
 						tinsert(self.invalidateControl[self.invalidateGroupCurrentWorldQuests], v.questId)
@@ -3639,14 +3647,16 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 			if (nil == self.quests[questId] or (nil == self.quests[questId]['A'] and nil == self.quests[questId]['AP'])) and nil ~= mapId then
 				local coordinates = strformat("%.2f,%.2f", x * 100 , y * 100)
-				local npcId = self._worldQuestSelfNPCs[mapId][coordinates]
-				if nil == npcId then
-					npcId = self._worldQuestSelfNPCs['nextToUse'][mapId]
-					self:LearnNPCLocation(npcId, mapId..':'..coordinates..' N:0')
-					self._worldQuestSelfNPCs['nextToUse'][mapId] = npcId - 10000
+				if nil ~= coordinates then
+					local npcId = self._worldQuestSelfNPCs[mapId][coordinates]
+					if nil == npcId then
+						npcId = self._worldQuestSelfNPCs['nextToUse'][mapId]
+						self:LearnNPCLocation(npcId, mapId..':'..coordinates..' N:0')
+						self._worldQuestSelfNPCs['nextToUse'][mapId] = npcId - 10000
+					end
+					aCodeToAdd = 'A:'..npcId
+					needToAddACode = true
 				end
-				aCodeToAdd = 'A:'..npcId
-				needToAddACode = true
 			end
 
 			local newLine = currentLine or ''
@@ -4498,7 +4508,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				if nil ~= self.GDE.learned.NPC_LOCATION then
 					for _, npcLine in pairs(self.GDE.learned.NPC_LOCATION) do
 						local ver, loc, npcId, npcLoc, aliasId = strsplit('|', npcLine)
-						if not self:_LocationKnown(npcId, npcLoc, aliasId) then
+						if nil ~= npcId and not self:_LocationKnown(npcId, npcLoc, aliasId) then
 							self:_AddNPCLocation(npcId, npcLoc, aliasId)
 						end
 					end
@@ -4597,7 +4607,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					local newNPCLocations = {}
 					for _, npcLine in pairs(learnedNPCLocations) do
 						local ver, loc, npcId, npcLoc, aliasId = strsplit('|', npcLine)
-						if not self:_LocationKnown(npcId, npcLoc, aliasId) then
+						if nil ~= npcId and not self:_LocationKnown(npcId, npcLoc, aliasId) then
 							tinsert(newNPCLocations, npcLine)
 						end
 					end
@@ -7518,6 +7528,7 @@ end
 
 		_AddNPCLocation = function(self, npcId, npcLocation, aliasNPCId)
 			npcId = tonumber(npcId)
+			if nil == npcId then return end
 			self.npc.locations[npcId] = self.npc.locations[npcId] or {}
 			tinsert(self.npc.locations[npcId], Grail:_LocationStructure(npcLocation))
 			aliasNPCId = tonumber(aliasNPCId)
@@ -7583,6 +7594,7 @@ end
 		_LocationKnown = function(self, npcId, locationString, possibleAliasId)
 			local retval = false
 			npcId = tonumber(npcId)
+			if nil == npcId then return retval end
 			local t = self.npc.locations[npcId]
 			if npcId >= 3000000 and npcId < 4000000 and nil ~= possibleAliasId then
 				possibleAliasId = tonumber(possibleAliasId)
