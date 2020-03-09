@@ -500,6 +500,7 @@
 --			Adds more Classic holiday quests and NPCs.
 --		109	Updates some Classic NPC information.
 --			Works around a problem in Retail where world quests can appear in Blizzard's API in different zones.
+--			Corrects the determination of Darkmoon Faire in Classic.
 --
 --	Known Issues
 --
@@ -4110,7 +4111,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			local retval = false
 			local weekday, month, day, year, hour, minute = self:CurrentDateTime()
 			-- Darkmoon Faire - first week from Monday to Sunday following first Friday in month
-			local weekdayToUse = (weekday == 0) and 8 or weekday
+			local weekdayToUse = (weekday == 1) and 8 or weekday
 			local thisOrLastMonday = day - weekdayToUse + 2
 			if thisOrLastMonday >= 4 and thisOrLastMonday <= 10 then
 				retval = true
