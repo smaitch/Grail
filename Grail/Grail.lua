@@ -1084,6 +1084,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[1470] = true, -- Horrific Vision of Stormwind 8.3
 							[1527] = true, -- Uldum 8.3
  							[1530] = true, -- Valley of Eternal Blossoms 8.3
+							[1595] = true, -- Nyalotha 8.3
 							}
 						self.quest.name = {
 							[51570]=Grail:_GetMapNameByID(862),	-- Zuldazar
