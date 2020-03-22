@@ -864,14 +864,16 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		-- of the quest, the minimum level required for the quest, and the maximum
 		-- level allowed to accept the quest.  Some quests have a variable level
 		-- and this is now supported in the bit structure as well.
-		bitMaskQuestLevel				=	0x000000ff,
-		bitMaskQuestMinLevel			=	0x0000ff00,
-		bitMaskQuestMaxLevel			=	0x00ff0000,
-		bitMaskQuestVariableLevel		=	0xff000000,
-		bitMaskQuestLevelOffset			=	0x00000001,
-		bitMaskQuestMinLevelOffset		=	0x00000100,
-		bitMaskQuestMaxLevelOffset		=	0x00010000,
-		bitMaskQuestVariableLevelOffset	=	0x01000000,
+		-- we should have them as MMKKLLNN
+		bitMaskQuestLevel				=	0x00ff0000, -- K
+		bitMaskQuestMinLevel			=	0x0000ff00, -- L
+		bitMaskQuestMaxLevel			=	0xff000000, -- M
+		bitMaskQuestVariableLevel		=	0x000000ff, -- N
+
+		bitMaskQuestLevelOffset			=	0x00010000,	-- K
+		bitMaskQuestMinLevelOffset		=	0x00000100, -- L
+		bitMaskQuestMaxLevelOffset		=	0x01000000, -- M
+		bitMaskQuestVariableLevelOffset	=	0x00000001, -- N
 		-- End of bit mask values
 
 
@@ -5381,21 +5383,41 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 									if 0 == bitband(typeValue, self.bitMaskQuestSpecial) then typeValue = typeValue + self.bitMaskQuestSpecial end
 								end
 
+--							elseif 'K' == code then
+--								levelValue = levelValue + (tonumber(strsub(c, 2, 4)) * self.bitMaskQuestLevelOffset)
+--								if strlen(c) > 4 then
+--									local possibleTypeValue = tonumber(strsub(c, 5))
+--									if possibleTypeValue then typeValue = typeValue + possibleTypeValue end
+--								end
+							
 							elseif 'K' == code then
-								levelValue = levelValue + (tonumber(strsub(c, 2, 4)) * self.bitMaskQuestLevelOffset)
-								if strlen(c) > 4 then
-									local possibleTypeValue = tonumber(strsub(c, 5))
-									if possibleTypeValue then typeValue = typeValue + possibleTypeValue end
-								end
-
+								typeValue = typeValue + (tonumber(strsub(c, 2)) or 0)
+							
 							elseif 'L' == code then
-								levelValue = levelValue + ((tonumber(strsub(c, 2)) or 1) * self.bitMaskQuestMinLevelOffset)
+								levelValue = levelValue + (tonumber(strsub(c, 2)) or 0)
+							
+--							elseif 'l' == code then
+--								-- lLLLNNNKKK+
+--								local codeLength = strlen(c)
+--								if codeLength >= 10 then
+--									levelValue = levelValue +
+--										((tonumber(strsub(c, 2, 4)) or 1) * self.bitMaskQuestMinLevelOffset) +
+--										((tonumber(strsub(c, 5, 7)) or 255) * self.bitMaskQuestVariableLevelOffset) +
+--										(tonumber(strsub(c, 8, 10)) * self.bitMaskQuestLevelOffset)
+--									if codeLength > 10 then
+--										local possibleTypeValue = tonumber(strsub(c, 11))
+--										if possibleTypeValue then typeValue = typeValue + possibleTypeValue end
+--									end
+--								end
+
+--							elseif 'L' == code then
+--								levelValue = levelValue + ((tonumber(strsub(c, 2)) or 1) * self.bitMaskQuestMinLevelOffset)
 
 							elseif 'M' == code then
 								levelValue = levelValue + ((tonumber(strsub(c, 2)) or 255) * self.bitMaskQuestMaxLevelOffset)
 
-							elseif 'N' == code then
-								levelValue = levelValue + ((tonumber(strsub(c, 2)) or 255) * self.bitMaskQuestVariableLevelOffset)
+--							elseif 'N' == code then
+--								levelValue = levelValue + ((tonumber(strsub(c, 2)) or 255) * self.bitMaskQuestVariableLevelOffset)
 
 							elseif 'H' == code then
 								bitValue = self.holidayToBitMapping[codeValue]
