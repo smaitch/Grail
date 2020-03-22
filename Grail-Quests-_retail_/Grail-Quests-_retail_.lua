@@ -137,7 +137,8 @@
 --		Hx			where x is the key to a specific holiday (see holidayMapping) when this quest is available.  if no Hx is present it should be available all the time.
 --		I:pat		where pat is a pattern (see below) of quests considered to invalidate the quest (they are mutually exclusive with this quest)  in other words, if the quest is in the Blizzard quest log or has ever been completed
 --		J:pat		where pat is a pattern (see below) of quests considered to have caused this FLAG quest to be marked complete.  Used for UI to ignore FLAG quests and present to the user a nicer experience.
---		Kxxxyyy		where xxx is the level of the quest (or 000 if the quest has a changing quest level the same as the player level) and 
+--		DEPRECATED Kxxxyyy		where xxx is the level of the quest (or 000 if the quest has a changing quest level the same as the player level) and
+--		Kyyy
 --			yyy is a number whose bits represent aspects of the quest:
 --			1	repeatable
 --			2	daily
@@ -160,8 +161,13 @@
 --			262144	world quest
 --			524288	biweekly (every two weeks)
 --			1048576	threat quest
---		Lxxx		where xxx is the minimum level for the quest to be acceptable
+--		DEPRECATED Lxxx		where xxx is the minimum level for the quest to be acceptable
+--		Lxxxxxxx	where xxxxxxx is an integer value that represented three parts of a quest's level added together
+--			The old K value * 65536
+--			The old L value * 256
+--			The old N value * 1
 --		Mxxx		where xxx is the maximum level for the quest to be acceptable
+--		DEPRECATED Nxxx		where xxx is the scaled maximum level for the quest
 --		O:pat		where pat is a pattern (see below) of quests that are optional prerequisites
 --		OAC:list	where list (see below) is the list of quests that are marked complete once this quest is accepted (On Accept Complete)
 --		OBC:list	where list (see below) is the list of quests that are marked "control" complete once this quest is abandoned

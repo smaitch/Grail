@@ -5553,7 +5553,6 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 					end
 
-local start2Time = debugprofilestop()
 					self:_SetQuestBits(questId, typeValue, obtainersRaceValue, levelValue, obtainersValue, holidayValue)
 --					self.questBits[questId] = strchar(
 --												bitband(bitrshift(typeValue, 24), 255),
@@ -5574,7 +5573,6 @@ local start2Time = debugprofilestop()
 --												bitband(bitrshift(holidayValue, 8), 255),
 --												bitband(holidayValue, 255)
 --												)
-self.totalFixedTime = self.totalFixedTime + (debugprofilestop() - start2Time)
 
 --					self.quests[questId][2] = typeValue
 --					self.quests[questId][3] = holidayValue
@@ -5890,8 +5888,9 @@ self.totalFixedTime = self.totalFixedTime + (debugprofilestop() - start2Time)
 			local questName
 			local mapIdsWithNames = {}
 			local mapName
-self.totalFixedTime = 0
-local totalLocationsTime = 0
+			local totalLocationsTime = 0
+			self.totalQuestLocationsAcceptTime = 0
+			self.totalRawNPCLocations = 0
 
 --			for questId in pairs(self.quests) do
 			for questId in pairs(self.questCodes) do
@@ -5911,7 +5910,7 @@ local totalLocationsTime = 0
 --					})
 				self:_CodeAllFixed(questId)
 
-local start2Time = debugprofilestop()
+				local start2Time = debugprofilestop()
 				--	Add the quests to the map areas based on the locations of the starting NPCs
 --				locations = self:QuestLocations(questId, 'A')
 				locations = self:QuestLocationsAccept(questId, nil, nil, nil, nil, nil, nil, true)
@@ -5945,7 +5944,7 @@ local start2Time = debugprofilestop()
 						end
 					end
 				end
-totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
+				totalLocationsTime = totalLocationsTime + (debugprofilestop() - start2Time)
 
 				-- Add this quest if it automatically starts entering a map area
 				if nil ~= self.quests[questId]['AZ'] then
@@ -6010,6 +6009,9 @@ end
 			end
 			mapIdsWithNames = nil
 			self.timings.CreateIndexedQuestList = debugprofilestop() - debugStartTime
+			self.timings.CreateIndexedQuestListLocations = totalLocationsTime
+			self.timings.QuestLocationsAcceptTime = self.totalQuestLocationsAcceptTime
+			self.timings.RawNPCLocationsTime = self.totalRawNPCLocations
 			if self.GDE.debug then print("Done creating indexed quest list with elapsed milliseconds:", self.timings.CreateIndexedQuestList) end
 		end,
 
@@ -7648,14 +7650,14 @@ end
 		_LocationStructure = function(self, locationString)
 			locationString = strsplit(' ', locationString)	-- we are taking the first one only for the time being
 			local mapId, rest = strsplit(':', locationString)
-			local mapLevel = 0
-			local mapLevelString
-			mapId, mapLevelString = strsplit('[', mapId)
+--			local mapLevel = 0
+--			local mapLevelString
+--			mapId, mapLevelString = strsplit('[', mapId)
 			local t1 = { ["mapArea"] = tonumber(mapId) }
-			if nil ~= mapLevelString then
-				mapLevel = tonumber(strsub(mapLevelString, 1, strlen(mapLevelString) - 1))
-			end
-			t1.mapLevel = mapLevel
+--			if nil ~= mapLevelString then
+--				mapLevel = tonumber(strsub(mapLevelString, 1, strlen(mapLevelString) - 1))
+--			end
+--			t1.mapLevel = mapLevel
 			local coord, realArea = nil, nil
 			if nil ~= rest then
 				coord, realArea = strsplit('>', rest)
@@ -7681,7 +7683,8 @@ end
 			local l2 = locationStructure2 or {}
 			if (l1.near or l2.near) and l1.mapArea == l2.mapArea then
 				retval = true
-			elseif l1.mapArea == l2.mapArea and l1.mapLevel == l2.mapLevel then
+--			elseif l1.mapArea == l2.mapArea and l1.mapLevel == l2.mapLevel then
+			elseif l1.mapArea == l2.mapArea then
 				if l1.x and l2.x and l1.y and l2.y then
 					if sqrt((l1.x - l2.x)^2 + (l1.y - l2.y)^2) < self.locationCloseness then
 						retval = true
@@ -8253,7 +8256,7 @@ end
 		--		name		the localized name of the NPC
 		--		id			the npcId (passed in to the function)
 		--		mapArea		the map area ID where the NPC is located
-		--		mapLevel	if present the dungeon level within the mapArea
+		--		mapLevel	if present the dungeon level within the mapArea 	*** DEPRECATED ***
 		--		near		true if the NPC is considered nearby
 		--		x			the x coordinate of the NPC location
 		--		y			the y coordinate of the NPC location
@@ -8281,7 +8284,8 @@ end
 				for _, npc in pairs(npcs) do
 					if not requiresNPCAvailable or self:IsNPCAvailable(npc.id) then
 						if not onlyMapReturn or (onlyMapReturn and mapIdToUse == npc.mapArea) then
-							if not dungeonLevel or (dungeonLevel == npc.mapLevel) then
+--							if not dungeonLevel or (dungeonLevel == npc.mapLevel) then
+							if not dungeonLevel then
 								tinsert(retval, npc)
 							end
 						end
@@ -8749,11 +8753,13 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 
 		--	Internal Use.
 		_ProcessNPCs = function(self, originalMem)
+			local debugStartTime = debugprofilestop()
 			local N = self.npc
 			if nil == self.npcs then
 				print("|cFFFF0000Grail|r: abandoned NPC processing because none loaded")
 				return
 			end
+			N.rawLocations = {}
 			for key, value in pairs(self.npcs) do
 				if value[1] then
 					N.locations[key] = {}
@@ -8855,6 +8861,7 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			-- TODO: Go through all the Grail.npc.droppedBy values and make sure the locations for the NPCs are added to those keys
 			self.npcs = nil
 			self.memoryUsage.NPCs = gcinfo() - originalMem
+			self.timings.ProcessNPCInformation = debugprofilestop() - debugStartTime
 		end,
 
 		--	Internal Use.
@@ -9388,7 +9395,10 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 --		end,
 
 		QuestLocationsAccept = function(self, questId, requiresNPCAvailable, onlySingleReturn, onlyMapAreaReturn, preferredMapId, acceptsMultipleUniques, dungeonLevel, isStartup)
-			return self:_QuestLocations(questId, 'A', requiresNPCAvailable, onlySingleReturn, onlyMapAreaReturn, preferredMapId, acceptsMultipleUniques, dungeonLevel, isStartup)
+			local debugStartTime = debugprofilestop()
+			local results = self:_QuestLocations(questId, 'A', requiresNPCAvailable, onlySingleReturn, onlyMapAreaReturn, preferredMapId, acceptsMultipleUniques, dungeonLevel, isStartup)
+			self.totalQuestLocationsAcceptTime = self.totalQuestLocationsAcceptTime + debugprofilestop() - debugStartTime
+			return results
 		end,
 
 		QuestLocationsTurnin = function(self, questId, requiresNPCAvailable, onlySingleReturn, onlyMapAreaReturn, preferredMapId, acceptsMultipleUniques, dungeonLevel, isStartup)
@@ -9744,13 +9754,16 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 		--	@return A table of NPC records
 		--	@see NPCLocations
 		_RawNPCLocations = function(self, npcId)
-			local retval = {}
+			local debugStartTime = debugprofilestop()
 			npcId = tonumber(npcId)
-			if nil ~= npcId and npcId < 0 and nil == self.npc.nameIndex[npcId] then
+			if nil == npcId then return nil end
+			local retval = self.npc.rawLocations[npcId]
+			if npcId < 0 and nil == self.npc.nameIndex[npcId] then
 				self.npc.nameIndex[npcId] = 0
 				self.npc.locations[npcId] = {{["mapArea"]= -1 * npcId}}
 			end
-			if nil ~= npcId and nil ~= self.npc.locations[npcId] then
+			if nil ~= self.npc.locations[npcId] and nil == retval then
+				retval = {}
 				local t = {}
 				t.name = self:NPCName(npcId)
 				t.id = npcId
@@ -9786,7 +9799,7 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 					t2.alias = t.alias
 					t2.heroic = t.heroic
 					t2.mapArea = t1.mapArea
-					t2.mapLevel = t1.mapLevel
+--					t2.mapLevel = t1.mapLevel
 					t2.near = t1.near
 					t2.mailbox = t1.mailbox
 					t2.created = t1.created
@@ -9805,7 +9818,7 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 					t2.alias = t.alias
 					t2.heroic = t.heroic
 					t2.mapArea = t1.mapArea
-					t2.mapLevel = t1.mapLevel
+--					t2.mapLevel = t1.mapLevel
 					t2.near = t1.near
 					t2.mailbox = t1.mailbox
 					t2.created = t1.created
@@ -9817,10 +9830,13 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 					t2.questId = t.questId
 					tinsert(retval, t2)
 				end
+				if 0 == #retval then
+					retval = nil
+				else
+					self.npc.rawLocations[npcId] = retval
+				end
 			end
-			if 0 == #retval then
-				retval = nil
-			end
+			self.totalRawNPCLocations = self.totalRawNPCLocations + debugprofilestop() - debugStartTime
 			return retval
 		end,
 
