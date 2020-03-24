@@ -4196,7 +4196,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			elseif 'X' == holidayCode then
 				-- Stranglethorn Fishing Extravaganza quest givers appear on Saturday and Sunday
 				if 1 == weekday or 7 == weekday then
-					retval = true
+					retval = !self.existsClassic
 				end
 			elseif 'K' == holidayCode then
 				-- Kalu'ak Fishing Derby quest giver appears on Saturday between 14h00 and 16h00 server
