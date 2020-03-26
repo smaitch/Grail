@@ -501,6 +501,8 @@
 --		109	Updates some Classic NPC information.
 --			Works around a problem in Retail where world quests can appear in Blizzard's API in different zones.
 --			Corrects the determination of Darkmoon Faire in Classic.
+--			Changes quest level storage and processing.
+--			Optimizes NPC location processing to cache values.
 --
 --	Known Issues
 --
