@@ -506,6 +506,7 @@
 --		110	Corrects checking a prerequisite code for level "less than".
 --			Updates GetPlayerMapPosition() to handle when UnitPosition() returns nils.
 --			Delays NPC name lookup from startup.
+--		111 Updates some Quest/NPC information.
 --
 --	Known Issues
 --
