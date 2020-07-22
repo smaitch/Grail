@@ -3561,6 +3561,7 @@ G[8570]='Past Efforts in Warsong Gulch'
 G[8575]="Azuregos's Magical Ledger"
 G[8576]='Translating the Ledger'
 G[8577]='Stewvul, Ex-B.F.F.'
+G[8578]='Scrying Goggles? No Problem!'
 G[8579]='Mortal Champions'
 G[8580]='The Horde Needs Firebloom!'
 G[8581]='The Horde Needs More Firebloom!'
