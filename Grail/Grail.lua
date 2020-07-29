@@ -578,7 +578,7 @@ local GetText							= GetText
 local GetTime							= GetTime
 local GetTitleText						= GetTitleText
 --local InCombatLockdown					= InCombatLockdown
-local IsQuestFlaggedCompleted			= IsQuestFlaggedCompleted
+-- local IsQuestFlaggedCompleted			= IsQuestFlaggedCompleted
 local QueryQuestsCompleted				= QueryQuestsCompleted					-- QueryQuestsCompleted is special because in modern environments we define it ourselves
 local SelectQuestLogEntry				= SelectQuestLogEntry
 -- SendQuestChoiceResponse														-- we rewrite this to our own function
@@ -1216,9 +1216,19 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end
 					if nil == GetQuestsCompleted then
 						GetQuestsCompleted = function(t)
-							for questId in pairs(Grail.questCodes) do
-								if IsQuestFlaggedCompleted(questId) then
-									t[questId] = true
+							if C_QuestLog.GetAllCompletedQuestIDs then
+								-- Assumes returns a table of integers that are the completed quests.
+								local completedQuests = C_QuestLog.GetAllCompletedQuestIDs()
+								if completedQuests then
+									for k, v in pairs(completedQuests) do
+										t[v] = true
+									end
+								end
+							else
+								for questId in pairs(Grail.questCodes) do
+									if self:IsQuestFlaggedCompleted(questId) then
+										t[questId] = true
+									end
 								end
 							end
 						end
@@ -1866,7 +1876,11 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					end
 					if isTask then baseValue = baseValue + 32768 end	-- bonus objective
 					if self.capabilities.usesCampaignInfo then
-						if C_CampaignInfo.IsCampaignQuest(theQuestId) then baseValue = baseValue + 4096 end -- war campaign (recorded as legendary)
+						local isCampaign = false
+						if C_CampaignInfo.IsCampaignQuest then
+							isCampaign = C_CampaignInfo.IsCampaignQuest(theQuestId)
+						end
+						if isCampaign then baseValue = baseValue + 4096 end -- war campaign (recorded as legendary)
 					end
 					-- at the moment we ignore questTag since it is localized
 					-- With Legion there are issues because the level of the quests
@@ -3457,7 +3471,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				if nil ~= tasks and 0 < #tasks then
 					for k,v in ipairs(tasks) do
 						if self.GDE.debug then
-							local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(v.questId)
+							local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = self:GetQuestTagInfo(v.questId)
 							if tagID and ((nil == self._LearnedWorldQuestProfessionMapping[tagID] and nil == self._LearnedWorldQuestTypeMapping[tagID]) or self.GDE.worldquestforcing) then
 								self.GDE.eek = self.GDE.eek or {}
 								self.GDE.eek[v.questId] = 'A:'..(tagID and tagID or 'NoTagID')..' B:'..(tagName and tagName or 'NoTagName')..' C:'..(worldQuestType and worldQuestType or 'NotWorld') ..' D:'..(rarity and rarity or 'NO')..' E:'..(isElite and 'YES' or 'NO')..' F:'..(tradeskillLineIndex or 'nil')
@@ -3593,11 +3607,11 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			self.GDE.learned = self.GDE.learned or {}
 			self.GDE.learned.QUEST = self.GDE.learned.QUEST or {}
 			local currentLine = self.GDE.learned.QUEST[questId]
-			local tagId = GetQuestTagInfo(questId)	-- only non-nil if actually a world quest
+--			local tagId = self:GetQuestTagInfo(questId)	-- only non-nil if actually a world quest
 			local needToAddKCode, needToAddLCode, needToAddPCode, needToAddTCode, needToAddACode = false, false, false, false, false
 			local kCodeToAdd, lCodeToAdd, pCodeToAdd, tCodeToAdd, aCodeToAdd = 'K000', 'L098', 'P:a'..questId, 'T:-'..mapId, ''
 			local levelToCompareAgainst = 110
-			local tagId, tagName = GetQuestTagInfo(questId)
+			local tagId, tagName = self:GetQuestTagInfo(questId)
 			local professionRequirement = self._LearnedWorldQuestProfessionMapping[tagId]
 			local typeModifier = self._LearnedWorldQuestTypeMapping[tagId]
 			local typeValue = tagId and 262144 or (isDaily and 2 or 0)
@@ -4191,6 +4205,13 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						if day <= 4 or (day == 5 and (elapsedMinutes <= 10 * 60)) then
 							retval = true
 						end
+					end
+				end
+			elseif 'Q' == holidayCode and self.existsClassic then
+				-- Ahn'Q
+				if 2020 == year then
+					if (month == 7 and day >= 29) or month > 7 then
+						retval = true
 					end
 				end
 			elseif 'Z' == holidayCode then
@@ -6787,10 +6808,25 @@ end
             local frequency
             local questLogIndex, campaignId, difficultyLevel, isAutoComplete, overridesSortOrder, readyForTranslation
             if C_QuestLog.GetInfo then
-				questTitle, questLogIndex, questId, campaignId, level, difficultyLevel, suggestedGroup, frequency, isHeader, isCollapsed, startEvent, isTask, isBounty, isStory, isScaling, isOnMap, hasLocalPOI, isHidden, isAutoComplete, overridesSortOrder, readyForTranslation = C_QuestLog.GetInfo(questIndex)
-				displayQuestID = nil
-				isDaily = (1 == frequency)
-				isWeekly = (2 == frequency)
+				local info = C_QuestLog.GetInfo(questIndex)
+				if info then
+					questTitle = info.title
+					level = info.level
+					suggestedGroup = info.suggestedGroup
+					isHeader = info.isHeader
+					isCollapsed = info.isCollapsed
+					isComplete = self:IsQuestFlaggedCompleted(info.questID)
+					isDaily = (1 == info.frequency)
+					questId = info.questID
+					startEvent = info.startEvent
+					displayQuestID = nil
+					isWeekly = (2 == info.frequency)
+					isTask = info.isTask
+					isBounty = info.isBounty
+					isStory = info.isStory
+					isHidden = info.isHidden
+					isScaling = info.isScaling
+				end
             else
 				questTitle, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questId, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling = GetQuestLogTitle(questIndex)
 				isDaily = (LE_QUEST_FREQUENCY_DAILY == frequency)
@@ -6798,6 +6834,28 @@ end
 			end
 			questTag = nil
 			return questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID, isWeekly, isTask, isBounty, isStory, isHidden, isScaling
+		end,
+
+		-- This is used to mask the real Blizzard API since it changes in Shadowlands and I would prefer to have
+		-- only one location where I need to mess with it.
+		GetQuestTagInfo = function(self, questId)
+			local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex
+			local quality, tradeskillLineID, displayExpiration
+			if C_QuestLog.GetQuestTagInfo then
+				local info = C_QuestLog.GetQuestTagInfo(questId)
+				if info then
+					tagID = info.tagID
+					tagName = info.tagName
+					worldQuestType = info.worldQuestType
+					-- quality 0 = Common, 1 = Rare, 2 = Epic
+					rarity = info.quality
+					isElite = info.isElite
+					tradeskillLineIndex = info.tradeskillLineID
+				end
+			else
+				tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(questId)
+			end
+			return tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex
 		end,
 
 		_HandleEventAchievementEarned = function(self, achievementId)
@@ -7362,6 +7420,14 @@ end
 			return self:_IsQuestMarkedInDatabase(questId)
 		end,
 
+		IsQuestFlaggedCompleted = function(self, questId)
+			if C_QuestLog.IsQuestFlaggedCompleted then
+				return C_QuestLog.IsQuestFlaggedCompleted(questId)
+			else
+				return IsQuestFlaggedCompleted(questId)
+			end
+		end,
+		
 		---
 		--	Returns whether the quest is in the quest log.
 		--	@param questId The standard numeric questId representing a quest.
