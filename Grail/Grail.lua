@@ -1248,6 +1248,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					--	Specific quests become available when certain interactions are done with specific NPCs so
 					--	we use this routine in conjunction with the GOSSIP_SHOW and GOSSIP_CLOSED events to determine
 					--	if we are to do anything.  GOSSIP_SHOW will record the NPC and GOSSIP_CLOSED will reset it.
+					if nil ~= SelectGossipOption then -- workaround for Shadowlands
 					hooksecurefunc("SelectGossipOption", function(index, text, confirm)
 --						print("Gossip index selected:", index, text, confirm)
 						local questToComplete = nil
@@ -1266,6 +1267,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							self:_MarkQuestComplete(questToComplete, true)
 						end
 					end)
+					end
 
 					--
 					--	The basic quest information is loaded from a file.  However, we need to create internal structures
@@ -6783,10 +6785,18 @@ end
 			local isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling
 			local isWeekly = nil
             local frequency
-			questTitle, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questId, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling = GetQuestLogTitle(questIndex)
+            local questLogIndex, campaignId, difficultyLevel, isAutoComplete, overridesSortOrder, readyForTranslation
+            if C_QuestLog.GetInfo then
+				questTitle, questLogIndex, questId, campaignId, level, difficultyLevel, suggestedGroup, frequency, isHeader, isCollapsed, startEvent, isTask, isBounty, isStory, isScaling, isOnMap, hasLocalPOI, isHidden, isAutoComplete, overridesSortOrder, readyForTranslation = C_QuestLog.GetInfo(questIndex)
+				displayQuestID = nil
+				isDaily = (1 == frequency)
+				isWeekly = (2 == frequency)
+            else
+				questTitle, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questId, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling = GetQuestLogTitle(questIndex)
+				isDaily = (LE_QUEST_FREQUENCY_DAILY == frequency)
+				isWeekly = (LE_QUEST_FREQUENCY_WEEKLY == frequency)
+			end
 			questTag = nil
-			isDaily = (LE_QUEST_FREQUENCY_DAILY == frequency)
-			isWeekly = (LE_QUEST_FREQUENCY_WEEKLY == frequency)
 			return questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID, isWeekly, isTask, isBounty, isStory, isHidden, isScaling
 		end,
 
