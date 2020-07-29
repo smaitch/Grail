@@ -4193,6 +4193,12 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						end
 					end
 				end
+			elseif 'Q' == holidayCode and self.existsClassic then
+				-- Ahn'Q
+				if 2020 == year and 7 >= month and day >= 29 then
+					retval = true
+					-- add other stuff here
+				end
 			elseif 'Z' == holidayCode then
 				if 12 == month and day >= 25 then
 					retval = true
