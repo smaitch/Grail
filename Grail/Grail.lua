@@ -1842,7 +1842,14 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				self.questAcceptingQuestId = GetQuestID()	-- this is new API and we never use this value currently
 			end,
 
-			['QUEST_ACCEPTED'] = function(self, frame, questIndex, theQuestId)
+			-- It appears in Shadowlands QUEST_ACCEPTED on provides the questId while previous versions provided questIdex and questId.
+			['QUEST_ACCEPTED'] = function(self, frame, questIndexOrIdBasedOnRelease, aQuestId)
+				local questIndex = aQuestId and questIndexOrIdBasedOnRelease or nil
+				local theQuestId = aQuestId or questIndexOrIdBasedOnRelease
+				-- In Shadowlands we need to look up the questIndex
+				if questIndex == nil and C_QuestLog.GetLogIndexForQuestID then
+					questIndex = C_QuestLog.GetLogIndexForQuestID(theQuestId)
+				end
 -- TODO: Figure out how to transform to delayed if needed
 				local debugStartTime = debugprofilestop()
 				local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestId, isWeekly, isTask, isBounty, isStory, isHidden, isScaling = self:GetQuestLogTitle(questIndex)
@@ -1850,7 +1857,9 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local version = self.versionNumber.."/"..self.questsVersionNumber.."/"..self.npcsVersionNumber.."/"..self.zonesVersionNumber
 
 				if nil == questTitle then questTitle = "NO TITLE PROVIDED BY BLIZZARD" end
-				if theQuestId ~= questId then print("Grail: QuestId mismatch", theQuestId, "accepted but log has", questId) end
+				if nil == questId then questId = -1 end
+				if self.GDE.debug then print("Grail QUEST_ACCEPTED: index:",questIndex,"event aQuestId:",aQuestId,"questId:",questId,"quest title:",questTitle) end
+				if aQuestId ~= questId then print("Grail: QuestId mismatch", aQuestId, "accepted but log has", questId) end
 
 				-- Get the target information to ensure the target exists in the database of NPCs
 				local targetName, npcId, coordinates
@@ -3386,7 +3395,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						smallestMinutes = minutesLeft
 					end
 				else
-					if self.debug and self.levelingLevel >= 110 then
+					if self.GDE.debug and self.levelingLevel >= 110 then
 						local stringValue = strformat("%4d-%02d-%02d %02d:%02d %s/%s", year, month, day, hour, minute, self.playerRealm, self.playerName)
 						self.GDE.learned = self.GDE.learned or {}
 						self.GDE.learned.WORLD_QUEST_UNAVAILABLE = self.GDE.learned.WORLD_QUEST_UNAVAILABLE or {}
