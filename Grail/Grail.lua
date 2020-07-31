@@ -1858,8 +1858,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 				if nil == questTitle then questTitle = "NO TITLE PROVIDED BY BLIZZARD" end
 				if nil == questId then questId = -1 end
-				if self.GDE.debug then print("Grail QUEST_ACCEPTED: index:",questIndex,"event aQuestId:",aQuestId,"questId:",questId,"quest title:",questTitle) end
-				if aQuestId ~= questId then print("Grail: QuestId mismatch", aQuestId, "accepted but log has", questId) end
+--				if self.GDE.debug then print("Grail QUEST_ACCEPTED: index:",questIndex,"event aQuestId:",aQuestId,"questId:",questId,"quest title:",questTitle) end
+				if aQuestId and aQuestId ~= questId then print("Grail: QuestId mismatch", aQuestId, "accepted but log has", questId) end
 
 				-- Get the target information to ensure the target exists in the database of NPCs
 				local targetName, npcId, coordinates
@@ -2069,12 +2069,10 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				end
 
 				if self.GDE.debug then
-					local debugMessage = "Grail Debug: Accepted quest: ".. questTitle .. " (" .. questId .. ") from "
+					local debugMessage = "Grail Debug: + ".. questTitle .. " (" .. questId .. ") <= "
 					if nil ~= targetName then debugMessage = debugMessage .. targetName .. " (" .. (npcId or -1) .. ") " .. (coordinates or 'no coords') else debugMessage = debugMessage .. "no target" end
 					if not self:CanAcceptQuest(questId, false, false, true) then
-						debugMessage = debugMessage .. " but should not accept because of: " .. "an error"
-					else
-						debugMessage = debugMessage .. " without problems"
+						debugMessage = debugMessage .. " !: " .. "an error"
 					end
 					print(debugMessage)
 				end
