@@ -565,7 +565,7 @@ local GetNumQuestLogEntries				= GetNumQuestLogEntries
 local GetProfessionInfo					= GetProfessionInfo
 local GetProfessions					= GetProfessions
 local GetRealmName						= GetRealmName
-local GetQuestGreenRange				= GetQuestGreenRange
+-- local GetQuestGreenRange				= GetQuestGreenRange
 local GetQuestLogRewardFactionInfo		= GetQuestLogRewardFactionInfo
 local GetQuestLogSelection				= GetQuestLogSelection
 local GetQuestResetTime					= GetQuestResetTime
@@ -6806,6 +6806,19 @@ end
 --			return results.x, results.y
 		end,
 
+		GetQuestGreenRange = function(self)
+			local retval
+			if GetQuestGreenRange then
+				retval = GetQuestGreenRange()
+			else
+				retval = UnitQuestTrivialLevelRange("player")
+			end
+			if nil == retval then
+				retval = 8	-- 8 is the return value from GetQuestGreenRange() for anyone level 60 or higher (at least)
+			end
+			return retval
+		end,
+
 		--	This is used to mask the real Blizzard API since it changes in WoD and I would prefer to have only
 		--	one location where I need to mess with it.
 		GetQuestLogTitle = function(self, questIndex)
@@ -7348,7 +7361,7 @@ end
 			comparisonLevel = tonumber(comparisonLevel) or UnitLevel("player")
 			local questLevel = self:QuestLevel(questId) or 1
 			if 0 ~= questLevel then		-- 0 is the special marker indicating the quest is actually the same level as the player
-				retval = (comparisonLevel > (questLevel + (GetQuestGreenRange() or 8)))	-- 8 is the return value from GetQuestGreenRange() for anyone level 60 or higher (at least)
+				retval = (comparisonLevel > (questLevel + self:GetQuestGreenRange()))
 			end
 			return retval
 		end,
