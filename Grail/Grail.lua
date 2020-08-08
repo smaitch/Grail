@@ -3317,13 +3317,17 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		--	@param callbackType The string representing the type of callback as posted by the notification system.
 		--	@param questId The standard questId posted by the notification system.
 		_AddTrackingCallback = function(callbackType, questId)
-			local message = strformat("%s %s(%d)", callbackType, Grail:QuestName(questId) or "NO NAME", questId)
+			local functionKey = "+"
+			if "Complete" == callbackType then
+				functionKey = "="
+			end
+			local message = strformat("%s %s(%d)", functionKey, Grail:QuestName(questId) or "NO NAME", questId)
 			if "Accept" == callbackType or "Complete" == callbackType then
 				local targetName, npcId, coordinates = Grail:TargetInformation()
 				if nil ~= targetName then
 					if nil == npcId then npcId = -123 end
 					if nil == coordinates then coordinates = "NO COORDS" end
-					message = strformat("%s %s %s(%d) %s", message, ("Accept" == callbackType) and "from" or "to", targetName, npcId, coordinates)
+					message = strformat("%s %s %s(%d) %s", message, ("Accept" == callbackType) and "<=" or "=>", targetName, npcId, coordinates)
 				else
 					message = strformat("%s, self coords: %s", message, Grail:Coordinates())
 				end
@@ -7903,9 +7907,9 @@ end
 					if nil ~= targetName then
 						npcId = npcId or -1
 						coordinates = coordinates or "no coords"
-						print("Grail Debug: Marked questId "..questId.." complete, turned in to: "..targetName.."("..npcId..") "..coordinates)
+						print("Grail Debug: = "..questId.." => "..targetName.."("..npcId..") "..coordinates)
 					else
-						print("Grail Debug: Turned in quest "..questId.." with no target")
+						print("Grail Debug: = "..questId)
 					end
 				end
 				self:_UpdateQuestDatabase(questId, 'No Title Stored', npcId, false, 'T', version)

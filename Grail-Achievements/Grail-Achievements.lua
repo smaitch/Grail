@@ -7151,6 +7151,7 @@ G[53472]={512995}
 G[53473]={512995}
 G[53474]={512995}
 G[53475]={512995}
+G[59770]={514334}	-- Into the Maw (Shadowlands)
 end
 
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime
