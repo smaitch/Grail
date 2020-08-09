@@ -7151,6 +7151,8 @@ G[53472]={512995}
 G[53473]={512995}
 G[53474]={512995}
 G[53475]={512995}
+G[57676]={514281}	-- Eternity's Call (The Path to Ascension) (Bastion) (Shadownlands) -- TODO: Verified required
+G[57677]={514281}	-- Eternity's Call (The Path to Ascension) (Bastion) (Shadownlands)
 G[59770]={514334}	-- Into the Maw (Shadowlands)
 end
 
