@@ -3256,7 +3256,14 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			--	map and then asking it for all the Continents that are children of it, hoping the API
 			--	will bypass the intervening World maps.
 			local currentMapId, TOP_MOST, ALL_DESCENDANTS = Grail.GetCurrentMapAreaID(), true, true
+			-- For Exile's Reach (Shadowlands) there is no parent map, so we are not going to be able to get continents from it.  Default to normal Cosmic of 946
+			if currentMapId == 1409 then
+				currentMapId = nil
+			end
 			local cosmicMapInfo = MapUtil.GetMapParentInfo(currentMapId or 946, Enum.UIMapType.Cosmic, TOP_MOST)
+			if nil == cosmicMapInfo then
+				cosmicMapInfo = { mapID = 946 }
+			end
 			if self.capabilities.usesAzerothAsCosmicMap then
 				cosmicMapInfo = { mapID = 947 }
 			end

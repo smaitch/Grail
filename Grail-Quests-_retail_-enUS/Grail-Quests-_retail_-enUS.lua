@@ -32752,7 +32752,7 @@ G[529411]='What Now?'
 G[529428]='What Now?'
 end
 
-if release >= 35482 then
+if release >= 35432 then
 G[54951]='Emergency First Aid'
 G[54952]='Finding the Lost Expedition'
 G[55122]='Murloc Mania'
@@ -32761,10 +32761,21 @@ G[55174]='Cooking Meat'
 G[55184]='Forbidden Quilboar Necromancy'
 G[55186]='Down with the Quilboar'
 G[55193]='The Scout-o-Matic 5000'
+G[55194]='Stocking Up on Supplies'
+G[55196]='The Harpy Problem'
+G[55639]='Who Lurks in the Pit'
+G[55879]='Ride of the Scientifically Enhanced Boar'
+G[55965]='Westward Bound'
+G[56034]='Re-sizing the Situation'
+G[56839]='Killclaw the Terrible'
+G[59254]='Enhanced Combat Tactics'
+G[59350]="A Druid's Form"
+end
+
+if release >= 35482 then
 G[58208]='Brace for Impact'
 G[58209]='Stand Your Ground'
 G[58910]="What's Your Specialty?"
-G[59254]='Enhanced Combat Tactics'
 end
 
 --	End of localized quest names
