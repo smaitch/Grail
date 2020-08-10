@@ -32753,6 +32753,7 @@ G[529428]='What Now?'
 end
 
 if release >= 35432 then
+G[54933]='Freeing the Light'
 G[54951]='Emergency First Aid'
 G[54952]='Finding the Lost Expedition'
 G[55122]='Murloc Mania'
@@ -32770,6 +32771,25 @@ G[56034]='Re-sizing the Situation'
 G[56839]='Killclaw the Terrible'
 G[59254]='Enhanced Combat Tactics'
 G[59350]="A Druid's Form"
+G[59926]='Warming Up'
+G[59927]='Stand Your Ground'
+G[59928]='Brace for Impact'
+G[59929]='Murloc Mania'
+G[59930]='Emergency First Aid'
+G[59931]='Finding the Lost Expedition'
+G[59932]='Cooking Meat'
+G[59933]='Enhanced Combat Tactics'
+G[59935]='Northbound'
+G[59938]='Down with the Quilboar'
+G[59939]='Forbidden Quilboar Necromancy'
+G[59940]='The Choppy Booster Mk 5'
+G[59941]='Re-sizing the Situation'
+G[59942]='The Re-Deather'
+G[59943]='The Harpy Problem'
+G[59948]='Westward Bound'
+G[59949]='Who Lurks in the Pit'
+G[59950]='Stocking Up on Supplies'
+G[59951]="A Druid's Form"
 end
 
 if release >= 35482 then
