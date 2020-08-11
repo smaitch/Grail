@@ -1385,6 +1385,8 @@ G[1335711]='Black Empire Cache'
 G[1335712]='Black Empire Cache'
 G[1335717]='Black Empire Cache'
 G[1339248]='Infested Cache'
+G[1348558]='Notice'
+G[1352027]='Wanted Scroll'
 G[1352028]='Wanted Scroll'
 end
 
