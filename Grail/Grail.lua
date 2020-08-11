@@ -507,6 +507,8 @@
 --			Updates GetPlayerMapPosition() to handle when UnitPosition() returns nils.
 --			Delays NPC name lookup from startup.
 --		111 Updates some Quest/NPC information.
+--			Adds basic support for Shadowlands beta.
+--			Changes the way treasures are looted to hopefully be faster.
 --
 --	Known Issues
 --
@@ -2430,6 +2432,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		mapAreaMaximumProfession = 399999,
 		mapAreaMaximumReputation = 499999,
 		mapAreaMaximumReputationChange = 699999,
+		mapAreasWithTreasures = {},	-- index is the mapId, and the value is a table of treasure questIds
 		memoryUsage = {},	-- see timings
 		nonPatternExperiment = true,
 
@@ -5965,6 +5968,10 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					for _, npc in pairs(locations) do
 						if nil ~= npc.mapArea then
 							local mapId = npc.mapArea
+							-- Add this quest to the list of treasure quests per zone if appropriate
+							if self:IsTreasure(questId) then
+								self:_InsertSet(self.mapAreasWithTreasures, mapId, questId)
+							end
 							if npc.realArea then
 								if not self.experimental then
 									self:_InsertSet(self.indexedQuestsExtra, mapId, questId)
@@ -6926,9 +6933,24 @@ end
 			-- Since querying the server is a little noisy we force it to be less so, reseting values later
 			local silentValue, manualValue = self.GDE.silent, self.manuallyExecutingServerQuery
 			self.GDE.silent, self.manuallyExecutingServerQuery = true, false
-			QueryQuestsCompleted()
+-- The old way of doing this was to query all the quests that were completed and see how they differ from the currently completed
+-- list and then assume the newly completed one(s) are associated with the treasure.  However, that is a little expensive.  Thus,
+-- only the treasure quests associated with the current zone are queried to see if there is any change in their status.
+--			QueryQuestsCompleted()
 			local newlyCompleted = {}
-			self:_ProcessServerCompare(newlyCompleted)
+--			self:_ProcessServerCompare(newlyCompleted)
+-- This is the new code that handles only checking specific values...
+			local mapId = Grail.GetCurrentMapAreaID()
+			local listOfTreasureQuestsInThisMap = self.mapAreasWithTreasures[mapId]
+			if nil ~= listOfTreasureQuestsInThisMap then
+				for k,v in pairs(listOfTreasureQuestsInThisMap) do
+					-- the first is server call, and the second is Grail database
+					if self:IsQuestFlaggedCompleted(v) and not self:IsQuestCompleted(v) then
+						tinsert(newlyCompleted, v)
+					end
+				end
+			end
+-- And back to the original code...
 			if #newlyCompleted > 0 then
 				local lootingNameToUse = self.lootingName or "NO LOOTING OBJECT"
 				local guidParts = { strsplit('-', self.lootingGUID or "") }
