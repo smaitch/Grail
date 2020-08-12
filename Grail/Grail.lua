@@ -507,6 +507,8 @@
 --			Updates GetPlayerMapPosition() to handle when UnitPosition() returns nils.
 --			Delays NPC name lookup from startup.
 --		111 Updates some Quest/NPC information.
+--			Adds basic support for Shadowlands beta.
+--			Changes the way treasures are looted to hopefully be faster.
 --
 --	Known Issues
 --
@@ -565,7 +567,7 @@ local GetNumQuestLogEntries				= GetNumQuestLogEntries
 local GetProfessionInfo					= GetProfessionInfo
 local GetProfessions					= GetProfessions
 local GetRealmName						= GetRealmName
-local GetQuestGreenRange				= GetQuestGreenRange
+-- local GetQuestGreenRange				= GetQuestGreenRange
 local GetQuestLogRewardFactionInfo		= GetQuestLogRewardFactionInfo
 local GetQuestLogSelection				= GetQuestLogSelection
 local GetQuestResetTime					= GetQuestResetTime
@@ -578,7 +580,7 @@ local GetText							= GetText
 local GetTime							= GetTime
 local GetTitleText						= GetTitleText
 --local InCombatLockdown					= InCombatLockdown
-local IsQuestFlaggedCompleted			= IsQuestFlaggedCompleted
+-- local IsQuestFlaggedCompleted			= IsQuestFlaggedCompleted
 local QueryQuestsCompleted				= QueryQuestsCompleted					-- QueryQuestsCompleted is special because in modern environments we define it ourselves
 local SelectQuestLogEntry				= SelectQuestLogEntry
 -- SendQuestChoiceResponse														-- we rewrite this to our own function
@@ -1216,9 +1218,19 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end
 					if nil == GetQuestsCompleted then
 						GetQuestsCompleted = function(t)
-							for questId in pairs(Grail.questCodes) do
-								if IsQuestFlaggedCompleted(questId) then
-									t[questId] = true
+							if C_QuestLog.GetAllCompletedQuestIDs then
+								-- Assumes returns a table of integers that are the completed quests.
+								local completedQuests = C_QuestLog.GetAllCompletedQuestIDs()
+								if completedQuests then
+									for k, v in pairs(completedQuests) do
+										t[v] = true
+									end
+								end
+							else
+								for questId in pairs(Grail.questCodes) do
+									if self:IsQuestFlaggedCompleted(questId) then
+										t[questId] = true
+									end
 								end
 							end
 						end
@@ -1832,7 +1844,14 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				self.questAcceptingQuestId = GetQuestID()	-- this is new API and we never use this value currently
 			end,
 
-			['QUEST_ACCEPTED'] = function(self, frame, questIndex, theQuestId)
+			-- It appears in Shadowlands QUEST_ACCEPTED on provides the questId while previous versions provided questIdex and questId.
+			['QUEST_ACCEPTED'] = function(self, frame, questIndexOrIdBasedOnRelease, aQuestId)
+				local questIndex = aQuestId and questIndexOrIdBasedOnRelease or nil
+				local theQuestId = aQuestId or questIndexOrIdBasedOnRelease
+				-- In Shadowlands we need to look up the questIndex
+				if questIndex == nil and C_QuestLog.GetLogIndexForQuestID then
+					questIndex = C_QuestLog.GetLogIndexForQuestID(theQuestId)
+				end
 -- TODO: Figure out how to transform to delayed if needed
 				local debugStartTime = debugprofilestop()
 				local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestId, isWeekly, isTask, isBounty, isStory, isHidden, isScaling = self:GetQuestLogTitle(questIndex)
@@ -1840,7 +1859,9 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local version = self.versionNumber.."/"..self.questsVersionNumber.."/"..self.npcsVersionNumber.."/"..self.zonesVersionNumber
 
 				if nil == questTitle then questTitle = "NO TITLE PROVIDED BY BLIZZARD" end
-				if theQuestId ~= questId then print("Grail: QuestId mismatch", theQuestId, "accepted but log has", questId) end
+				if nil == questId then questId = -1 end
+--				if self.GDE.debug then print("Grail QUEST_ACCEPTED: index:",questIndex,"event aQuestId:",aQuestId,"questId:",questId,"quest title:",questTitle) end
+				if aQuestId and aQuestId ~= questId then print("Grail: QuestId mismatch", aQuestId, "accepted but log has", questId) end
 
 				-- Get the target information to ensure the target exists in the database of NPCs
 				local targetName, npcId, coordinates
@@ -1866,7 +1887,11 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					end
 					if isTask then baseValue = baseValue + 32768 end	-- bonus objective
 					if self.capabilities.usesCampaignInfo then
-						if C_CampaignInfo.IsCampaignQuest(theQuestId) then baseValue = baseValue + 4096 end -- war campaign (recorded as legendary)
+						local isCampaign = false
+						if C_CampaignInfo.IsCampaignQuest then
+							isCampaign = C_CampaignInfo.IsCampaignQuest(theQuestId)
+						end
+						if isCampaign then baseValue = baseValue + 4096 end -- war campaign (recorded as legendary)
 					end
 					-- at the moment we ignore questTag since it is localized
 					-- With Legion there are issues because the level of the quests
@@ -2046,12 +2071,10 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				end
 
 				if self.GDE.debug then
-					local debugMessage = "Grail Debug: Accepted quest: ".. questTitle .. " (" .. questId .. ") from "
+					local debugMessage = "Grail Debug: + ".. questTitle .. " (" .. questId .. ") <= "
 					if nil ~= targetName then debugMessage = debugMessage .. targetName .. " (" .. (npcId or -1) .. ") " .. (coordinates or 'no coords') else debugMessage = debugMessage .. "no target" end
 					if not self:CanAcceptQuest(questId, false, false, true) then
-						debugMessage = debugMessage .. " but should not accept because of: " .. "an error"
-					else
-						debugMessage = debugMessage .. " without problems"
+						debugMessage = debugMessage .. " !: " .. "an error"
 					end
 					print(debugMessage)
 				end
@@ -2409,6 +2432,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		mapAreaMaximumProfession = 399999,
 		mapAreaMaximumReputation = 499999,
 		mapAreaMaximumReputationChange = 699999,
+		mapAreasWithTreasures = {},	-- index is the mapId, and the value is a table of treasure questIds
 		memoryUsage = {},	-- see timings
 		nonPatternExperiment = true,
 
@@ -3235,7 +3259,14 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			--	map and then asking it for all the Continents that are children of it, hoping the API
 			--	will bypass the intervening World maps.
 			local currentMapId, TOP_MOST, ALL_DESCENDANTS = Grail.GetCurrentMapAreaID(), true, true
+			-- For Exile's Reach (Shadowlands) there is no parent map, so we are not going to be able to get continents from it.  Default to normal Cosmic of 946
+			if currentMapId == 1409 then
+				currentMapId = nil
+			end
 			local cosmicMapInfo = MapUtil.GetMapParentInfo(currentMapId or 946, Enum.UIMapType.Cosmic, TOP_MOST)
+			if nil == cosmicMapInfo then
+				cosmicMapInfo = { mapID = 946 }
+			end
 			if self.capabilities.usesAzerothAsCosmicMap then
 				cosmicMapInfo = { mapID = 947 }
 			end
@@ -3296,13 +3327,17 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		--	@param callbackType The string representing the type of callback as posted by the notification system.
 		--	@param questId The standard questId posted by the notification system.
 		_AddTrackingCallback = function(callbackType, questId)
-			local message = strformat("%s %s(%d)", callbackType, Grail:QuestName(questId) or "NO NAME", questId)
+			local functionKey = "+"
+			if "Complete" == callbackType then
+				functionKey = "="
+			end
+			local message = strformat("%s %s(%d)", functionKey, Grail:QuestName(questId) or "NO NAME", questId)
 			if "Accept" == callbackType or "Complete" == callbackType then
 				local targetName, npcId, coordinates = Grail:TargetInformation()
 				if nil ~= targetName then
 					if nil == npcId then npcId = -123 end
 					if nil == coordinates then coordinates = "NO COORDS" end
-					message = strformat("%s %s %s(%d) %s", message, ("Accept" == callbackType) and "from" or "to", targetName, npcId, coordinates)
+					message = strformat("%s %s %s(%d) %s", message, ("Accept" == callbackType) and "<=" or "=>", targetName, npcId, coordinates)
 				else
 					message = strformat("%s, self coords: %s", message, Grail:Coordinates())
 				end
@@ -3372,7 +3407,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						smallestMinutes = minutesLeft
 					end
 				else
-					if self.debug and self.levelingLevel >= 110 then
+					if self.GDE.debug and self.levelingLevel >= 110 then
 						local stringValue = strformat("%4d-%02d-%02d %02d:%02d %s/%s", year, month, day, hour, minute, self.playerRealm, self.playerName)
 						self.GDE.learned = self.GDE.learned or {}
 						self.GDE.learned.WORLD_QUEST_UNAVAILABLE = self.GDE.learned.WORLD_QUEST_UNAVAILABLE or {}
@@ -3457,7 +3492,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				if nil ~= tasks and 0 < #tasks then
 					for k,v in ipairs(tasks) do
 						if self.GDE.debug then
-							local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(v.questId)
+							local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = self:GetQuestTagInfo(v.questId)
 							if tagID and ((nil == self._LearnedWorldQuestProfessionMapping[tagID] and nil == self._LearnedWorldQuestTypeMapping[tagID]) or self.GDE.worldquestforcing) then
 								self.GDE.eek = self.GDE.eek or {}
 								self.GDE.eek[v.questId] = 'A:'..(tagID and tagID or 'NoTagID')..' B:'..(tagName and tagName or 'NoTagName')..' C:'..(worldQuestType and worldQuestType or 'NotWorld') ..' D:'..(rarity and rarity or 'NO')..' E:'..(isElite and 'YES' or 'NO')..' F:'..(tradeskillLineIndex or 'nil')
@@ -3593,11 +3628,11 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			self.GDE.learned = self.GDE.learned or {}
 			self.GDE.learned.QUEST = self.GDE.learned.QUEST or {}
 			local currentLine = self.GDE.learned.QUEST[questId]
-			local tagId = GetQuestTagInfo(questId)	-- only non-nil if actually a world quest
+--			local tagId = self:GetQuestTagInfo(questId)	-- only non-nil if actually a world quest
 			local needToAddKCode, needToAddLCode, needToAddPCode, needToAddTCode, needToAddACode = false, false, false, false, false
 			local kCodeToAdd, lCodeToAdd, pCodeToAdd, tCodeToAdd, aCodeToAdd = 'K000', 'L098', 'P:a'..questId, 'T:-'..mapId, ''
 			local levelToCompareAgainst = 110
-			local tagId, tagName = GetQuestTagInfo(questId)
+			local tagId, tagName = self:GetQuestTagInfo(questId)
 			local professionRequirement = self._LearnedWorldQuestProfessionMapping[tagId]
 			local typeModifier = self._LearnedWorldQuestTypeMapping[tagId]
 			local typeValue = tagId and 262144 or (isDaily and 2 or 0)
@@ -4194,12 +4229,12 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					end
 				end
 			elseif 'Q' == holidayCode and self.existsClassic then
- 				-- Ahn'Q 
- 				if 2020 == year then
- 					if (month == 7 and day >= 29) or month > 7 then
- 						retval = true
- 					end
- 				end
+				-- Ahn'Q
+				if 2020 == year then
+					if (month == 7 and day >= 29) or month > 7 then
+						retval = true
+					end
+				end
 			elseif 'Z' == holidayCode then
 				if 12 == month and day >= 25 then
 					retval = true
@@ -5933,6 +5968,10 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					for _, npc in pairs(locations) do
 						if nil ~= npc.mapArea then
 							local mapId = npc.mapArea
+							-- Add this quest to the list of treasure quests per zone if appropriate
+							if self:IsTreasure(questId) then
+								self:_InsertSet(self.mapAreasWithTreasures, mapId, questId)
+							end
 							if npc.realArea then
 								if not self.experimental then
 									self:_InsertSet(self.indexedQuestsExtra, mapId, questId)
@@ -6785,6 +6824,19 @@ end
 --			return results.x, results.y
 		end,
 
+		GetQuestGreenRange = function(self)
+			local retval
+			if GetQuestGreenRange then
+				retval = GetQuestGreenRange()
+			else
+				retval = UnitQuestTrivialLevelRange("player")
+			end
+			if nil == retval then
+				retval = 8	-- 8 is the return value from GetQuestGreenRange() for anyone level 60 or higher (at least)
+			end
+			return retval
+		end,
+
 		--	This is used to mask the real Blizzard API since it changes in WoD and I would prefer to have only
 		--	one location where I need to mess with it.
 		GetQuestLogTitle = function(self, questIndex)
@@ -6794,10 +6846,25 @@ end
             local frequency
             local questLogIndex, campaignId, difficultyLevel, isAutoComplete, overridesSortOrder, readyForTranslation
             if C_QuestLog.GetInfo then
-				questTitle, questLogIndex, questId, campaignId, level, difficultyLevel, suggestedGroup, frequency, isHeader, isCollapsed, startEvent, isTask, isBounty, isStory, isScaling, isOnMap, hasLocalPOI, isHidden, isAutoComplete, overridesSortOrder, readyForTranslation = C_QuestLog.GetInfo(questIndex)
-				displayQuestID = nil
-				isDaily = (1 == frequency)
-				isWeekly = (2 == frequency)
+				local info = C_QuestLog.GetInfo(questIndex)
+				if info then
+					questTitle = info.title
+					level = info.level
+					suggestedGroup = info.suggestedGroup
+					isHeader = info.isHeader
+					isCollapsed = info.isCollapsed
+					isComplete = self:IsQuestFlaggedCompleted(info.questID)
+					isDaily = (1 == info.frequency)
+					questId = info.questID
+					startEvent = info.startEvent
+					displayQuestID = nil
+					isWeekly = (2 == info.frequency)
+					isTask = info.isTask
+					isBounty = info.isBounty
+					isStory = info.isStory
+					isHidden = info.isHidden
+					isScaling = info.isScaling
+				end
             else
 				questTitle, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questId, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling = GetQuestLogTitle(questIndex)
 				isDaily = (LE_QUEST_FREQUENCY_DAILY == frequency)
@@ -6805,6 +6872,28 @@ end
 			end
 			questTag = nil
 			return questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID, isWeekly, isTask, isBounty, isStory, isHidden, isScaling
+		end,
+
+		-- This is used to mask the real Blizzard API since it changes in Shadowlands and I would prefer to have
+		-- only one location where I need to mess with it.
+		GetQuestTagInfo = function(self, questId)
+			local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex
+			local quality, tradeskillLineID, displayExpiration
+			if C_QuestLog.GetQuestTagInfo then
+				local info = C_QuestLog.GetQuestTagInfo(questId)
+				if info then
+					tagID = info.tagID
+					tagName = info.tagName
+					worldQuestType = info.worldQuestType
+					-- quality 0 = Common, 1 = Rare, 2 = Epic
+					rarity = info.quality
+					isElite = info.isElite
+					tradeskillLineIndex = info.tradeskillLineID
+				end
+			else
+				tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(questId)
+			end
+			return tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex
 		end,
 
 		_HandleEventAchievementEarned = function(self, achievementId)
@@ -6844,9 +6933,24 @@ end
 			-- Since querying the server is a little noisy we force it to be less so, reseting values later
 			local silentValue, manualValue = self.GDE.silent, self.manuallyExecutingServerQuery
 			self.GDE.silent, self.manuallyExecutingServerQuery = true, false
-			QueryQuestsCompleted()
+-- The old way of doing this was to query all the quests that were completed and see how they differ from the currently completed
+-- list and then assume the newly completed one(s) are associated with the treasure.  However, that is a little expensive.  Thus,
+-- only the treasure quests associated with the current zone are queried to see if there is any change in their status.
+--			QueryQuestsCompleted()
 			local newlyCompleted = {}
-			self:_ProcessServerCompare(newlyCompleted)
+--			self:_ProcessServerCompare(newlyCompleted)
+-- This is the new code that handles only checking specific values...
+			local mapId = Grail.GetCurrentMapAreaID()
+			local listOfTreasureQuestsInThisMap = self.mapAreasWithTreasures[mapId]
+			if nil ~= listOfTreasureQuestsInThisMap then
+				for k,v in pairs(listOfTreasureQuestsInThisMap) do
+					-- the first is server call, and the second is Grail database
+					if self:IsQuestFlaggedCompleted(v) and not self:IsQuestCompleted(v) then
+						tinsert(newlyCompleted, v)
+					end
+				end
+			end
+-- And back to the original code...
 			if #newlyCompleted > 0 then
 				local lootingNameToUse = self.lootingName or "NO LOOTING OBJECT"
 				local guidParts = { strsplit('-', self.lootingGUID or "") }
@@ -7290,7 +7394,7 @@ end
 			comparisonLevel = tonumber(comparisonLevel) or UnitLevel("player")
 			local questLevel = self:QuestLevel(questId) or 1
 			if 0 ~= questLevel then		-- 0 is the special marker indicating the quest is actually the same level as the player
-				retval = (comparisonLevel > (questLevel + (GetQuestGreenRange() or 8)))	-- 8 is the return value from GetQuestGreenRange() for anyone level 60 or higher (at least)
+				retval = (comparisonLevel > (questLevel + self:GetQuestGreenRange()))
 			end
 			return retval
 		end,
@@ -7369,6 +7473,14 @@ end
 			return self:_IsQuestMarkedInDatabase(questId)
 		end,
 
+		IsQuestFlaggedCompleted = function(self, questId)
+			if C_QuestLog.IsQuestFlaggedCompleted then
+				return C_QuestLog.IsQuestFlaggedCompleted(questId)
+			else
+				return IsQuestFlaggedCompleted(questId)
+			end
+		end,
+		
 		---
 		--	Returns whether the quest is in the quest log.
 		--	@param questId The standard numeric questId representing a quest.
@@ -7824,9 +7936,9 @@ end
 					if nil ~= targetName then
 						npcId = npcId or -1
 						coordinates = coordinates or "no coords"
-						print("Grail Debug: Marked questId "..questId.." complete, turned in to: "..targetName.."("..npcId..") "..coordinates)
+						print("Grail Debug: = "..questId.." => "..targetName.."("..npcId..") "..coordinates)
 					else
-						print("Grail Debug: Turned in quest "..questId.." with no target")
+						print("Grail Debug: = "..questId)
 					end
 				end
 				self:_UpdateQuestDatabase(questId, 'No Title Stored', npcId, false, 'T', version)
