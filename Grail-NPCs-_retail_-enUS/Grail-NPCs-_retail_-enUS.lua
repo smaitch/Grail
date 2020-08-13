@@ -1374,6 +1374,7 @@ G[1327652]='War Supply Chest'
 G[1327673]='Stolen Oil'
 G[1329783]='Glowing Arcane Trunk'
 G[1330194]='Prismatic Crystal'
+G[1330627]='Danger Sign'
 G[1332623]='Christy Punchcog'
 G[1334215]='Black Empire Cache'
 G[1334227]='Mogu Plunder'
@@ -1384,6 +1385,9 @@ G[1335711]='Black Empire Cache'
 G[1335712]='Black Empire Cache'
 G[1335717]='Black Empire Cache'
 G[1339248]='Infested Cache'
+G[1348558]='Notice'
+G[1352027]='Wanted Scroll'
+G[1352028]='Wanted Scroll'
 end
 
 --	End of localized NPC names
