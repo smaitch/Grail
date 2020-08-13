@@ -32829,7 +32829,14 @@ G[59948]='Westward Bound'
 G[59949]='Who Lurks in the Pit'
 G[59950]='Stocking Up on Supplies'
 G[59951]="A Druid's Form"
+G[60005]='Imminent Danger'
+G[60006]='Now or Never'
+G[60007]='Stay Scrappy'
+G[60008]='Rip and Tear'
+G[60009]='Fight Another Day'
 G[60013]='Leave it to Mnemis'
+G[60052]='Double Tap'
+G[60053]='Clear as Crystal'
 G[60180]="A Paragon's Reflection"
 G[60218]="The Archon's Answer"
 G[60315]='WANTED: Gorgebeak'
@@ -32842,6 +32849,14 @@ if release >= 35482 then
 G[58208]='Brace for Impact'
 G[58209]='Stand Your Ground'
 G[58910]="What's Your Specialty?"
+end
+
+if release >= 35522 then
+G[60054]='The Final Countdown'
+G[60055]='A Time for Courage'
+G[60056]='Follow the Path'
+G[60057]="Necrotic Wake: A Paragon's Plight"
+G[62407]='Herbicidal Tendencies'
 end
 
 --	End of localized quest names
