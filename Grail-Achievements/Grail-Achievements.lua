@@ -7152,6 +7152,7 @@ G[53473]={512995}
 G[53474]={512995}
 G[53475]={512995}
 G[57447]={514281}	-- The Temple of Purity (The Path to Ascension) (Bastion) (Shadownlands)
+G[57515]={514206}	-- Champion of Pain (Blade of the Primus) (Maldraxxus) (Shadowlands)
 G[57676]={514281}	-- Eternity's Call (The Path to Ascension) (Bastion) (Shadownlands) -- TODO: Verified required
 G[57677]={514281}	-- Eternity's Call (The Path to Ascension) (Bastion) (Shadownlands)
 G[58174]={514281}	-- The Aspirant's Crucible (The Path to Ascension) (Bastion) (Shadownlands)
@@ -7159,6 +7160,7 @@ G[59200]={514281}	-- By the Archon's Will (The Path to Ascension) (Bastion) (Sha
 G[59770]={514334}	-- Into the Maw (Shadowlands)
 G[60013]={514281}	-- Chasing a Memory (The Path to Ascension) (Bastion) (Shadownlands)
 G[60055]={514281}	-- The Temple of Courage (The Path to Ascension) (Bastion) (Shadownlands)
+G[60886]={514206}	-- House of the Chosen (Blade of the Primus) (Maldraxxus) (Shadowlands)
 end
 
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime

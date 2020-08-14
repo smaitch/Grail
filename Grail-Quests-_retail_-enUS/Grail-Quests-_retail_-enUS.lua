@@ -32852,10 +32852,38 @@ G[58910]="What's Your Specialty?"
 end
 
 if release >= 35522 then
+G[51947]='Sabertron'
+G[57386]='If You Want Peace...'
+G[57390]='To Die By the Sword'
+G[57425]='Land of Opportunity'
+G[57511]='Arms for the Poor'
+G[57512]='Walk Among Death'
+G[57514]='The First Act of War'
+G[57515]='The House of the Chosen'
+G[57516]='Through the Fire and Flames'
+G[57912]='Baron of the Chosen'
+G[58351]='The Hills Have Eyes'
+G[58616]='Forging a Champion'
+G[58617]='Maintaining Order'
+G[58618]='Ossein Enchantment'
+G[58726]='Thick Skin'
+G[58751]='A Common Peril'
+G[59130]='The House of Plagues'
+G[60020]='An Opportunistic Strike'
+G[60021]='Champion the Cause'
 G[60054]='The Final Countdown'
 G[60055]='A Time for Courage'
 G[60056]='Follow the Path'
 G[60057]="Necrotic Wake: A Paragon's Plight"
+G[60179]='Memory of Honor'
+G[60181]='Trench Warfare'
+G[60428]='The Blade of the Primus'
+G[60451]='Never Enough'
+G[60453]='The Path to Glory'
+G[60461]='Meet the Margrave'
+G[60886]='The Seat of the Primus'
+G[61096]="The Arbiter's Will"
+G[61107]='A Land of Strife'
 G[62407]='Herbicidal Tendencies'
 end
 

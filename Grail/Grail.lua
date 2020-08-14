@@ -1095,6 +1095,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[1527] = true, -- Uldum 8.3
  							[1530] = true, -- Valley of Eternal Blossoms 8.3
  							[1533] = true, -- Bastion (Shadowlands)
+ 							[1536] = true, -- Maldraxxus (Shadowlands)
 							[1595] = true, -- Nyalotha 8.3
 							}
 						self.quest.name = {
