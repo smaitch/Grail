@@ -1856,7 +1856,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				end
 -- TODO: Figure out how to transform to delayed if needed
 				local debugStartTime = debugprofilestop()
-				local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestId, isWeekly, isTask, isBounty, isStory, isHidden, isScaling = self:GetQuestLogTitle(questIndex)
+				local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestId, isWeekly, isTask, isBounty, isStory, isHidden, isScaling, difficultyLevel = self:GetQuestLogTitle(questIndex)
 				local npcId = nil
 				local version = self.versionNumber.."/"..self.questsVersionNumber.."/"..self.npcsVersionNumber.."/"..self.zonesVersionNumber
 
@@ -1879,7 +1879,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				--	If this quest is not in our internal database attempt to record some information about it so we have a chance the
 				--	user can provide this to us to update the database.
 				if not isHeader then
-					local baseValue = 0
+					local baseValue, kCode = 0, nil
 					if isDaily then baseValue = baseValue + 2 end
 					if isWeekly then baseValue = baseValue + 4 end
 					if suggestedGroup then
@@ -1901,8 +1901,11 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					if self.existsWoD and level > 100 then
 						level = 0
 					end
-					local kCode = strformat("K%03d%d", level, baseValue)
-					self:_UpdateQuestDatabase(questId, questTitle, npcId, isDaily, 'A', version, kCode)
+					local lCode = strformat("L%d", 255 + level * 256 + (difficultyLevel or 0) * 65536)
+					if baseValue > 0 then
+						kCode = strformat("K%d", baseValue)
+					end
+					self:_UpdateQuestDatabase(questId, questTitle, npcId, isDaily, 'A', version, kCode, lCode)
 
 					-- Ask Blizzard API to provide us with the reputation rewards for this quest
 -- As of July 2015 it has been reported that GetNumQuestLogRewardFactions() and GetQuestLogRewardFactionInfo() are not
@@ -4587,13 +4590,9 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 									local code = strsub(codes[c], 1, 1)
 									local subcode = strsub(codes[c], 2, 2)
 									if 'K' == code then
-										local possibleQuestLevel = tonumber(strsub(codes[c], 2, 4))
 										local possibleQuestType = tonumber(strsub(codes[c], 5))
-										if (nil ~= possibleQuestLevel and possibleQuestLevel ~= self:QuestLevel(questId)) or (nil ~= possibleQuestType and possibleQuestType ~= bitband(self:CodeType(questId), possibleQuestType)) then
+										if (nil ~= possibleQuestType and possibleQuestType ~= bitband(self:CodeType(questId), possibleQuestType)) then
 											shouldAdd = true
-											if nil ~= possibleQuestLevel then
-												self:_SetQuestLevel(questId, possibleQuestLevel)
-											end
 											if nil ~= possibleQuestType then
 												self:_MarkQuestType(questId, possibleQuestType)
 											end
@@ -6866,6 +6865,7 @@ end
 					isStory = info.isStory
 					isHidden = info.isHidden
 					isScaling = info.isScaling
+					difficultyLevel = info.difficultyLevel
 				end
             else
 				questTitle, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questId, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling = GetQuestLogTitle(questIndex)
@@ -6873,7 +6873,7 @@ end
 				isWeekly = (LE_QUEST_FREQUENCY_WEEKLY == frequency)
 			end
 			questTag = nil
-			return questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID, isWeekly, isTask, isBounty, isStory, isHidden, isScaling
+			return questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestID, isWeekly, isTask, isBounty, isStory, isHidden, isScaling, difficultyLevel
 		end,
 
 		-- This is used to mask the real Blizzard API since it changes in Shadowlands and I would prefer to have
@@ -10832,7 +10832,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 		--	@param isDaily Indicates whether the quest is a daily quest.
 		--	@param npcCode A string value 'A:' or 'T:' indicating whether the NPC is for accepting a quest or turning one in.
 		--	@param version A version string based on the current internal database versions.
-		_UpdateQuestDatabase = function(self, questId, questTitle, npcId, isDaily, npcCode, version, kCode)
+		_UpdateQuestDatabase = function(self, questId, questTitle, npcId, isDaily, npcCode, version, kCode, lCode)
 			questId = tonumber(questId)
 			npcId = tonumber(npcId)
 			if nil == questId or nil == npcId then return end
@@ -10854,11 +10854,14 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 				local needToAddQuestName = (questTitle ~= "No Title Stored" and self:QuestName(questId) ~= questTitle)
 				local completeNPCCode = npcCode .. ':' .. npcId
 				local newLine = ''
-				local possibleLevel = nil ~= kCode and tonumber(strsub(kCode, 2, 4)) or nil
 				if nil == currentLine then
 					local spacer = ''
-					if nil ~= kCode and nil ~= possibleLevel and possibleLevel < 100 then
-						newLine = kCode
+					if nil ~= kCode then
+						newLine = newLine .. spacer .. kCode
+						spacer = ' '
+					end
+					if nil ~= lCode then
+						newLine = newLine .. spacer .. lCode
 						spacer = ' '
 					end
 					if nil ~= completeNPCCode then
@@ -10872,12 +10875,18 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 						if 1 == i then
 							local codeSpacer = ''
 							local codes = { strsplit(' ', questBits[i]) }
-							local foundK, foundNPC = false, false
+							local foundK, foundL, foundNPC = false, false, false
 							for j = 1, #codes do
 								local matchFound = false
 								if not foundK then
 									foundK = (codes[j] == kCode)
 									if foundK then
+										matchFound = true
+									end
+								end
+								if not foundL then
+									foundL = (codes[j] == lCode)
+									if foundL then
 										matchFound = true
 									end
 								end
@@ -10892,10 +10901,15 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 									codeSpacer = ' '
 								end
 							end
-							if not foundK and nil ~= kCode and nil ~= possibleLevel and possibleLevel < 100 then
+							if not foundK and nil ~= kCode then
 								newLine = newLine .. codeSpacer .. kCode
 								codeSpacer = ' '
 								self.questCodes[questId] = self.questCodes[questId] .. ' ' .. kCode
+							end
+							if not foundL and nil ~= lCode then
+								newLine = newLine .. codeSpacer .. lCode
+								codeSpacer = ' '
+								self.questCodes[questId] = self.questCodes[questId] .. codeSpacer .. lCode
 							end
 							if not foundNPC and nil ~= completeNPCCode then
 								newLine = newLine .. codeSpacer .. completeNPCCode

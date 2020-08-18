@@ -13924,6 +13924,10 @@ end
 
 if release >= 35522 then
 G[51947]={'87275','86D75'}
+G[53235]={'86F150'}
+G[53366]={'86F150'}
+G[54370]={'86F150'}
+G[54386]={'86F150'}
 end
 
 --	Now the reputation data gets processed into its own table to save space

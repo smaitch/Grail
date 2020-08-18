@@ -1388,6 +1388,7 @@ G[1339248]='Infested Cache'
 G[1348558]='Notice'
 G[1352027]='Wanted Scroll'
 G[1352028]='Wanted Scroll'
+G[1353645]="Marileth's Journal"
 end
 
 --	End of localized NPC names
