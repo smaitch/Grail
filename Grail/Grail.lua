@@ -1055,6 +1055,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[49]  = true, -- Redrige Mountains
 							[62]  = true,
 							[81]  = true, -- Silithus
+							[379] = true, -- Kun-Lai Summit ,MoP
 							[525] = true,
 							[534] = true,
 							[535] = true,
@@ -1088,15 +1089,22 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[1165] = true, -- Dazar'Alor (primarily horde)
 							--
 							[1355] = true, -- Nazjatar 8.2
- 							[1462] = true, -- Mechagon Island 8.2
+							[1462] = true, -- Mechagon Island 8.2
 							--
 							[1469] = true, -- Horrific Vision of Ogrimmar 8.3
 							[1470] = true, -- Horrific Vision of Stormwind 8.3
 							[1527] = true, -- Uldum 8.3
- 							[1530] = true, -- Valley of Eternal Blossoms 8.3
- 							[1533] = true, -- Bastion (Shadowlands)
- 							[1536] = true, -- Maldraxxus (Shadowlands)
+							[1530] = true, -- Valley of Eternal Blossoms 8.3
+
 							[1595] = true, -- Nyalotha 8.3
+							-- Shadowlands
+							[1525] = true, -- Revendreth 9.0
+							[1533] = true, -- Bastion 9.0
+							[1536] = true, -- Maldraxxus 9.0
+							[1565] = true, -- Ardenweald 9.0
+							[1670] = true, -- Oribos 9.0 , TODO: so far no chests and rares
+							[1671] = true, -- Oribos 9.0, Part 2 , TODO: so far no chests and rares 
+							[1707] = true, -- Bastion: Elyssian Keep 9.0 , TODO: so far no chests and rares
 							}
 						self.quest.name = {
 							[51570]=Grail:_GetMapNameByID(862),	-- Zuldazar
@@ -3489,7 +3497,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
-			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1527, 1530 }
+			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1565 }
 			
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
