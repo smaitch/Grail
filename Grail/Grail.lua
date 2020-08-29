@@ -1094,8 +1094,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[1469] = true, -- Horrific Vision of Ogrimmar 8.3
 							[1470] = true, -- Horrific Vision of Stormwind 8.3
 							[1527] = true, -- Uldum 8.3
-							[1530] = true, -- Valley of Eternal Blossoms 8.3
-
+ 							[1530] = true, -- Valley of Eternal Blossoms 8.3
 							[1595] = true, -- Nyalotha 8.3
 							-- Shadowlands
 							[1525] = true, -- Revendreth 9.0
@@ -1264,8 +1263,18 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 					--	For the choice of types of quest on Isle of Thunder the following function is eventually
 					--	called with anId which is associated with the button in the UI.
-					self.origSendQuestChoiceResponseFunction = SendQuestChoiceResponse
-					SendQuestChoiceResponse = function(anId) self:_SendQuestChoiceResponse(anId) end
+					local newSendQuestChoiceFunction = function(anId) self:_SendQuestChoiceResponse(anId) end
+					if SendQuestChoiceResponse then
+						self.origSendQuestChoiceResponseFunction = SendQuestChoiceResponse
+						SendQuestChoiceResponse = newSendQuestChoiceFunction
+					elseif C_PlayerChoice and C_PlayerChoice.SendPlayerChoiceResponse then
+						self.origSendQuestChoiceResponseFunction = C_PlayerChoice.SendPlayerChoiceResponse
+						C_PlayerChoice.SendPlayerChoiceResponse = newSendQuestChoiceFunction
+					else
+						if self.GDE.debug then
+							print("Grail did not replace any SendQuestChoiceResponse")
+						end
+					end
 
 					--	Specific quests become available when certain interactions are done with specific NPCs so
 					--	we use this routine in conjunction with the GOSSIP_SHOW and GOSSIP_CLOSED events to determine
@@ -1390,10 +1399,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 					self:_LoadContinentData()
 
-					local environmentToUse = self.environment
-					if IsTestBuild() then
-						environmentToUse = "_retail_"
-					end
+					local environmentToUse = self:_EnvironmentForLoad()
 					self:LoadAddOn("Grail-Quests-" .. environmentToUse)
 					local originalMem = gcinfo()
 					if self:LoadAddOn("Grail-NPCs-" .. environmentToUse) then
@@ -1617,7 +1623,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end
 --					frame:RegisterEvent("ZONE_CHANGED_NEW_AREA")	-- only to get the first time logging in so the GetQuestResetTime() actually returns a real value
 					self:_CleanDatabase()
---					self:_CleanDatabaseLearnedQuestName()
+					self:_CleanDatabaseLearnedQuestName()
+					self:_CleanDatabaseLearnedObjectName()
+					self:_CleanDatabaseLearnedNPCLocation()
+					self:_CleanDatabaseLearnedQuest()
+					self:_CleanDatabaseLearnedQuestCode()
 
 					self:RegisterObserver("Bags", self._BagUpdates)
 					self:RegisterObserver("QuestLogChange", self._QuestLogUpdate)
@@ -2016,24 +2026,6 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					end
 					self:_RecordBadQuestData(errorString)
 				end
-
-				--	If the questTitle is different from what we have recorded, note that as BadQuestData (even though it could just be a localization issue)
-				if self:DoesQuestExist(questId) and questTitle ~= self:QuestName(questId) then
---					errorString = errorString .. "|Title:" .. questTitle .. "|Locale:" .. self.playerLocale
---					self:_RecordBadQuestData(errorString)
-					self:_LearnQuestName(questId, questTitle)
-				end
-
-				--	If the level as reported by Blizzard API does not match our internal database we should note that fact
--- Starting July 2019 we are not going to record quest level from API
---				if self:DoesQuestExist(questId) and not isScaling then
---					local internalQuestLevel = self:QuestLevel(questId)
-----					if (0 ~= internalQuestLevel and (internalQuestLevel or 1) ~= level) or (0 == internalQuestLevel and level ~= 0 and level ~= UnitLevel('player')) then
---					if nil ~= level and internalQuestLevel ~= level then
---						errorString = errorString .. "|Level:" .. level
---						self:_RecordBadQuestData(errorString)
---					end
---				end
 
 				-- Check to see whether the database faction agrees with the Blizzard API and note discrepancies
 -- Starting July 2019 we are not going to record faction from API
@@ -3209,6 +3201,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		verifyTableCount = 0,
 --		warnedClientQuestLocationsAccept = nil,
 --		warnedClientQuestLocationsTurnin = nil,
+		worldNPCBase = 5999999,
 		zoneNameMapping = {},	-- maps zone names into map IDs
 		zonesForLootingTreasure = {
 			[941] = true, -- Frostfire Ridge
@@ -3432,7 +3425,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			C_Timer.After((smallestMinutes + 1) * 60, function() self:_ResetWorldQuests() end)
 		end,
 
-		_worldQuestSelfNPCs = {},
+		_worldQuestSelfNPCs = {},	-- key is the mapId, value is a table that contains as keys the x/y coords, and values as the npcId
 		--	This looks at the current NPCs for self in the mapId and creates a structure of them
 		--	so they can be looked up based on coordinates.
 		_PrepareWorldQuestSelfNPCs = function(self, mapId)
@@ -3444,22 +3437,6 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					self._worldQuestSelfNPCs[mapId][coordinates] = currentNPCId
 					currentNPCId = currentNPCId - 10000
 				end
--- We do not need to know what one is next because we are going to start counting at 6000000 and we will create new NPCs no matter
--- what mapId they are in for all new NPCs.
--- TODO: Comment out the next two lines when we switch to 60000000 thing
-				self._worldQuestSelfNPCs['nextToUse'] = self._worldQuestSelfNPCs['nextToUse'] or {}
-				self._worldQuestSelfNPCs['nextToUse'][mapId] = currentNPCId
-			end
-		end,
-
-		_PrepareWorldQuestSelfNewNPCs = function(self)
-			local currentNPCId = 6000000
-			while Grail.npc.locations[currentNPCId] and Grail.npc.locations[currentNPCId][1] and Grail.npc.locations[currentNPCId][1].x do
-				local coordinates = strformat("%.2f,%.2f", Grail.npc.locations[currentNPCId][1].x, Grail.npc.locations[currentNPCId][1].y)
-				local mapId = Grail.npc.locations[currentNPCId][1].mapArea
-				self._worldQuestSelfNPCs[mapId] = self._worldQuestSelfNPCs[mapId] or {}
-				self._worldQuestSelfNPCs[mapId][coordinates] = currentNPCId
-				currentNPCId = currentNPCId + 1
 			end
 		end,
 
@@ -3478,7 +3455,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			-- Assuming we have something, do the work to process the list
 			if nil ~= currentlyAvailableThreatQuests and 0 < #currentlyAvailableThreatQuests then
 				for k, questId in ipairs(currentlyAvailableThreatQuests) do
-					-- Record this quest as a threat quest for Grail enhancment
+					-- Record this quest as a threat quest for Grail enhancement
 					self:_LearnThreatQuest(questId)
 
 					-- Add the quest to the list of current threat quests available in the system
@@ -3498,7 +3475,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --			self.availableWorldQuests = {}
 
 			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1565 }
-			
+
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
 				local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
@@ -3595,68 +3572,42 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		_LearnThreatQuest = function(self, questId)
 			questId = tonumber(questId)
 			if nil == questId then return end
-			self.GDE.learned = self.GDE.learned or {}
-			self.GDE.learned.QUEST = self.GDE.learned.QUEST or {}
-			local currentLine = self.GDE.learned.QUEST[questId]
-			local needToAddKCode, needToAddPCode = false, false
-			local kCodeToAdd, pCodeToAdd = 'K0001048576', 'P:b'..questId
-			if not Grail:IsThreatQuest(questId) then
-				needToAddKCode = true
-			end
+			local kCodeToAdd, pCodeToAdd = 'K1048576', 'P:b'..questId
+			
+			self:_LearnKCode(questId, kCodeToAdd)
+			
 			if nil == strfind(self.questPrerequisites[questId] or '', strsub(pCodeToAdd, 3), 1, true) then
-				needToAddPCode = true
-			end
-			local newLine = currentLine or ''
-			local spacer = (strlen(newLine) > 0) and ' ' or ''
-			if needToAddKCode then
-				local possibleQuestLevel = tonumber(strsub(kCodeToAdd, 2, 4))
-				local possibleQuestType = tonumber(strsub(kCodeToAdd, 5))
-				if nil ~= possibleQuestLevel then
-					self:_SetQuestLevel(questId, possibleQuestLevel)
-				end
-				if nil ~= possibleQuestType then
-					self:_MarkQuestType(questId, possibleQuestType)
-				end
-				newLine = newLine .. spacer .. kCodeToAdd
-				spacer = ' '
-			end
-			if needToAddPCode then
+				self:_LearnQuestCode(questId, pCodeToAdd)
 				local codeToAdd = strsub(pCodeToAdd, 3)
 				if nil == self.questPrerequisites[questId] then
 					self.questPrerequisites[questId] = codeToAdd
 				else
 					self.questPrerequisites[questId] = self.questPrerequisites[questId] .. "+" .. codeToAdd
 				end
-				newLine = newLine .. spacer .. pCodeToAdd
-				spacer = ' '
 			end
-			if 0 < strlen(newLine) then
-				self.GDE.learned.QUEST[questId] = newLine
+		end,
+
+		_LearnKCode = function(self, questId, kCode, dontLearn)
+			local retval = false
+			local possibleQuestType = tonumber(strsub(kCode, 2))
+			if nil ~= possibleQuestType and 0 ~= possibleQuestType and possibleQuestType ~= bitband(self:CodeType(questId), possibleQuestType) then
+				if not dontLearn then
+					self:_LearnQuestCode(questId, kCode)
+				end
+				self:_MarkQuestType(questId, possibleQuestType)
+				retval = true
 			end
+			return retval
 		end,
 
 		_LearnWorldQuest = function(self, questId, mapId, x, y, isDaily)
 			questId = tonumber(questId)
 			if nil == questId then return end
-			self.GDE.learned = self.GDE.learned or {}
-			self.GDE.learned.QUEST = self.GDE.learned.QUEST or {}
-			local currentLine = self.GDE.learned.QUEST[questId]
---			local tagId = self:GetQuestTagInfo(questId)	-- only non-nil if actually a world quest
-			local needToAddKCode, needToAddLCode, needToAddPCode, needToAddTCode, needToAddACode = false, false, false, false, false
-			local kCodeToAdd, lCodeToAdd, pCodeToAdd, tCodeToAdd, aCodeToAdd = 'K000', 'L098', 'P:a'..questId, 'T:-'..mapId, ''
-			local levelToCompareAgainst = 110
+			local kCodeToAdd, pCodeToAdd = 'K', 'P:a'..questId
 			local tagId, tagName = self:GetQuestTagInfo(questId)
 			local professionRequirement = self._LearnedWorldQuestProfessionMapping[tagId]
 			local typeModifier = self._LearnedWorldQuestTypeMapping[tagId]
 			local typeValue = tagId and 262144 or (isDaily and 2 or 0)
-
---			-- Alter the minimum level based on the zone
---			local zonesFor120 = { 862, 863, 864, 895, 896, 942, }
---			if tContains(zonesFor120, mapId) then
---				kCodeToAdd = 'K000'
---				lCodeToAdd = 'L120'
---				levelToCompareAgainst = 120
---			end
 
 			if nil ~= professionRequirement then
 				pCodeToAdd = pCodeToAdd .. '+P' .. professionRequirement .. '001'
@@ -3679,30 +3630,22 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			end
 			kCodeToAdd = kCodeToAdd .. typeValue
 
-			--	We do not check whether the codes are present in currentLine because we assume when
-			--	currentLine was processed during the cleaning process anything already in the database
-			--	was removed from currentLine, and anything that was not removed updated the internal
-			--	structures properly so the following checks against the internal structures will work
-			--	as they should.
+			self:_LearnKCode(questId, kCodeToAdd)
 
-			--	Check the internal structure to ensure we have the knowledge that we want.
---			if levelToCompareAgainst ~= Grail:QuestLevel(questId) or not Grail:IsWorldQuest(questId) then
-			if not Grail:IsWorldQuest(questId) then
-				needToAddKCode = true
-			end
-			local meetsReqs, levelToCompare, levelRequired, levelNotToExceed = Grail:MeetsRequirementLevel(questId, levelToCompareAgainst)
--- I am taking out adding L codes because they annoy...
---			if levelToCompareAgainst ~= levelRequired then
---				needToAddLCode = true
---			end
 			if nil == strfind(self.questPrerequisites[questId] or '', strsub(pCodeToAdd, 3), 1, true) then
-				needToAddPCode = true
+				self:_LearnQuestCode(questId, pCodeToAdd)
+				local codeToAdd = strsub(pCodeToAdd, 3)
+				if nil == self.questPrerequisites[questId] then
+					self.questPrerequisites[questId] = codeToAdd
+				else
+					self.questPrerequisites[questId] = self.questPrerequisites[questId] .. "+" .. codeToAdd
+				end
 			end
 
 			-- If we do not already have a T: code of some sort we will create one that is based on turning
 			-- in the quest to self in the zone.
 			if nil == self.quests[questId] or (nil == self.quests[questId]['T'] and nil == self.quests[questId]['TP']) then
-				needToAddTCode = true
+				self:_LearnQuestCode(questId, 'T:-'..mapId)
 			end
 
 			if (nil == self.quests[questId] or (nil == self.quests[questId]['A'] and nil == self.quests[questId]['AP'])) and nil ~= mapId then
@@ -3710,65 +3653,12 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				if nil ~= coordinates then
 					local npcId = self._worldQuestSelfNPCs[mapId][coordinates]
 					if nil == npcId then
-						npcId = self._worldQuestSelfNPCs['nextToUse'][mapId]
-						self:LearnNPCLocation(npcId, mapId..':'..coordinates..' N:0')
-						self._worldQuestSelfNPCs['nextToUse'][mapId] = npcId - 10000
+						npcId = self:_CreateWorldNPC(mapId..':'..coordinates)
+						if self.GDE.debug then print("*** did not find NPC for "..mapId..":"..coordinates.." so created a new NPC "..npcId) end
+						self._worldQuestSelfNPCs[mapId][coordinates] = npcId
 					end
-					aCodeToAdd = 'A:'..npcId
-					needToAddACode = true
+					self:_LearnQuestCode(questId, 'A:'..npcId)
 				end
-			end
-
-			local newLine = currentLine or ''
-			local spacer = (strlen(newLine) > 0) and ' ' or ''
-			if needToAddKCode then
-				local possibleQuestLevel = tonumber(strsub(kCodeToAdd, 2, 4))
-				local possibleQuestType = tonumber(strsub(kCodeToAdd, 5))
-				if nil ~= possibleQuestLevel then
-					self:_SetQuestLevel(questId, possibleQuestLevel)
-				end
-				if nil ~= possibleQuestType then
-					self:_MarkQuestType(questId, possibleQuestType)
-				end
-				newLine = newLine .. spacer .. kCodeToAdd
-				spacer = ' '
-			end
---			if needToAddLCode then
---				self:_SetQuestRequiredLevel(questId, tonumber(strsub(lCodeToAdd, 2)))
---				newLine = newLine .. spacer .. lCodeToAdd
---				spacer = ' '
---			end
-			if needToAddPCode then
-				local codeToAdd = strsub(pCodeToAdd, 3)
-				if nil == self.questPrerequisites[questId] then
-					self.questPrerequisites[questId] = codeToAdd
-				else
-					self.questPrerequisites[questId] = self.questPrerequisites[questId] .. "+" .. codeToAdd
-				end
-				newLine = newLine .. spacer .. pCodeToAdd
-				spacer = ' '
-			end
-			if needToAddTCode then
-				local appended, appendedLine = self:AppendCode(newLine, tCodeToAdd)
-				if not appended then
-					newLine = newLine .. spacer .. tCodeToAdd
-					spacer = ' '
-				else
-					newLine = appendedLine
-				end
-			end
-			if needToAddACode then
-				local appended, appendedLine = self:AppendCode(newLine, aCodeToAdd)
-				if not appended then
-					newLine = newLine .. spacer .. aCodeToAdd
-					spacer = ' '
-				else
-					newLine = appendedLine
-				end
-			end
-
-			if 0 < strlen(newLine) then
-				self.GDE.learned.QUEST[questId] = newLine
 			end
 		end,
 
@@ -4527,29 +4417,220 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			return self:_GoodNPC(npcId, self:QuestNPCPrerequisiteTurnins(questId), self:QuestNPCTurnins(questId))
 		end,
 
---		_CleanDatabaseLearnedQuestName = function(self)
---			self.GDE.learned = self.GDE.learned or {}
---			if nil ~= self.GDE.learned.QUEST_NAME then
---				local newQuestNames = {}
---				for _, questNameLine in pairs(self.GDE.learned.QUEST_NAME) do
---					local shouldAdd = true
---					local locale, release, questId, questName = strsplit('|', questNameLine)
---					questId = tonumber(questId)
---					if locale == self.playerLocale and nil ~= questId then
---						local storedQuestName = self.quest.name[questId]
---						if nil == storedQuestName or storedQuestName ~= questName then
---							self.quest.name[questId] = questName
---						else
---							shouldAdd = false
---						end
---					end
---					if shouldAdd then
---						tinsert(newQuestNames, questNameLine)
---					end
---				end
---				self.GDE.learned.QUEST_NAME = newQuestNames
---			end
---		end,
+		_CleanDatabaseLearnedNPCLocation = function(self)
+			self.GDE.learned = self.GDE.learned or {}
+			if nil ~= self.GDE.learned.NPC_LOCATION then
+				local newNPCLocations = {}
+				for _, npcLocationLine in pairs(self.GDE.learned.NPC_LOCATION) do
+					local shouldAdd = true
+					local release, locale, npcId, npcLocation, aliasId = strsplit('|', npcLocationLine)
+					npcId = tonumber(npcId)
+					-- Note that we are not checking to ensure the locale matches self.playerLocale because locations should be universal
+					if  nil ~= npcId then
+						if not self:_LocationKnown(npcId, npcLocation, aliasId) then
+							self:_AddNPCLocation(npcId, npcLocation, aliasId)
+						else
+							shouldAdd = false
+						end
+					end
+					if shouldAdd then
+						tinsert(newNPCLocations, npcLocationLine)
+					end
+				end
+				self.GDE.learned.NPC_LOCATION = newNPCLocations
+			end
+		end,
+
+		_CleanDatabaseLearnedObjectName = function(self)
+			self.GDE.learned = self.GDE.learned or {}
+			if nil ~= self.GDE.learned.OBJECT_NAME then
+				local newObjectNames = {}
+				for _, objectNameLine in pairs(self.GDE.learned.OBJECT_NAME) do
+					local shouldAdd = true
+					local release, locale, objectId, objectName = strsplit('|', objectNameLine)
+					objectId = tonumber(objectId)
+					if locale == self.playerLocale and nil ~= objectId then
+						local storedObjectName = self:ObjectName(objectId)
+						if nil == storedObjectName or storedObjectName ~= objectName then
+							self.npc.name[1000000 + objectId] = objectName
+						else
+							shouldAdd = false
+						end
+					end
+					if shouldAdd then
+						tinsert(newObjectNames, objectNameLine)
+					end
+				end
+				self.GDE.learned.OBJECT_NAME = newObjectNames
+			end
+		end,
+
+		-- This transforms the older database entry into the newer one stored in QUEST_CODE.
+		_CleanDatabaseLearnedQuest = function(self)
+			self.GDE.learned = self.GDE.learned or {}
+			if nil ~= self.GDE.learned.QUEST then
+				-- Because we are using _LearnQuestCode() to populate, and we want to mark these entries
+				-- as something special, we reset self.blizzardRelease for the time being.
+				local realBlizzardRelease = self.blizzardRelease
+				self.blizzardRelease = 0
+				for questId, questLine in pairs(self.GDE.learned.QUEST) do
+					local codes = { strsplit(' ', questLine) }
+					for c = 1, #codes do
+						local currentCode = codes[c]
+						if '' ~= currentCode then
+							-- The only codes that could have a comma in them should be P:, A: and T: and
+							-- since we want to break up A: and T: we should be able to detect the need to
+							-- break things up with the following check.
+							if 'P' ~= strsub(currentCode, 1, 1) and strfind(currentCode, ',') then
+								local codeType = strsub(currentCode, 1, 2)
+								local remainder = strsub(currentCode, 3)
+								local remainders = { strsplit(',', remainder) }
+								for r = 1, #remainders do
+									self:_LearnQuestCode(questId, codeType .. remainders[r])
+								end
+							else
+								self:_LearnQuestCode(questId, currentCode)
+							end
+						end
+					end
+				end
+				self.blizzardRelease = realBlizzardRelease
+				self.GDE.learned.QUEST = nil
+			end
+		end,
+
+		_UpdateWorldQuestSelfNPC = function(self, npcId)
+			npcId = tonumber(npcId)
+			if nil ~= npcId and npcId > self.worldNPCBase and npcId < self.worldNPCBase + 1000000 then
+				local locations = self:NPCLocations(npcId, false, true)
+				if nil ~= locations then
+					for _, npc in pairs(locations) do
+						if nil ~= npc.mapArea and nil ~= npc.x and nil ~= npc.y then
+							local coordinates = strformat("%.2f,%.2f", npc.x, npc.y)
+							self._worldQuestSelfNPCs[npc.mapArea] = self._worldQuestSelfNPCs[npc.mapArea] or {}
+							self._worldQuestSelfNPCs[npc.mapArea][coordinates] = npcId
+						end
+					end
+				end
+			end
+		end,
+
+		-- This assumes that QUEST_CODE entries are single entries like most of the rest of the learned database.  This should make it easier to process.
+		_CleanDatabaseLearnedQuestCode = function(self)
+			self.GDE.learned = self.GDE.learned or {}
+			if nil ~= self.GDE.learned.QUEST_CODE then
+				local newQuestCodes = {}
+				for _, questCodeLine in pairs(self.GDE.learned.QUEST_CODE) do
+					local shouldAdd = true
+					local release, locale, questId, questCode = strsplit('|', questCodeLine)
+					questId = tonumber(questId)
+					-- Note that we are not checking to ensure the locale matches self.playerLocale because quest codes should be universal
+					if questId ~= nil and questCode ~= nil and 1 < strlen(questCode) then
+						local code = strsub(questCode, 1, 1)
+						local subcode = strsub(questCode, 2, 2)
+						if 'A' == code and ':' == subcode then
+							local npcId = strsub(questCode, 3)
+							if self:_GoodNPCAccept(questId, npcId) then
+								shouldAdd = false
+							else
+								self:_UpdateWorldQuestSelfNPC(npcId)
+								self.quests[questId] = self.quests[questId] or {}
+								self.quests[questId]['A'] = self:_TableAppendCodes(self:_FromList(npcId), self.quests[questId], { 'A' })
+							end
+						elseif 'T' == code and ':' == subcode then
+							local npcId = strsub(questCode, 3)
+							if self:_GoodNPCTurnin(questId, npcId) then
+								shouldAdd = false
+							else
+								self:_UpdateWorldQuestSelfNPC(npcId)
+								self.quests[questId] = self.quests[questId] or {}
+								self.quests[questId]['T'] = self:_TableAppendCodes(self:_FromList(npcId), self.quests[questId], { 'T' })
+							end
+						elseif 'K' == code then
+							shouldAdd = self:_LearnKCode(questId, questCode, true)
+						elseif 'L' == code then
+							local possibleQuestLevels = tonumber(strsub(questCode, 2))
+							if nil ~= possibleQuestLevels and 0 ~= possibleQuestLevels then
+								local questLevel = possibleQuestLevels / 65536
+								local questLevelRequired = (possibleQuestLevels - (questLevel * 65536)) / 256
+								local questLevelMatches = (self:QuestLevel(questId) == questLevel)
+								local questLevelRequiredMatches = (self:QuestLevelRequired(questId) == questLevelRequired)
+								if questLevelMatches and questLevelRequiredMatches then
+									shouldAdd = false
+								else
+									if not questLevelMatches then
+										self:_SetQuestLevel(questId, questLevel)
+									end
+									if not questLevelRequiredMatches then
+										self:_SetQuestRequiredLevel(questId, questLevelRequired)
+									end
+								end
+							end
+						elseif 'P' == code and ':' == subcode then
+							local codeToSeek = strsub(questCode, 3)
+							if nil == strfind(self.questPrerequisites[questId] or '', codeToSeek, 1, true) then
+								if nil == self.questPrerequisites[questId] then
+									self.questPrerequisites[questId] = codeToSeek
+								else
+									self.questPrerequisites[questId] = self.questPrerequisites[questId] .. "+" .. codeToSeek
+								end
+							else
+								shouldAdd = false
+							end
+						end
+					end
+					if shouldAdd then
+						tinsert(newQuestCodes, questCodeLine)
+					end
+				end
+				self.GDE.learned.QUEST_CODE = newQuestCodes
+			end
+		end,
+
+		_CleanDatabaseLearnedQuestName = function(self)
+			self.GDE.learned = self.GDE.learned or {}
+			if nil ~= self.GDE.learned.QUEST_NAME then
+				local newQuestNames = {}
+				for _, questNameLine in pairs(self.GDE.learned.QUEST_NAME) do
+					local shouldAdd = true
+					local locale, release, questId, questName = strsplit('|', questNameLine)
+					questId = tonumber(questId)
+					if locale == self.playerLocale and nil ~= questId then
+						local storedQuestName = self.quest.name[questId]
+						if nil == storedQuestName or storedQuestName ~= questName then
+							self.quest.name[questId] = questName
+						else
+							shouldAdd = false
+						end
+					end
+					if shouldAdd then
+						tinsert(newQuestNames, questNameLine)
+					end
+				end
+				self.GDE.learned.QUEST_NAME = newQuestNames
+			end
+		end,
+
+		_LearnNPCLocation = function(self, npcId, npcLocation, aliasNPCId)
+			self.GDE.learned = self.GDE.learned or {}
+			self.GDE.learned.NPC_LOCATION = self.GDE.learned.NPC_LOCATION or {}
+			local aliasString = aliasNPCId and ('|' .. aliasNPCId) or ''
+			tinsert(self.GDE.learned.NPC_LOCATION, self.blizzardRelease .. '|' .. self.playerLocale .. '|' .. npcId .. '|' .. npcLocation .. aliasString)
+			self:_AddNPCLocation(npcId, npcLocation, aliasNPCId)
+		end,
+
+		_LearnObjectName = function(self, objectId, objectName)
+			self.GDE.learned = self.GDE.learned or {}
+			self.GDE.learned.OBJECT_NAME = self.GDE.learned.OBJECT_NAME or {}
+			tinsert(self.GDE.learned.OBJECT_NAME, self.blizzardRelease .. '|' .. self.playerLocale .. '|' .. objectId .. '|' .. objectName)
+			self.npc.name[1000000 + tonumber(objectId)] = objectName
+		end,
+
+		_LearnQuestCode = function(self, questId, questCode)
+			self.GDE.learned = self.GDE.learned or {}
+			self.GDE.learned.QUEST_CODE = self.GDE.learned.QUEST_CODE or {}
+			tinsert(self.GDE.learned.QUEST_CODE, self.blizzardRelease .. '|' .. self.playerLocale .. '|' .. questId .. '|' .. questCode)
+		end,
 
 		_LearnQuestName = function(self, questId, questName)
 			self.GDE.learned = self.GDE.learned or {}
@@ -4564,30 +4645,30 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		_UpdateDatabaseFromLearnedDatabase = function(self)
 			local locale = GetLocale()
 			if nil ~= self.GDE.learned then
-				if nil ~= self.GDE.learned.OBJECT_NAME then
-					for _, objectLine in pairs(self.GDE.learned.OBJECT_NAME) do
-						local ver, loc, objId, objName = strsplit('|', objectLine)
-						if loc == locale and self:ObjectName(objId) ~= objName then
-							self.npc.name[1000000 + tonumber(objId)] = objName
-						end
-					end
-				end
-				if nil ~= self.GDE.learned.NPC_LOCATION then
-					for _, npcLine in pairs(self.GDE.learned.NPC_LOCATION) do
-						local ver, loc, npcId, npcLoc, aliasId = strsplit('|', npcLine)
-						if nil ~= npcId and not self:_LocationKnown(npcId, npcLoc, aliasId) then
-							self:_AddNPCLocation(npcId, npcLoc, aliasId)
-						end
-					end
-				end
-				if nil ~= self.GDE.learned.QUEST_NAME then
-					for _, questNameLine in pairs(self.GDE.learned.QUEST_NAME) do
-						local loc, release, questId, questName = strsplit('|', questNameLine)
-						if loc == locale and nil ~= questId and (nil == self.quest.name[questId] or self.quest.name[questId] ~= questName) then
-							self.quest.name[questId] = questName
-						end
-					end
-				end
+--				if nil ~= self.GDE.learned.OBJECT_NAME then
+--					for _, objectLine in pairs(self.GDE.learned.OBJECT_NAME) do
+--						local ver, loc, objId, objName = strsplit('|', objectLine)
+--						if loc == locale and self:ObjectName(objId) ~= objName then
+--							self.npc.name[1000000 + tonumber(objId)] = objName
+--						end
+--					end
+--				end
+--				if nil ~= self.GDE.learned.NPC_LOCATION then
+--					for _, npcLine in pairs(self.GDE.learned.NPC_LOCATION) do
+--						local ver, loc, npcId, npcLoc, aliasId = strsplit('|', npcLine)
+--						if nil ~= npcId and not self:_LocationKnown(npcId, npcLoc, aliasId) then
+--							self:_AddNPCLocation(npcId, npcLoc, aliasId)
+--						end
+--					end
+--				end
+--				if nil ~= self.GDE.learned.QUEST_NAME then
+--					for _, questNameLine in pairs(self.GDE.learned.QUEST_NAME) do
+--						local loc, release, questId, questName = strsplit('|', questNameLine)
+--						if loc == locale and nil ~= questId and (nil == self.quest.name[questId] or self.quest.name[questId] ~= questName) then
+--							self.quest.name[questId] = questName
+--						end
+--					end
+--				end
 				if nil ~= self.GDE.learned.QUEST then
 					for questId, questLine in pairs(self.GDE.learned.QUEST) do
 						local codes = { strsplit(' ', questLine) }
@@ -4653,41 +4734,41 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			local learned = self.GDE.learned
 			if nil ~= learned and not self.processedLearned then
 
-				local learnedObjectNames = learned.OBJECT_NAME
-				if nil ~= learnedObjectNames then
-					local newObjectNames = {}
-					for _, objectLine in pairs(learnedObjectNames) do
-						local ver, loc, objId, objName = strsplit('|', objectLine)
-						if loc ~= locale or self:ObjectName(objId) ~= objName then
-							tinsert(newObjectNames, objectLine)
-						end
-					end
-					learned.OBJECT_NAME = newObjectNames
-				end
+--				local learnedObjectNames = learned.OBJECT_NAME
+--				if nil ~= learnedObjectNames then
+--					local newObjectNames = {}
+--					for _, objectLine in pairs(learnedObjectNames) do
+--						local ver, loc, objId, objName = strsplit('|', objectLine)
+--						if loc ~= locale or self:ObjectName(objId) ~= objName then
+--							tinsert(newObjectNames, objectLine)
+--						end
+--					end
+--					learned.OBJECT_NAME = newObjectNames
+--				end
 
-				local learnedNPCLocations = learned.NPC_LOCATION
-				if nil ~= learnedNPCLocations then
-					local newNPCLocations = {}
-					for _, npcLine in pairs(learnedNPCLocations) do
-						local ver, loc, npcId, npcLoc, aliasId = strsplit('|', npcLine)
-						if nil ~= npcId and not self:_LocationKnown(npcId, npcLoc, aliasId) then
-							tinsert(newNPCLocations, npcLine)
-						end
-					end
-					learned.NPC_LOCATION = newNPCLocations
-				end
+--				local learnedNPCLocations = learned.NPC_LOCATION
+--				if nil ~= learnedNPCLocations then
+--					local newNPCLocations = {}
+--					for _, npcLine in pairs(learnedNPCLocations) do
+--						local ver, loc, npcId, npcLoc, aliasId = strsplit('|', npcLine)
+--						if nil ~= npcId and not self:_LocationKnown(npcId, npcLoc, aliasId) then
+--							tinsert(newNPCLocations, npcLine)
+--						end
+--					end
+--					learned.NPC_LOCATION = newNPCLocations
+--				end
 
-				local learnedQuestNames = learned.QUEST_NAME
-				if nil ~= learnedQuestNames then
-					local newQuestNames = {}
-					for _, questNameLine in pairs(learnedQuestNames) do
-						local loc, ver, questId, questName = strsplit('|', questNameLine)
-						if loc ~= locale or (nil ~= questId and nil ~= self.quest.name[questId] and self.quest.name[questId] ~= questName) then
-							tinsert(newQuestNames, questNameLine)
-						end
-					end
-					learned.QUEST_NAME = newQuestNames
-				end
+--				local learnedQuestNames = learned.QUEST_NAME
+--				if nil ~= learnedQuestNames then
+--					local newQuestNames = {}
+--					for _, questNameLine in pairs(learnedQuestNames) do
+--						local loc, ver, questId, questName = strsplit('|', questNameLine)
+--						if loc ~= locale or (nil ~= questId and nil ~= self.quest.name[questId] and self.quest.name[questId] ~= questName) then
+--							tinsert(newQuestNames, questNameLine)
+--						end
+--					end
+--					learned.QUEST_NAME = newQuestNames
+--				end
 
 				local learnedQuest = learned.QUEST
 				if nil ~= learnedQuest then
@@ -4795,8 +4876,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --		in step 1.
 		_CleanDatabase = function(self)
 
-			self:_CleanLearnedDatabase()
-			self:_UpdateDatabaseFromLearnedDatabase()
+--			self:_CleanLearnedDatabase()
+--			self:_UpdateDatabaseFromLearnedDatabase()
 
 			local locale = GetLocale()
 
@@ -6967,7 +7048,7 @@ end
 				if nil ~= guidParts and guidParts[1] == "GameObject" and self.lootingName ~= self.defaultUnfoundLootingName then
 					local internalName = self:ObjectName(guidParts[6])
 					if self.lootingName ~= internalName then
-						self:LearnObjectName(guidParts[6], lootingNameToUse)
+						self:_LearnObjectName(guidParts[6], lootingNameToUse)
 					end
 				end
 				if self.GDE.debug then
@@ -7662,41 +7743,39 @@ end
 		--	Normally the itemId passed in is a Grail representation of a Blizzard
 		--	item ID, but this routine should be able to handle a pure Blizzard ID
 		--	as well.
-		--	@param itemId Either the Grail representation of an item or a Blizzard one.
-		--	@return True if an item with the same ID is in the player's bags, or false otherwise.
-		ItemPresent = function(self, itemId)
-			local retval = false
-			itemId = tonumber(itemId)
-			if nil == itemId then return false end
+		--	@param soughtItemId Either the Grail representation of an item or a Blizzard one.
+		--	@return True if an item with the same ID is in the player's bags, or false/nil otherwise.
+		--  @calls GetContainerNumSlots(), GetContainerItemID()
+		--  @alters self.cachedBagItems
+		ItemPresent = function(self, soughtItemId)
+			soughtItemId = tonumber(soughtItemId)
+			if nil == soughtItemId then return false end
 
 			--	The itemId is really our NPC representation of the item so its value
 			--	needs to be adjusted back to Blizzard values.
-			if itemId > 100000000 then
-				itemId = itemId - 100000000
+			if soughtItemId > 100000000 then
+				soughtItemId = soughtItemId - 100000000
 			end
 
+			-- If the items in the bags are not cached, create a cache of them.
+			-- Note that when bags are updated the cache is destroyed.
 			if nil == self.cachedBagItems then
 				self.cachedBagItems = {}
 				local c = self.cachedBagItems
-				--	Now check the bags for an item with this ID
-				local id, count = nil, 0
+				local id
 				for bag = 0, 4 do
 					local numSlots = GetContainerNumSlots(bag)
 					for slot = 1, numSlots do
 						id = GetContainerItemID(bag, slot)
---						if nil ~= id and itemId == id then
---							retval = true
---						end
 						if nil ~= id then
-							count = count + 1
-							c[count] = id		-- should be faster than tinsert
+							c[id] = true
 						end
 					end
 				end
 			end
 
-			retval = tContains(self.cachedBagItems, itemId)
-			return retval
+			-- Return whether the cache of bag items contains the sought item
+			return self.cachedBagItems[soughtItemId]
 		end,
 
 		_AddNPCLocation = function(self, npcId, npcLocation, aliasNPCId)
@@ -7711,21 +7790,6 @@ end
 			end
 		end,
 
-		LearnNPCLocation = function(self, npcId, npcLocation, aliasNPCId)
-			self.GDE.learned = self.GDE.learned or {}
-			self.GDE.learned.NPC_LOCATION = self.GDE.learned.NPC_LOCATION or {}
-			local aliasString = aliasNPCId and ('|' .. aliasNPCId) or ''
-			tinsert(self.GDE.learned.NPC_LOCATION, self.blizzardRelease .. '|' .. self.playerLocale .. '|' .. npcId .. '|' .. npcLocation .. aliasString)
-			self:_AddNPCLocation(npcId, npcLocation, aliasNPCId)
-		end,
-
-		LearnObjectName = function(self, objectId, objectName)
-			self.GDE.learned = self.GDE.learned or {}
-			self.GDE.learned.OBJECT_NAME = self.GDE.learned.OBJECT_NAME or {}
-			tinsert(self.GDE.learned.OBJECT_NAME, self.blizzardRelease .. '|' .. self.playerLocale .. '|' .. objectId .. '|' .. objectName)
-			self.npc.name[1000000 + tonumber(objectId)] = objectName
-		end,
-
 		---
 		--	Attempts to load the addon with the name addonName.  If reportFailureInBlizzardUI
 		--	is true, a failure will display a message in the Blizzard UI.  Otherwise, a failure
@@ -7733,6 +7797,7 @@ end
 		--	@param addonName The name of the addon to be loaded.
 		--	@param reportFailureInBlizzardUI Indicates whether errors are dislpayed in the Blizzard UI or the chat window.
 		--	@return True if the addon is loaded, or false otherwise.
+		--  @calls UIParentLoadAddOn(), LoadAddOn()
 		LoadAddOn = function(self, addonName, reportFailureInBlizzardUI)
 			local success, failureReason
 			if reportFailureInBlizzardUI then
@@ -7746,20 +7811,30 @@ end
 			return success
 		end,
 
-		LoadLocalizedQuestNames = function(self)
-			local environmentToUse = self.environment
-			if IsTestBuild() then
-				environmentToUse = "_retail_"
-			end
-			self:LoadAddOn("Grail-Quests-" .. environmentToUse .. "-" .. self.playerLocale)
+		---
+		--  Returns the environment string accounting for the special situation for PTR
+		--  by returning the retail string since our files do not differentiate between
+		--  retail and PTR.
+		--  @return The string used for the environment aspect of loading files.
+		--  @calls IsTestBuild()
+		--  @requires Grail.environment
+		_EnvironmentForLoad = function(self)
+			return IsTestBuild() and "_retail_" or self.environment
 		end,
 
+		---
+		--  Attempts to load the quest names for both the environment and the locale.
+		--  @calls Grail:_EnvironmentForLoad(), Grail:LoadAddOn()
+		--  @requires Grail.playerLocale
+		LoadLocalizedQuestNames = function(self)
+			self:LoadAddOn("Grail-Quests-" .. self:_EnvironmentForLoad() .. "-" .. self.playerLocale)
+		end,
+
+		---
+		--  Attempts to load the reputation information for the environment.
+		--  @calls Grail:_EnvironmentForLoad(), Grail:LoadAddOn()
 		LoadReputations = function(self)
-			local environmentToUse = self.environment
-			if IsTestBuild() then
-				environmentToUse = "_retail_"
-			end
-			self:LoadAddOn("Grail-Reputations-" .. environmentToUse)
+			self:LoadAddOn("Grail-Reputations-" .. self:_EnvironmentForLoad())
 		end,
 
 		--	Check the internal npc.locations structure for a location close to
@@ -8128,14 +8203,14 @@ end
 		end,
 
 		---
-		--	Returns the factions associated with quest givers.
-		--	A for Alliance, H for Horde, B for both
-		_FactionsFromQuestGivers = function(self, questId)
+		--  Returns a code indicating the factions associated with the table of NPC IDs.
+		--  @return A for Alliance only, H for Horde only, or B for both.
+		--  @calls Grail:_NPCFaction()
+		_FactionsFromNPCs = function(self, npcs)
 			local retval = 'B'
 			local foundAlliance, foundHorde = false, false
-			local targetNPCs = self:QuestNPCAccepts(questId)
-			if nil ~= targetNPCs then
-				for _, npcId in pairs(targetNPCs) do
+			if nil ~= npcs then
+				for _, npcId in pairs(npcs) do
 					local factionCode = self:_NPCFaction(npcId)
 					if nil == factionCode then
 						-- ignore this
@@ -8150,6 +8225,20 @@ end
 				retval = 'A'
 			elseif foundHorde and not foundAlliance then
 				retval = 'H'
+			end
+			return retval
+		end,
+
+		---
+		--	Returns a code representing the factions associated with quest givers/turnins.
+		--  If there is a limit for either givers or turnins that limit is used.  If there
+		--  is a limit that disagrees, that of givers is returned.
+		--  @return A for Alliance only, H for Horde only, or B for both.
+		--  @calls Grail:_FactionsFromNPCs(), Grail:QuestNPCAccepts(), Grail:QuestNPCTurnins()
+		_FactionsFromQuestGivers = function(self, questId)
+			local retval = self:_FactionsFromNPCs(self:QuestNPCAccepts(questId))
+			if retval == 'B' then
+				retval = self:_FactionsFromNPCs(self:QuestNPCTurnins(questId))
 			end
 			return retval
 		end,
@@ -8519,7 +8608,7 @@ end
 						if nil ~= self.npc.locations[npcId] and 0 < #(self.npc.locations[npcId]) then
 							retval = self:_CreateAliasNPC(npcId, npcLocationString)
 						else
-							self:LearnNPCLocation(npcId, npcLocationString)
+							self:_LearnNPCLocation(npcId, npcLocationString)
 						end
 					end
 				end
@@ -8533,8 +8622,22 @@ end
 				aliasBase = aliasBase + 1
 			end
 			local newAliasId = aliasBase + 1
-			self:LearnNPCLocation(newAliasId, npcLocationString, npcId)
+			self:_LearnNPCLocation(newAliasId, npcLocationString, npcId)
 			return newAliasId
+		end,
+
+		---
+		--	Returns the npcId for a newly created NPC whose location matches the npcLocationString provided
+		--	assuming this is a newly learned World Quest location, with the npcId starting off from a known
+		--	value used specifically for this purpose.
+		_CreateWorldNPC = function(self, npcLocationString)
+			local base = self.worldNPCBase
+			while nil ~= self.npc.locations[base + 1] do
+				base = base + 1
+			end
+			local npcId = base + 1
+			self:_LearnNPCLocation(npcId, npcLocationString)
+			return npcId
 		end,
 
 		---
@@ -10844,106 +10947,46 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			questId = tonumber(questId)
 			npcId = tonumber(npcId)
 			if nil == questId or nil == npcId then return end
-			local needToWork = false
-			if not self:DoesQuestExist(questId) then
-				needToWork = true
-			else
-				if 'A' == npcCode then
-					needToWork = not self:_GoodNPCAccept(questId, npcId)
-				end
-				if 'T' == npcCode then
-					needToWork = not self:_GoodNPCTurnin(questId, npcId)
-				end
+
+			self.quests[questId] = self.quests[questId] or {}
+			self.questCodes[questId] = self.questCodes[questId] or ''
+
+-- TODO: Do we need to add each of these code that are found (A:, T:, K:, L:) to self.questCodes[questId]?
+			if questTitle ~= "No Title Stored" and self:QuestName(questId) ~= questTitle then
+				self.quest.name[questId] = questTitle
+				self:_LearnQuestName(questId, questTitle)
 			end
-			if needToWork then
-				self.GDE.learned = self.GDE.learned or {}
-				self.GDE.learned.QUEST = self.GDE.learned.QUEST or {}
-				local currentLine = self.GDE.learned.QUEST[questId]
-				local needToAddQuestName = (questTitle ~= "No Title Stored" and self:QuestName(questId) ~= questTitle)
-				local completeNPCCode = npcCode .. ':' .. npcId
-				local newLine = ''
-				if nil == currentLine then
-					local spacer = ''
-					if nil ~= kCode then
-						newLine = newLine .. spacer .. kCode
-						spacer = ' '
-					end
-					if nil ~= lCode then
-						newLine = newLine .. spacer .. lCode
-						spacer = ' '
-					end
-					if nil ~= completeNPCCode then
-						newLine = newLine .. spacer .. completeNPCCode
-					end
-					self.questCodes[questId] = newLine
-				else
-					local questBits = { strsplit('|', currentLine) }
-					self.questCodes[questId] = self.questCodes[questId] or ''
-					for i = 1, #questBits do
-						if 1 == i then
-							local codeSpacer = ''
-							local codes = { strsplit(' ', questBits[i]) }
-							local foundK, foundL, foundNPC = false, false, false
-							for j = 1, #codes do
-								local matchFound = false
-								if not foundK then
-									foundK = (codes[j] == kCode)
-									if foundK then
-										matchFound = true
-									end
-								end
-								if not foundL then
-									foundL = (codes[j] == lCode)
-									if foundL then
-										matchFound = true
-									end
-								end
-								if not foundNPC then
-									foundNPC = (codes[j] == completeNPCCode)
-									if foundNPC then
-										matchFound = true
-									end
-								end
-								if not matchFound then
-									newLine = newLine .. codeSpacer .. codes[j]
-									codeSpacer = ' '
-								end
-							end
-							if not foundK and nil ~= kCode then
-								newLine = newLine .. codeSpacer .. kCode
-								codeSpacer = ' '
-								self.questCodes[questId] = self.questCodes[questId] .. ' ' .. kCode
-							end
-							if not foundL and nil ~= lCode then
-								newLine = newLine .. codeSpacer .. lCode
-								codeSpacer = ' '
-								self.questCodes[questId] = self.questCodes[questId] .. codeSpacer .. lCode
-							end
-							if not foundNPC and nil ~= completeNPCCode then
-								newLine = newLine .. codeSpacer .. completeNPCCode
-								codeSpacer = ' '
-								self.questCodes[questId] = self.questCodes[questId] .. ' ' .. completeNPCCode
-							end
-						else
---							local loc, localizedName = strsplit(':', questBits[i])
---							if loc ~= self.playerLocale then
---								newLine = newLine .. '|' .. questBits[i]
---							else
---								if localizedName == questTitle then
---									needToAddQuestName = false
---								end
---							end
+			
+			if 'A' == npcCode and not self:_GoodNPCAccept(questId, npcId) then
+				self:_LearnQuestCode(questId, 'A:' .. npcId)
+			end
+			
+			if 'T' == npcCode and not self:_GoodNPCTurnin(questId, npcId) then
+				self:_LearnQuestCode(questId, 'T:' .. npcId)
+			end
+			
+			if kCode then
+				self:_LearnKCode(questId, kCode)
+			end
+			
+			if lCode then
+				local possibleQuestLevels = tonumber(strsub(lCode, 2))
+				if nil ~= possibleQuestLevels and 0 ~= possibleQuestLevels then
+					local questLevel = possibleQuestLevels / 65536
+					local questLevelRequired = (possibleQuestLevels - (questLevel * 65536)) / 256
+					local questLevelMatches = (self:QuestLevel(questId) == questLevel)
+					local questLevelRequiredMatches = (self:QuestLevelRequired(questId) == questLevelRequired)
+					if questLevelMatches and questLevelRequiredMatches then
+						-- do nothing as all is well
+					else
+						self:_LearnQuestCode(questId, lCode)
+						if not questLevelMatches then
+							self:_SetQuestLevel(questId, questLevel)
+						end
+						if not questLevelRequiredMatches then
+							self:_SetQuestRequiredLevel(questId, questLevelRequired)
 						end
 					end
-				end
---				if needToAddQuestName then
---					newLine = newLine .. '|' .. self.playerLocale .. ':' .. questTitle
---					self.questNames[questId] = questTitle
---				end
-				self.quests[questId] = self.quests[questId] or {}
-				self.GDE.learned.QUEST[questId] = newLine
-				if needToAddQuestName then
-					self:_LearnQuestName(questId, questTitle)
 				end
 			end
 		end,

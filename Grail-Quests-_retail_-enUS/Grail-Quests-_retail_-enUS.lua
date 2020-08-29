@@ -32905,4 +32905,19 @@ G[61107]='A Land of Strife'
 G[62407]='Herbicidal Tendencies'
 end
 
+if release >= 35598 then
+G[55882]='Message to Base'
+G[55981]='Right Beneath Their Eyes'
+G[55988]='Like Ogres to the Slaughter'
+G[55989]='Catapult Destruction'
+G[55990]='Controlling their Stones'
+G[56344]='To Darkmaul Citadel'
+G[58983]='Tides of War'
+G[59641]='The Nation of Kul Tiras'
+G[59975]='To Darkmaul Citadel'
+G[59978]='Right Beneath Their Eyes'
+G[59984]='Dungeon: Darkmaul Citadel'
+G[59985]='An End to Beginnings'
+end
+
 --	End of localized quest names
