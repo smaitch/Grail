@@ -32920,4 +32920,27 @@ G[59984]='Dungeon: Darkmaul Citadel'
 G[59985]='An End to Beginnings'
 end
 
+if release >= 35707 then
+G[57976]='Lead By Example'
+G[57979]='Offensive Behavior'
+G[57983]='Archon Save Us'
+G[57984]='The Ones in Charge'
+G[57985]='Give Them a Hand'
+G[57986]='A Burden Worth Bearing'
+G[57987]='A Deadly Distraction'
+G[58268]='Take the High Ground'
+G[58821]='Glorious Pursuits'
+G[59009]='Her Rightful Place'
+G[59025]='Straight to the Heart'
+G[59171]='Prey Upon Them'
+G[59172]='War is Deception'
+G[59185]='Entangling Web'
+G[59188]='Vaunted Vengeance'
+G[59190]='Seek Your Mark'
+G[59210]='Tainted Cores'
+G[59616]='Army of One'
+G[60113]='An Urgent Request'
+G[60557]='First Time? You Have to Fight!'
+end
+
 --	End of localized quest names
