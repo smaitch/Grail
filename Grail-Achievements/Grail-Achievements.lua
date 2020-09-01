@@ -7156,10 +7156,15 @@ G[57515]={514206}	-- Champion of Pain (Blade of the Primus) (Maldraxxus) (Shadow
 G[57676]={514281}	-- Eternity's Call (The Path to Ascension) (Bastion) (Shadownlands) -- TODO: Verified required
 G[57677]={514281}	-- Eternity's Call (The Path to Ascension) (Bastion) (Shadownlands)
 G[58174]={514281}	-- The Aspirant's Crucible (The Path to Ascension) (Bastion) (Shadownlands)
+G[59009]={514206}	-- Matron of Spies (Blade of the Primus) (Maldraxxus) (Shadowlands)
 G[59200]={514281}	-- By the Archon's Will (The Path to Ascension) (Bastion) (Shadownlands)
+G[59231]={514206}	-- House of Plagues (Blade of the Primus) (Maldraxxus) (Shadowlands)
 G[59770]={514334}	-- Into the Maw (Shadowlands)
+G[59974]={514206}	-- Ritual for the Damned (Blade of the Primus) (Maldraxxus) (Shadowlands)
 G[60013]={514281}	-- Chasing a Memory (The Path to Ascension) (Bastion) (Shadownlands)
 G[60055]={514281}	-- The Temple of Courage (The Path to Ascension) (Bastion) (Shadownlands)
+G[60733]={514206}	-- House of Constructs (Blade of the Primus) (Maldraxxus) (Shadowlands)
+G[60737]={514206}	-- The Empty Throne (Blade of the Primus) (Maldraxxus) (Shadowlands)
 G[60886]={514206}	-- House of the Chosen (Blade of the Primus) (Maldraxxus) (Shadowlands)
 end
 
