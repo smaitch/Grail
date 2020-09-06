@@ -4598,8 +4598,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						elseif 'L' == code then
 							local possibleQuestLevels = tonumber(strsub(questCode, 2))
 							if nil ~= possibleQuestLevels and 0 ~= possibleQuestLevels then
-								local questLevel = possibleQuestLevels / 65536
-								local questLevelRequired = (possibleQuestLevels - (questLevel * 65536)) / 256
+								local questLevel = floor(possibleQuestLevels / 65536)
+								local questLevelRequired = floor((possibleQuestLevels - (questLevel * 65536)) / 256)
 								local questLevelMatches = (self:QuestLevel(questId) == questLevel)
 								local questLevelRequiredMatches = (self:QuestLevelRequired(questId) == questLevelRequired)
 								if questLevelMatches and questLevelRequiredMatches then

@@ -33053,4 +33053,40 @@ G[62624]="The Queen's Conservatory"
 G[62654]='Maw Walker'
 end
 
+if release >= 35755 then
+G[60115]='An Urgent Request'
+G[60466]='The Old Ways'
+G[60563]='Tending to Wildseeds'
+G[60567]='Shooing Wildlife'
+G[61874]='A Chilling Summons'
+end
+
+if release >= 35789 then
+G[53261]='Arathi Donations: Frost-Laced Ammunition'
+G[54332]='Darkshore Donations: Star Moss'
+G[54340]='Darkshore Donations: Enchant Ring - Seal of Haste'
+G[54790]='Conflagros'
+G[57529]='Garden in Turmoil'
+G[57538]='Disturbing the Peace'
+G[57545]='Distractions for Kala'
+G[57547]='A Test of Courage'
+G[57549]="In Agthia's Memory"
+G[57551]="Agthia's Path"
+G[57552]='Warriors of the Void'
+G[57553]='On Wounded Wings'
+G[57554]='Wicked Gateways'
+G[57555]="Shadow's Fall"
+G[57568]='Tough Love'
+G[57931]='Phalynx Malfunction'
+G[57932]='Resource Drain'
+G[57937]='Tactical Formation'
+G[58037]='Part of the Pride'
+G[58038]='All Natural Chews'
+G[58039]='Larion at Large'
+G[58184]='Antiquated Methodology'
+G[60232]='Souls of the Damned'
+G[60292]='Dangerous Discourse'
+G[60296]='Pride or Unit'
+end
+
 --	End of localized quest names
