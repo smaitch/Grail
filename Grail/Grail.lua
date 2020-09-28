@@ -1055,6 +1055,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[49]  = true, -- Redrige Mountains
 							[62]  = true,
 							[81]  = true, -- Silithus
+							[371] = true, -- Jade Forest, MoP
 							[379] = true, -- Kun-Lai Summit ,MoP
 							[525] = true,
 							[534] = true,
