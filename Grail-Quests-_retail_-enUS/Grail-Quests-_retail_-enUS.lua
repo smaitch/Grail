@@ -33170,7 +33170,16 @@ end
 
 if release >= 36037 then
 G[54382]='Darkshore Donations: Deep Sea Satin'
+G[57025]='A Plea to Revendreth'
+G[57933]='We Can Rebuild Him'
+G[57934]='Combat Drills'
+G[57935]='Laser Location'
+G[57936]='Superior Programming'
+G[58104]="Show, Don't Tell"
+G[58264]='Wake Up, Get Up, Get Out There'
 G[58265]='Blooming Villains'
+G[58266]='Break It Down'
+G[58267]='Beneath the Mask'
 G[58473]='Echoes of Tirna Noch'
 G[58480]='Read the Roots'
 G[58483]='Mementos'
@@ -33185,11 +33194,18 @@ G[58592]='Caring for the Caretakers'
 G[58593]='End of the Dream'
 G[58714]='The Forest Has Eyes'
 G[58719]="The Droman's Call"
+G[58720]='Missing!'
+G[58721]='Awaken the Dreamer'
+G[58723]='The Court of Winter'
+G[58724]="The Queen's Request"
+G[58869]='Battle for Hibernal Hollow'
 G[60520]='Nightmares Manifest'
 G[60522]='Return to Tirna Vaal'
 G[60572]='For the Sake of Spirit'
 G[60578]='Visions of the Dreamer: The Betrayal'
+G[60621]='Enemies at the Gates'
 G[60632]='I Know Your Face'
+G[60661]='Dying Dreams'
 G[60738]='The Way to Hibernal Hollow'
 G[60764]='Soothing Song'
 G[60839]='Remnants of the Wild Hunt'
@@ -33198,6 +33214,7 @@ G[60856]='Toppling the Brute'
 G[60881]='Ride of the Wild Hunt'
 G[60901]='Passage to Hibernal Hollow'
 G[60905]='Infusing the Wildseed'
+G[62371]='Tirna Scithe: A Warning Silence'
 G[62807]='Forest Refugees'
 end
 
