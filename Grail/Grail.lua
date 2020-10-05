@@ -1105,6 +1105,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[1670] = true, -- Oribos 9.0 , TODO: so far no chests and rares
 							[1671] = true, -- Oribos 9.0, Part 2 , TODO: so far no chests and rares 
 							[1707] = true, -- Bastion: Elyssian Keep 9.0 , TODO: so far no chests and rares
+							[1912] = true, -- Runecarver, TODO: so far no chests and rares
 							}
 						self.quest.name = {
 							[51570]=Grail:_GetMapNameByID(862),	-- Zuldazar
