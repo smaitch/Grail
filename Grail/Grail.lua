@@ -1607,6 +1607,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					frame:RegisterEvent("PLAYER_LEVEL_UP")	-- needed for quest status caching
 					frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 					frame:RegisterEvent("PLAYER_REGEN_DISABLED")
+					self:RegisterObserver("FullAccept", Grail._AcceptQuestProcessing)
 					frame:RegisterEvent("QUEST_ACCEPTED")
 					frame:RegisterEvent("QUEST_COMPLETE")
 					frame:RegisterEvent("QUEST_DETAIL")
@@ -1852,244 +1853,99 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				end
 			end,
 
-			-- When a Bounty Board only has one quest to give, by the time QUEST_ACCEPTED
+			-- When a guestgiver only has one quest to give, by the time QUEST_ACCEPTED
 			-- happens in WoD asking for TargetInformation() will not yield good results.
 			-- Therefore, we record that information here and use it in QUEST_ACCEPTED.
 			-- This is not perfect and there is no way to properly clear this unless I start
 			-- overriding buttons on Blizzard's quest panel because, for example, the
 			-- QUEST_FINISH event happens for both accepting and rejecting a quest.
 			['QUEST_DETAIL'] = function(self, frame)
-				local targetName, npcId, coordinates = self:TargetInformation()
-				self.questAcceptingTargetName = targetName
-				self.questAcceptingNpcId = npcId
-				self.questAcceptingCoordinates = coordinates
-				self.questAcceptingQuestId = GetQuestID()	-- this is new API and we never use this value currently
+				local npcId, npcName = self:GetNPCInformation("questnpc")
+				local coordinates = self:Coordinates()
+				npcId = self:_UpdateTargetDatabase(npcName, npcId, coordinates)
+				self.questDetailInformation = {
+					coordinates = coordinates,
+					npcId = npcId,
+					npcName = npcName,
+					questId = GetQuestID()	-- technically we do not currently use this, but it might be useful
+				}
 			end,
 
-			-- It appears in Shadowlands QUEST_ACCEPTED on provides the questId while previous versions provided questIdex and questId.
+			-- Prior to Shadowlands, the signature is (self, frame, questIndex, questId)
+			-- In Shadowlands, the signature is       (self, frame, questId)
+			-- To run in both, we need to detect the number of parameters are deal with them appropriately.
 			['QUEST_ACCEPTED'] = function(self, frame, questIndexOrIdBasedOnRelease, aQuestId)
+				-- If there are two parameters, the first will be the questIndex, otherwise we have no questIndex
 				local questIndex = aQuestId and questIndexOrIdBasedOnRelease or nil
+				
+				-- If there are two parameters, the second in the quest Id, otherwise the first is.
 				local theQuestId = aQuestId or questIndexOrIdBasedOnRelease
+				
 				-- In Shadowlands we need to look up the questIndex
 				if questIndex == nil and C_QuestLog.GetLogIndexForQuestID then
 					questIndex = C_QuestLog.GetLogIndexForQuestID(theQuestId)
 				end
--- TODO: Figure out how to transform to delayed if needed
-				local debugStartTime = debugprofilestop()
-				local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestId, isWeekly, isTask, isBounty, isStory, isHidden, isScaling, difficultyLevel = self:GetQuestLogTitle(questIndex)
-				local npcId = nil
-				local version = self.versionNumber.."/"..self.questsVersionNumber.."/"..self.npcsVersionNumber.."/"..self.zonesVersionNumber
-
-				if nil == questTitle then questTitle = "NO TITLE PROVIDED BY BLIZZARD" end
-				if nil == questId then questId = -1 end
---				if self.GDE.debug then print("Grail QUEST_ACCEPTED: index:",questIndex,"event aQuestId:",aQuestId,"questId:",questId,"quest title:",questTitle) end
-				if aQuestId and aQuestId ~= questId then print("Grail: QuestId mismatch", aQuestId, "accepted but log has", questId) end
-
-				-- Get the target information to ensure the target exists in the database of NPCs
-				local targetName, npcId, coordinates
-				if not self.existsWoD then
-					targetName, npcId, coordinates = self:TargetInformation()
+				
+				local payload = {}
+				if nil ~= self.questDetailInformation then
+					payload.npcId = self.questDetailInformation.npcId
+					payload.npcName = self.questDetailInformation.npcName
+					if self.GDE.debug then
+						if self.questDetailInformation.questId ~= theQuestId then
+							print("*** QUEST_DETAIL reports questId", self.questDetailInformation.questId, "but QUEST_ACCEPT reports questId", theQuestId)
+						end
+					end
 				else
-					targetName = self.questAcceptingTargetName
-					npcId = self.questAcceptingNpcId
-					coordinates = self.questAcceptingCoordinates
+					-- The assumption is if there was no QUEST_DETAIL presented, that the quest is gotten from self in the current map.
+					payload.npcId = Grail.GetCurrentMapAreaID() * -1
+					payload.npcName = Grail.npc.name[0]
 				end
-				npcId = self:_UpdateTargetDatabase(targetName, npcId, coordinates, version)
+				payload.questId = theQuestId
+				payload.questIndex = questIndex
+				payload.coordinates = self:Coordinates()
+				
+				-- Get rid of the information gotten from QUEST_DETAIL to we do not use it erroneously again.
+				self.questDetailInformation = nil
+				
+				-- Inform subscribers of what just happened
+				self:_PostNotification("FullAccept", payload)
+				self:_PostNotification("Accept", theQuestId)
 
-				--	If this quest is not in our internal database attempt to record some information about it so we have a chance the
-				--	user can provide this to us to update the database.
-				if not isHeader then
-					local baseValue, kCode = 0, nil
-					if isDaily then baseValue = baseValue + 2 end
-					if isWeekly then baseValue = baseValue + 4 end
-					if suggestedGroup then
-						if type(suggestedGroup) == "string" or suggestedGroup > 1 then
-							baseValue = baseValue + 512
-						end
-					end
-					if isTask then baseValue = baseValue + 32768 end	-- bonus objective
-					if self.capabilities.usesCampaignInfo then
-						local isCampaign = false
-						if C_CampaignInfo.IsCampaignQuest then
-							isCampaign = C_CampaignInfo.IsCampaignQuest(theQuestId)
-						end
-						if isCampaign then baseValue = baseValue + 4096 end -- war campaign (recorded as legendary)
-					end
-					-- at the moment we ignore questTag since it is localized
-					-- With Legion there are issues because the level of the quests
-					-- match the level of the player.  So, we force the level to 0.
-					if self.existsWoD and level > 100 then
-						level = 0
-					end
-					local lCode = strformat("L%d", 255 + level * 256 + (difficultyLevel or 0) * 65536)
-					if baseValue > 0 then
-						kCode = strformat("K%d", baseValue)
-					end
-					self:_UpdateQuestDatabase(questId, questTitle, npcId, isDaily, 'A', version, kCode, lCode)
-
-					-- Ask Blizzard API to provide us with the reputation rewards for this quest
--- As of July 2015 it has been reported that GetNumQuestLogRewardFactions() and GetQuestLogRewardFactionInfo() are not
--- honoring the call to SelectQuestLogEntry() but seem to be using the "last selected quest with the mouse in the interface"
---	However, with live Legion it seems we have the ability back in place properly.
---	But it also seems not to work with world quests, so we ignore those.
--- Starting July 2019 we are just going to ignore what the API *might* give us for faction rewards.
---					if self.checksReputationRewardsOnAcceptance and not self:IsWorldQuest(questId) then
---						SelectQuestLogEntry(questIndex)
---						local reputationRewardsCount = GetNumQuestLogRewardFactions()	-- note that this will fail in Classic
---						local factionId, reputationAmount, repChangeString
---						local blizzardReps = {}
---						for i = 1, reputationRewardsCount do
---							factionId, reputationAmount = GetQuestLogRewardFactionInfo(i)
---							repChangeString = strformat("%s%d", self:_HexValue(factionId, 3), floor(reputationAmount / 100))
---							tinsert(blizzardReps, repChangeString)
---						end
+--				--	If we think we should not have been able to accept this quest we should record some information that may help us update our faulty database.
+--				local statusCode = self:StatusCode(questId)
+--				local errorString = 'G' .. self.versionNumber .. '|' .. questId .. '|' .. statusCode
+--				if not self:CanAcceptQuest(questId, false, false, true) then
+--					-- look at the reason and record the reason and contrary information for that reason
+--					if bitband(statusCode, self.bitMaskLevelTooLow + self.bitMaskLevelTooHigh) > 0 then errorString = errorString .. "|L:" .. UnitLevel('player') end
+--					if bitband(statusCode, self.bitMaskClass + self.bitMaskAncestorClass) > 0 then errorString = errorString .. "|C:" .. self.playerClass end
+---- TODO: Correct the fact that |R results in the loss of the R because it is a code used in their strings
+--					if bitband(statusCode, self.bitMaskRace + self.bitMaskAncestorRace) > 0 then errorString = errorString .. "|R:" .. self.playerRace end
+--					if bitband(statusCode, self.bitMaskGender + self.bitMaskAncestorGender) > 0 then errorString = errorString .. "|G:" .. self.playerGender end
+--					if bitband(statusCode, self.bitMaskFaction + self.bitMaskAncestorFaction) > 0 then errorString = errorString .. "|F:" .. self.playerFaction end
+--					if bitband(statusCode, self.bitMaskInvalidated) > 0 then
 --
---						if not self:_ReputationChangesMatch(questId, blizzardReps) then
---							local allReps = ""
---							for i = 1, #blizzardReps do
---								if i > 1 then allReps = allReps .. ',' end
---								allReps = allReps .. "'" .. blizzardReps[i] .. "'"
---							end
---							self:_RecordBadQuestData('G' .. self.versionNumber .. '|' .. self.portal .. '|' .. self.blizzardRelease .. "|G[" .. questId .. "][6]={" .. allReps .. '}')
---						end
 --					end
-
-					-- Ask Blizzard API to get all the other reward information we record
---	local currentSpec = GetSpecialization()		-- nil if no spec chosen, otherwise 1 or more depending on spec
---	select(2, GetSpecializationInfo(currentSpec))	-- is the name of the current spec
---	specID = GetLootSpecialization()
-					if self.questRewards then
-						SelectQuestLogEntry(questIndex)
-						local rewardString = ""
-						local xp = GetQuestLogRewardXP()
-						if nil ~= xp and 0 ~= xp then
-							rewardString = rewardString .. ":X" .. xp
-						end
-						local copper = GetQuestLogRewardMoney()
-						if nil ~= copper and 0 ~= copper then
-							rewardString = rewardString .. ":M" .. copper
-						end
-						local link
-						for counter = 1, GetNumQuestLogRewards() do
-							local itemId = string.match(GetQuestLogItemLink("reward", counter) or '', 'item:(%d+):')
-							if itemId then
-								local _, _, numberItems = GetQuestLogRewardInfo(counter)
-								rewardString = rewardString .. ":R" .. itemId .. "-" .. numberItems
-							end
-						end
--- TODO: Figure out how to handle current rewards (like Apexis Crystals)
---						for counter = 1, GetNumQuestLogRewardCurrencies() do
---							local itemId = string.match(GetQuestLogItemLink("reward", counter) or '', 'item:(%d+):')
---							if itemId then
---								rewardString = rewardString .. ":O" .. itemId
---							end
---						end
-						for counter = 1, GetNumQuestLogChoices() do
-							local itemId = string.match(GetQuestLogItemLink("choice", counter) or '', 'item:(%d+):')
-							if itemId then
-								rewardString = rewardString .. ":C" .. itemId
-							end
-						end
-						if nil == self.questRewards[questId] or self.questRewards[questId] ~= rewardString then
-							self:_RecordBadQuestData('G' .. self.versionNumber .. '|' .. self.portal .. '|' .. self.blizzardRelease .. "|G[" .. questId .. "][reward]=" .. rewardString)
-						end
-					end
-
-				end
-
-				--	If we think we should not have been able to accept this quest we should record some information that may help us update our faulty database.
-				local statusCode = self:StatusCode(questId)
-				local errorString = 'G' .. self.versionNumber .. '|' .. questId .. '|' .. statusCode
-				if not self:CanAcceptQuest(questId, false, false, true) then
-					-- look at the reason and record the reason and contrary information for that reason
-					if bitband(statusCode, self.bitMaskLevelTooLow + self.bitMaskLevelTooHigh) > 0 then errorString = errorString .. "|L:" .. UnitLevel('player') end
-					if bitband(statusCode, self.bitMaskClass + self.bitMaskAncestorClass) > 0 then errorString = errorString .. "|C:" .. self.playerClass end
--- TODO: Correct the fact that |R results in the loss of the R because it is a code used in their strings
-					if bitband(statusCode, self.bitMaskRace + self.bitMaskAncestorRace) > 0 then errorString = errorString .. "|R:" .. self.playerRace end
-					if bitband(statusCode, self.bitMaskGender + self.bitMaskAncestorGender) > 0 then errorString = errorString .. "|G:" .. self.playerGender end
-					if bitband(statusCode, self.bitMaskFaction + self.bitMaskAncestorFaction) > 0 then errorString = errorString .. "|F:" .. self.playerFaction end
-					if bitband(statusCode, self.bitMaskInvalidated) > 0 then
-
-					end
-					if bitband(statusCode, self.bitMaskProfession) > 0 then
--- TODO: Need to look at all the professions associated with the quest and record the actual profession values the user currently has for them
-
-					end
-					if bitband(statusCode, self.bitMaskReputation) > 0 then
--- TODO: Same as professions, but with reputations instead
-
-					end
-					if bitband(statusCode, self.bitMaskHoliday) > 0 then
--- TODO: Determine if we actually need to mark which holiday caused the problem because when CleanDatabase comes across this without the specific one, it can only remove this if there is NO holiday associated with the quest.
-						errorString = errorString .. "HOL"
-					end
-					if bitband(statusCode, self.bitMaskPrerequisites) > 0 then
-
-					end
-					self:_RecordBadQuestData(errorString)
-				end
-
-				-- Check to see whether the database faction agrees with the Blizzard API and note discrepancies
--- Starting July 2019 we are not going to record faction from API
---				if self:DoesQuestExist(questId) then
---					local blizzardFactionGroup = GetQuestFactionGroup(questId)	-- nil means no specific faction, otherwise LE_QUEST_FACTION_HORDE (2) or LE_QUEST_FACTION_ALLIANCE (1)
---					-- need to check our database for specific faction association
---					local obtainers = self:CodeObtainers(questId)
---					local bitMaskToCheckAgainst = 0
---					local errorCode = "Unknown"
---					if nil == blizzardFactionGroup then
---						bitMaskToCheckAgainst = self.bitMaskFactionAll
---						errorCode = "Both"
---					elseif LE_QUEST_FACTION_ALLIANCE == blizzardFactionGroup then
---						bitMaskToCheckAgainst = self.bitMaskFactionAlliance
---						errorCode = "Alliance"
---					elseif LE_QUEST_FACTION_HORDE == blizzardFactionGroup then
---						bitMaskToCheckAgainst = self.bitMaskFactionHorde
---						errorCode = "Horde"
---					else
---						print("Unknown faction association returned "..blizzardFactionGroup.." for quest "..questId)
+--					if bitband(statusCode, self.bitMaskProfession) > 0 then
+---- TODO: Need to look at all the professions associated with the quest and record the actual profession values the user currently has for them
+--
 --					end
---					if bitband(obtainers, self.bitMaskFactionAll) ~= bitMaskToCheckAgainst then
---						errorString = errorString .. "|Faction:" .. errorCode
---						self:_RecordBadQuestData(errorString)
+--					if bitband(statusCode, self.bitMaskReputation) > 0 then
+---- TODO: Same as professions, but with reputations instead
+--
 --					end
+--					if bitband(statusCode, self.bitMaskHoliday) > 0 then
+---- TODO: Determine if we actually need to mark which holiday caused the problem because when CleanDatabase comes across this without the specific one, it can only remove this if there is NO holiday associated with the quest.
+--						errorString = errorString .. "HOL"
+--					end
+--					if bitband(statusCode, self.bitMaskPrerequisites) > 0 then
+--
+--					end
+--					self:_RecordBadQuestData(errorString)
 --				end
 
-				-- Check to see whether this quest belongs to a group and handle group counts properly
-				if self.questStatusCache.H[questId] then
-					for _, group in pairs(self.questStatusCache.H[questId]) do
-						if self:_RecordGroupValueChange(group, true, false, questId) >= self.dailyMaximums[group] then
-							self:_StatusCodeInvalidate(self.questStatusCache['G'][group])
-							self:_NPCLocationInvalidate(self.npcStatusCache['G'][group])
-						end
-						self:_StatusCodeInvalidate(self.questStatusCache['X'][group])
-						self:_NPCLocationInvalidate(self.npcStatusCache['X'][group])
-					end
-				end
-
-				self:_PostNotification("Accept", questId)
-
-				-- If there is an OAC: code associated with the quest we need to complete all the quests listed there.
-				local oacCodes = self:QuestOnAcceptCompletes(questId)
-				if nil ~= oacCodes then
-					for i = 1, #oacCodes do
-						self:_MarkQuestComplete(oacCodes[i], true, false, false)
-					end
-				end
-
-				if self.GDE.debug then
-					local debugMessage = "Grail Debug: + ".. questTitle .. " (" .. questId .. ") <= "
-					if nil ~= targetName then debugMessage = debugMessage .. targetName .. " (" .. (npcId or -1) .. ") " .. (coordinates or 'no coords') else debugMessage = debugMessage .. "no target" end
-					if not self:CanAcceptQuest(questId, false, false, true) then
-						debugMessage = debugMessage .. " !: " .. "an error"
-					end
-					print(debugMessage)
-				end
-				self:_UpdateQuestResetTime()
-				self.timings.QuestAccepted = debugprofilestop() - debugStartTime
 			end,
 
-			['QUEST_COMPLETE'] = function(self, frame)
+			['QUEST_COMPLETE'] = function(self, frame, ...)
 				local titleText = GetTitleText()
 				self.completingQuest = self:QuestInQuestLogMatchingTitle(titleText)
 				self.completingQuestTitle = titleText
@@ -3279,6 +3135,68 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			},
 
 		---
+		--	This is what happens when a quest has been accepted.
+		_AcceptQuestProcessing = function(callbackType, payload)
+			local debugStartTime = debugprofilestop()
+			local questIndex = payload.questIndex
+			local npcId = payload.npcId
+			if questIndex ~= nil then
+				local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId, startEvent, displayQuestId, isWeekly, isTask, isBounty, isStory, isHidden, isScaling, difficultyLevel = Grail:GetQuestLogTitle(questIndex)
+				if nil == questTitle then questTitle = "NO TITLE PROVIDED BY BLIZZARD" end
+				if nil == questId then questId = -1 end
+				if not isHeader then
+					local kCodeValue = 0
+					if isDaily then kCodeValue = kCodeValue + 2 end
+					if isWeekly then kCodeValue = kCodeValue + 4 end
+					if suggestedGroup then
+						if type(suggestedGroup) == "string" or suggestedGroup > 1 then
+							kCodeValue = kCodeValue + 512
+						end
+					end
+					if isTask then kCodeValue = kCodeValue + 32768 end	-- bonus objective
+					if Grail.capabilities.usesCampaignInfo then
+						local isCampaign = false
+						if C_CampaignInfo.IsCampaignQuest then
+							isCampaign = C_CampaignInfo.IsCampaignQuest(questId)
+						end
+						if isCampaign then kCodeValue = kCodeValue + 4096 end -- war campaign (recorded as legendary)
+					end
+					local kCode = (kCodeValue > 0) and strformat("K%d", kCodeValue) or nil
+					local lCode = strformat("L%d", 255 + level * 256 + (difficultyLevel or 0) * 65536)
+					Grail:_UpdateQuestDatabase(questId, questTitle, npcId, isDaily, 'A', nil, kCode, lCode)
+				end
+			end
+			Grail:_AcceptQuestProcessingUpdateGroupCounts(payload.questId)
+			Grail:_AcceptQuestProcessingCompleteOnAccept(payload.questId)
+			Grail:_UpdateQuestResetTime()
+			Grail.timings.QuestAccepted = debugprofilestop() - debugStartTime
+		end,
+
+		_AcceptQuestProcessingUpdateGroupCounts = function(self, questId)
+			if questId ~= nil and self.questStatusCache.H[questId] then
+				for _, group in pairs(self.questStatusCache.H[questId]) do
+					if self:_RecordGroupValueChange(group, true, false, questId) >= self.dailyMaximums[group] then
+						self:_StatusCodeInvalidate(self.questStatusCache['G'][group])
+						self:_NPCLocationInvalidate(self.npcStatusCache['G'][group])
+					end
+					self:_StatusCodeInvalidate(self.questStatusCache['X'][group])
+					self:_NPCLocationInvalidate(self.npcStatusCache['X'][group])
+				end
+			end
+		end,
+
+		_AcceptQuestProcessingCompleteOnAccept = function(self, questId)
+			if nil ~= questId then
+				local oacCodes = self:QuestOnAcceptCompletes(questId)
+				if nil ~= oacCodes then
+					for i = 1, #oacCodes do
+						self:_MarkQuestComplete(oacCodes[i], true, false, false)
+					end
+				end
+			end
+		end,
+
+		---
 		--	Returns the mapID where the player currently is.
 		GetCurrentMapAreaID = function()
 -- C_Map.GetBestMapForUnit will return nil if it can't find a map for that unit, MapUtil.GetDisplayableMapForPlayer will uses a fallback map if so
@@ -3398,6 +3316,18 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				end
 			end
 			Grail:_AddTrackingMessage(message)
+		end,
+
+		_AddFullTrackingCallback = function(callbackType, payload)
+			local questId = payload.questId
+			local questIndex = payload.questIndex or "NO questIndex"
+			local npcName = payload.npcName or "NO npcName"
+			local npcId = payload.npcId or "NO npcId"
+			local coordinates = payload.coordinates or "NO coordinates"
+			local errorCodeString = Grail:CanAcceptQuest(questId, false, false, true) and "" or strformat(" Error: %d", Grail:StatusCode(questId))
+			local message = strformat("+ %s(%d)[%d] <= %s(%d) %s%s", Grail:QuestName(questId) or "NO NAME", questId, questIndex, npcName, npcId, coordinates, errorCodeString)
+			Grail:_AddTrackingMessage(message)
+			print(message)
 		end,
 
 		--	This adds the provided message to the tracking system.  The first time this is called, a timestamp with some player
@@ -6922,6 +6852,30 @@ end
 				end
 			end
 			return npcId, targetName
+		end,
+
+		GetNPCInformation = function(self, npcType)
+			local npcId = nil
+			local name = UnitName(npcType)
+			local gid = UnitGUID(npcType)
+			if nil ~= gid then
+				local targetType = nil
+				--	Blizzard has changed the separator from : to - but we will try both if needed
+				local npcBits = { strsplit("-", gid) }
+				if #npcBits == 1 then
+					npcBits = { strsplit(":", gid) }
+				end
+				if #npcBits == 3 and npcBits[1] == "Player" then
+					npcId = Grail.GetCurrentMapAreaID() * -1
+					name = "Player: " .. name
+				end
+				if #npcBits > 5 then
+					npcId = npcBits[6]
+					targetType = (npcBits[1] == "GameObject") and 1 or nil
+				end
+				if 1 == targetType then npcId = npcId + 1000000 end		-- our representation of a world object
+			end
+			return npcId, name
 		end,
 
 		_GetOTCQuest = function(self, questId, npcId)
@@ -11021,8 +10975,8 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			if lCode then
 				local possibleQuestLevels = tonumber(strsub(lCode, 2))
 				if nil ~= possibleQuestLevels and 0 ~= possibleQuestLevels then
-					local questLevel = possibleQuestLevels / 65536
-					local questLevelRequired = (possibleQuestLevels - (questLevel * 65536)) / 256
+					local questLevel = floor(possibleQuestLevels / 65536)
+					local questLevelRequired = floor((possibleQuestLevels - (questLevel * 65536)) / 256)
 					local questLevelMatches = (self:QuestLevel(questId) == questLevel)
 					local questLevelRequiredMatches = (self:QuestLevelRequired(questId) == questLevelRequired)
 					if questLevelMatches and questLevelRequiredMatches then
@@ -11066,8 +11020,8 @@ end
 		_UpdateTrackingObserver = function(self)
 			if self.GDE.tracking then
 				self:RegisterObserverQuestAbandon(Grail._AddTrackingCallback)
-				self:RegisterObserverQuestAccept(Grail._AddTrackingCallback)
 				self:RegisterObserverQuestComplete(Grail._AddTrackingCallback)
+				self:RegisterObserver("FullAccept", Grail._AddFullTrackingCallback)
 			else
 				self:UnregisterObserverQuestAbandon(Grail._AddTrackingCallback)
 				self:UnregisterObserverQuestAccept(Grail._AddTrackingCallback)

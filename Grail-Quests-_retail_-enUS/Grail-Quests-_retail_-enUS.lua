@@ -33218,4 +33218,16 @@ G[62371]='Tirna Scithe: A Warning Silence'
 G[62807]='Forest Refugees'
 end
 
+if release >= 36086 then
+G[53236]='Arathi Donations: War-Scroll of Fortitude'
+G[53361]='Arathi Donations: Meaty Haunch'
+G[54367]='Darkshore Donations: Platinum Ore'
+G[58040]='With Lance and Larion'
+G[58041]='Providing for the Pack'
+G[58042]='On Larion Wings'
+G[58103]='Pride or Unit'
+G[62704]='The Threads of Fate'
+G[62801]='The Call of Fate'
+end
+
 --	End of localized quest names
