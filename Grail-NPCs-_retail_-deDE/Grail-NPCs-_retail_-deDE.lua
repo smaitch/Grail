@@ -414,6 +414,7 @@ G[1329909]='Zuckender Haufen'
 G[1332623]='Mechanisierte Truhe'
 G[1332631]='Geborgener Kanister'
 G[1334734]='Glitzernde Truhe'
+G[1355798]='Käfig'
 G[100113448]='Stück des Kraterfürsten'
 G[100113453]='Edelpilz'
 G[100122399]='Späherbericht: Magnarok'
@@ -428,6 +429,95 @@ G[100122417]='Späherbericht: Nachtflutnest'
 G[100122420]='Späherbericht: Gorianisches Übungsgelände'
 G[100128231]='Ausstattungsbaupläne: Abgerichtete Haie'
 G[100128232]='Ausstattungsbaupläne: Hochleistungsnebelleuchten'
+end
+
+if release >= 35360 then
+G[1349975]='Ewigkeitspanzerung'
+G[1354208]='Gestohlene Ausrüstung'
+G[1354213]='Notizen des verlorenen Jüngers'
+G[1354214]='Harnisch des Larionbändigers'
+G[1354859]='Truhe der würdigen Aspirantin'
+end
+
+if release >= 35522 then
+G[1347444]='Kunstvoller Knochenschild'
+G[1348521]='Seltsamer Auswuchs'
+G[1352428]='Vesperglocke der Tugenden'
+G[1355872]='Gestohlener Krug'
+end
+
+if release >= 35598 then
+G[1232458]="Nizzix' Truhe"
+G[1234147]='Habseligkeiten der Ausgestoßenen'
+G[1234157]='Frakturierter Sonnenstein'
+G[1234159]='Verlorenes Kräuterbündel'
+G[1234456]='Kassette der Zerschmetterten Hand'
+G[1234458]='Truhe der Zerschmetterten Hand'
+G[1234461]='Giftzahntoxin'
+G[1234472]='Seemann Zazzuks 180-prozentiger Rum'
+G[1234473]='Kampagnenspenden'
+G[1234618]='Geschenk Anzus'
+G[1234704]='Elixier der Schattensicht'
+G[1234740]='Orcsignalhorn'
+G[1234744]='Opfergabe an die Rabenmutter'
+G[1234746]='Opfergabe an die Rabenmutter'
+G[1234748]='Opfergabe an die Rabenmutter'
+G[1235073]='Opfergabe an die Rabenmutter'
+G[1235091]='Verlorener Ring'
+G[1235097]='Ephials dunkler Foliant'
+G[1235141]='Sprengladung der Eisernen Horde'
+G[1235143]='Assassinenspeer'
+G[1235168]='Beutel der Ausgestoßenen'
+G[1235282]='Ritualgebräu der Sethekk'
+G[1235299]='Kupferknausers Bezahlung'
+G[1235307]='Durchnässter Sack'
+G[1235310]='Schredderteile'
+G[1235313]='Liegen gelassene Spitzhacke'
+G[1346055]='Seelenaschenreliquiar'
+G[1354202]='Verlassener Vorrat'
+end
+
+if release >= 35679 then
+G[1224750]='Hängender Ranzen'
+G[1224756]='Alchemistenbeutel'
+G[1224770]='Schatz des Exilanten des Schattenmondklans'
+G[1224780]='Opferdolch des Schattenmondklans'
+G[1224783]='Behälter mit doppeltem Boden'
+G[1226831]='Kiste des Astrologen'
+G[1226854]='Gepanzerter Elekkstoßzahn'
+G[1226861]='Ronokks Habseligkeiten'
+G[1226862]='Riesiger Mondweidenzapfen'
+G[1226865]='Fracht der Rabenkönigin'
+G[1230664]='Torvaths Kristallklinge'
+G[1232494]='Pilzbedeckte Truhe'
+G[1232582]="A'kumbos Asche"
+G[1232583]='Geschnitztes Trinkhorn'
+G[1232586]='Rovos Dolch'
+G[1232587]='Uzkos Krimskrams'
+G[1232588]='Grekas Urne'
+G[1232589]='Veemas Kräuterbeutel'
+G[1232591]='Gabe unter Geliebten'
+G[1232596]='Großaxt der Ahnen'
+G[1232621]='Seltsame Spore'
+G[1232624]='Mikkals Truhe'
+G[1233126]='Schattenmondschatzkiste'
+G[1233241]='Leuchtender Höhlenpilz'
+G[1235860]='Orcskelett'
+G[1236755]='Staubige Truhe'
+end
+
+if release >= 35707 then
+G[1223533]='Friedliche Opfergabe'
+G[1224753]='Schuppiges Rylakei'
+G[1224755]='Tribut der Eisernen Horde'
+G[1224784]='Truhe des Verteidigers'
+G[1224785]='Dämonentruhe'
+G[1225501]='Friedliche Opfergabe'
+G[1225502]='Friedliche Opfergabe'
+G[1225503]='Friedliche Opfergabe'
+G[1227134]='Lieferung der Eisernen Horde'
+G[1232592]='Sumpfleuchterstock'
+G[1233101]='Versunkenes Fischerboot'
 end
 
 --	End of localized NPC names

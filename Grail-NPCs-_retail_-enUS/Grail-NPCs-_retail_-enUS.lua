@@ -1384,10 +1384,17 @@ G[1334751]="Zanj'ir Weapon Rack"
 G[1335711]='Black Empire Cache'
 G[1335712]='Black Empire Cache'
 G[1335717]='Black Empire Cache'
+G[1336415]='Discarded Scroll'
 G[1339248]='Infested Cache'
 G[1348558]='Notice'
+G[1348747]='Muddy Scroll'
+G[1349515]='Battered Journal'
 G[1352027]='Wanted Scroll'
 G[1352028]='Wanted Scroll'
+G[1353420]='Stone Altar'
+G[1353645]="Marileth's Journal"
+G[1355798]='Cage'
+G[1362489]='Elysian Decree'
 end
 
 --	End of localized NPC names
