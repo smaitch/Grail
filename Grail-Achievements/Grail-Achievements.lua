@@ -7182,6 +7182,7 @@ G[60733]={514206}	-- House of Constructs (Blade of the Primus) (Maldraxxus) (Sha
 G[60737]={514206}	-- The Empty Throne (Blade of the Primus) (Maldraxxus) (Shadowlands)
 G[60886]={514206}	-- House of the Chosen (Blade of the Primus) (Maldraxxus) (Shadowlands)
 G[60905]={514164}	-- This is the Way (Awaken, Ardenweald) (Ardenweald) (Shadowlands)
+G[61107]={514281}	-- A Land of Strife (The Path to Ascension) (Bastion) (Shadownlands)
 end
 
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime
