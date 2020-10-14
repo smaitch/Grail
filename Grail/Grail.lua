@@ -1628,6 +1628,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self:_CleanDatabase()
 					self:_CleanDatabaseLearnedQuestName()
 					self:_CleanDatabaseLearnedObjectName()
+					--	We rely on _ProcessNPCs() being called before _CleanDatabaseLearnedNPCLocation() because we want all the world quest NPCs to be processed
+					--	so any learned ones can be removed if the database contains them.
 					self:_CleanDatabaseLearnedNPCLocation()
 					self:_CleanDatabaseLearnedQuest()
 					self:_CleanDatabaseLearnedQuestCode()
@@ -2524,7 +2526,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			[6] = { 1445, 1515, 1520, 1679, 1681, 1682, 1708, 1710, 1711, 1731, 1732, 1733, 1735, 1736, 1737, 1738, 1739, 1740, 1741, 1847, 1848, 1849, 1850, },
 			[7] = { 1815, 1828, 1833, 1859, 1860, 1862, 1883, 1888, 1894, 1899, 1900, 1919, 1947, 1948, 1975, 1984, 1989, 2018, 2045, 2097, 2098, 2099, 2100, 2101, 2102, 2135, 2165, 2170, },
 			[8] = { 2103, 2111, 2120, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2233, 2264, 2265, 2371, 2372, 2373, 2374, 2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 2392, 2395, 2396, 2397, 2398, 2400, 2401, 2415, 2417, 2427, },
-			[9] = { 2407, 2410, 2413, 2422, 2432, 2439, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2465, },
+			[9] = { 2407, 2410, 2413, 2432, 2439, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2465, },
 			},
 
 		-- These reputations use the friendship names instead of normal reputation names
@@ -3071,7 +3073,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["96D"] = "Neutral", -- 2413	-- TODO: Determine faction
 			["96F"] = "Neutral", -- 2415	-- TODO: Determine faction
 			["971"] = "Neutral", -- 2417	-- TODO: Determine faction
-			["976"] = "Neutral", -- 2422	-- TODO: Determine faction
+--			["976"] = "Neutral", -- 2422	-- TODO: Determine faction
 			["97B"] = "Neutral", -- 2427	-- TODO: Determine faction
 			["980"] = "Neutral", -- 2432	-- TODO: Determine faction
 			["987"] = "Neutral", -- 2439	-- TODO: Determine faction
@@ -3092,6 +3094,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["99B"] = "Neutral", -- 2459	-- TODO: Determine faction
 			["99C"] = "Neutral", -- 2460	-- TODO: Determine faction
 			["99D"] = "Neutral", -- 2461	-- TODO: Determine faction
+			["9A1"] = "Neutral", -- 2422	-- TODO: Determine faction
 			},
 
 		slashCommandOptions = {},
@@ -3415,12 +3418,13 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		_PrepareWorldQuestSelfNPCs = function(self, mapId)
 			if nil == self._worldQuestSelfNPCs[mapId] then
 				self._worldQuestSelfNPCs[mapId] = {}
-				local currentNPCId = -100000 - mapId
-				while Grail.npc.locations[currentNPCId] and Grail.npc.locations[currentNPCId][1] and Grail.npc.locations[currentNPCId][1].x do
-					local coordinates = strformat("%.2f,%.2f", Grail.npc.locations[currentNPCId][1].x, Grail.npc.locations[currentNPCId][1].y)
-					self._worldQuestSelfNPCs[mapId][coordinates] = currentNPCId
-					currentNPCId = currentNPCId - 10000
-				end
+-- Since the processing of npc.locations for world quests has been handled in _ProcessNPCs(), we need not do any here.
+--				local currentNPCId = -100000 - mapId
+--				while Grail.npc.locations[currentNPCId] and Grail.npc.locations[currentNPCId][1] and Grail.npc.locations[currentNPCId][1].x do
+--					local coordinates = strformat("%.2f,%.2f", Grail.npc.locations[currentNPCId][1].x, Grail.npc.locations[currentNPCId][1].y)
+--					self._worldQuestSelfNPCs[mapId][coordinates] = currentNPCId
+--					currentNPCId = currentNPCId - 10000
+--				end
 			end
 		end,
 
@@ -7872,6 +7876,14 @@ end
 					end
 				end
 			end
+			-- Look for learned world quest locations to see if they are in the datbase as fixed locations
+			if npcId > self.worldNPCBase and npcId < self.worldNPCBase + 1000000 then
+				local mapId, coordinates = strsplit(':', locationString)
+				mapId = tonumber(mapId)
+				if mapId and self._worldQuestSelfNPCs[mapId] and self._worldQuestSelfNPCs[mapId][coordinates] then
+					retval = true
+				end
+			end
 			if nil ~= t then
 				local locations = { strsplit(' ', locationString) }
 				for _, loc in pairs(locations) do
@@ -9161,6 +9173,16 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 							tinsert(N.locations[key], { ["mapArea"]=tonumber(strsub(code, 2)) })
 						else	-- a real coordinate
 							tinsert(N.locations[key], Grail:_LocationStructure(code))
+							--	If this quest is a world quest location (NPC ID which is negative), it should be added to the _worldQuestSelfNPCs structure.
+							local keyAsNumber = tonumber(key)
+							if keyAsNumber and keyAsNumber < 0 then
+								local mapId, coordinates = strsplit(':', code)
+								mapId = tonumber(mapId)
+								if nil ~= mapId then
+									self._worldQuestSelfNPCs[mapId] = self._worldQuestSelfNPCs[mapId] or {}
+									self._worldQuestSelfNPCs[mapId][coordinates] = keyAsNumber
+								end
+							end
 						end
 					end
 				end

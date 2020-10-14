@@ -33231,6 +33231,9 @@ G[62801]='The Call of Fate'
 end
 
 if release >= 36165 then
+G[53368]='Arathi Donations: Organic Discombobulation Grenade'
+G[54373]='Darkshore Donations: Enchant Ring - Seal of Haste'
+G[54377]='Darkshore Donations: Crimson Ink'
 G[54546]='Singer'
 G[57328]="Trashin' the Camp"
 G[57650]='Better Off Dead'
@@ -33255,12 +33258,14 @@ G[58908]='Finding Your Way'
 G[58909]='License to Ride'
 G[58911]='Home Is Where the Hearth Is'
 G[59234]='Mixing A Mess'
+G[59430]='A Plague on Your House'
 G[59578]="Let's Get Ready to Humble"
 G[59583]='Welcome to Stormwind'
 G[59599]='Retaining the Court'
 G[59680]="Vesiphone's Vicious Vesper"
 G[59705]='Things Remembered'
 G[59717]='Things Remembered'
+G[59750]='How to Get a Head'
 G[59771]='History of Corruption'
 G[59789]='Tithe and Taxes'
 G[59804]='Gateways of Horror'
