@@ -509,6 +509,7 @@
 --		111 Updates some Quest/NPC information.
 --			Adds basic support for Shadowlands beta.
 --			Changes the way treasures are looted to hopefully be faster.
+--			Changes interface to 90001.
 --
 --	Known Issues
 --
