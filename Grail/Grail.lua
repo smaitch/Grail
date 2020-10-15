@@ -3241,6 +3241,26 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			return retval
 		end,
 
+		_HighestSupportedExpansion = function(self)
+			local retval = 0
+			-- As of 2020-10-15 Classic has EXPANSION_NAME 0..6 defined, while Retail has 0..8 defined.
+			-- It would be great if we could support what is defined in the system, but it seems we cannot
+			-- and therefor if in Classic we limit ourselves to EXPANSION_NAME0 only.
+			if not self.existsClassic then
+				for expansionIndex = 1, 100 do
+					if nil == self:_ExpansionName(expansionIndex) then
+						break
+					end
+					retval = expansionIndex
+				end
+			end
+			return retval
+		end,
+		
+		_ExpansionName = function(self, expansionIndex)
+			return _G["EXPANSION_NAME"..expansionIndex]
+		end,
+
 		_LoadContinentData = function(self)
 			--	Attempt to get all the Continents by starting wherever you are and getting the Cosmic
 			--	map and then asking it for all the Continents that are children of it, hoping the API
