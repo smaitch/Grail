@@ -507,9 +507,11 @@
 --			Updates GetPlayerMapPosition() to handle when UnitPosition() returns nils.
 --			Delays NPC name lookup from startup.
 --		111 Updates some Quest/NPC information.
---			Adds basic support for Shadowlands beta.
+--			Adds basic support for Shadowlands beta P:58619.
 --			Changes the way treasures are looted to hopefully be faster.
 --			Changes interface to 90001.
+--		112	Updates from Quest/NPC information.
+--			Redefines LE_GARRISON_TYPE_6_0 because Blizzard removed it.
 --
 --	Known Issues
 --
@@ -1212,6 +1214,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.retrievingString = "正在获取物品信息"
 					else
 						self.retrievingString = "Unknown"
+					end
+
+					-- A quick and dirty workaround for Blizzard's change in how they deal with an old enum.
+					if nil == LE_GARRISON_TYPE_6_0 then
+						LE_GARRISON_TYPE_6_0 = Enum.GarrisonType.Type_6_0
 					end
 
 					--

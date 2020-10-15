@@ -1396,6 +1396,7 @@ G[1352028]='Wanted Scroll'
 G[1353420]='Stone Altar'
 G[1353645]="Marileth's Journal"
 G[1355798]='Cage'
+G[1358533]='Forgotten Supplies'
 G[1362489]='Elysian Decree'
 end
 
