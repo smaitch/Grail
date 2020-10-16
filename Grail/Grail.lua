@@ -10661,6 +10661,10 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[2186] = 57042,	-- Choosing Nazjatar Alliance companion Inowari
 			[2214] = {55404, 57041},	-- Choosing Nazjatar Alliance companion Ori
 			[2215] = 57040, -- Choosing Nazjatar Alliance companion Akana
+			[4335] = { 62020, 62709, 62827, },	-- Choosing Venthyr covenant	[for a level 60 prebuild NE druid]
+			[4431] = { 62017, 62711, 62827, },	-- Choosing Necrolord covenant	[for a level 60 prebuild NE druid]
+			[4499] = { 62019, 62827, },	-- Choosing Night Fae covenant	[for a level 60 prebuild NE druid]
+			[4565] = { 62023, 62708, 62827, },	-- Choosing Kyrian covenant	[for a level 60 prebuild NE druid]
 --			[20920] = XXX, -- Choosing "Replay Storyline" in Choose Your Shadowlands Experience [note that there is no quest completed]
 			[20947] = {		 -- Choosing "The Threads of Fate"
 						56829, 56942, 56955, 56978, 57007, 57025, 57026, 57037, 57098, 57102, 57131, 57136, 57159, 57161, 57164, 57173,
@@ -10682,7 +10686,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 						60647, 60648, 60661, 60671, 60709, 60724, 60733, 60735, 60737, 60738, 60763, 60764, 60778, 60831, 60839, 60856,
 						60857, 60859, 60881, 60886, 60901, 60905, 60972, 61096, 61107, 61190, 61715, 61716, 62654, 62706, 62713, 62744,
 						},
-			[21039] = {62019, 62710},	-- Choosing Night Fae covenant
+			[21039] = {62019, 62710},	-- Choosing Night Fae covenant [for a level 50 Zand druid having chosen threads of fate]
 			},
 		_ItemTextBeginList = {
 			[1292673] = 52134,
