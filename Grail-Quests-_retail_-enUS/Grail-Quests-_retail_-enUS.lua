@@ -33431,7 +33431,25 @@ G[63032]='The Highlord Calls'
 end
 
 if release >= 36267 then
+G[59211]='Forgotten Village'
+G[59600]='Rotbriar Trouble'
 G[59940]='The Choppy Booster Mk. 5'
+G[60476]='Seize the Means of Production'
+G[60602]='Secret Service'
+G[60657]='Aid From Above'
+G[60837]='Wrath of Aliothe'
+G[61060]='Spore Losers'
+G[61303]="It's Raining Sparkles"
+G[61948]='Airborne Defense Force'
+G[63031]='Acquisition: Crystallized Stygia'
+G[63038]='Guaranteed Delivery'
+G[63039]='A Monument to Vengeance'
+G[63040]='Guaranteed Delivery'
+G[63043]='Sundered Souls'
+G[63045]='Feed Your Soul'
+G[63047]='Acquisiton: Runeforged Shackles'
+G[63050]='Acquisiton: Blazing Ingots'
+G[63062]='Torment for the Taking'
 end
 
 --	End of localized quest names

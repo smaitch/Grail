@@ -7963,6 +7963,7 @@ end
 			local l2 = locationStructure2 or {}
 			if (l1.near or l2.near) and l1.mapArea == l2.mapArea then
 				retval = true
+				distance = 0.0	-- Assume that near is really really close :-)
 --			elseif l1.mapArea == l2.mapArea and l1.mapLevel == l2.mapLevel then
 			elseif l1.mapArea == l2.mapArea then
 				if l1.x and l2.x and l1.y and l2.y then
@@ -8697,7 +8698,7 @@ end
 							local npcLocation = self:_LocationStructure(npcLocationString)
 							for _, aliasLocation in pairs(aliasLocationStructures) do
 								local found, computedDistance = self:_LocationsCloseStructures(npcLocation, aliasLocation)
-								if found and computedDistance < bestDistanceValue then
+								if found and computedDistance and computedDistance < bestDistanceValue then
 									bestDistanceValue = computedDistance
 									bestNPCId = aliasId
 									retval = true
@@ -11147,6 +11148,13 @@ end
 		--	@param coordinates The zone coordinates of the player.
 		--	@param version A version string based on the current internal database versions.
 		_UpdateTargetDatabase = function(self, targetName, npcId, coordinates, version)
+			-- If the npcId is a world object and we do not already have its name we should learn it.
+			if npcId >= 1000000 and npcId < 2000000 then
+				local storedNPCName = self:NPCName(npcId)
+				if nil == storedNPCName or storedNPCName ~= targetName then
+					self:_LearnObjectName(npcId, targetName)
+				end
+			end
 			return self:_NPCToUse(npcId, coordinates)
 		end,
 

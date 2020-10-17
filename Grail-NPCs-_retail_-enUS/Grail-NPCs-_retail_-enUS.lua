@@ -1400,4 +1400,9 @@ G[1358533]='Forgotten Supplies'
 G[1362489]='Elysian Decree'
 end
 
+if release >= 36267 then
+G[1351874]='Wanted: Enforcer Kristof'
+G[1351888]='Wanted: Summoner Marcelis'
+end
+
 --	End of localized NPC names
