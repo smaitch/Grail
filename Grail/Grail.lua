@@ -512,6 +512,7 @@
 --			Changes interface to 90001.
 --		112	Updates from Quest/NPC information.
 --			Redefines LE_GARRISON_TYPE_6_0 because Blizzard removed it.
+--			Adds slash command "/grail treasures" which toggles the old method of LOOT_CLOSED to record information when looting.
 --
 --	Known Issues
 --
@@ -1517,6 +1518,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self:RegisterSlashOption("debug", "|cFF00FF00debug|r => toggles debug on and off, printing new value", function()
 						Grail.GDE.debug = not Grail.GDE.debug
 						print(strformat("Grail Debug now %s", Grail.GDE.debug and "ON" or "OFF"))
+					end)
+					self:RegisterSlashOption("treasures", "|cFF00FF00treasures|r => toggles treasures on and off, printing new value", function()
+						Grail.GDE.treasures = not Grail.GDE.treasures
+						print(strformat("Grail Debug Treasures now %s", Grail.GDE.treasures and "ON" or "OFF"))
 					end)
 					self:RegisterSlashOption("target", "|cFF00FF00target|r => gets target information (NPC ID and your current location)", function()
 						local targetName, npcId, coordinates = self:TargetInformation()
@@ -7074,17 +7079,22 @@ end
 -- The old way of doing this was to query all the quests that were completed and see how they differ from the currently completed
 -- list and then assume the newly completed one(s) are associated with the treasure.  However, that is a little expensive.  Thus,
 -- only the treasure quests associated with the current zone are queried to see if there is any change in their status.
---			QueryQuestsCompleted()
 			local newlyCompleted = {}
---			self:_ProcessServerCompare(newlyCompleted)
+			-- We now support a value that controls using the old code versus the new because getting the initial treasure values
+			-- is a lot easier with the old code.
+			if Grail.GDE.treasures then
+				QueryQuestsCompleted()
+				self:_ProcessServerCompare(newlyCompleted)
+			else
 -- This is the new code that handles only checking specific values...
-			local mapId = Grail.GetCurrentMapAreaID()
-			local listOfTreasureQuestsInThisMap = self.mapAreasWithTreasures[mapId]
-			if nil ~= listOfTreasureQuestsInThisMap then
-				for k,v in pairs(listOfTreasureQuestsInThisMap) do
-					-- the first is server call, and the second is Grail database
-					if self:IsQuestFlaggedCompleted(v) and not self:IsQuestCompleted(v) then
-						tinsert(newlyCompleted, v)
+				local mapId = Grail.GetCurrentMapAreaID()
+				local listOfTreasureQuestsInThisMap = self.mapAreasWithTreasures[mapId]
+				if nil ~= listOfTreasureQuestsInThisMap then
+					for k,v in pairs(listOfTreasureQuestsInThisMap) do
+						-- the first is server call, and the second is Grail database
+						if self:IsQuestFlaggedCompleted(v) and not self:IsQuestCompleted(v) then
+							tinsert(newlyCompleted, v)
+						end
 					end
 				end
 			end
@@ -11148,8 +11158,9 @@ end
 		--	@param coordinates The zone coordinates of the player.
 		--	@param version A version string based on the current internal database versions.
 		_UpdateTargetDatabase = function(self, targetName, npcId, coordinates, version)
+			npcId = tonumber(npcId)
 			-- If the npcId is a world object and we do not already have its name we should learn it.
-			if npcId >= 1000000 and npcId < 2000000 then
+			if nil ~= npcId and npcId >= 1000000 and npcId < 2000000 then
 				local storedNPCName = self:NPCName(npcId)
 				if nil == storedNPCName or storedNPCName ~= targetName then
 					self:_LearnObjectName(npcId, targetName)
