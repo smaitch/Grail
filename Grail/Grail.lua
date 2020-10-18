@@ -514,6 +514,7 @@
 --			Redefines LE_GARRISON_TYPE_6_0 because Blizzard removed it.
 --			Adds slash command "/grail treasures" which toggles the old method of LOOT_CLOSED to record information when looting.
 --			Adds GetCurrencyInfo() which works around issues for which Blizzard API to use.
+--			Ensures AzeriteLevelMeetsOrExceeds() checks to make sure API used are present.
 --
 --	Known Issues
 --
@@ -3964,8 +3965,12 @@ end,
 		end,
 
 		AzeriteLevelMeetsOrExceeds = function(self, soughtLevel)
-			local retval = false
-			local currentLevel = C_AzeriteItem.GetPowerLevel(C_AzeriteItem.FindActiveAzeriteItem())
+			local retval, currentLevel = false, nil
+			if C_AzeriteItem then
+				if C_AzeriteItem.GetPowerLevel and C_AzeriteItem.FindActiveAzeriteItem then
+					currentLevel = C_AzeriteItem.GetPowerLevel(C_AzeriteItem.FindActiveAzeriteItem())
+				end
+			end
 			if nil ~= currentLevel and currentLevel >= soughtLevel then
 				retval = true
 			end
