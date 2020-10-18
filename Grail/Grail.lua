@@ -513,6 +513,7 @@
 --		112	Updates from Quest/NPC information.
 --			Redefines LE_GARRISON_TYPE_6_0 because Blizzard removed it.
 --			Adds slash command "/grail treasures" which toggles the old method of LOOT_CLOSED to record information when looting.
+--			Adds GetCurrencyInfo() which works around issues for which Blizzard API to use.
 --
 --	Known Issues
 --
@@ -1607,6 +1608,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end
 					frame:RegisterEvent("LOOT_OPENED")		-- support for Timeless Isle chests
 					frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+frame:RegisterEvent("GOSSIP_CONFIRM")	-- gossipIndex, text, cost
+frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 
 -- ReloadUI in Classic same as startup
 -- Normal startup in Classic		startup in Retail		ReloadUI in Retail
@@ -1851,6 +1854,13 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --				end
 			end,
 
+['GOSSIP_CONFIRM'] = function(self, frame, ...)
+if self.GDE.debug then print("*** GOSSIP_CONFIRM", ...) end
+end,
+['GOSSIP_ENTER_CODE'] = function(self, frame, ...)
+if self.GDE.debug then print("*** GOSSIP_ENTER_CODE", ...) end
+end,
+
 			['PLAYER_ENTERING_WORLD'] = function(self, frame)
 				if self.capabilities.usesArtifacts then
 					frame:RegisterEvent("ARTIFACT_XP_UPDATE")
@@ -2090,7 +2100,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						spellId = realSpellId
 						--	Reading Artifact Research Notes raises the knowledge level, so we need to handle this
 						if tonumber(spellId) == 219978 then
-							local _, level = GetCurrencyInfo(1171)
+							local _, level = self:GetCurrencyInfo(1171)
 							self:ArtifactChange(level)
 						end
 					end
@@ -3875,6 +3885,20 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupArtifactKnowledge])
 		end,
 
+		GetCurrencyInfo = function(self, currencyIndex)
+			local currencyName, currencyAmount = nil, nil
+			if GetCurrencyInfo then
+				currencyName, currencyAmount = GetCurrencyInfo(currencyIndex)
+			elseif C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo then
+				local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(currencyIndex)
+				if currencyInfo then
+					currencyName = currencyInfo.name
+					currencyAmount = currencyInfo.quantity
+				end
+			end
+			return currencyName, currencyAmount
+		end,
+
 		ArtifactKnowledgeLevel = function(self)
 --	In 7.1 the following API does not work unless the artifact UI is already open.
 --			return C_ArtifactUI.GetArtifactKnowledgeLevel()
@@ -3883,7 +3907,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --			if self.LAD then
 --				self.artifactKnowledgeLevel = self.LAD:GetArtifactKnowledge()
 --			end
-			local _, artifactKnowledgeCurrency = GetCurrencyInfo(1171)
+			local _, artifactKnowledgeCurrency = self:GetCurrencyInfo(1171)
 			self.artifactKnowledgeLevel = artifactKnowledgeCurrency or 0
 			return self.artifactKnowledgeLevel
 		end,

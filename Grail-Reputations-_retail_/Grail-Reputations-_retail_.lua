@@ -14141,6 +14141,7 @@ G[62715]={'967100'}
 end
 
 if release >= 36267 then
+G[28723]={'04575'}
 G[58221]={'96A125'}
 G[58437]={'96A125'}
 G[58505]={'96A125'}
@@ -14161,6 +14162,7 @@ G[61477]={'96A125'}
 G[61870]={'96A125'}
 G[61879]={'96D125'}
 G[61948]={'9A1125'}
+G[62085]={'96A75'}
 end
 
 --	Now the reputation data gets processed into its own table to save space
