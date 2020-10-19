@@ -7026,10 +7026,10 @@ end
 					else
 						isComplete = 0
 					end
-					isDaily = (1 == info.frequency)
+					isDaily = (Enum.QuestFrequency.Daily == info.frequency)
 					startEvent = info.startEvent
 					displayQuestID = nil
-					isWeekly = (2 == info.frequency)
+					isWeekly = (Enum.QuestFrequency.Weekly == info.frequency)
 					isTask = info.isTask
 					isBounty = info.isBounty
 					isStory = info.isStory
