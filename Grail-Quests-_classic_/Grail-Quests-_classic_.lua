@@ -25,7 +25,6 @@ interface = tonumber(interface)
 local G = Grail.questCodes
 
 if release >= 0 then
-G[-2]=''
 G[1]='L262655 E31727'
 G[2]='FH L1971455 A:100016305 T:12696 P:6383 E31727'
 G[5]='L1315327 A:288 T:272 O:163 E31727'
