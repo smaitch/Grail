@@ -507,8 +507,14 @@
 --			Updates GetPlayerMapPosition() to handle when UnitPosition() returns nils.
 --			Delays NPC name lookup from startup.
 --		111 Updates some Quest/NPC information.
---			Adds basic support for Shadowlands beta.
+--			Adds basic support for Shadowlands beta P:58619.
 --			Changes the way treasures are looted to hopefully be faster.
+--			Changes interface to 90001.
+--		112	Updates from Quest/NPC information.
+--			Redefines LE_GARRISON_TYPE_6_0 because Blizzard removed it.
+--			Adds slash command "/grail treasures" which toggles the old method of LOOT_CLOSED to record information when looting.
+--			Adds GetCurrencyInfo() which works around issues for which Blizzard API to use.
+--			Ensures AzeriteLevelMeetsOrExceeds() checks to make sure API used are present.
 --
 --	Known Issues
 --
@@ -1213,6 +1219,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.retrievingString = "Unknown"
 					end
 
+					-- A quick and dirty workaround for Blizzard's change in how they deal with an old enum.
+					if nil == LE_GARRISON_TYPE_6_0 then
+						LE_GARRISON_TYPE_6_0 = Enum.GarrisonType.Type_6_0
+					end
+
 					--
 					--	Blizzard has changed the way one queries to determine what quests are complete.
 					--	Prior to Mists of Pandaria the architecture required a call to be made to the
@@ -1269,9 +1280,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					if SendQuestChoiceResponse then
 						self.origSendQuestChoiceResponseFunction = SendQuestChoiceResponse
 						SendQuestChoiceResponse = newSendQuestChoiceFunction
-					elseif C_PlayerChoice and C_PlayerChoice.SendPlayerChoiceResponse then
-						self.origSendQuestChoiceResponseFunction = C_PlayerChoice.SendPlayerChoiceResponse
-						C_PlayerChoice.SendPlayerChoiceResponse = newSendQuestChoiceFunction
+					elseif SendPlayerChoiceResponse then
+						self.origSendQuestChoiceResponseFunction = SendPlayerChoiceResponse
+						SendPlayerChoiceResponse = newSendQuestChoiceFunction
 					else
 						if self.GDE.debug then
 							print("Grail did not replace any SendQuestChoiceResponse")
@@ -1510,6 +1521,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						Grail.GDE.debug = not Grail.GDE.debug
 						print(strformat("Grail Debug now %s", Grail.GDE.debug and "ON" or "OFF"))
 					end)
+					self:RegisterSlashOption("treasures", "|cFF00FF00treasures|r => toggles treasures on and off, printing new value", function()
+						Grail.GDE.treasures = not Grail.GDE.treasures
+						print(strformat("Grail Debug Treasures now %s", Grail.GDE.treasures and "ON" or "OFF"))
+					end)
 					self:RegisterSlashOption("target", "|cFF00FF00target|r => gets target information (NPC ID and your current location)", function()
 						local targetName, npcId, coordinates = self:TargetInformation()
 						local message = strformat("%s (%d) %s", targetName and targetName or 'nil target', npcId and npcId or -1, coordinates and coordinates or 'no coords')
@@ -1594,6 +1609,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end
 					frame:RegisterEvent("LOOT_OPENED")		-- support for Timeless Isle chests
 					frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+frame:RegisterEvent("GOSSIP_CONFIRM")	-- gossipIndex, text, cost
+frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 
 -- ReloadUI in Classic same as startup
 -- Normal startup in Classic		startup in Retail		ReloadUI in Retail
@@ -1628,6 +1645,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self:_CleanDatabase()
 					self:_CleanDatabaseLearnedQuestName()
 					self:_CleanDatabaseLearnedObjectName()
+					--	We rely on _ProcessNPCs() being called before _CleanDatabaseLearnedNPCLocation() because we want all the world quest NPCs to be processed
+					--	so any learned ones can be removed if the database contains them.
 					self:_CleanDatabaseLearnedNPCLocation()
 					self:_CleanDatabaseLearnedQuest()
 					self:_CleanDatabaseLearnedQuestCode()
@@ -1836,6 +1855,13 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --				end
 			end,
 
+['GOSSIP_CONFIRM'] = function(self, frame, ...)
+if self.GDE.debug then print("*** GOSSIP_CONFIRM", ...) end
+end,
+['GOSSIP_ENTER_CODE'] = function(self, frame, ...)
+if self.GDE.debug then print("*** GOSSIP_ENTER_CODE", ...) end
+end,
+
 			['PLAYER_ENTERING_WORLD'] = function(self, frame)
 				if self.capabilities.usesArtifacts then
 					frame:RegisterEvent("ARTIFACT_XP_UPDATE")
@@ -1862,10 +1888,11 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			['QUEST_DETAIL'] = function(self, frame)
 				local npcId, npcName = self:GetNPCInformation("questnpc")
 				local coordinates = self:Coordinates()
-				npcId = self:_UpdateTargetDatabase(npcName, npcId, coordinates)
+				local databaseNPCId = self:_UpdateTargetDatabase(npcName, npcId, coordinates)
 				self.questDetailInformation = {
+					blizzardNPCId = npcId,
 					coordinates = coordinates,
-					npcId = npcId,
+					npcId = databaseNPCId,
 					npcName = npcName,
 					questId = GetQuestID()	-- technically we do not currently use this, but it might be useful
 				}
@@ -1888,6 +1915,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				
 				local payload = {}
 				if nil ~= self.questDetailInformation then
+					payload.blizzardNPCId = self.questDetailInformation.blizzardNPCId
 					payload.npcId = self.questDetailInformation.npcId
 					payload.npcName = self.questDetailInformation.npcName
 					if self.GDE.debug then
@@ -2073,7 +2101,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						spellId = realSpellId
 						--	Reading Artifact Research Notes raises the knowledge level, so we need to handle this
 						if tonumber(spellId) == 219978 then
-							local _, level = GetCurrencyInfo(1171)
+							local _, level = self:GetCurrencyInfo(1171)
 							self:ArtifactChange(level)
 						end
 					end
@@ -2522,7 +2550,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			[6] = { 1445, 1515, 1520, 1679, 1681, 1682, 1708, 1710, 1711, 1731, 1732, 1733, 1735, 1736, 1737, 1738, 1739, 1740, 1741, 1847, 1848, 1849, 1850, },
 			[7] = { 1815, 1828, 1833, 1859, 1860, 1862, 1883, 1888, 1894, 1899, 1900, 1919, 1947, 1948, 1975, 1984, 1989, 2018, 2045, 2097, 2098, 2099, 2100, 2101, 2102, 2135, 2165, 2170, },
 			[8] = { 2103, 2111, 2120, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2233, 2264, 2265, 2371, 2372, 2373, 2374, 2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 2392, 2395, 2396, 2397, 2398, 2400, 2401, 2415, 2417, 2427, },
-			[9] = { 2407, 2410, 2413, 2422, 2432, 2439, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, },
+			[9] = { 2407, 2410, 2413, 2432, 2439, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2465, },
 			},
 
 		-- These reputations use the friendship names instead of normal reputation names
@@ -2810,7 +2838,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["96D"] = "Court of Harvesters", -- 2413
 			["96F"] = "Rajani", -- 2415
 			["971"] = "Uldum Accord", -- 2417
-			["976"] = "The Wild Hunt", -- 2422
+--			["976"] = "The Wild Hunt", -- 2422
 			["97B"] = "Aqir Hatchling", -- 2427
 			["980"] = "Ve'nari", -- 2432
 			["987"] = "The Avowed", -- 2439
@@ -2831,6 +2859,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["99B"] = "Sika", -- 2459
 			["99C"] = "Stonehead", -- 2460
 			["99D"] = "Plague Deviser Marileth", -- 2461
+			["9A1"] = "The Wild Hunt",	-- 2465
 			},
 
 		reputationMappingFaction = {
@@ -3068,7 +3097,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["96D"] = "Neutral", -- 2413	-- TODO: Determine faction
 			["96F"] = "Neutral", -- 2415	-- TODO: Determine faction
 			["971"] = "Neutral", -- 2417	-- TODO: Determine faction
-			["976"] = "Neutral", -- 2422	-- TODO: Determine faction
+--			["976"] = "Neutral", -- 2422	-- TODO: Determine faction
 			["97B"] = "Neutral", -- 2427	-- TODO: Determine faction
 			["980"] = "Neutral", -- 2432	-- TODO: Determine faction
 			["987"] = "Neutral", -- 2439	-- TODO: Determine faction
@@ -3089,6 +3118,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["99B"] = "Neutral", -- 2459	-- TODO: Determine faction
 			["99C"] = "Neutral", -- 2460	-- TODO: Determine faction
 			["99D"] = "Neutral", -- 2461	-- TODO: Determine faction
+			["9A1"] = "Neutral", -- 2422	-- TODO: Determine faction
 			},
 
 		slashCommandOptions = {},
@@ -3227,6 +3257,26 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			return retval
 		end,
 
+		_HighestSupportedExpansion = function(self)
+			local retval = 0
+			-- As of 2020-10-15 Classic has EXPANSION_NAME 0..6 defined, while Retail has 0..8 defined.
+			-- It would be great if we could support what is defined in the system, but it seems we cannot
+			-- and therefor if in Classic we limit ourselves to EXPANSION_NAME0 only.
+			if not self.existsClassic then
+				for expansionIndex = 1, 100 do
+					if nil == self:_ExpansionName(expansionIndex) then
+						break
+					end
+					retval = expansionIndex
+				end
+			end
+			return retval
+		end,
+		
+		_ExpansionName = function(self, expansionIndex)
+			return _G["EXPANSION_NAME"..expansionIndex]
+		end,
+
 		_LoadContinentData = function(self)
 			--	Attempt to get all the Continents by starting wherever you are and getting the Cosmic
 			--	map and then asking it for all the Continents that are children of it, hoping the API
@@ -3322,10 +3372,12 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			local questId = payload.questId
 			local questIndex = payload.questIndex or "NO questIndex"
 			local npcName = payload.npcName or "NO npcName"
-			local npcId = payload.npcId or "NO npcId"
+			local npcId = tonumber(payload.npcId) or "NO npcId"
+			local blizardNPCId = payload.blizzardNPCId and tonumber(payload.blizzardNPCId) or nil
 			local coordinates = payload.coordinates or "NO coordinates"
 			local errorCodeString = Grail:CanAcceptQuest(questId, false, false, true) and "" or strformat(" Error: %d", Grail:StatusCode(questId))
-			local message = strformat("+ %s(%d)[%d] <= %s(%d) %s%s", Grail:QuestName(questId) or "NO NAME", questId, questIndex, npcName, npcId, coordinates, errorCodeString)
+			local actualNPCIdString = (nil ~= blizardNPCId and blizardNPCId ~= npcId) and ("[" .. blizardNPCId .. "]") or ""
+			local message = strformat("+ %s(%d)[%d] <= %s(%d)%s %s%s", Grail:QuestName(questId) or "NO NAME", questId, questIndex, npcName, npcId, actualNPCIdString, coordinates, errorCodeString)
 			Grail:_AddTrackingMessage(message)
 			print(message)
 		end,
@@ -3410,12 +3462,13 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		_PrepareWorldQuestSelfNPCs = function(self, mapId)
 			if nil == self._worldQuestSelfNPCs[mapId] then
 				self._worldQuestSelfNPCs[mapId] = {}
-				local currentNPCId = -100000 - mapId
-				while Grail.npc.locations[currentNPCId] and Grail.npc.locations[currentNPCId][1] and Grail.npc.locations[currentNPCId][1].x do
-					local coordinates = strformat("%.2f,%.2f", Grail.npc.locations[currentNPCId][1].x, Grail.npc.locations[currentNPCId][1].y)
-					self._worldQuestSelfNPCs[mapId][coordinates] = currentNPCId
-					currentNPCId = currentNPCId - 10000
-				end
+-- Since the processing of npc.locations for world quests has been handled in _ProcessNPCs(), we need not do any here.
+--				local currentNPCId = -100000 - mapId
+--				while Grail.npc.locations[currentNPCId] and Grail.npc.locations[currentNPCId][1] and Grail.npc.locations[currentNPCId][1].x do
+--					local coordinates = strformat("%.2f,%.2f", Grail.npc.locations[currentNPCId][1].x, Grail.npc.locations[currentNPCId][1].y)
+--					self._worldQuestSelfNPCs[mapId][coordinates] = currentNPCId
+--					currentNPCId = currentNPCId - 10000
+--				end
 			end
 		end,
 
@@ -3833,6 +3886,20 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupArtifactKnowledge])
 		end,
 
+		GetCurrencyInfo = function(self, currencyIndex)
+			local currencyName, currencyAmount = nil, nil
+			if GetCurrencyInfo then
+				currencyName, currencyAmount = GetCurrencyInfo(currencyIndex)
+			elseif C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo then
+				local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(currencyIndex)
+				if currencyInfo then
+					currencyName = currencyInfo.name
+					currencyAmount = currencyInfo.quantity
+				end
+			end
+			return currencyName, currencyAmount
+		end,
+
 		ArtifactKnowledgeLevel = function(self)
 --	In 7.1 the following API does not work unless the artifact UI is already open.
 --			return C_ArtifactUI.GetArtifactKnowledgeLevel()
@@ -3841,7 +3908,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --			if self.LAD then
 --				self.artifactKnowledgeLevel = self.LAD:GetArtifactKnowledge()
 --			end
-			local _, artifactKnowledgeCurrency = GetCurrencyInfo(1171)
+			local _, artifactKnowledgeCurrency = self:GetCurrencyInfo(1171)
 			self.artifactKnowledgeLevel = artifactKnowledgeCurrency or 0
 			return self.artifactKnowledgeLevel
 		end,
@@ -3898,8 +3965,12 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		end,
 
 		AzeriteLevelMeetsOrExceeds = function(self, soughtLevel)
-			local retval = false
-			local currentLevel = C_AzeriteItem.GetPowerLevel(C_AzeriteItem.FindActiveAzeriteItem())
+			local retval, currentLevel = false, nil
+			if C_AzeriteItem then
+				if C_AzeriteItem.GetPowerLevel and C_AzeriteItem.FindActiveAzeriteItem then
+					currentLevel = C_AzeriteItem.GetPowerLevel(C_AzeriteItem.FindActiveAzeriteItem())
+				end
+			end
 			if nil ~= currentLevel and currentLevel >= soughtLevel then
 				retval = true
 			end
@@ -6946,12 +7017,19 @@ end
 					suggestedGroup = info.suggestedGroup
 					isHeader = info.isHeader
 					isCollapsed = info.isCollapsed
-					isComplete = self:IsQuestFlaggedCompleted(info.questID)
-					isDaily = (1 == info.frequency)
 					questId = info.questID
+					-- our use of isComplete is based on the old API and thus needs to be -1, 0, or 1 based on failure, not yet, and complete
+					if self:IsQuestFlaggedCompleted(questId) then
+						isComplete = 1
+					elseif C_QuestLog.IsFailed(questId) then
+						isComplete = -1
+					else
+						isComplete = 0
+					end
+					isDaily = (Enum.QuestFrequency.Daily == info.frequency)
 					startEvent = info.startEvent
 					displayQuestID = nil
-					isWeekly = (2 == info.frequency)
+					isWeekly = (Enum.QuestFrequency.Weekly == info.frequency)
 					isTask = info.isTask
 					isBounty = info.isBounty
 					isStory = info.isStory
@@ -7030,17 +7108,22 @@ end
 -- The old way of doing this was to query all the quests that were completed and see how they differ from the currently completed
 -- list and then assume the newly completed one(s) are associated with the treasure.  However, that is a little expensive.  Thus,
 -- only the treasure quests associated with the current zone are queried to see if there is any change in their status.
---			QueryQuestsCompleted()
 			local newlyCompleted = {}
---			self:_ProcessServerCompare(newlyCompleted)
+			-- We now support a value that controls using the old code versus the new because getting the initial treasure values
+			-- is a lot easier with the old code.
+			if Grail.GDE.treasures then
+				QueryQuestsCompleted()
+				self:_ProcessServerCompare(newlyCompleted)
+			else
 -- This is the new code that handles only checking specific values...
-			local mapId = Grail.GetCurrentMapAreaID()
-			local listOfTreasureQuestsInThisMap = self.mapAreasWithTreasures[mapId]
-			if nil ~= listOfTreasureQuestsInThisMap then
-				for k,v in pairs(listOfTreasureQuestsInThisMap) do
-					-- the first is server call, and the second is Grail database
-					if self:IsQuestFlaggedCompleted(v) and not self:IsQuestCompleted(v) then
-						tinsert(newlyCompleted, v)
+				local mapId = Grail.GetCurrentMapAreaID()
+				local listOfTreasureQuestsInThisMap = self.mapAreasWithTreasures[mapId]
+				if nil ~= listOfTreasureQuestsInThisMap then
+					for k,v in pairs(listOfTreasureQuestsInThisMap) do
+						-- the first is server call, and the second is Grail database
+						if self:IsQuestFlaggedCompleted(v) and not self:IsQuestCompleted(v) then
+							tinsert(newlyCompleted, v)
+						end
 					end
 				end
 			end
@@ -7568,8 +7651,10 @@ end
 		end,
 
 		IsQuestFlaggedCompleted = function(self, questId)
-			if C_QuestLog.IsQuestFlaggedCompleted then
-				return C_QuestLog.IsQuestFlaggedCompleted(questId)
+			if C_QuestLog.IsComplete then
+				return C_QuestLog.IsComplete(questId)
+--			if C_QuestLog.IsQuestFlaggedCompleted then
+--				return C_QuestLog.IsQuestFlaggedCompleted(questId)
 			else
 				return IsQuestFlaggedCompleted(questId)
 			end
@@ -7858,6 +7943,14 @@ end
 					end
 				end
 			end
+			-- Look for learned world quest locations to see if they are in the datbase as fixed locations
+			if npcId > self.worldNPCBase and npcId < self.worldNPCBase + 1000000 then
+				local mapId, coordinates = strsplit(':', locationString)
+				mapId = tonumber(mapId)
+				if mapId and self._worldQuestSelfNPCs[mapId] and self._worldQuestSelfNPCs[mapId][coordinates] then
+					retval = true
+				end
+			end
 			if nil ~= t then
 				local locations = { strsplit(' ', locationString) }
 				for _, loc in pairs(locations) do
@@ -7904,19 +7997,22 @@ end
 
 		_LocationsCloseStructures = function(self, locationStructure1, locationStructure2)
 			local retval = false
+			local distance = nil
 			local l1 = locationStructure1 or {}
 			local l2 = locationStructure2 or {}
 			if (l1.near or l2.near) and l1.mapArea == l2.mapArea then
 				retval = true
+				distance = 0.0	-- Assume that near is really really close :-)
 --			elseif l1.mapArea == l2.mapArea and l1.mapLevel == l2.mapLevel then
 			elseif l1.mapArea == l2.mapArea then
 				if l1.x and l2.x and l1.y and l2.y then
-					if sqrt((l1.x - l2.x)^2 + (l1.y - l2.y)^2) < self.locationCloseness then
+					distance = sqrt((l1.x - l2.x)^2 + (l1.y - l2.y)^2)
+					if distance < self.locationCloseness then
 						retval = true
 					end
 				end
 			end
-			return retval
+			return retval, distance
 		end,
 
 --		_LogNameIssue = function(self, npcOrQuest, id, properTitle)
@@ -8597,16 +8693,21 @@ end
 			local retval = npcId
 			if nil ~= npcId and npcId > 0 then
 				if not self:_LocationKnown(npcId, npcLocationString) then
-					local aliasFound = false
-					local possibleAliases = self.npc.aliases[npcId]
-					if nil ~= possibleAliases then
-						for _, aliasId in pairs(possibleAliases) do
-							if self:_LocationKnown(aliasId, npcLocationString) then
-								retval = aliasId
-								aliasFound = true
-							end
-						end
+					local aliasFound, aliasNPCId = self:_BestAliasNPCToUse(npcId, npcLocationString)
+					if aliasFound then
+						retval = aliasNPCId
 					end
+--					local aliasFound = false
+--					local possibleAliases = self.npc.aliases[npcId]
+--					if nil ~= possibleAliases then
+--						-- TODO: Need to look through all the possibleAliases and return the best one because otherwise we are not returning the one that should be used.
+--						for _, aliasId in pairs(possibleAliases) do
+--							if self:_LocationKnown(aliasId, npcLocationString) then
+--								retval = aliasId
+--								aliasFound = true
+--							end
+--						end
+--					end
 					if not aliasFound then
 						if nil ~= self.npc.locations[npcId] and 0 < #(self.npc.locations[npcId]) then
 							retval = self:_CreateAliasNPC(npcId, npcLocationString)
@@ -8617,6 +8718,36 @@ end
 				end
 			end
 			return retval
+		end,
+
+		---
+		--	Returns whether an alias is found and the npc ID for it.
+		--	Picks the best one (meaning closest) if there are more than one that match.
+		_BestAliasNPCToUse = function(self, npcId, npcLocationString)
+			local retval, bestNPCId = false, nil
+			-- The key for npc.aliases is the true NPC ID.  The values are alias NPC IDs (usually in the 700000 range) for that true NPC ID.
+			local possibleAliases = self.npc.aliases[npcId]
+			if nil ~= possibleAliases then
+				local npcLocationStrings = { strsplit(' ', npcLocationString) }
+				local bestDistanceValue = self.locationCloseness * 1000	-- initialize the value to something really big so the first found will be used
+				for _, aliasId in pairs(possibleAliases) do
+					local aliasLocationStructures = self.npc.locations[aliasId]
+					if nil ~= aliasLocationStructures then
+						for _, npcLocationString in pairs(npcLocationStrings) do
+							local npcLocation = self:_LocationStructure(npcLocationString)
+							for _, aliasLocation in pairs(aliasLocationStructures) do
+								local found, computedDistance = self:_LocationsCloseStructures(npcLocation, aliasLocation)
+								if found and computedDistance and computedDistance < bestDistanceValue then
+									bestDistanceValue = computedDistance
+									bestNPCId = aliasId
+									retval = true
+								end
+							end
+						end
+					end
+				end
+			end
+			return retval, bestNPCId
 		end,
 
 		_CreateAliasNPC = function(self, npcId, npcLocationString)
@@ -9110,6 +9241,16 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 							tinsert(N.locations[key], { ["mapArea"]=tonumber(strsub(code, 2)) })
 						else	-- a real coordinate
 							tinsert(N.locations[key], Grail:_LocationStructure(code))
+							--	If this quest is a world quest location (NPC ID which is negative), it should be added to the _worldQuestSelfNPCs structure.
+							local keyAsNumber = tonumber(key)
+							if keyAsNumber and keyAsNumber < 0 then
+								local mapId, coordinates = strsplit(':', code)
+								mapId = tonumber(mapId)
+								if nil ~= mapId then
+									self._worldQuestSelfNPCs[mapId] = self._worldQuestSelfNPCs[mapId] or {}
+									self._worldQuestSelfNPCs[mapId][coordinates] = keyAsNumber
+								end
+							end
 						end
 					end
 				end
@@ -10558,8 +10699,34 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[1197] = 51571,	-- Choosing Nazmir from Zandalar Mission Board on ship in Boralus
 			[1210] = 51802,	-- Choosing Stormsong Valley from Kul Tiras Mission Board on ship in Zuldazar
 			[2186] = 57042,	-- Choosing Nazjatar Alliance companion Inowari
-			[2214] = 55404,	-- Choosing Nazjatar Alliance companion Ori -- also completes 57041
+			[2214] = {55404, 57041},	-- Choosing Nazjatar Alliance companion Ori
 			[2215] = 57040, -- Choosing Nazjatar Alliance companion Akana
+			[4335] = { 62020, 62709, 62827, },	-- Choosing Venthyr covenant	[for a level 60 prebuild NE druid]
+			[4431] = { 62017, 62711, 62827, },	-- Choosing Necrolord covenant	[for a level 60 prebuild NE druid]
+			[4499] = { 62019, 62827, },	-- Choosing Night Fae covenant	[for a level 60 prebuild NE druid]
+			[4565] = { 62023, 62708, 62827, },	-- Choosing Kyrian covenant	[for a level 60 prebuild NE druid]
+--			[20920] = XXX, -- Choosing "Replay Storyline" in Choose Your Shadowlands Experience [note that there is no quest completed]
+			[20947] = {		 -- Choosing "The Threads of Fate"
+						56829, 56942, 56955, 56978, 57007, 57025, 57026, 57037, 57098, 57102, 57131, 57136, 57159, 57161, 57164, 57173,
+						57174, 57175, 57176, 57178, 57179, 57180, 57182, 57189, 57190, 57240, 57261, 57263, 57264, 57265, 57266, 57267,
+						57269, 57270, 57288, 57291, 57380, 57381, 57386, 57390, 57405, 57425, 57426, 57427, 57428, 57442, 57446, 57447,
+						57460, 57461, 57511, 57512, 57514, 57515, 57516, 57574, 57584, 57619, 57676, 57677, 57689, 57690, 57691, 57693,
+						57694, 57709, 57710, 57711, 57713, 57714, 57715, 57716, 57717, 57719, 57724, 57787, 57816, 57908, 57909, 57912,
+						57947, 57948, 57949, 57950, 57951, 59773, 59774, 57976, 57977, 57979, 57982, 57983, 57984, 57985, 57986, 57987,
+						57993, 57994, 58011, 58016, 58027, 58031, 58036, 58045, 58086, 58117, 58174, 58268, 58351, 58433, 58473, 58480,
+						58483, 58484, 58486, 58488, 58524, 58589, 58590, 58591, 58592, 58593, 58616, 58617, 58618, 58654, 58714, 58719,
+						58720, 58721, 58723, 58724, 58726, 58751, 58771, 58799, 58800, 58821, 58843, 58869, 58916, 58931, 58932, 58941,
+						58976, 58977, 58978, 58979, 58980, 59009, 59011, 59014, 59021, 59023, 59025, 59130, 59147, 59171, 59172, 59185,
+						59188, 59190, 59196, 59197, 59198, 59199, 59200, 59202, 59206, 59209, 59210, 59223, 59231, 59232, 59256, 59327,
+						59426, 59616, 59644, 59874, 59897, 59920, 59959, 59960, 59962, 59966, 59973, 59974, 60005, 60006, 60007, 60008,
+						60009, 60013, 60020, 60021, 60052, 60053, 60054, 60055, 60056, 60129, 60148, 60149, 60150, 60151, 60152, 60154,
+						60156, 60179, 60180, 60181, 60217, 60218, 60219, 60220, 60221, 60222, 60223, 60224, 60225, 60226, 60229, 60292,
+						60313, 60338, 60341, 60428, 60451, 60453, 60461, 60506, 60519, 60520, 60521, 60522, 60557, 60563, 60566, 60567,
+						60572, 60575, 60577, 60578, 60594, 60600, 60621, 60624, 60628, 60629, 60630, 60631, 60632, 60637, 60638, 60639,
+						60647, 60648, 60661, 60671, 60709, 60724, 60733, 60735, 60737, 60738, 60763, 60764, 60778, 60831, 60839, 60856,
+						60857, 60859, 60881, 60886, 60901, 60905, 60972, 61096, 61107, 61190, 61715, 61716, 62654, 62706, 62713, 62744,
+						},
+			[21039] = {62019, 62710},	-- Choosing Night Fae covenant [for a level 50 Zand druid having chosen threads of fate]
 			},
 		_ItemTextBeginList = {
 			[1292673] = 52134,
@@ -10581,7 +10748,13 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			end
 			local questToComplete = self._SendQuestChoiceList[numericOption]
 			if nil ~= questToComplete then
-				self:_MarkQuestComplete(questToComplete, true)
+				if type(questToComplete) == "table" then
+					for _, questId in pairs(questToComplete) do
+						self:_MarkQuestComplete(questId, true)
+					end
+				else
+					self:_MarkQuestComplete(questToComplete, true)
+				end
 			end
 			self.origSendQuestChoiceResponseFunction(anId)
 		end,
@@ -11014,6 +11187,14 @@ end
 		--	@param coordinates The zone coordinates of the player.
 		--	@param version A version string based on the current internal database versions.
 		_UpdateTargetDatabase = function(self, targetName, npcId, coordinates, version)
+			npcId = tonumber(npcId)
+			-- If the npcId is a world object and we do not already have its name we should learn it.
+			if nil ~= npcId and npcId >= 1000000 and npcId < 2000000 then
+				local storedNPCName = self:NPCName(npcId)
+				if nil == storedNPCName or storedNPCName ~= targetName then
+					self:_LearnObjectName(npcId, targetName)
+				end
+			end
 			return self:_NPCToUse(npcId, coordinates)
 		end,
 
