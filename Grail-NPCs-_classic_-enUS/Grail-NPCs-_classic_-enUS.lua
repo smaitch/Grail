@@ -199,6 +199,7 @@ G[1177787]="Rackmore's Log"
 G[1177904]='Wanted Poster: Besseleth'
 G[1179485]='Broken Trap'
 G[1179551]="Hydraxis' Coffer"
+G[1179827]='Wanted/Missing/Lost & Found'
 G[1179880]="Drakkisath's Brand"
 G[1179913]='Call to Arms!'
 G[1180024]='Mysterious Deadmines Chest'
