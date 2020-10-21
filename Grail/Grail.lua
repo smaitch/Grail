@@ -515,6 +515,7 @@
 --			Adds slash command "/grail treasures" which toggles the old method of LOOT_CLOSED to record information when looting.
 --			Adds GetCurrencyInfo() which works around issues for which Blizzard API to use.
 --			Ensures AzeriteLevelMeetsOrExceeds() checks to make sure API used are present.
+--			Reworks quest abandoning to use events instead of the old routines.
 --
 --	Known Issues
 --
@@ -1268,12 +1269,6 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						QuestFrameCompleteQuestButton:SetScript("OnClick", function() self:_QuestRewardCompleteButton_OnClick() end);
 					end
 
-					self.origAbandonQuestFunction = SetAbandonQuest
-					SetAbandonQuest = function() self:_QuestAbandonStart() end
-
-					self.origConfirmAbandonQuestFunction = AbandonQuest
-					AbandonQuest = function() self:_QuestAbandonStop() end
-
 					--	For the choice of types of quest on Isle of Thunder the following function is eventually
 					--	called with anId which is associated with the button in the UI.
 					local newSendQuestChoiceFunction = function(anId) self:_SendQuestChoiceResponse(anId) end
@@ -2019,7 +2014,7 @@ end,
 				-- this happens for both abandon and turn-in
 				-- and turn-in is first, so we can know we are abandoning or not
 				if nil == self.questTurningIn then
-					self:_StatusCodeInvalidate({ tonumber(questId) }, self.delayQuestRemoved)
+					self:_QuestAbandon(questId)
 				end
 				self.questTurningIn = nil
 			end,
@@ -3353,6 +3348,8 @@ end,
 			local functionKey = "+"
 			if "Complete" == callbackType then
 				functionKey = "="
+			elseif "Abandon" == callbackType then
+				functionKey = "-"
 			end
 			local message = strformat("%s %s(%d)", functionKey, Grail:QuestName(questId) or "NO NAME", questId)
 			if "Accept" == callbackType or "Complete" == callbackType then
@@ -4477,7 +4474,7 @@ end,
 					npcId = tonumber(npcId)
 					-- Note that we are not checking to ensure the locale matches self.playerLocale because locations should be universal
 					if  nil ~= npcId then
-						if not self:_LocationKnown(npcId, npcLocation, aliasId) then
+						if npcLocation ~= "" and not self:_LocationKnown(npcId, npcLocation, aliasId) then
 							self:_AddNPCLocation(npcId, npcLocation, aliasId)
 						else
 							shouldAdd = false
@@ -4499,6 +4496,9 @@ end,
 					local shouldAdd = true
 					local release, locale, objectId, objectName = strsplit('|', objectNameLine)
 					objectId = tonumber(objectId)
+					if objectId > 1000000 then
+						objectId = objectId - 1000000
+					end
 					if locale == self.playerLocale and nil ~= objectId then
 						local storedObjectName = self:ObjectName(objectId)
 						if nil == storedObjectName or storedObjectName ~= objectName then
@@ -9588,19 +9588,10 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 		end,
 
 		--	Internal Use.
-		--	Routine used to hook the function for abandoning a quest.  This is needed because the events that Blizzard issues
-		--	are not adequate for our desired tasks.  One of three needed for abandoning.
-		_QuestAbandonStart = function(self)
-			self.abandoningQuestIndex = GetQuestLogSelection()
-			self.origAbandonQuestFunction()
-		end,
+		_QuestAbandon = function(self, questId)
+			questId = tonumber(questId)
+			if nil == questId then return end
 
-		--	Internal Use.
-		--	Routine used to hook the function for abandoning a quest.  This is needed because the events that Blizzard issues
-		--	are not adequate for our desired tasks.  One of three needed for abandoning.
-		_QuestAbandonStop = function(self)
-			local questTitle, level, questTag, suggestedGroup, isHeader, isCollapsed, isComplete, isDaily, questId = self:GetQuestLogTitle(self.abandoningQuestIndex)
-			self.origConfirmAbandonQuestFunction()
 			if nil ~= self.quests[questId] then
 				self:_MarkQuestInDatabase(questId, GrailDatabasePlayer["abandonedQuests"])
 			end
@@ -9622,6 +9613,9 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 				end
 				self:_StatusCodeInvalidate(questsToInvalidate)
 			end
+
+			self:_StatusCodeInvalidate({ questId }, self.delayQuestRemoved)
+
 			self:_PostDelayedNotification("Abandon", questId, self.abandonPostNotificationDelay)
 		end,
 
