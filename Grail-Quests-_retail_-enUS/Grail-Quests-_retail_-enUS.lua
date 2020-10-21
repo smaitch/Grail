@@ -33462,6 +33462,7 @@ G[61885]="Eyegor's Special Friends"
 G[61947]='Lurking In The Shadows'
 G[61948]='Airborne Defense Force'
 G[62085]='...Why Me?'
+G[62166]="Tal-Inara's Call"
 G[62287]='Observing Arenas'
 G[62740]='Dark Aspirations'
 G[62785]='I Could Be A Contender'
