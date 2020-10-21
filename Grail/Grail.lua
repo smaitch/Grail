@@ -4477,7 +4477,7 @@ end,
 					npcId = tonumber(npcId)
 					-- Note that we are not checking to ensure the locale matches self.playerLocale because locations should be universal
 					if  nil ~= npcId then
-						if not self:_LocationKnown(npcId, npcLocation, aliasId) then
+						if npcLocation ~= "" and not self:_LocationKnown(npcId, npcLocation, aliasId) then
 							self:_AddNPCLocation(npcId, npcLocation, aliasId)
 						else
 							shouldAdd = false
@@ -4499,6 +4499,9 @@ end,
 					local shouldAdd = true
 					local release, locale, objectId, objectName = strsplit('|', objectNameLine)
 					objectId = tonumber(objectId)
+					if objectId > 1000000 then
+						objectId = objectId - 1000000
+					end
 					if locale == self.playerLocale and nil ~= objectId then
 						local storedObjectName = self:ObjectName(objectId)
 						if nil == storedObjectName or storedObjectName ~= objectName then
