@@ -516,6 +516,7 @@
 --			Adds GetCurrencyInfo() which works around issues for which Blizzard API to use.
 --			Ensures AzeriteLevelMeetsOrExceeds() checks to make sure API used are present.
 --			Reworks quest abandoning to use events instead of the old routines.
+--		113 Updates some Quest/NPC information.
 --
 --	Known Issues
 --

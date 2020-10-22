@@ -14183,6 +14183,10 @@ G[62371]={'9A1250'}
 G[62837]={'980500'}
 end
 
+if release >= 36294 then
+G[58750]={'96A135'}
+end
+
 --	Now the reputation data gets processed into its own table to save space
 
 for questId, reps in pairs(Grail.questReputations) do

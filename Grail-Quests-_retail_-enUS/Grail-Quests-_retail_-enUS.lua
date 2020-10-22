@@ -33479,4 +33479,13 @@ G[63050]='Acquisiton: Blazing Ingots'
 G[63062]='Torment for the Taking'
 end
 
+if release >= 36294 then
+G[57661]='Silk Shortage'
+G[59837]='Working for the Living'
+G[59879]='This Thing of Ours'
+G[60061]='Tough as Silk'
+G[60062]='The Shattered Harp'
+G[61553]='Know Where to Strike'
+end
+
 --	End of localized quest names
