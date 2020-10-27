@@ -517,6 +517,7 @@
 --			Ensures AzeriteLevelMeetsOrExceeds() checks to make sure API used are present.
 --			Reworks quest abandoning to use events instead of the old routines.
 --		113 Updates some Quest/NPC information.
+--			Fixes the problem where unregistering tracking quest acceptance was not being done properly.
 --
 --	Known Issues
 --
@@ -11200,8 +11201,8 @@ end
 				self:RegisterObserver("FullAccept", Grail._AddFullTrackingCallback)
 			else
 				self:UnregisterObserverQuestAbandon(Grail._AddTrackingCallback)
-				self:UnregisterObserverQuestAccept(Grail._AddTrackingCallback)
 				self:UnregisterObserverQuestComplete(Grail._AddTrackingCallback)
+				self:UnregisterObserver("FullAccept", Grail._AddFullTrackingCallback)
 			end
 		end,
 
