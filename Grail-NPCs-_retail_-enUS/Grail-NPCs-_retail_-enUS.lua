@@ -1415,4 +1415,9 @@ G[1351888]='Wanted: Summoner Marcelis'
 G[1355872]='Stolen Jar'
 end
 
+if release >= 36532 then
+G[1352490]='Join the Rebellion!'
+G[1355296]='Bounty: Beast Control'
+end
+
 --	End of localized NPC names
