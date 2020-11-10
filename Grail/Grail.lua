@@ -9645,6 +9645,25 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 				self.completingQuest = self:_GetOTCQuest(questId, self.questNPCId)
 				local shouldUpdateActual = (nil ~= self:QuestInvalidates(questId))
 				self:_MarkQuestComplete(questId, true, shouldUpdateActual, false)
+				-- Check to see whether there are any other quests that are also marked by Blizzard as being completed now.
+				if self.GDE.debug then
+					local newlyCompletedQuests, newlyLostQuests = {}, {}
+					self:_ProcessServerCompare(newlyCompletedQuests, newlyLostQuests)
+					if #newlyCompletedQuests > 0 then
+						for _, aQuestId in pairs(newlyCompletedQuests) do
+							if aQuestId ~= questId then
+								print("   *** Completed:", aQuestId)
+							end
+						end
+					end
+					if #newlyLostQuests > 0 then
+					for _, aQuestId in pairs(newlyLostQuests) do
+						print("   *** Lost:", aQuestId)
+					end
+					end
+					-- TODO: Actually do something with this information to update quest database so it can be used to do things like provide ODC: codes
+					self:_ProcessServerBackup(true)
+				end
 
 				if nil ~= self.quests[questId] then
 					local odcCodes = self.quests[questId]['ODC']
@@ -10701,6 +10720,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[4431] = { 62017, 62711, 62827, },	-- Choosing Necrolord covenant	[for a level 60 prebuild NE druid]
 			[4499] = { 62019, 62827, },	-- Choosing Night Fae covenant	[for a level 60 prebuild NE druid]
 			[4565] = { 62023, 62708, 62827, },	-- Choosing Kyrian covenant	[for a level 60 prebuild NE druid]
+			[15801] = {62020, 62827 }, 	-- Choosing Venthyr covenant (for NE druid played through storyline)
 --			[20920] = XXX, -- Choosing "Replay Storyline" in Choose Your Shadowlands Experience [note that there is no quest completed]
 			[20947] = {		 -- Choosing "The Threads of Fate"
 						56829, 56942, 56955, 56978, 57007, 57025, 57026, 57037, 57098, 57102, 57131, 57136, 57159, 57161, 57164, 57173,
