@@ -29704,4 +29704,22 @@ if release >= 36206 then
 G[62605]='Mittlergeschäfte'
 end
 
+if release >= 36599 then
+G[54601]='Zornschnabel'
+G[57591]='Geisttrinker'
+G[57621]='Beschwörungsritual'
+G[58257]='Verschlingendes Maul'
+G[58264]='Aufwachen, hoch mit Euch und raus da'
+G[58266]='Abriss'
+G[59867]='GESUCHT: Gutachter Vix'
+G[60487]='Es war so schön ruhig hier'
+G[60501]='Erlösung für den Erlöser'
+G[60656]='Ruft Eure Sünden herbei'
+G[60770]='Zerquetscht und abgefackelt'
+G[61141]='Todesreißers Lieblingsspielzeug'
+G[62285]='Kriegsobservation'
+G[62691]='Ein Ruf aus Revendreth'
+G[62807]='Wald-Flüchtlinge'
+end
+
 --	End of localized quest names

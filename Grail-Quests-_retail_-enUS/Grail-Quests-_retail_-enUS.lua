@@ -33591,6 +33591,7 @@ G[60564]='Three Gorm Enter, No One Leaves'
 G[60566]='Into the Light'
 G[60609]='Who Devours the Devourers?'
 G[60622]='Eye of the Scryer'
+G[60649]='A Thorn In Their Side'
 G[60654]='Swarming Souls'
 G[60739]='Tough Crowd'
 G[60770]='Squish and Burn'
@@ -33607,6 +33608,7 @@ G[61981]='Replenish the Reservoir'
 G[62058]='Centurions, Assemble!'
 G[62203]='Major Mirror Disruptions'
 G[62241]='Training Regimen'
+G[62258]='Soaring Over Bastion'
 G[62691]='A Calling in Revendreth'
 G[62695]='A Call to Service'
 G[62780]='Parasites of Reality'
@@ -33614,6 +33616,15 @@ G[62781]='Ash You Like It'
 G[62783]='Stalking Fear'
 G[62857]="The Court's Bounty"
 G[63215]='Report to Draven'
+end
+
+if release >= 36599 then
+G[58601]='Web of Information'
+G[58975]='Pest Removal'
+G[60872]='A Dangerous Harvest'
+G[61141]="Deathfang's Favorite Toy"
+G[61148]='AHHH! Real Monsters!'
+G[61411]='Our Heart Will Go On'
 end
 
 --	End of localized quest names
