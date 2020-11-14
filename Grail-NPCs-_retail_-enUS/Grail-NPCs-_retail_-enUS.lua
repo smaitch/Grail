@@ -1176,6 +1176,7 @@ G[1286016]="Ship's Log"
 G[1286952]='Lichen-Covered Chest'
 G[1286953]='Rod of Tides'
 G[1287052]='Xibalan Fossil'
+G[1287160]='Smuggled Goods'
 G[1287185]="Wanted: Darkspeaker Jo'la"
 G[1287189]='Wanted: Dangerous Beasts'
 G[1287228]='Wanted: Dark Chronicler'
@@ -1390,34 +1391,24 @@ G[1335717]='Black Empire Cache'
 G[1336415]='Discarded Scroll'
 G[1339248]='Infested Cache'
 G[1344726]='Dark Sermon'
+G[1344765]='Jar of Ground Maldracite'
 G[1348521]='Strange Growth'
 G[1348558]='Notice'
 G[1348747]='Muddy Scroll'
 G[1349515]='Battered Journal'
 G[1351467]='Faded Epitaph'
-G[1352027]='Wanted Scroll'
-G[1352028]='Wanted Scroll'
-G[1353420]='Stone Altar'
-G[1353645]="Marileth's Journal"
-G[1355798]='Cage'
-G[1358533]='Forgotten Supplies'
-G[1362489]='Elysian Decree'
-end
-
-if release >= 33528 then
-G[1287160]='Smuggled Goods'
-end
-
-if release >= 36267 then
-G[1344765]='Jar of Ground Maldracite'
 G[1351874]='Wanted: Enforcer Kristof'
 G[1351888]='Wanted: Summoner Marcelis'
-G[1355872]='Stolen Jar'
-end
-
-if release >= 36532 then
+G[1352027]='Wanted Scroll'
+G[1352028]='Wanted Scroll'
 G[1352490]='Join the Rebellion!'
+G[1353420]='Stone Altar'
+G[1353645]="Marileth's Journal"
 G[1355296]='Bounty: Beast Control'
+G[1355798]='Cage'
+G[1355872]='Stolen Jar'
+G[1358533]='Forgotten Supplies'
+G[1362489]='Elysian Decree'
 end
 
 --	End of localized NPC names
