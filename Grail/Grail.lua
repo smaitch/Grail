@@ -9529,6 +9529,33 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			self.timings.ProcessServerQuests = debugprofilestop() - debugStartTime
 		end,
 
+		-- The key is the professionCode used as the key in professionMapping, and the value is a table of ids for each extension
+		-- These values are the ones that are returned by C_TradeSkillUI.GetAllProfessionTradeSkillLines() as of 2020-11-14.
+		-- Note that these do not cover Riding, Cooking, Fishing or Archaeology as the API does not return anything for those.
+		-- Using the values from here with the C_TradeSkillUI.GetTradeSkillLineInfoByID(id) API allows access to the following:
+		--		skillLineDisplayName, skillLineRank, skillLineMaxRank, skillLineModifier
+		-- If skillLineMaxRank is 0 there is no ability for the player.
+		-- TODO: Determine whether someone can have a 0 skillLineMaxRank at a lower expansion but a non-zero at a higher one (i.e.,
+		--		skipped over a "lower level" of the skill.
+		professionSkillLineIdMapping = {
+			A = { 2485, 2484, 2483, 2482, 2481, 2480, 2479, 2478, 2750, }, -- 'Alchemy',
+			B = { 2477, 2476, 2475, 2474, 2473, 2472, 2454, 2437, 2751, }, -- 'Blacksmithing',
+			E = { 2494, 2493, 2492, 2491, 2489, 2488, 2487, 2486, 2753, }, -- 'Enchanting',
+			H = { 2556, 2555, 2554, 2553, 2552, 2551, 2550, 2549, 2760, }, -- 'Herbalism',
+			I = { 2514, 2513, 2512, 2511, 2510, 2509, 2508, 2507, 2756, }, -- 'Inscription',
+			J = { 2524, 2523, 2522, 2521, 2520, 2519, 2518, 2517, 2757, }, -- 'Jewelcrafting',
+			L = { 2532, 2531, 2530, 2529, 2528, 2527, 2526, 2525, 2758, }, -- 'Leatherworking',
+			M = { 2572, 2571, 2570, 2569, 2568, 2567, 2566, 2565, 2761, }, -- 'Mining',
+			N = { 2506, 2505, 2504, 2503, 2502, 2501, 2500, 2499, 2755, }, -- 'Engineering',
+			S = { 2564, 2563, 2562, 2561, 2560, 2559, 2558, 2557, 2762, }, -- 'Skinning',
+			T = { 2540, 2539, 2538, 2537, 2536, 2535, 2534, 2533, 2759, }, -- 'Tailoring',
+		},
+
+		-- TODO: Get the maximum value for skills for Shadowlands and replace the 0 with that...
+		professionMaximumValuesPerExpansio = {
+			300, 75, 75, 75, 75, 100, 100, 175, 0,
+		},
+
 		--	Internal Use.
 		--	Returns whether the character has the profession specified by the code exceeding the specified level.
 		--	@param professionCode The code representing the profession as used in Grail.professionMapping
@@ -9557,6 +9584,9 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			else
 				local skillName = nil
 				local prof1, prof2, archaeology, fishing, cooking, firstAid = GetProfessions()
+				-- TODO: Remove the use of firstAid as a profession
+
+-- local name, texture, rank, maxRank, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset, skillLineName = GetProfessionInfo(index)
 
 				if "X" == professionCode and nil ~= archaeology then
 					ignore1, ignore2, skillLevel = GetProfessionInfo(archaeology)
