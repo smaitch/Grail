@@ -1010,6 +1010,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.capabilities.usesQuestHyperlink = not self.existsClassic
 					self.capabilities.usesFollowers = not self.existsClassic
 					self.capabilities.usesWorldEvents = not self.existsClassic
+					self.capabilities.usesWorldQuests = not self.existsClassic
 
                     -- These values are no longer used, but kept for posterity.
 					self.existsPandaria = (self.blizzardRelease >= 15640)
@@ -1612,7 +1613,9 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 					self:RegisterObserver("FullAccept", Grail._AcceptQuestProcessing)
 					frame:RegisterEvent("QUEST_ACCEPTED")
 					frame:RegisterEvent("QUEST_AUTOCOMPLETE")
-					frame:RegisterEvent("WORLD_QUEST_COMPLETED_BY_SPELL")
+					if self.capabilities.usesWorldQuests then
+						frame:RegisterEvent("WORLD_QUEST_COMPLETED_BY_SPELL")
+					end
 					frame:RegisterEvent("QUEST_DETAIL")
 					frame:RegisterEvent("QUEST_LOG_UPDATE")	-- just to indicate we are now available to read the Blizzard quest log without issues
 					frame:RegisterEvent("QUEST_REMOVED")
