@@ -518,6 +518,8 @@
 --			Reworks quest abandoning to use events instead of the old routines.
 --		113 Updates some Quest/NPC information.
 --			Fixes the problem where unregistering tracking quest acceptance was not being done properly.
+--			Changes technique of obtaining NPC location to use internal routine rather than Blizzard's which does not show locations in instances.
+--			Changes interface to 90002.
 --
 --	Known Issues
 --
@@ -11026,9 +11028,9 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 				local currentMapInfo = C_Map.GetMapInfo(Grail.GetCurrentMapAreaID())
 				while currentMapInfo do
 					local currentMapId = currentMapInfo.mapID
-					local results = C_Map.GetPlayerMapPosition(currentMapId, victim)
-					if results and results.x and results.y then
-						retval = retval .. spacer .. strformat("%d:%.2f,%.2f", currentMapId, results.x * 100 , results.y * 100)
+					local x, y = self.GetPlayerMapPosition(victim)
+					if x and y then
+						retval = retval .. spacer .. strformat("%d:%.2f,%.2f", currentMapId, x * 100 , y * 100)
 						spacer = " "
 						currentMapInfo = C_Map.GetMapInfo(currentMapInfo.parentMapID)
 						if nil ~= currentMapInfo and currentMapInfo.mapType == Enum.UIMapType.Continent then
