@@ -33590,4 +33590,9 @@ G[61492]='The Princeguard'
 G[62189]='Parasol Components'
 end
 
+if release >= 36751 then
+G[60623]='AHHH! Real Monsters!'
+G[61593]='A Crisis of Memory'
+end
+
 --	End of localized quest names

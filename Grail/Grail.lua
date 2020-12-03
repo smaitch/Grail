@@ -520,6 +520,8 @@
 --			Fixes the problem where unregistering tracking quest acceptance was not being done properly.
 --			Changes technique of obtaining NPC location to use internal routine rather than Blizzard's which does not show locations in instances.
 --			Changes interface to 90002.
+--		114	Changes the Orgrimmar NPCs to use the proper map ID.
+--			Updates quest levels based on Blizzard's new system.
 --
 --	Known Issues
 --
@@ -9650,6 +9652,9 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 				self:_MarkQuestComplete(questId, true, shouldUpdateActual, false)
 				-- Check to see whether there are any other quests that are also marked by Blizzard as being completed now.
 				if self.GDE.debug then
+					C_Timer.After(1, function()
+					print("*** Starting check after turning in quest", questId)
+					local self = Grail
 					local newlyCompletedQuests, newlyLostQuests = {}, {}
 					self:_ProcessServerCompare(newlyCompletedQuests, newlyLostQuests)
 					if #newlyCompletedQuests > 0 then
@@ -9666,6 +9671,8 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 					end
 					-- TODO: Actually do something with this information to update quest database so it can be used to do things like provide ODC: codes
 					self:_ProcessServerBackup(true)
+					print("*** Done with check ***")
+					end)
 				end
 
 				if nil ~= self.quests[questId] then
