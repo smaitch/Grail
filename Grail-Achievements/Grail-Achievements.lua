@@ -7233,6 +7233,7 @@ G[57951]={514164}	-- Spirit Glen (Awaken, Ardenweald) (Ardenweald) (Shadowlands)
 G[58026]={514800}	-- When a Gorm Eats a God (Sojourner of Ardenweald) (Ardenweald) (Shadowlands)
 G[58086]={513878}	-- The Master of Lies (The Master of Revendreth) (Revendreth) (Shadowlands)
 G[58092]={514798}	-- The Final Atonement (Sojourner of Revendreth) (Revendreth) (Shadowlands)
+G[58103]={514801}	-- Pride or Unit (Sojourner of Bastion) (Bastion) (Shadowlands)
 G[58166]={514800}	-- An Ominous Stone (Sojourner of Ardenweald) (Ardenweald) (Shadowlands)
 G[58174]={514281}	-- The Aspirant's Crucible (The Path to Ascension) (Bastion) (Shadownlands)
 G[58267]={514800}	-- Wicked Plan (Sojourner of Ardenweald) (Ardenweald) (Shadowlands)
@@ -7256,6 +7257,7 @@ G[60013]={514281}	-- Chasing a Memory (The Path to Ascension) (Bastion) (Shadown
 G[60055]={514281}	-- The Temple of Courage (The Path to Ascension) (Bastion) (Shadownlands)
 G[60066]={514800}	-- Thread of Hope (Sojourner of Ardenweald) (Ardenweald) (Shadowlands)
 G[60178]={514798}	-- Tithes of Darkhaven (Sojourner of Revendreth) (Revendreth) (Shadowlands)
+G[60296]={514801}	-- Pride or Unit (Sojourner of Bastion) (Bastion) (Shadowlands)
 G[60470]={514798}	-- Revelations of the Light (Sojourner of Revendreth) (Revendreth) (Shadowlands)
 G[60519]={514164}	-- Waning Grove (Awaken, Ardenweald) (Ardenweald) (Shadowlands)
 G[60520]={514164}	-- Glitterfall Heights (Awaken, Ardenweald) (Ardenweald) (Shadowlands)
@@ -7322,7 +7324,7 @@ for expansionIndex = 4, highestSupportedExpansion do
 	local expansions = expansionMaps[expansionIndex]
 	for _, faction in pairs(supportedFactions) do
 		for _, expansion in pairs(expansions) do
-			for _, achievement in pairs(Grail.loremasterAchievements[faction][expansion]) do
+			for _, achievement in pairs(Grail.achievements[faction][expansion]) do
 				if not tContains(achievementsDone, achievement) then
 					local newTable = {}
 					for _, questId in pairs(Grail.indexedQuests[achievement]) do

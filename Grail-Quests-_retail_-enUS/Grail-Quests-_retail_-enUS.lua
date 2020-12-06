@@ -33595,4 +33595,9 @@ G[60623]='AHHH! Real Monsters!'
 G[61593]='A Crisis of Memory'
 end
 
+if release >= 36753 then
+G[28262]='Meet with Veruca Darkstream'
+G[59601]='Assault on the Vestibule'
+end
+
 --	End of localized quest names

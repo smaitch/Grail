@@ -522,6 +522,9 @@
 --			Changes interface to 90002.
 --		114	Changes the Orgrimmar NPCs to use the proper map ID.
 --			Updates quest levels based on Blizzard's new system.
+--			Update GetPlayerMapPosition() to accept an optional map ID and has Coordinates() use it.
+--			Enables prerequisite quest determination for non-Loremaster achievements.
+--			Updates Quest/NPC information.
 --
 --	Known Issues
 --
@@ -6938,8 +6941,8 @@ end
 		-- Code derived from elcius post in http://www.wowinterface.com/forums/showthread.php?t=56290
 		GetPlayerMapPositionMapRects = {},
 		GetPlayerMapPositionTempVec2D = CreateVector2D(0,0),
-		GetPlayerMapPosition = function(unitName)
-			local MapID = C_Map.GetBestMapForUnit(unitName)
+		GetPlayerMapPosition = function(unitName, optionalMapId)
+			local MapID = optionalMapId or C_Map.GetBestMapForUnit(unitName)
 			if not MapID or MapID < 1 then return 0, 0 end
 			local R,P,_ = Grail.GetPlayerMapPositionMapRects[MapID], Grail.GetPlayerMapPositionTempVec2D
 			if not R then
@@ -11035,7 +11038,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 				local currentMapInfo = C_Map.GetMapInfo(Grail.GetCurrentMapAreaID())
 				while currentMapInfo do
 					local currentMapId = currentMapInfo.mapID
-					local x, y = self.GetPlayerMapPosition(victim)
+					local x, y = self.GetPlayerMapPosition(victim, currentMapId)
 					if x and y then
 						retval = retval .. spacer .. strformat("%d:%.2f,%.2f", currentMapId, x * 100 , y * 100)
 						spacer = " "
