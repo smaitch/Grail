@@ -1282,6 +1282,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						end
 					end
 
+					self:_QuestCompleteCheckObserve(Grail.GDE.debug)
+
 					--	Specific quests become available when certain interactions are done with specific NPCs so
 					--	we use this routine in conjunction with the GOSSIP_SHOW and GOSSIP_CLOSED events to determine
 					--	if we are to do anything.  GOSSIP_SHOW will record the NPC and GOSSIP_CLOSED will reset it.
@@ -1512,6 +1514,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end)
 					self:RegisterSlashOption("debug", "|cFF00FF00debug|r => toggles debug on and off, printing new value", function()
 						Grail.GDE.debug = not Grail.GDE.debug
+						Grail:_QuestCompleteCheckObserve(Grail.GDE.debug)
 						print(strformat("Grail Debug now %s", Grail.GDE.debug and "ON" or "OFF"))
 					end)
 					self:RegisterSlashOption("treasures", "|cFF00FF00treasures|r => toggles treasures on and off, printing new value", function()
@@ -9641,6 +9644,36 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			return self:_QuestGenericAccess(questId, 'B')
 		end,
 
+		_QuestCompleteCheckObserve = function(self, shouldObserve)
+			if shouldObserve then
+				self:RegisterObserver("QuestCompleteCheck", Grail._QuestCompleteCheck)
+			else
+				self:UnregisterObserver("QuestCompleteCheck")
+			end
+		end,
+
+		_QuestCompleteCheck = function(callbackType, questId)
+			print("*** Starting check after turning in quest", questId)
+			local self = Grail
+			local newlyCompletedQuests, newlyLostQuests = {}, {}
+			self:_ProcessServerCompare(newlyCompletedQuests, newlyLostQuests)
+			if #newlyCompletedQuests > 0 then
+				for _, aQuestId in pairs(newlyCompletedQuests) do
+					if aQuestId ~= questId then
+						print("   *** Completed:", aQuestId)
+					end
+				end
+			end
+			if #newlyLostQuests > 0 then
+				for _, aQuestId in pairs(newlyLostQuests) do
+					print("   *** Lost:", aQuestId)
+				end
+			end
+			-- TODO: Actually do something with this information to update quest database so it can be used to do things like provide ODC: codes
+			self:_ProcessServerBackup(true)
+			print("*** Done with check ***")
+		end,
+
 		_QuestCompleteProcess = function(self, questId)
 			if nil == questId then
 				print("Grail problem attempting to complete a quest with no questId")
@@ -9655,27 +9688,7 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 				self:_MarkQuestComplete(questId, true, shouldUpdateActual, false)
 				-- Check to see whether there are any other quests that are also marked by Blizzard as being completed now.
 				if self.GDE.debug then
-					C_Timer.After(1, function()
-					print("*** Starting check after turning in quest", questId)
-					local self = Grail
-					local newlyCompletedQuests, newlyLostQuests = {}, {}
-					self:_ProcessServerCompare(newlyCompletedQuests, newlyLostQuests)
-					if #newlyCompletedQuests > 0 then
-						for _, aQuestId in pairs(newlyCompletedQuests) do
-							if aQuestId ~= questId then
-								print("   *** Completed:", aQuestId)
-							end
-						end
-					end
-					if #newlyLostQuests > 0 then
-					for _, aQuestId in pairs(newlyLostQuests) do
-						print("   *** Lost:", aQuestId)
-					end
-					end
-					-- TODO: Actually do something with this information to update quest database so it can be used to do things like provide ODC: codes
-					self:_ProcessServerBackup(true)
-					print("*** Done with check ***")
-					end)
+					self:_PostDelayedNotification("QuestCompleteCheck", questId, 1.0)
 				end
 
 				if nil ~= self.quests[questId] then
