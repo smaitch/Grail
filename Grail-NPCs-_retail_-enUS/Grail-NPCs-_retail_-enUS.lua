@@ -1415,4 +1415,8 @@ G[1358533]='Forgotten Supplies'
 G[1362489]='Elysian Decree'
 end
 
+if release >= 36839 then
+G[1353959]='Spear of Kalliope'
+end
+
 --	End of localized NPC names

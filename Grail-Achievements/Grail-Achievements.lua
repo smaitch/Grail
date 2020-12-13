@@ -7227,7 +7227,6 @@ G[57787]={514164}	-- Welcome to Ardenweald (Awaken, Ardenweald) (Ardenweald) (Sh
 G[57677]={514281}	-- Eternity's Call (The Path to Ascension) (Bastion) (Shadownlands)
 G[57694]={513878}	-- Prince Renathal (The Master of Revendreth) (Revendreth) (Shadowlands)
 G[57724]={513878}	-- The Mad Duke (The Master of Revendreth) (Revendreth) (Shadowlands)
--- Assumption is 57865 57866 57867 not needed for Tricky Spriggans
 G[57871]={514800}	-- Tricky Spriggans (Sojourner of Ardenweald) (Ardenweald) (Shadowlands)
 G[57951]={514164}	-- Spirit Glen (Awaken, Ardenweald) (Ardenweald) (Shadowlands)
 G[58026]={514800}	-- When a Gorm Eats a God (Sojourner of Ardenweald) (Ardenweald) (Shadowlands)
@@ -7266,6 +7265,7 @@ G[60733]={514206}	-- House of Constructs (Blade of the Primus) (Maldraxxus) (Sha
 G[60737]={514206}	-- The Empty Throne (Blade of the Primus) (Maldraxxus) (Shadowlands)
 G[60886]={514206}	-- House of the Chosen (Blade of the Primus) (Maldraxxus) (Shadowlands)
 G[60905]={514164}	-- This is the Way (Awaken, Ardenweald) (Ardenweald) (Shadowlands)
+G[60906]={514801}	-- The Spear of Kallipe (Sojourner of Bastion) (Bastion) (Shadowlands)
 G[61107]={514281}	-- A Land of Strife (The Path to Ascension) (Bastion) (Shadownlands)
 
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime
