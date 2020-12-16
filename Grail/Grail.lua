@@ -6950,7 +6950,9 @@ end
 			local R,P,_ = Grail.GetPlayerMapPositionMapRects[MapID], Grail.GetPlayerMapPositionTempVec2D
 			if not R then
 				R = {}
-				_, R[1] = C_Map.GetWorldPosFromMapPos(MapID, CreateVector2D(0,0))
+				local test
+				test, R[1] = C_Map.GetWorldPosFromMapPos(MapID, CreateVector2D(0,0))
+				if nil == test then return 0, 0 end
 				_, R[2] = C_Map.GetWorldPosFromMapPos(MapID, CreateVector2D(1,1))
 				R[2]:Subtract(R[1])
 				Grail.GetPlayerMapPositionMapRects[MapID] = R
@@ -9660,13 +9662,13 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			if #newlyCompletedQuests > 0 then
 				for _, aQuestId in pairs(newlyCompletedQuests) do
 					if aQuestId ~= questId then
-						print("   *** Completed:", aQuestId)
+						print("   *** Completed:", aQuestId, self:QuestName(aQuestId) or "UNKNOWN NAME")
 					end
 				end
 			end
 			if #newlyLostQuests > 0 then
 				for _, aQuestId in pairs(newlyLostQuests) do
-					print("   *** Lost:", aQuestId)
+					print("   *** Lost:", aQuestId, self:QuestName(aQuestId) or "UNKNOWN NAME")
 				end
 			end
 			-- TODO: Actually do something with this information to update quest database so it can be used to do things like provide ODC: codes
