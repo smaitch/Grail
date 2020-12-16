@@ -1113,6 +1113,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
  							[1530] = true, -- Valley of Eternal Blossoms 8.3
 							[1595] = true, -- Nyalotha 8.3
 							-- Shadowlands
+							[1409] = true, -- Exiles Reach 9.0
 							[1525] = true, -- Revendreth 9.0
 							[1533] = true, -- Bastion 9.0
 							[1536] = true, -- Maldraxxus 9.0
