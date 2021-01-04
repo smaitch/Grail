@@ -1284,6 +1284,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					end
 
 					self:_QuestCompleteCheckObserve(Grail.GDE.debug)
+					self:_QuestAcceptCheckObserve(Grail.GDE.debug)
 
 					--	Specific quests become available when certain interactions are done with specific NPCs so
 					--	we use this routine in conjunction with the GOSSIP_SHOW and GOSSIP_CLOSED events to determine
@@ -1516,6 +1517,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self:RegisterSlashOption("debug", "|cFF00FF00debug|r => toggles debug on and off, printing new value", function()
 						Grail.GDE.debug = not Grail.GDE.debug
 						Grail:_QuestCompleteCheckObserve(Grail.GDE.debug)
+						Grail:_QuestAcceptCheckObserve(Grail.GDE.debug)
 						print(strformat("Grail Debug now %s", Grail.GDE.debug and "ON" or "OFF"))
 					end)
 					self:RegisterSlashOption("treasures", "|cFF00FF00treasures|r => toggles treasures on and off, printing new value", function()
@@ -1940,6 +1942,10 @@ end,
 				-- Inform subscribers of what just happened
 				self:_PostNotification("FullAccept", payload)
 				self:_PostNotification("Accept", theQuestId)
+				-- Check to see whether there are any other quests that are also marked by Blizzard as being completed now.
+				if self.GDE.debug then
+					self:_PostDelayedNotification("QuestAcceptCheck", theQuestId, 1.0)
+				end
 
 			end,
 
@@ -9647,6 +9653,14 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			return self:_QuestGenericAccess(questId, 'B')
 		end,
 
+		_QuestAcceptCheckObserve = function(self, shouldObserve)
+			if shouldObserve then
+				self:RegisterObserver("QuestAcceptCheck", Grail._QuestCompleteCheck)
+			else
+				self:UnregisterObserver("QuestAcceptCheck")
+			end
+		end,
+
 		_QuestCompleteCheckObserve = function(self, shouldObserve)
 			if shouldObserve then
 				self:RegisterObserver("QuestCompleteCheck", Grail._QuestCompleteCheck)
@@ -9656,8 +9670,9 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 		end,
 
 		_QuestCompleteCheck = function(callbackType, questId)
-			print("*** Starting check after turning in quest", questId)
+			print("*** Starting check", callbackType, questId)
 			local self = Grail
+			QueryQuestsCompleted()
 			local newlyCompletedQuests, newlyLostQuests = {}, {}
 			self:_ProcessServerCompare(newlyCompletedQuests, newlyLostQuests)
 			if #newlyCompletedQuests > 0 then
@@ -10679,6 +10694,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 --			[397] = 37891,	-- Ironhold Harbor (Tanaan) Alliance 37886 37887
 --			[401] = 37891,	-- Ironhold Harbor (Tanaan) Alliance
 --			[402] = 38440,	-- Fel Forge (Tanaan) Alliance
+			[403] = { 62020, 62709, },	-- Choosing Venthyr covenant	[for a level 60 NE druid]
 			-- 2015-08-01 Alleria 401 402
 --			[413] = 37968,	--Temple of Sha'naar (Tanaan) Alliance
 --			[414] = 38045,	-- Zeth'Gol (Tanaan) Alliance
