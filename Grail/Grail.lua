@@ -525,6 +525,7 @@
 --			Update GetPlayerMapPosition() to accept an optional map ID and has Coordinates() use it.
 --			Enables prerequisite quest determination for non-Loremaster achievements.
 --			Updates Quest/NPC information.
+--			Adds basic support for covenant renown level prerequisites.
 --
 --	Known Issues
 --
@@ -4321,6 +4322,8 @@ end,
 					retval = self:IsMissionAvailable(numeric) and 'C' or 'P'
 				elseif '&' == code then
 					retval = self:AzeriteLevelMeetsOrExceeds(numeric) and 'C' or 'P'
+				elseif '$' == code then
+					retval = self:_CovenantRenownMeetsOrExceeds(subcode, numeric) and 'C' or 'P'
 				elseif 'h' == code then
 					retval = (bitband(questBitMask, self.bitMaskEverCompleted) > 0) and 'P' or 'C'
 				else	-- A, B, C, D, E, H, O, X
@@ -5921,6 +5924,11 @@ end,
 					-- Note numeric and subcode are reverse from traditional codes
 					numeric = tonumber(strsub(questCode, 2, 4))
 					subcode = tonumber(strsub(questCode, 5))
+				
+				-- Csn+ (s must be a number)
+				elseif '$' == code then
+					subcode = tonumber(strsub(questCode, 2, 2))
+					numeric = tonumber(strsub(questCode, 3))
 				end
 
 				-- CSn+ (s can be a letter)
@@ -6290,9 +6298,8 @@ end
 			if nil ~= codeString then
 				local questId = p and p.q or nil
 				local dangerous = p and p.d or false
-				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-				local code, value, position, subcode
+				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local forcingProfessionOnly, forcingReputationOnly = false, false
 
 				if forceSpecificChecksOnly then
@@ -6304,7 +6311,7 @@ end
 					end
 				end
 
-				code, subcode, value = Grail:CodeParts(codeString)
+				local code, subcode, value = Grail:CodeParts(codeString)
 
 				if code == '' then
 					if dangerous then	-- we are checking I:
@@ -6314,17 +6321,6 @@ end
 					end
 				end
 
------				position = 1
------				code = strsub(codeString, 1, 1)
------				if nil == tonumber(code) then
------					-- code is already a letter, so leave it alone
------				position = 2
------				elseif dangerous then	-- we are checking I:
------					code = 'C'
------				else					-- we are checking P:
------					code = 'A'
------				end
-
 				--	We do not care about any prerequisite except profession ones when forcingProfessionOnly
 				if forcingProfessionOnly and 'P' ~= code then
 					code = ' '
@@ -6332,33 +6328,6 @@ end
 				if forcingReputationOnly and ('T' ~= code and 't' ~= code and 'U' ~= code and 'u' ~= code) then
 					code = ' '
 				end
-
---				if 'P' == code then
---					subcode = strsub(codeString, 2, 2)
---					position = 3
---				elseif 't' == code or 'T' == code or 'u' == code or 'U' == code then
---					subcode = strsub(codeString, 2, 4)
---					position = 5
---				elseif 'W' == code or 'V' == code or 'w' == code then
---					subcode = tonumber(strsub(codeString, 2, 4))
---					position = 5
---				elseif 'F' == code then
---					subcode = strsub(codeString, 2, 2)
---				elseif '=' == code or '<' == code or '>' == code then
---					subcode = tonumber(strsub(codeString, 2, 5))
---					position = 6
---				elseif 'G' == code then
---					subcode = tonumber(strsub(codeString, 2, 5))
---					position = 6
---				elseif 'z' == code then
---					subcode = tonumber(strsub(codeString, 2, 5))
---				else
---					subcode = nil
---				end
---				value = tonumber(strsub(codeString, position))
-
---				code, subcode, value = Grail:CodeParts(codeString)
---	TODO:	See when we can convert to use CodeParts()
 
 				-- Now to figure out what needs to be checked based on the code
 				if code == ' ' then
@@ -6417,6 +6386,7 @@ end
 				elseif code == '@' then checkArtifactLevel = true
 				elseif code == '#' then checkMission = true
 				elseif code == '&' then checkAzeriteLevel = true
+				elseif code == '$' then checkRenownLevel = true
 				else print("|cffff0000Grail|r _EvaluateCodeAsPrerequisite cannot process code", codeString)
 				end
 
@@ -6514,6 +6484,9 @@ end
 				if checkAzeriteLevel then
 					azeriteLevelMatches = Grail:AzeriteLevelMeetsOrExceeds(value)
 				end
+				if checkRenownLevel then
+					renownExceeds = Grail:_CovenantRenownMeetsOrExceeds(subcode, value)
+				end
 
 				good =
 					(code == ' ') or
@@ -6562,7 +6535,8 @@ end
 					(checkArtifactLevel and artifactLevelMatches) or
 					(checkMission and missionMatches) or
 					(checkThreatQuestAvailable and threatQuestAvailable) or
-					(checkAzeriteLevel and azeriteLevelMatches)
+					(checkAzeriteLevel and azeriteLevelMatches) or
+					(checkRenownLevel and renownExceeds)
 				if not good then tinsert(failures, codeString) end
 			end
 
@@ -8502,6 +8476,33 @@ end
 		--	@see StatusCode
 		MeetsRequirementRace = function(self, questId, soughtRace)
 			return self:_MeetsRequirement(questId, 'R', soughtRace)
+		end,
+
+		-- Returns a boolean indicating whether the player meets the renown requirements (if any) for the specified quest.
+		-- TODO: Implement this some day if we get all crazy about it...
+--		MeetsRequirementRenown = function(self, questId)
+--			questId = tonumber(questId)
+--			if nil == questId then return false end
+--			-- TODO: Get a renown requirement for the quest
+--			-- TODO: If none exists return true
+--			-- TODO: Otherwise determine covenant and needed level and return results of _CovenantRenownMeetsOrExceeds call
+--		end,
+		
+		--	Returns a boolean indicating whether the player's renown level with the specified covenant meets or exceeds the desired level.
+		_CovenantRenownMeetsOrExceeds = function(self, covenant, desiredLevel)
+			local retval = false
+			covenant = tonumber(covenant)
+			desiredLevel = tonumber(desiredLevel)
+			if nil == covenant or nil == desiredLevel then return false end
+			local levels = C_CovenantSanctumUI and C_CovenantSanctumUI.GetRenownLevels(covenant) or nil
+			if nil ~= levels then
+				for _, levelInfo in pairs(levels) do
+					if desiredLevel == levelInfo.level then
+						return not levelInfo.locked
+					end
+				end
+			end
+			return retval
 		end,
 
 		---

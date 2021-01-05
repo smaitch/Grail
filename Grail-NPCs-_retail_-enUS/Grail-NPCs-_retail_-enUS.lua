@@ -1409,6 +1409,7 @@ G[1351889]='Wanted: The Pale Doom'
 G[1352027]='Wanted Scroll'
 G[1352028]='Wanted Scroll'
 G[1352490]='Join the Rebellion!'
+G[1352520]='Medallion of Pride'
 G[1353420]='Stone Altar'
 G[1353645]="Marileth's Journal"
 G[1355296]='Bounty: Beast Control'
