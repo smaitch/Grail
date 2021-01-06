@@ -155,7 +155,7 @@ Grail.extraAchievements = {
 		[mapArgus] = { 512066, 512073, },
 		[mapZandalar] = { 512771, 512849, 512851, },
 		[mapKulTiras] = { 512510, 512853, 512852, 512995, },
-		[mapShadowlands] = { 514801, 514800, 514799, 514798, },
+		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, },
 		},
 	[factionHorde] = {
 		[mapKalimdor] = { 504961, 505859, 505866, },
@@ -169,7 +169,7 @@ Grail.extraAchievements = {
 		[mapArgus] = { 512066, 512073, },
 		[mapZandalar] = { 512555, 512771, 512849, 512851, },
 		[mapKulTiras] = { 512509, 512853, 512852, 512995, },
-		[mapShadowlands] = { 514801, 514800, 514799, 514798, },
+		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, },
 		},
 	}
 
@@ -7267,6 +7267,7 @@ G[60886]={514206}	-- House of the Chosen (Blade of the Primus) (Maldraxxus) (Sha
 G[60905]={514164}	-- This is the Way (Awaken, Ardenweald) (Ardenweald) (Shadowlands)
 G[60906]={514801}	-- The Spear of Kallipe (Sojourner of Bastion) (Bastion) (Shadowlands)
 G[61107]={514281}	-- A Land of Strife (The Path to Ascension) (Bastion) (Shadownlands)
+G[62921]={513997}	-- Sinfall (Venthyr Campaign) (Revendreth) (Shadowlands)
 
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime
 debugStartTime = debugprofilestop()

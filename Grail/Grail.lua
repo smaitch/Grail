@@ -526,6 +526,7 @@
 --			Enables prerequisite quest determination for non-Loremaster achievements.
 --			Updates Quest/NPC information.
 --			Adds basic support for covenant renown level prerequisites.
+--			Adds support to mark quests as callings quests.
 --
 --	Known Issues
 --
@@ -878,7 +879,16 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		bitMaskQuestWorldQuest	=	0x00040000,
 		bitMaskQuestBiweekly	=	0x00080000,
 		bitMaskQuestThreatQuest =	0x00100000,
--- 		lots of unused bits we can still abuse :-)
+		bitMaskQuestCallingQuest =	0x00200000,
+			bitMaskQuestUnused1 =	0x00400000,
+			bitMaskQuestUnused2 =	0x00800000,
+			bitMaskQuestUnused3 =	0x01000000,
+			bitMaskQuestUnused4 =	0x02000000,
+			bitMaskQuestUnused5 =	0x04000000,
+			bitMaskQuestUnused6 =	0x08000000,
+			bitMaskQuestUnused7 =	0x10000000,
+			bitMaskQuestUnused8 =	0x20000000,
+			bitMaskQuestUnused9 =	0x40000000,
 		bitMaskQuestSpecial		=	0x80000000,		-- quest is "special" and never appears in the quest log
 		-- End of bit mask values
 
@@ -1629,6 +1639,7 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 					frame:RegisterEvent("QUEST_AUTOCOMPLETE")
 					if self.capabilities.usesWorldQuests then
 						frame:RegisterEvent("WORLD_QUEST_COMPLETED_BY_SPELL")
+						frame:RegisterEvent("COVENANT_CALLINGS_UPDATED")
 					end
 					frame:RegisterEvent("QUEST_DETAIL")
 					frame:RegisterEvent("QUEST_LOG_UPDATE")	-- just to indicate we are now available to read the Blizzard quest log without issues
@@ -1689,6 +1700,11 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 				self.receivedCalendarUpdateEventList = true
 				frame:UnregisterEvent("CALENDAR_UPDATE_EVENT_LIST")
 				self:_UpdateQuestResetTime()	-- moved here from ADDON_LOADED in the hopes that here GetQuestResetTime() will always return a real value
+			end,
+
+			-- When we call C_CovenantCallings_RequestCallings() we will get this event, but it also happens during gameplay, so we currently do not call that.
+			['COVENANT_CALLINGS_UPDATED'] = function(self, frame, ...)
+				self:_AddCallingQuests(...)
 			end,
 
 			['CHAT_MSG_COMBAT_FACTION_CHANGE'] = function(self, frame, message)
@@ -2400,7 +2416,7 @@ end,
 		-- are associated with Blizzard groups (like factions), which are noted.
 		invalidateControl = {},
 
-		invalidateGroupHighestValue = 6,
+		invalidateGroupHighestValue = 7,
 
 		invalidateGroupWithering = 1,
 		invalidateGroupGarrisonBuildings = 2,
@@ -2408,6 +2424,7 @@ end,
 		invalidateGroupArtifactKnowledge = 4,
 		invalidateGroupArtifactLevel = 5,
 		invalidateGroupCurrentThreatQuests = 6,
+		invalidateGroupCurrentCallingQuests = 7,
 		invalidateGroupBaseAchievement = 1000000,	-- the actual achievement ID is added to this
 		invalidateGroupBaseBuff = 2000000,	-- the actual buff ID is added to this
 		invalidateGroupBaseItem = 3000000,	-- the actual item ID is added to this
@@ -3455,6 +3472,28 @@ end,
 			end
 		end,
 
+		_AddCallingQuests = function(self, callingQuests)
+			-- Clear the status of all the ones in the current calling quest list
+			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupCurrentCallingQuests])
+
+			-- Clean out the list because we will rebuild it with current values
+			self.invalidateControl[self.invalidateGroupCurrentCallingQuests] = {}
+
+			-- Process the calling quests provided to us
+			if nil ~= callingQuests and 0 < #callingQuests then
+				for _, callingQuest in pairs(callingQuests) do
+					local questId = callingQuest.questID
+					if nil ~= questId then
+						self:_LearnCallingQuest(questId)
+						tinsert(self.invalidateControl[self.invalidateGroupCurrentCallingQuests], questId)
+					end
+				end
+			end
+
+			-- Clear the status of all the ones in the current (new) calling quest list
+			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupCurrentCallingQuests])
+		end,
+
 		-- Assume we are going to get the current list of threat quests and update the internal structures
 		-- to those quests.
 		_AddThreatQuests = function(self)
@@ -3584,6 +3623,24 @@ end,
 
 		_LearnedWorldQuestTypeMapping = { [109] = 0, [111] = 0, [112] = 0, [113] = 0x00000100, [115] = 0x00004000, [135] = 0, [136] = 0, [137] = 0x00000040, [139] = 0, [141] = 0x00000080, [142] = 0, [144] = 0, [145] = 0x00000040, [151] = 0, [152] = 0, [259] = 0, [260] = 0, [266] = 0, },
 
+		_LearnCallingQuest = function(self, questId)
+			questId = tonumber(questId)
+			if nil == questId then return end
+			local kCodeToAdd, pCodeToAdd = 'K2097152', 'P:^'..questId
+			
+			self:_LearnKCode(questId, kCodeToAdd)
+			
+			if nil == strfind(self.questPrerequisites[questId] or '', strsub(pCodeToAdd, 3), 1, true) then
+				self:_LearnQuestCode(questId, pCodeToAdd)
+				local codeToAdd = strsub(pCodeToAdd, 3)
+				if nil == self.questPrerequisites[questId] then
+					self.questPrerequisites[questId] = codeToAdd
+				else
+					self.questPrerequisites[questId] = self.questPrerequisites[questId] .. "+" .. codeToAdd
+				end
+			end
+		end,
+
 		_LearnThreatQuest = function(self, questId)
 			questId = tonumber(questId)
 			if nil == questId then return end
@@ -3620,6 +3677,7 @@ end,
 			if nil == questId then return end
 			local kCodeToAdd, pCodeToAdd = 'K', 'P:a'..questId
 			local tagId, tagName = self:GetQuestTagInfo(questId)
+			if tagName == "Calling Quest" then return end
 			local professionRequirement = self._LearnedWorldQuestProfessionMapping[tagId]
 			local typeModifier = self._LearnedWorldQuestTypeMapping[tagId]
 			local typeValue = tagId and 262144 or (isDaily and 2 or 0)
@@ -4314,7 +4372,7 @@ end,
 					retval = self:_PhaseMatches(code, subcode, numeric) and 'C' or 'P'
 				elseif 'Q' == code or 'q' == code then
 					retval = self:_iLvlMatches(code, numeric) and 'C' or 'P'
-				elseif 'a' == code or 'b' == code then
+				elseif 'a' == code or 'b' == code or '^' == code then
 					retval = self:IsAvailable(numeric) and 'C' or 'P'
 				elseif '@' == code then
 					retval = self:ArtifactLevelMeetsOrExceeds(subcode, numeric) and 'C' or 'P'
@@ -6298,8 +6356,8 @@ end
 			if nil ~= codeString then
 				local questId = p and p.q or nil
 				local dangerous = p and p.d or false
-				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local forcingProfessionOnly, forcingReputationOnly = false, false
 
 				if forceSpecificChecksOnly then
@@ -6387,6 +6445,7 @@ end
 				elseif code == '#' then checkMission = true
 				elseif code == '&' then checkAzeriteLevel = true
 				elseif code == '$' then checkRenownLevel = true
+				elseif code == '^' then checkCallingQuestAvailable = true
 				else print("|cffff0000Grail|r _EvaluateCodeAsPrerequisite cannot process code", codeString)
 				end
 
@@ -6487,6 +6546,9 @@ end
 				if checkRenownLevel then
 					renownExceeds = Grail:_CovenantRenownMeetsOrExceeds(subcode, value)
 				end
+				if checkCallingQuestAvailable then
+					callingQuestAvailable = Grail:IsAvailable(value)
+				end
 
 				good =
 					(code == ' ') or
@@ -6536,7 +6598,8 @@ end
 					(checkMission and missionMatches) or
 					(checkThreatQuestAvailable and threatQuestAvailable) or
 					(checkAzeriteLevel and azeriteLevelMatches) or
-					(checkRenownLevel and renownExceeds)
+					(checkRenownLevel and renownExceeds) or
+					(checkCallingQuestAvailable and callingQuestAvailable)
 				if not good then tinsert(failures, codeString) end
 			end
 
@@ -7352,7 +7415,7 @@ end
 		--	@return true if the world quest is currently available, otherwise false
 		IsAvailable = function(self, questId)
 --			return (nil ~= self.availableWorldQuests[questId])
-			return tContains(self.invalidateControl[self.invalidateGroupCurrentWorldQuests], questId) or tContains(self.invalidateControl[self.invalidateGroupCurrentThreatQuests], questId)
+			return tContains(self.invalidateControl[self.invalidateGroupCurrentWorldQuests], questId) or tContains(self.invalidateControl[self.invalidateGroupCurrentThreatQuests], questId) or tContains(self.invalidateControl[self.invalidateGroupCurrentCallingQuests], questId)
 		end,
 
 		---
@@ -7714,6 +7777,10 @@ end
 		--	@return True if the quest is a threat quest, false otherwise.
 		IsThreatQuest = function(self, questId)
 			return (bitband(self:CodeType(questId), self.bitMaskQuestThreatQuest) > 0)
+		end,
+
+		IsCallingQuest = function(self, questId)
+			return (bitband(self:CodeType(questId), self.bitMaskQuestCallingQuest) > 0)
 		end,
 
 		---

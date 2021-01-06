@@ -1423,4 +1423,9 @@ if release >= 36839 then
 G[1353959]='Spear of Kalliope'
 end
 
+if release >= 36949 then
+G[1364932]='Blazing Ingot'
+G[1364937]='Phasic Siphoner'
+end
+
 --	End of localized NPC names
