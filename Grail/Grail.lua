@@ -527,6 +527,7 @@
 --			Updates Quest/NPC information.
 --			Adds basic support for covenant renown level prerequisites.
 --			Adds support to mark quests as callings quests.
+--			Adds the ability to set covenant talent prerequisites.
 --
 --	Known Issues
 --
@@ -994,7 +995,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					local _
 					self.playerRealm = GetRealmName()
 					self.playerName = UnitName('player')
-					_, self.playerClass = UnitClass('player')
+					_, self.playerClass, self.playerClassId = UnitClass('player')
 					_, self.playerRace = UnitRace('player')
 					self.playerFaction = UnitFactionGroup('player')		-- for Pandaren who has not chosen results is "Neutral"
 					self.playerGender = UnitSex('player')
@@ -1702,7 +1703,7 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 				self:_UpdateQuestResetTime()	-- moved here from ADDON_LOADED in the hopes that here GetQuestResetTime() will always return a real value
 			end,
 
-			-- When we call C_CovenantCallings_RequestCallings() we will get this event, but it also happens during gameplay, so we currently do not call that.
+			-- When we call C_CovenantCallings.RequestCallings() we will get this event, but it also happens during gameplay.
 			['COVENANT_CALLINGS_UPDATED'] = function(self, frame, ...)
 				self:_AddCallingQuests(...)
 			end,
@@ -2000,6 +2001,7 @@ end,
 					C_Calendar.OpenCalendar()	-- this does nothing during startup...its real usage is when checking holidays
 					self:_AddWorldQuests()
 					self:_AddThreatQuests()
+					C_CovenantCallings.RequestCallings()	-- causes COVENANT_CALLINGS_UPDATED event to be sent
 				end
 				-- In Classic we need to get the completed quests because we have eliminated the
 				-- call as a result of calendar processing being removed from Classic.
@@ -3677,7 +3679,7 @@ end,
 			if nil == questId then return end
 			local kCodeToAdd, pCodeToAdd = 'K', 'P:a'..questId
 			local tagId, tagName = self:GetQuestTagInfo(questId)
-			if tagName == "Calling Quest" then return end
+			if tagName == "Calling Quest" or tagName == "Threat Wrapper" then return end
 			local professionRequirement = self._LearnedWorldQuestProfessionMapping[tagId]
 			local typeModifier = self._LearnedWorldQuestTypeMapping[tagId]
 			local typeValue = tagId and 262144 or (isDaily and 2 or 0)
@@ -4382,6 +4384,8 @@ end,
 					retval = self:AzeriteLevelMeetsOrExceeds(numeric) and 'C' or 'P'
 				elseif '$' == code then
 					retval = self:_CovenantRenownMeetsOrExceeds(subcode, numeric) and 'C' or 'P'
+				elseif '%' == code then
+					retval = self:_GarrisonTalentResearched(numeric) and 'C' or 'P'
 				elseif 'h' == code then
 					retval = (bitband(questBitMask, self.bitMaskEverCompleted) > 0) and 'P' or 'C'
 				else	-- A, B, C, D, E, H, O, X
@@ -6356,8 +6360,8 @@ end
 			if nil ~= codeString then
 				local questId = p and p.q or nil
 				local dangerous = p and p.d or false
-				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable, garrisonTalentResearched = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local forcingProfessionOnly, forcingReputationOnly = false, false
 
 				if forceSpecificChecksOnly then
@@ -6446,6 +6450,7 @@ end
 				elseif code == '&' then checkAzeriteLevel = true
 				elseif code == '$' then checkRenownLevel = true
 				elseif code == '^' then checkCallingQuestAvailable = true
+				elseif code == '%' then checkGarrisonTalent = true
 				else print("|cffff0000Grail|r _EvaluateCodeAsPrerequisite cannot process code", codeString)
 				end
 
@@ -6549,6 +6554,9 @@ end
 				if checkCallingQuestAvailable then
 					callingQuestAvailable = Grail:IsAvailable(value)
 				end
+				if checkGarrisonTalent then
+					garrisonTalentResearched = Grail:_GarrisonTalentResearched(value)
+				end
 
 				good =
 					(code == ' ') or
@@ -6599,7 +6607,8 @@ end
 					(checkThreatQuestAvailable and threatQuestAvailable) or
 					(checkAzeriteLevel and azeriteLevelMatches) or
 					(checkRenownLevel and renownExceeds) or
-					(checkCallingQuestAvailable and callingQuestAvailable)
+					(checkCallingQuestAvailable and callingQuestAvailable) or
+					(checkGarrisonTalent and garrisonTalentResearched)
 				if not good then tinsert(failures, codeString) end
 			end
 
@@ -8570,6 +8579,29 @@ end
 				end
 			end
 			return retval
+		end,
+
+		_GarrisonTalentResearched = function(self, talentId)
+			talentId = tonumber(talentId)
+			if nil == talentId then return false, nil, nil end
+			-- Note that we would normally try to use self.playerClassId as the second parameter, but that yields nil, and 0 returns them all.
+			local talentTreeIds = C_Garrison.GetTalentTreeIDsByClassID(Enum.GarrisonType.Type_9_0, 0)
+			if nil ~= talentTreeIds then
+				for _, talentTreeId in pairs(talentTreeIds) do
+					local treeInfo = C_Garrison.GetTalentTreeInfo(talentTreeId)
+					if nil ~= treeInfo then
+						local talents = treeInfo.talents
+						if nil ~= talents then
+							for _, talentInfo in pairs(talents) do
+								if talentInfo.researched and talentId == tonumber(talentInfo.id) then
+									return true, treeInfo.title, talentInfo.name
+								end
+							end
+						end
+					end
+				end
+			end
+			return false, nil, nil
 		end,
 
 		---

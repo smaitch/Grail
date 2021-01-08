@@ -1424,6 +1424,7 @@ G[1353959]='Spear of Kalliope'
 end
 
 if release >= 36949 then
+G[1364911]='Twisted Mawstone'
 G[1364932]='Blazing Ingot'
 G[1364937]='Phasic Siphoner'
 end
