@@ -1412,18 +1412,13 @@ G[1352490]='Join the Rebellion!'
 G[1352520]='Medallion of Pride'
 G[1353420]='Stone Altar'
 G[1353645]="Marileth's Journal"
+G[1353948]='Medallion of Desire'
+G[1353959]='Spear of Kalliope'
 G[1355296]='Bounty: Beast Control'
 G[1355798]='Cage'
 G[1355872]='Stolen Jar'
 G[1358533]='Forgotten Supplies'
 G[1362489]='Elysian Decree'
-end
-
-if release >= 36839 then
-G[1353959]='Spear of Kalliope'
-end
-
-if release >= 36949 then
 G[1364911]='Twisted Mawstone'
 G[1364932]='Blazing Ingot'
 G[1364937]='Phasic Siphoner'

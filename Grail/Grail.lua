@@ -1611,6 +1611,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						frame:RegisterEvent("GARRISON_BUILDING_ACTIVATED")
 						frame:RegisterEvent("GARRISON_BUILDING_REMOVED")
 						frame:RegisterEvent("GARRISON_BUILDING_UPDATE")
+						frame:RegisterEvent("GARRISON_TALENT_COMPLETE")
+						frame:RegisterEvent("GARRISON_TALENT_UPDATE")
 					end
 					frame:RegisterEvent("GOSSIP_CLOSED")
 					frame:RegisterEvent("GOSSIP_SHOW")		-- needed to learn about gossips to be able to know when specific events have happened so quest availability can be updated
@@ -1760,6 +1762,14 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				else
 					self:_RegisterDelayedEvent(frame, { 'GARRISON_BUILDING_UPDATE', buildingId })
 				end
+			end,
+
+			['GARRISON_TALENT_COMPLETE'] = function(self, frame, ...)
+				self:_InvalidateStatusForQuestsWithTalentPrerequisites()
+			end,
+			
+			['GARRISON_TALENT_UPDATE'] = function(self, frame, ...)
+				self:_InvalidateStatusForQuestsWithTalentPrerequisites()
 			end,
 
 			['GOSSIP_CLOSED'] = function(self, frame, ...)
@@ -2418,7 +2428,7 @@ end,
 		-- are associated with Blizzard groups (like factions), which are noted.
 		invalidateControl = {},
 
-		invalidateGroupHighestValue = 7,
+		invalidateGroupHighestValue = 8,
 
 		invalidateGroupWithering = 1,
 		invalidateGroupGarrisonBuildings = 2,
@@ -2427,6 +2437,7 @@ end,
 		invalidateGroupArtifactLevel = 5,
 		invalidateGroupCurrentThreatQuests = 6,
 		invalidateGroupCurrentCallingQuests = 7,
+		invalidateGroupCurrentGarrisonTalentQuests = 8,
 		invalidateGroupBaseAchievement = 1000000,	-- the actual achievement ID is added to this
 		invalidateGroupBaseBuff = 2000000,	-- the actual buff ID is added to this
 		invalidateGroupBaseItem = 3000000,	-- the actual item ID is added to this
@@ -9411,6 +9422,13 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 					tinsert(t, questId)
 				end
 				self.invalidateControl[self.invalidateGroupArtifactLevel] = t
+			elseif '%' == code then
+				-- This is implemented quite simply to say that any quest that has a garrison talent requirement will be invalidated when talents change.
+				local t = self.invalidateControl[self.invalidateGroupCurrentGarrisonTalentQuests] or {}
+				if not tContains(t, questId) then
+					tinsert(t, questId)
+				end
+				self.invalidateControl[self.invalidateGroupCurrentGarrisonTalentQuests] = t
 			end
 		end,
 
@@ -11071,6 +11089,10 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 
 		_NPCLocationInvalidate = function(self, tableOfQuestIds)
 			
+		end,
+
+		_InvalidateStatusForQuestsWithTalentPrerequisites = function(self)
+			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupCurrentGarrisonTalentQuests])
 		end,
 
 		---
