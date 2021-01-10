@@ -1643,6 +1643,8 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 					if self.capabilities.usesWorldQuests then
 						frame:RegisterEvent("WORLD_QUEST_COMPLETED_BY_SPELL")
 						frame:RegisterEvent("COVENANT_CALLINGS_UPDATED")
+						frame:RegisterEvent("COVENANT_CHOSEN")
+						frame:RegisterEvent("COVENANT_SANCTUM_RENOWN_LEVEL_CHANGED")
 					end
 					frame:RegisterEvent("QUEST_DETAIL")
 					frame:RegisterEvent("QUEST_LOG_UPDATE")	-- just to indicate we are now available to read the Blizzard quest log without issues
@@ -1708,6 +1710,17 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 			-- When we call C_CovenantCallings.RequestCallings() we will get this event, but it also happens during gameplay.
 			['COVENANT_CALLINGS_UPDATED'] = function(self, frame, ...)
 				self:_AddCallingQuests(...)
+			end,
+
+			['COVENANT_CHOSEN'] = function(self, frame, ...)
+				-- If someone were to change covenants all the quests associated with covenant need to have their status refreshed.
+				self:_InvalidateStatusForQuestsWithTalentPrerequisites()
+				self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupRenownQuests])
+				C_CovenantCallings.RequestCallings()	-- this causes COVENANT_CALLINGS_UPDATED to be received which is exactly what we need to update the current calling quests
+			end,
+
+			['COVENANT_SANCTUM_RENOWN_LEVEL_CHANGED'] = function(self, frame, ...)
+				self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupRenownQuests])
 			end,
 
 			['CHAT_MSG_COMBAT_FACTION_CHANGE'] = function(self, frame, message)
@@ -2428,7 +2441,7 @@ end,
 		-- are associated with Blizzard groups (like factions), which are noted.
 		invalidateControl = {},
 
-		invalidateGroupHighestValue = 8,
+		invalidateGroupHighestValue = 9,
 
 		invalidateGroupWithering = 1,
 		invalidateGroupGarrisonBuildings = 2,
@@ -2438,6 +2451,7 @@ end,
 		invalidateGroupCurrentThreatQuests = 6,
 		invalidateGroupCurrentCallingQuests = 7,
 		invalidateGroupCurrentGarrisonTalentQuests = 8,
+		invalidateGroupRenownQuests = 9,
 		invalidateGroupBaseAchievement = 1000000,	-- the actual achievement ID is added to this
 		invalidateGroupBaseBuff = 2000000,	-- the actual buff ID is added to this
 		invalidateGroupBaseItem = 3000000,	-- the actual item ID is added to this
@@ -2561,7 +2575,7 @@ end,
 			[6] = { 1445, 1515, 1520, 1679, 1681, 1682, 1708, 1710, 1711, 1731, 1732, 1733, 1735, 1736, 1737, 1738, 1739, 1740, 1741, 1847, 1848, 1849, 1850, },
 			[7] = { 1815, 1828, 1833, 1859, 1860, 1862, 1883, 1888, 1894, 1899, 1900, 1919, 1947, 1948, 1975, 1984, 1989, 2018, 2045, 2097, 2098, 2099, 2100, 2101, 2102, 2135, 2165, 2170, },
 			[8] = { 2103, 2111, 2120, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2233, 2264, 2265, 2371, 2372, 2373, 2374, 2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 2392, 2395, 2396, 2397, 2398, 2400, 2401, 2415, 2417, 2427, },
-			[9] = { 2407, 2410, 2413, 2432, 2439, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2465, },
+			[9] = { 2407, 2410, 2413, 2432, 2439, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2462, 2463, 2464, 2465, },
 			},
 
 		-- These reputations use the friendship names instead of normal reputation names
@@ -2870,6 +2884,9 @@ end,
 			["99B"] = "Sika", -- 2459
 			["99C"] = "Stonehead", -- 2460
 			["99D"] = "Plague Deviser Marileth", -- 2461
+			["99E"] = "Stitchmasters", -- 2462
+			["99F"] = "Marasmius", -- 2463
+			["9A0"] = "Court of Night", -- 2464
 			["9A1"] = "The Wild Hunt",	-- 2465
 			},
 
@@ -3129,6 +3146,9 @@ end,
 			["99B"] = "Neutral", -- 2459	-- TODO: Determine faction
 			["99C"] = "Neutral", -- 2460	-- TODO: Determine faction
 			["99D"] = "Neutral", -- 2461	-- TODO: Determine faction
+			["99E"] = "Neutral", -- 2462	-- TODO: Determine faction
+			["99F"] = "Neutral", -- 2463	-- TODO: Determine faction
+			["9A0"] = "Neutral", -- 2464	-- TODO: Determine faction
 			["9A1"] = "Neutral", -- 2422	-- TODO: Determine faction
 			},
 
@@ -7022,6 +7042,7 @@ end
 				Grail.GetPlayerMapPositionMapRects[MapID] = R
 			end
 			local x, y = UnitPosition(unitName)
+			if nil == x or nil == y then return nil, nil end
 			P.x = x or 0
 			P.y = y or 0
 			P:Subtract(R[1])
@@ -9422,6 +9443,13 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 					tinsert(t, questId)
 				end
 				self.invalidateControl[self.invalidateGroupArtifactLevel] = t
+			elseif '$' == code then
+				-- This is implemented quite simply to say that any quest that has a renown requirement will be invalidated when renown level changes.
+				local t = self.invalidateControl[self.invalidateGroupRenownQuests] or {}
+				if not tContains(t, questId) then
+					tinsert(t, questId)
+				end
+				self.invalidateControl[self.invalidateGroupRenownQuests] = t
 			elseif '%' == code then
 				-- This is implemented quite simply to say that any quest that has a garrison talent requirement will be invalidated when talents change.
 				local t = self.invalidateControl[self.invalidateGroupCurrentGarrisonTalentQuests] or {}
