@@ -1413,6 +1413,7 @@ G[1352520]='Medallion of Pride'
 G[1353420]='Stone Altar'
 G[1353645]="Marileth's Journal"
 G[1353948]='Medallion of Desire'
+G[1353949]='Medallion of Avarice'
 G[1353959]='Spear of Kalliope'
 G[1355296]='Bounty: Beast Control'
 G[1355798]='Cage'

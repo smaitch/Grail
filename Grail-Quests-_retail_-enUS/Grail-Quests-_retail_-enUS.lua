@@ -34126,4 +34126,30 @@ G[529411]='What Now?'
 G[529428]='What Now?'
 end
 
+if release >= 37142 then
+G[34398]='Warlords of Draenor: The Dark Portal'
+G[58325]='Watcher Emil'
+G[58326]='Combing the Catacombs'
+G[58337]='Break Out'
+G[58372]='Lead the Way'
+G[58406]='Mirror to Maldraxxus'
+G[58421]='Special Access'
+G[58424]='An Eye for an Amulet'
+G[58428]='Crypt Crashers'
+G[58440]='Mirror, Mirror...'
+G[58444]='Return to Sinfall'
+G[58842]='The Curator'
+G[60251]='A Valuable Find: Plaguefall'
+G[60255]='A Valuable Find: The Other Side'
+G[60385]='Training in Revendreth'
+G[60387]='Training in Bastion'
+G[60404]='Training Our Forces'
+G[60405]='Training in Bastion'
+G[60406]='Training in Bastion'
+G[60411]='Training in Revendreth'
+G[60432]='Troubles at Home'
+G[60673]='The Traitor'
+G[63135]='Coldheart Flight Routes'
+end
+
 --	End of localized quest names

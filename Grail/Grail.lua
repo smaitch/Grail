@@ -1006,6 +1006,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.blizzardVersion = version
 					self.blizzardVersionAsNumber = self:_MakeNumberFromVersion(self.blizzardVersion)
 					self.portal = GetCVar("portal")
+					self.covenant = C_Covenants and C_Covenants.GetActiveCovenantID() or 0
+					self.renownLevel = C_CovenantSanctumUI and C_CovenantSanctumUI.GetRenownLevel() or 0
 					self.environment = "_retail_"
 					if IsTestBuild() then
 						self.environment = "_ptr_"
@@ -1713,6 +1715,12 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 			end,
 
 			['COVENANT_CHOSEN'] = function(self, frame, ...)
+				if self.GDE.debug or self.GDE.tracking then
+					local covenantId = ...
+					local message = strformat("Covenant chosen: %d", covenantId)
+					print(message)
+					self:_AddTrackingMessage(message)
+				end
 				-- If someone were to change covenants all the quests associated with covenant need to have their status refreshed.
 				self:_InvalidateStatusForQuestsWithTalentPrerequisites()
 				self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupRenownQuests])
@@ -1720,6 +1728,12 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 			end,
 
 			['COVENANT_SANCTUM_RENOWN_LEVEL_CHANGED'] = function(self, frame, ...)
+				if self.GDE.debug or self.GDE.tracking then
+					local newLevel, oldLevel = ...
+					local message = strformat("Renown level changed from %d to %d", oldLevel, newLevel)
+					print(message)
+					self:_AddTrackingMessage(message)
+				end
 				self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupRenownQuests])
 			end,
 
@@ -3422,7 +3436,7 @@ end,
 			self.GDE.Tracking = self.GDE.Tracking or {}
 			if not self.trackingStarted then
 				local weekday, month, day, year, hour, minute = self:CurrentDateTime()
-				tinsert(self.GDE.Tracking, strformat("%4d-%02d-%02d %02d:%02d %s/%s/%s/%s/%s/%s/%s/%s/%d", year, month, day, hour, minute, self.playerRealm, self.playerName, self.playerFaction, self.playerClass, self.playerRace, self.playerGender, self.playerLocale, self.portal, self.blizzardRelease))
+				tinsert(self.GDE.Tracking, strformat("%4d-%02d-%02d %02d:%02d %s/%s/%s/%s/%s/%s/%s/%s/%d/%d:%d", year, month, day, hour, minute, self.playerRealm, self.playerName, self.playerFaction, self.playerClass, self.playerRace, self.playerGender, self.playerLocale, self.portal, self.blizzardRelease, self.covenant, self.renownLevel))
 				self.trackingStarted = true
 			end
 			tinsert(self.GDE.Tracking, msg)
