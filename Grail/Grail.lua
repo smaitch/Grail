@@ -528,6 +528,8 @@
 --			Adds basic support for covenant renown level prerequisites.
 --			Adds support to mark quests as callings quests.
 --			Adds the ability to set covenant talent prerequisites.
+--			Adds the ability to have prerequisites for quests turned in prior to the previous weekly reset.
+--			Adds GetBasicAchievementInfo() that acts as a front for Blizzard's GetAchievementInfo() albeit with limited return values, but also provides information about achievements for which Blizzard's API returns nil.
 --
 --	Known Issues
 --
@@ -1757,7 +1759,7 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 				if self.GDE.debug or self.GDE.tracking then
 --					local achievementId, criterionId = ...
 					local achievementId, criterionName = ...
-					local _, achievementName = GetAchievementInfo(achievementId)
+					local achievementName = self:GetBasicAchievementInfo(achievementId)
 --					local criterionName = GetAchievementCriteriaInfoByID(achievementId, criterionId)
 --					self:_AddTrackingMessage("Criterion earned: "..criterionName.." ("..criterionId..") for achievement "..achievementName.." ("..achievementId..")")
 					self:_AddTrackingMessage("Criterion earned: "..criterionName.." for achievement "..achievementName.." ("..achievementId..")")
@@ -3294,12 +3296,39 @@ end,
 		--	@param onlyPlayerCompleted If true, the return value indicates whether the player completed the achievement, otherwise it represents whether the achievement is completed on the account.
 		--	@return true is the achievement is complete, false otherwise.
 		AchievementComplete = function(self, soughtAchievementId, onlyPlayerCompleted)
-			local _, _, _, achievementComplete, _, _, _, _, _, _, _, _, playerCompletedIt = GetAchievementInfo(soughtAchievementId)
+			local name, achievementComplete, playerCompletedIt = self:GetBasicAchievementInfo(soughtAchievementId)
 			local retval = achievementComplete
 			if onlyPlayerCompleted then
 				retval = playerCompletedIt
 			end
 			return retval
+		end,
+
+		_customAchievementNames = {
+									[13997] = C_CampaignInfo.GetCampaignInfo(113).name,	-- Venthyr Campaign
+									},
+		-- The assumption is the value of each entry in the table would logically be considered a valid P:
+		_customAchievementPrerequisites = {
+											[13997] = "58407",	-- Venthyr
+											[14234] = "62557",	-- Kyrian
+											[14279] = "62406",	-- Necrolords
+											[14282] = "60108",	-- Night Fae
+											},
+
+		GetBasicAchievementInfo = function(self, achievementId)
+			local id, name, points, completed, month, day, year, description, flags, icon, rewardText, isGuild, wasEarnedByMe, earnedBy = GetAchievementInfo(achievementId)
+			if nil == id then
+				-- Attempt to look up the achievement in our own limited list of supported achievements.
+				-- Note that we are limited in determining completed vs wasEarnedByMe so assume they are the same.
+				name = self._customAchievementNames[achievementId]
+				local prerequisites = self._customAchievementPrerequisites[achievementId]
+				if nil ~= prerequisites then
+					local isCompleted = self:_AnyEvaluateTrueF(prerequisites, { q = 0, d = false}, Grail._EvaluateCodeAsPrerequisite, false)
+					completed = isCompleted
+					wasEarnedByMe = isCompleted
+				end
+			end
+			return name, completed, wasEarnedByMe
 		end,
 
 		_HighestSupportedExpansion = function(self)
@@ -4402,6 +4431,8 @@ end,
 				elseif 'V' == code then
 --					retval = self:MeetsRequirementGroupAccepted(subcode, numeric) and 'C' or 'P'
 					retval = self:MeetsRequirementGroupControl({groupNumber = subcode, minimum = numeric, accepted = true}) and 'C' or 'P'
+				elseif 'v' == code then
+					retval = self:_QuestTurnedInBeforeLastWeeklyReset(numeric) and 'C' or 'P'
 				elseif 'W' == code then
 --					retval = self:MeetsRequirementGroup(subcode, numeric) and 'C' or 'P'
 					retval = self:MeetsRequirementGroupControl({groupNumber = subcode, minimum = numeric, turnedIn = true}) and 'C' or 'P'
@@ -6405,8 +6436,8 @@ end
 			if nil ~= codeString then
 				local questId = p and p.q or nil
 				local dangerous = p and p.d or false
-				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable, garrisonTalentResearched = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable, garrisonTalentResearched, questTurnedIndBeforeLastWeeklyReset = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent, checkQuestTurnedInBeforeLastWeeklyReset = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local forcingProfessionOnly, forcingReputationOnly = false, false
 
 				if forceSpecificChecksOnly then
@@ -6479,6 +6510,7 @@ end
 				elseif code == 'U' then checkFriendshipReputationExceeds = true
 				elseif code == 'u' then checkFriendshipReputationUnder = true
 				elseif code == 'V' then checkGroupAccepted = true
+				elseif code == 'v' then checkQuestTurnedInBeforeLastWeeklyReset = true
 				elseif code == 'W' then checkGroupDone = true
 				elseif code == 'w' then checkGroupDoneOrComplete = true
 				elseif code == 'X' then	checkNotCompleted = true
@@ -6602,6 +6634,9 @@ end
 				if checkGarrisonTalent then
 					garrisonTalentResearched = Grail:_GarrisonTalentResearched(value)
 				end
+				if checkQuestTurnedInBeforeLastWeeklyReset then
+					questTurnedIndBeforeLastWeeklyReset = Grail:_QuestTurnedInBeforeLastWeeklyReset(value)
+				end
 
 				good =
 					(code == ' ') or
@@ -6653,7 +6688,8 @@ end
 					(checkAzeriteLevel and azeriteLevelMatches) or
 					(checkRenownLevel and renownExceeds) or
 					(checkCallingQuestAvailable and callingQuestAvailable) or
-					(checkGarrisonTalent and garrisonTalentResearched)
+					(checkGarrisonTalent and garrisonTalentResearched) or
+					(checkQuestTurnedInBeforeLastWeeklyReset and questTurnedIndBeforeLastWeeklyReset)
 				if not good then tinsert(failures, codeString) end
 			end
 
@@ -8627,6 +8663,38 @@ end
 			return retval
 		end,
 
+		-- The assumption is if someone is not using GrailWhenPlayer then this is the same as IsQuestCompleted
+		_QuestTurnedInBeforeLastWeeklyReset = function(self, questId)
+			questId = tonumber(questId)
+			if nil == questId then return false end
+			local retval = self:IsQuestCompleted(questId)
+			if retval then
+				if nil ~= GrailWhenPlayer then
+					local when = GrailWhenPlayer.when[questId]
+					if nil ~= when then
+--						print("*** Quest:", questId)
+						local lastWeeklyResetDate = C_DateAndTime.AdjustTimeByMinutes(C_DateAndTime.GetCurrentCalendarTime(), (C_DateAndTime.GetSecondsUntilWeeklyReset() - (86400 * 7)) / 60)
+--						print("*** Last weekly reset:", lastWeeklyResetDate.year, lastWeeklyResetDate.month, lastWeeklyResetDate.monthDay, lastWeeklyResetDate.hour, lastWeeklyResetDate.minute)
+						-- Start with a date and then replace its values with those from when the quest was completed.
+						-- an example of when is: 2018-12-18 06:34
+						local whenDate = C_DateAndTime.GetCurrentCalendarTime()
+						local year, month, day, hour, minute = string.match(when, "(%d+)-(%d+)-(%d+) (%d+):(%d+)")
+						whenDate.year = year
+						whenDate.month = month
+						whenDate.monthDay = day
+						whenDate.hour = hour
+						whenDate.minute = minute
+--						print("*** When:", when)
+--						print("*** As a day:", whenDate.year, whenDate.month, whenDate.monthDay, whenDate.hour, whenDate.minute)
+						-- Compare whenDate with lastWeeklyResetDate
+--						print("*** Comparison:", C_DateAndTime.CompareCalendarTime(whenDate, lastWeeklyResetDate))
+						retval = (C_DateAndTime.CompareCalendarTime(whenDate, lastWeeklyResetDate) >= 0)
+					end
+				end
+			end
+			return retval
+		end,
+
 		_GarrisonTalentResearched = function(self, talentId)
 			talentId = tonumber(talentId)
 			if nil == talentId then return false, nil, nil end
@@ -9471,6 +9539,8 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 					tinsert(t, questId)
 				end
 				self.invalidateControl[self.invalidateGroupCurrentGarrisonTalentQuests] = t
+			elseif 'v' == code then
+				-- TODO: We should take all these quests and put them into a table that is invalidated when the weekly reset happens (even though that is a pain to determine)
 			end
 		end,
 

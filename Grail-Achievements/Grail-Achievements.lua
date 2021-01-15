@@ -26,7 +26,7 @@
 --
 
 local pairs, tContains, tinsert, tonumber, wipe = pairs, tContains, tinsert, tonumber, wipe
-local GetAchievementInfo, GetBuildInfo = GetAchievementInfo, GetBuildInfo
+local GetBuildInfo = GetBuildInfo
 
 local Grail_Achievements_File_Version = 010
 
@@ -7236,6 +7236,7 @@ G[58103]={514801}	-- Pride or Unit (Sojourner of Bastion) (Bastion) (Shadowlands
 G[58166]={514800}	-- An Ominous Stone (Sojourner of Ardenweald) (Ardenweald) (Shadowlands)
 G[58174]={514281}	-- The Aspirant's Crucible (The Path to Ascension) (Bastion) (Shadownlands)
 G[58267]={514800}	-- Wicked Plan (Sojourner of Ardenweald) (Ardenweald) (Shadowlands)
+G[58407]={513997}	-- Dominion (Venthyr Campaign) (Revendreth) (Shadowlands)
 G[58524]={514164}	-- The Fallen Tree (Awaken, Ardenweald) (Ardenweald) (Shadowlands)
 G[58593]={514164}	-- Visions of the Dreamer (Awaken, Ardenweald) (Ardenweald) (Shadowlands)
 G[58623]={514799}	-- Archival Protection (Sojourner of Maldraxxus) (Maldraxxus) (Shadowlands)
@@ -7306,7 +7307,7 @@ for questId, achs in pairs(G) do
 				end
 				Grail.questsLoremaster[questId] = achievementId
 			else
-				local _, title = GetAchievementInfo(achievementId - Grail.mapAreaBaseAchievement)
+				local title = Grail:GetBasicAchievementInfo(achievementId - Grail.mapAreaBaseAchievement)
 				Grail:AddQuestToMapArea(questId, achievementId, title)
 			end
 		end
