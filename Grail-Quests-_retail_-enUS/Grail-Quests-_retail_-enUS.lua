@@ -34154,6 +34154,10 @@ G[63135]='Coldheart Flight Routes'
 end
 
 if release >= 37176 then
+G[57646]='The Tithelord'
+G[57729]='To the Estate'
+G[57771]='An Unwelcome Incursion'
+G[57772]='Fangs and Minds'
 G[58382]='Someone Worth Saving'
 G[58383]="The Many Sins of Kael'thas Sunstrider"
 G[58384]='Dredgers Left Behind'
@@ -34167,6 +34171,7 @@ G[58392]="Death's End Destruction"
 G[58393]='Strategic Executions'
 G[58394]="Lady Ouix'Ara"
 G[58395]='Enough Vengeance For One Day'
+G[58407]='The Medallion of Dominion'
 G[58426]='In the Shadow of our Failures'
 G[58443]="Continued Care of Kael'thas"
 G[58518]="There's Always a Paper Trail"
@@ -34178,8 +34183,13 @@ G[58586]='The Right Stuff'
 G[58603]='Phaestus, Genesis of Aeons'
 G[58630]='Crown of the Harvesters'
 G[58656]='Heavy is the Head...'
+G[59325]='A Stalwart Ally'
+G[59346]="Indri's Flute"
 G[60066]='Silk for Ardenweald'
+G[60145]='Third Talon Vartox'
 G[60159]='Mirror Attunement: Halls of Atonement'
+G[60183]='After Them!'
+G[60265]='Disrupting the Chain'
 G[60414]='Rare Resources'
 G[60416]='Rare Resources'
 G[60417]='Rare Resources'
@@ -34187,6 +34197,7 @@ G[60993]='Citadel of Loyalty'
 G[60994]='Lowering Their Defenses'
 G[60995]='Disloyalty'
 G[60996]='Face Your Fears'
+G[61730]='The Captive King'
 G[61786]='Adventurer: Stonehead'
 G[61788]='Adventurer: Simone'
 G[62055]='Castle Nathria: Getting a Head'
@@ -34195,7 +34206,9 @@ G[62631]='The World Awaits'
 G[62633]='A Frozen Path Through Time'
 G[62935]='Remnants of Hope'
 G[62951]='Path of Ascension: Kleia'
+G[62966]='Finding a Witness'
 G[63068]='Settling Disputes'
+G[63341]='Sinfall Tactician'
 end
 
 --	End of localized quest names
