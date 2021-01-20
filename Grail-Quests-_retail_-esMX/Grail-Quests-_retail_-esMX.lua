@@ -29665,4 +29665,8 @@ G[529411]='¿Y ahora qué?'
 G[529428]='¿Y ahora qué?'
 end
 
+if release >= 37176 then
+G[58160]='¡Por la reina y la arboleda!'
+end
+
 --	End of localized quest names
