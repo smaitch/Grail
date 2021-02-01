@@ -29332,4 +29332,31 @@ G[529411]='¿Y ahora qué?'
 G[529428]='¿Y ahora qué?'
 end
 
+if release >= 37176 then
+G[41699]='Cangrejos crujientes'
+G[41821]='SE BUSCA: Shara Hálito Vil'
+G[43771]='La magia del vuelo'
+G[49198]='Punto de invasión superior: Inquisidor Meto'
+G[50874]='Hakbi el Resucitado'
+G[50962]='Reclamación de carga'
+G[50977]='Redada de contrabandista'
+G[51379]='Templo de Sethraliss: navegación por las corrientes'
+G[51847]='Quijarruina'
+G[51897]='Rocaescarcha'
+G[54561]='Zalas Secacorteza'
+G[54604]='Molok el Triturador'
+G[56019]='Cofre con bloqueo de runas'
+G[59660]='Una corte nueva'
+G[60920]='Akros'
+G[61616]='La Corte de Ascuas'
+G[61789]='Aventurera: Sibila Perdida'
+G[61790]='Aventurera: Vulca'
+G[61792]='Aventurero: Bogdan'
+G[62637]='Llamada a la batalla'
+G[62867]='Recuperar almas perdidas'
+G[62868]='Recuperar almas perdidas'
+G[63065]='Mejora del sagrario: La Corte de Ascuas'
+G[63179]='Ahogados y hechos pedazos'
+end
+
 --	End of localized quest names

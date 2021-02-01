@@ -34337,4 +34337,42 @@ G[529411]='What Now?'
 G[529428]='What Now?'
 end
 
+if release >= 37176 then
+G[45729]='Sandworm Meat'
+G[45730]='Crunchy Spider Legs'
+G[45734]='Raw Clefthoof Meat'
+G[45735]='Lean Shanks'
+G[45736]="The Ruins of Ahn'Qiraj: Ossirian"
+G[45737]="Ahn'Qiraj: C'Thun"
+G[54395]='Darkshore Donations: Seasoned Steak and Potatoes'
+G[58917]="A Rogue's End"
+G[58923]="A Paladin's Service"
+G[58933]='The Deadliest of Poisons'
+G[58946]="The Divine's Shield"
+G[59607]="Takin' Down the Beast"
+G[59958]="A Paladin's Service"
+G[59967]="A Rogue's End"
+G[59968]='The Deadliest of Poisons'
+G[60174]="The Divine's Shield"
+G[60236]='RSVP: Cryptkeeper Kassir'
+G[60246]='Trading Favors: Tirna Scithe'
+G[60393]='Aiding Bastion'
+G[60394]='Aiding Bastion'
+G[60426]='A Call to Bastion'
+G[60439]='Challenges in Ardenweald'
+G[60440]='Challenges in Ardenweald'
+G[60441]='Challenges in Ardenweald'
+G[61789]='Adventurer: Lost Sybille'
+G[61790]='Adventurer: Vulca'
+G[61792]='Adventurer: Bogdan'
+G[62634]='A Shattered Path Through Time'
+G[62637]='A Call to Battle'
+G[62638]='Emissary of War'
+G[62862]='Return Lost Souls'
+G[62865]='Return Lost Souls'
+G[63137]='Puzzling Cryptogram'
+G[63145]='Shadebound Testimonial'
+G[63153]='Discarded Torments'
+end
+
 --	End of localized quest names

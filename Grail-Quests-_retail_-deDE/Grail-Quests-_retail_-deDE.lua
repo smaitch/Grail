@@ -30170,4 +30170,30 @@ G[529411]='Was jetzt?'
 G[529428]='Was jetzt?'
 end
 
+if release >= 37176 then
+G[50874]='Hakbi der Auferstandene'
+G[50977]='Schmugglerrazzia'
+G[51379]='Der Tempel von Sethraliss: Ein Weg durch die Strömungen'
+G[54604]='Molok der Zermalmer'
+G[56019]='Runenverriegelte Truhe'
+G[59660]='Ein neuer Hof'
+G[60268]='Tief im Innern'
+G[60920]='Akros'
+G[61539]='Trau keinem Lich'
+G[61616]='Der Gluthof'
+G[62637]='Ein Aufruf zur Schlacht'
+G[62695]='Ein Ruf zur Hilfe'
+G[62856]='Wege zum Ruhm'
+G[62857]='Die Beute des Hofes'
+G[62867]='Rückkehr der verlorenen Seelen'
+G[62868]='Rückkehr der verlorenen Seelen'
+G[62870]='Seelen für Sündensturz'
+G[62915]='Hör mal, wer da hämmert'
+G[62967]='Gefängnis der Vergessenen'
+G[63029]='Ruf des Hochlords'
+G[63032]='Ruf des Hochlords'
+G[63065]='Sanktumaufwertung: Der Gluthof'
+G[63179]='Ertränkt und auseinandergerissen'
+end
+
 --	End of localized quest names

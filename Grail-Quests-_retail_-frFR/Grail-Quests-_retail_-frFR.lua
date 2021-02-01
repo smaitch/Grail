@@ -30020,4 +30020,22 @@ G[529411]='Et maintenant ?'
 G[529428]='Et maintenant ?'
 end
 
+if release >= 37176 then
+G[50874]='Hakbi le Ressuscité'
+G[50977]='Contrebandiers en difficulté'
+G[54604]='Molok l’Anéantisseur'
+G[56019]='Coffre à verrou runique'
+G[59660]='Une nouvelle réception'
+G[60920]='Akros'
+G[61616]='La cour des Braises'
+G[61789]='Aventurière : Sybille l’égarée'
+G[61790]='Aventurière : Vulca'
+G[61792]='Aventurier : Bogdan'
+G[62637]='L’appel au combat'
+G[62867]='Le retour des âmes perdues'
+G[62868]='Le retour des âmes perdues'
+G[63065]='Amélioration du sanctum : cour des Braises'
+G[63179]='Noyés et brisés'
+end
+
 --	End of localized quest names

@@ -318,7 +318,7 @@
 --			Makes CanAcceptQuest() not return true if the quest is obsolete or pending.
 --		056	Updates some quest/NPC information.
 --			Fixes a variable leak that causes problems determining prerequisite information.
---		057	Corrects some issues stemming from new repuation information.
+--		057	Corrects some issues stemming from new reputation information.
 --			Adds some localizations of quest/NPC names.
 --		058	Augments ClassificationOfQuestCode() to return 'K' for weekly quests.
 --			Updates some quest/NPC information.
@@ -530,6 +530,9 @@
 --			Adds the ability to set covenant talent prerequisites.
 --			Adds the ability to have prerequisites for quests turned in prior to the previous weekly reset.
 --			Adds GetBasicAchievementInfo() that acts as a front for Blizzard's GetAchievementInfo() albeit with limited return values, but also provides information about achievements for which Blizzard's API returns nil.
+--		115 Updates some Quest/NPC information.
+--			Removes redefinition of LE_GARRISON_TYPE_6_0 and uses Enum.GarrisonType.Type_6_0 instead.
+--			Adds the ability to have groups of weekly quests behave like groups of daily quests.
 --
 --	Known Issues
 --
@@ -1245,11 +1248,6 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.retrievingString = "Unknown"
 					end
 
-					-- A quick and dirty workaround for Blizzard's change in how they deal with an old enum.
-					if nil == LE_GARRISON_TYPE_6_0 then
-						LE_GARRISON_TYPE_6_0 = Enum.GarrisonType.Type_6_0
-					end
-
 					--
 					--	Blizzard has changed the way one queries to determine what quests are complete.
 					--	Prior to Mists of Pandaria the architecture required a call to be made to the
@@ -1342,6 +1340,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						-- G is a table whose key is a group number and whose value is a table of quests associated with it
 						-- H is a table whose key is a questId and whose value is a table of groups associated with it
 						-- I is a table whose indexes are questIds and values are tables of questIds that suffer bitMaskInvalidated from the quest that is the index
+						-- J is a table whose key is a group number and whose value is a table of quests associated with it (weekly instead of daily "G")
+						-- K is a table whose key is a questId and whose value is a table of groups associated with it (weekly instead of daily "H")
 						-- L is a table of questIds who fail because of bitMaskLevelTooLow
 						-- M is a table of questIds that require garrison buildings
 						-- P is a table of questIds who fail because of bitMaskProfession
@@ -1353,8 +1353,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						-- X is a table whose key is a group number and whose value is a table of quests interested in that group for accepting.
 						-- Y is a table whose key is a spellId that has ever been experienced and whose value is a table of quests associated with it
 						-- Z is a table whose key is a spellId that has ever been cast and whose value is a table of quests associated with it
-						self.questStatusCache = { ["A"] = {}, ["B"] = {}, ["C"] = {}, ["D"] = {}, ["E"] = {}, ["F"] = {}, ["G"] = {}, ["H"] = {}, ["I"] = {}, ["L"] = {}, ["M"] = {}, ["P"] = {}, ["Q"] = {}, ["R"] = {}, ["S"] = {}, ["V"] = {}, ["W"] = {}, ["X"] = {}, ["Y"] = {}, ["Z"] = {}, }
-						self.npcStatusCache = { ["A"] = {}, ["B"] = {}, ["C"] = {}, ["D"] = {}, ["E"] = {}, ["F"] = {}, ["G"] = {}, ["H"] = {}, ["I"] = {}, ["L"] = {}, ["M"] = {}, ["P"] = {}, ["Q"] = {}, ["R"] = {}, ["S"] = {}, ["V"] = {}, ["W"] = {}, ["X"] = {}, ["Y"] = {}, ["Z"] = {}, }
+						self.questStatusCache = { ["A"] = {}, ["B"] = {}, ["C"] = {}, ["D"] = {}, ["E"] = {}, ["F"] = {}, ["G"] = {}, ["H"] = {}, ["I"] = {}, ["J"] = {}, ["K"] = {}, ["L"] = {}, ["M"] = {}, ["P"] = {}, ["Q"] = {}, ["R"] = {}, ["S"] = {}, ["V"] = {}, ["W"] = {}, ["X"] = {}, ["Y"] = {}, ["Z"] = {}, }
+						self.npcStatusCache = { ["A"] = {}, ["B"] = {}, ["C"] = {}, ["D"] = {}, ["E"] = {}, ["F"] = {}, ["G"] = {}, ["H"] = {}, ["I"] = {}, ["J"] = {}, ["K"] = {}, ["L"] = {}, ["M"] = {}, ["P"] = {}, ["Q"] = {}, ["R"] = {}, ["S"] = {}, ["V"] = {}, ["W"] = {}, ["X"] = {}, ["Y"] = {}, ["Z"] = {}, }
 					end
 
 -- TODO: Move this to the place where the rest of the classes are done
@@ -2167,6 +2167,7 @@ end,
 		followerMapping = {},
 		forceLocalizedQuestNameLoad = true,
 		friendshipLevel = { 'Stranger', 'Acquaintance', 'Buddy', 'Friend', 'Good Friend', 'Best Friend' },
+		friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Tentative', 'Ambivalent', 'Cordial', 'Appreciative' },	-- TODO: localize them
 		garrisonBuildingLevelMapping = {
 			[-8] = "1+", [-9] = "2+", [-24] = "1+", [-25] = "2+", [-26] = "1+", [-27] = "2+",
 			[-29] = "1+", [-34] = "1+", [-35] = "2+", [-37] = "1+", [-38] = "2+", [-40] = "1+",
@@ -2613,6 +2614,12 @@ end,
 		reputationFriendshipLevelMapping = { [41999] = 1, [50399] = 2, [58799] = 3, [67199] = 4, [75599] = 5, [83999] = 6,
 											[55439] = 2005040, [71430] = 4004231, [79925] = 5004326,
 											},
+
+		reputationFriendsMaw = {
+			["980"] = "Ve'nari",
+			},
+
+		reputationFriendshipMawLevelMapping = { [28000] = 1, [29000] = 2, [35000] = 3, [42000] = 4, [49000] = 5, [70000] = 6, },
 
 		--	The keys are the boundary values for specific reputation names.  Up to 8 indicates the names used for reputations.
 		--	For values > 100 the reputation level is the value / 1000000 and the value mod 1000000 is how much over is
@@ -3258,6 +3265,14 @@ end,
 					end
 					self:_StatusCodeInvalidate(self.questStatusCache['X'][group])
 					self:_NPCLocationInvalidate(self.npcStatusCache['X'][group])
+				end
+			end
+			if questId ~= nil and self.questStatusCache.K[questId] then
+				for _, group in pairs(self.questStatusCache.K[questId]) do
+					if self:_RecordGroupValueChange(group, true, false, questId, true) >= self.weeklyMaximums[group] then
+						self:_StatusCodeInvalidate(self.questStatusCache.J[group])
+						self:_NPCLocationInvalidate(self.npcStatusCache.J[group])
+					end
 				end
 			end
 		end,
@@ -5619,6 +5634,15 @@ end,
 									hasError = true
 								end
 
+							elseif 'W' == code then
+								local group = tonumber(strsub(c, 2))
+								if nil ~= group then
+									self:_InsertSet(self.questStatusCache.J, group, questId)
+									self:_InsertSet(self.questStatusCache.K, questId, group)
+								else
+									hasError = true
+								end
+
 							elseif 'B' == code then
 								if ':' == codeValue then
 									--	we call _FromList with the current value of the 'B' table because processing 'O:' codes before
@@ -5746,12 +5770,13 @@ end,
 									hasError = true
 								end
 
-							elseif 'V' == code or 'W' == code then
-								local reputationIndex = strsub(c, 2, 4)
-								local reputationValue = tonumber(strsub(c, 5))
-								if nil == self.quests[questId]['rep'] then self.quests[questId]['rep'] = {} end
-								if nil == self.quests[questId]['rep'][reputationIndex] then self.quests[questId]['rep'][reputationIndex] = {} end
-								self.quests[questId]['rep'][reputationIndex][('V' == code) and 'min' or 'max'] = reputationValue
+-- Old V and W codes no longer exist
+--							elseif 'V' == code or 'W' == code then
+--								local reputationIndex = strsub(c, 2, 4)
+--								local reputationValue = tonumber(strsub(c, 5))
+--								if nil == self.quests[questId]['rep'] then self.quests[questId]['rep'] = {} end
+--								if nil == self.quests[questId]['rep'][reputationIndex] then self.quests[questId]['rep'][reputationIndex] = {} end
+--								self.quests[questId]['rep'][reputationIndex][('V' == code) and 'min' or 'max'] = reputationValue
 
 							elseif 'O' == code then
 								if ':' == codeValue then
@@ -6938,6 +6963,13 @@ end
 			return self.garrisonBuildingLevelMapping[garrisonBuildingId]
 		end,
 
+		--	This routine returns the current "weekly" day which is the start time date for
+		--	weekly quests in the format YYYY-MM-DD.
+		_GetWeeklyDay = function(self)
+			local lastWeeklyResetDate = C_DateAndTime.AdjustTimeByMinutes(C_DateAndTime.GetCurrentCalendarTime(), (C_DateAndTime.GetSecondsUntilWeeklyReset() - (86400 * 7)) / 60)
+			return strformat("%4d-%02d-%02d", lastWeeklyResetDate.year, lastWeeklyResetDate.month, lastWeeklyResetDate.monthDay)
+		end,
+
 		--	This routine returns the current "daily" day which is the start time date for
 		--	daily quests in the format YYYY-MM-DD.
 		_GetDailyDay = function(self)
@@ -7325,7 +7357,7 @@ end
 		HasGarrisonBuilding = function(self, buildingId, ignoreIsBuildingRequirement)
 			local desiredBuildingTable = nil
 			local retval = false
-			local buildings = (self.blizzardRelease >= 22248) and C_Garrison.GetBuildings(LE_GARRISON_TYPE_6_0) or C_Garrison.GetBuildings()
+			local buildings = (self.blizzardRelease >= 22248) and C_Garrison.GetBuildings(Enum.GarrisonType.Type_6_0) or C_Garrison.GetBuildings()
 			local building
 			local id, name, texPrefix, icon, rank, isBuilding, timeStart, buildTime, canActivate, canUpgrade, planExists
 			local foundPlot, foundBuildingId
@@ -7666,7 +7698,19 @@ end
 						end
 					end
 				end
-
+			end
+			-- Now do the check for weekly quests too...
+			if not retval then
+				if self.questStatusCache.K[questId] then
+					local weeklyDay = self:_GetWeeklyDay()
+					for _, group in pairs(self.questStatusCache.K[questId]) do
+						if self:_RecordGroupValueChange(group, false, false, questId, true) >= self.weeklyMaximums[group] then
+							if not tContains(GrailDatabasePlayer["weeklyGroups"][weeklyDay][group], questId) then
+						 		retval = true
+							end
+						end
+					end
+				end
 			end
 
 			return retval, failures
@@ -8699,26 +8743,7 @@ end
 			return retval
 		end,
 
-		-- List all the researched talents
-		_GarrisonResearchedTalents = function(self)
-			local talentTreeIds = C_Garrison.GetTalentTreeIDsByClassID(Enum.GarrisonType.Type_9_0, 0)
-			if nil ~= talentTreeIds then
-				for _, talentTreeId in pairs(talentTreeIds) do
-					local treeInfo = C_Garrison.GetTalentTreeInfo(talentTreeId)
-					if nil ~= treeInfo then
-						local talents = treeInfo.talents
-						if nil ~= talents then
-							for _, talentInfo in pairs(talents) do
-								if talentInfo.researched then
-									print(talentInfo.id, treeInfo.title, '-', talentInfo.name)
-								end
-							end
-						end
-					end
-				end
-			end
-		end,
-
+		-- Providing -1 as the talendId prints out all the researched talents instead of doing the normal behavior
 		_GarrisonTalentResearched = function(self, talentId)
 			talentId = tonumber(talentId)
 			if nil == talentId then return false, nil, nil end
@@ -8731,8 +8756,12 @@ end
 						local talents = treeInfo.talents
 						if nil ~= talents then
 							for _, talentInfo in pairs(talents) do
-								if talentInfo.researched and talentId == tonumber(talentInfo.id) then
-									return true, treeInfo.title, talentInfo.name
+								if talentInfo.researched then
+									if talentId == tonumber(talentInfo.id) then
+										return true, treeInfo.title, talentInfo.name
+									elseif talentId == -1 then
+										print(talentInfo.id, treeInfo.title, '-', talentInfo.name)
+									end
 								end
 							end
 						end
@@ -8768,7 +8797,7 @@ end
 --			local retval, failures = true, nil
 --			local reputationCodes = self.questReputationRequirements[questId]
 --			if reputationCodes then
---				local repuationCount = strlen(reputationCodes) / 4
+--				local reputationCount = strlen(reputationCodes) / 4
 --				local index, value, notExceeds
 --				local exceeds, earnedValue
 --				for i = 1, reputationCount do
@@ -9081,7 +9110,7 @@ end
 --			else
 --			if (not self.battleForAzeroth and (971 == phaseCode or 976 == phaseCode)) or (self.battleForAzeroth and (581 == phaseCode or 587 == phaseCode)) then
 			if 971 == phaseCode or 976 == phaseCode or 581 == phaseCode or 587 == phaseCode then
-				currentPhase = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0	-- the API returns nil when there is no garrison
+				currentPhase = C_Garrison.GetGarrisonInfo(Enum.GarrisonType.Type_6_0) or 0	-- the API returns nil when there is no garrison
 			end
 			--	We are using phaseCode 0 to mean the Classic Darkmoon Faire location.
 			--	We assume perfect swapping back and forth between locations with Elwynn being in odd months.
@@ -9874,7 +9903,15 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			if self.questStatusCache.H[questId] then
 				for _, group in pairs(self.questStatusCache.H[questId]) do
 					if self:_RecordGroupValueChange(group, false, true, questId) >= self.dailyMaximums[group] - 1 then
-						self:_StatusCodeInvalidate(self.questStatusCache['G'][group])
+						self:_StatusCodeInvalidate(self.questStatusCache.G[group])
+					end
+				end
+			end
+			-- And weekly...
+			if self.questStatusCache.K[questId] then
+				for _, group in pairs(self.questStatusCache.K[questId]) do
+					if self:_RecordGroupValueChange(group, false, true, questId, true) >= self.weeklyMaximums[group] - 1 then
+						self:_StatusCodeInvalidate(self.questStatusCache.J[group])
 					end
 				end
 			end
@@ -10590,11 +10627,12 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 		--	This routine will update the per-player saved information about group quests
 		--	that are currently considered accepted on a specific "daily" day.  It erases
 		--	any previous information if the "daily" day changes.  It returns the count 
-		_RecordGroupValueChange = function(self, group, isAdding, isRemoving, questId)
-			local dailyDay = self:_GetDailyDay()
-			GrailDatabasePlayer["dailyGroups"] = GrailDatabasePlayer["dailyGroups"] or {}
-			GrailDatabasePlayer["dailyGroups"][dailyDay] = GrailDatabasePlayer["dailyGroups"][dailyDay] or {}
-			local t = GrailDatabasePlayer["dailyGroups"][dailyDay][group] or {}
+		_RecordGroupValueChange = function(self, group, isAdding, isRemoving, questId, isWeekly)
+			local dayName = isWeekly and self:_GetWeeklyDay() or self:_GetDailyDay()
+			local categoryName = isWeekly and "weeklyGroups" or "dailyGroups"
+			GrailDatabasePlayer[categoryName] = GrailDatabasePlayer[categoryName] or {}
+			GrailDatabasePlayer[categoryName][dayName] = GrailDatabasePlayer[categoryName][dayName] or {}
+			local t = GrailDatabasePlayer[categoryName][dayName][group] or {}
 			if isAdding then
 				if not tContains(t, questId) then tinsert(t, questId) end
 			elseif isRemoving then
@@ -10613,7 +10651,7 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 					if self.GDE.debug then print("|cFFFFFF00Grail|r _RecordGroupValueChange could not remove a non-existent quest", questId) end
 				end
 			end
-			GrailDatabasePlayer["dailyGroups"][dailyDay][group] = t
+			GrailDatabasePlayer[categoryName][dayName][group] = t
 			return #(t)
 		end,
 
@@ -10788,6 +10826,19 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			end
 			return retval, actualEarnedValue
 		end,
+		-- GetFriendshipReputation(2432)
+		-- id		2432
+		-- rep		8530		-- my UI says 1530/7000
+		-- maxRep	42000
+		-- name		"Ve'nari"
+		-- text		"Ve'nari's gaze feels Tentative."
+		-- texture	3729461
+		-- reaction	"Tentative"
+		-- threshold	7000
+		-- nextThreshold	14000
+		--- compute base = 42000 - 14000 + 7000 = 35000
+		--- compute amount = 8530 - 7000 = 1530
+		--- actualEarnedValue = 35000 + 1530 = 36530
 
 		--	Returns the localized values for the reputation name and the reputation level (including any modifications)
 		--	If no reputationValue exists, it is assumed it will be in the reputationCode.  If it does exist, then the
@@ -10803,6 +10854,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			end
 			local usingFriends = self.reputationFriends[reputationCode] and true or false
 			local usingBodyGuards = self.reputationBodyGuards[reputationCode] and true or false
+			local usingFriendsMaw = self.reputationFriendsMaw[reputationCode] and true or false
 			if nil ~= reputationValue then
 				local repExtra = ""
 				local repNumber
@@ -10810,6 +10862,8 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 					repNumber = self.reputationFriendshipLevelMapping[reputationValue]
 				elseif usingBodyGuards then
 					repNumber = self.reputationBodyGuardLevelMapping[reputationValue]
+				elseif usingFriendsMaw then
+					repNumber = self.reputationFriendshipMawLevelMapping[reputationValue]
 				else
 					repNumber = self.reputationLevelMapping[reputationValue]
 				end
@@ -10826,6 +10880,8 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 					reputationValue = self.friendshipLevel[repNumber]
 				elseif usingBodyGuards then
 					reputationValue = self.bodyGuardLevel[repNumber]
+				elseif usingFriendsMaw then
+					reputationValue = self.friendshipMawLevel[repNumber]
 				else
 					reputationValue = GetText(strformat(factionStandingFormat, repNumber))
 				end
@@ -10835,7 +10891,11 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 		end,
 
 		FriendshipReputationNameAndLevelName = function(self, reputationCode, reputationValue)
-			return self.reputationMapping[reputationCode], "Stable"
+			if self.reputationFriendsMaw[reputationCode] then
+				return self:ReputationNameAndLevelName(reputationCode, reputationValue)
+			else
+				return self.reputationMapping[reputationCode], "Stable"
+			end
 		end,
 
 		--	Returns the riding skill level of the character.
@@ -11529,6 +11589,7 @@ local me = Grail
 if locale == "deDE" then
 	me.bodyGuardLevel = { 'Leibwächter', 'Treuer Leibwächter', 'Persönlicher Flügelmann' }
 	me.friendshipLevel = { 'Fremder', 'Bekannter', 'Kumpel', 'Freund', 'guter Freund', 'bester Freund' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Unverbindlich', 'Ambivalent', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = 'Liebe liegt in der Luft', ['B'] = 'Braufest', ['C'] = "Kinderwoche", ['D'] = 'Tag der Toten', ['E'] = 'WoW Anniversary', ['F'] = 'Dunkelmond-Jahrmarkt', ['H'] = 'Erntedankfest', ['K'] = "Angelwettstreit der Kalu'ak", ['L'] = 'Mondfest', ['M'] = 'Sonnenwendfest', ['N'] = 'Nobelgarten', ['P'] = "Piratentag", ['U'] = 'Neujahr', ['V'] = 'Winterhauch', ['W'] = "Schlotternächte", ['X'] = 'Anglerwettbewerb im Schlingendorntal', ['Y'] = "Die Pilgerfreuden", ['Z'] = "Weihnachtswoche", ['a'] = 'Bonusereignis: Apexis', ['b'] = 'Bonusereignis: Arenascharmützel', ['c'] = 'Bonusereignis: Schlachtfelder', ['d'] = 'Bonusereignis: Draenordungeons', ['e'] = 'Bonusereignis: Haustierkämpfe', ['f'] = 'Bonusereignis: Zeitwanderungsdungeons', ['Q'] = "AQ", }
 
@@ -11584,6 +11645,7 @@ if locale == "deDE" then
 elseif locale == "esES" then
 	me.bodyGuardLevel = { 'Guardaespaldas', 'Escolta leal', 'Compañero del alma' }
 	me.friendshipLevel = { 'Extraño', 'Conocido', 'Colega', 'Amigo', 'Buen amigo', 'Mejor amigo' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Indecisa', 'Ambivalent', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = 'Amor en el aire', ['B'] = 'Fiesta de la cerveza', ['C'] = "Semana de los Niños", ['D'] = 'Festividad de los Muertos', ['E'] = 'WoW Anniversary', ['F'] = 'Feria de la Luna Negra', ['H'] = 'Festival de la Cosecha', ['K'] = "Competición de pesca Kalu'ak", ['L'] = 'Festival Lunar', ['M'] = 'Festival de Fuego del Solsticio de Verano', ['N'] = 'Jardín Noble', ['P'] = "Día de los Piratas", ['U'] = 'Nochevieja', ['V'] = 'El festín del Festival del Invierno', ['W'] = "Halloween", ['X'] = 'Concurso de Pesca', ['Y'] = "Generosidad del Peregrino", ['Z'] = "Semana navideña", ['a'] = 'Evento de bonificación apexis', ['b'] ='Evento de bonificación de escaramuza de arena', ['c'] = 'Evento de bonificación de campo de batalla', ['d'] = 'Evento de mazmorra de Draenor', ['e'] = 'Evento de bonificación de duelo de mascotas', ['f'] = 'Evento de mazmorra de Paseo en el tiempo', ['Q'] = "AQ", }
 
@@ -11611,6 +11673,7 @@ elseif locale == "esES" then
 elseif locale == "esMX" then
 	me.bodyGuardLevel = { 'Guardaespaldas', 'De confianza', 'Copiloto personal' }
 	me.friendshipLevel = { 'Extraño', 'Conocido', 'Colega', 'Amigo', 'Buen amigo', 'Mejor amigo' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Vacilante', 'Ambivalent', 'Cordial', 'Appreciative' }
 
  	me.holidayMapping = { ['A'] = 'Amor en el Aire', ['B'] = 'Fiesta de la Cerveza', ['C'] = "Semana de los Niños", ['D'] = 'Día de los Muertos', ['E'] = 'WoW Anniversary', ['F'] = 'Feria de la Luna Negra', ['H'] = 'Festival de la Cosecha', ['K'] = "Competición de pesca Kalu'ak", ['L'] = 'Festival Lunar', ['M'] = 'Festival de Fuego del Solsticio de Verano', ['N'] = 'Jardín Noble', ['P'] = "Día de los Piratas", ['U'] = 'Nochevieja', ['V'] = 'Festival del Invierno', ['W'] = "Halloween", ['X'] = 'Concurso de Pesca', ['Y'] = "Generosidad del Peregrino", ['Z'] = "Semana navideña", ['a'] = 'Evento de ápices con bonificación', ['b'] ='Evento de refriegas de arena con bonificación', ['c'] = 'Evento de campos de batalla con bonificación', ['d'] = 'Evento de calabozo de Draenor', ['e'] = 'Evento de duelo de mascotas con bonificación', ['f'] = 'Evento de calabozo de cronoviaje', ['Q'] = "AQ", }
 
@@ -11638,6 +11701,7 @@ elseif locale == "esMX" then
 elseif locale == "frFR" then
 	me.bodyGuardLevel = { 'Garde du corps', 'Garde personnel', 'Bras droit' }
 	me.friendshipLevel = { 'Étranger', 'Connaissance', 'Camarade', 'Ami', 'Bon ami', 'Meilleur ami' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Hésitation', 'Ambivalent', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = "De l'amour dans l'air", ['B'] = 'Fête des Brasseurs', ['C'] = "Semaine des enfants", ['D'] = 'Jour des morts', ['E'] = 'WoW Anniversary', ['F'] = 'Foire de Sombrelune', ['H'] = 'Fête des moissons', ['K'] = "Tournoi de pêche kalu'ak", ['L'] = 'Fête lunaire', ['M'] = "Fête du Feu du solstice d'été", ['N'] = 'Le Jardin des nobles', ['P'] = "Jour des pirates", ['U'] = 'Nouvel an', ['V'] = "Voile d'hiver", ['W'] = "Sanssaint", ['X'] = 'Concours de pêche de Strangleronce', ['Y'] = "Bienfaits du pèlerin", ['Z'] = "Vacances de Noël", ['a'] = 'Évènement bonus Apogides', ['b'] ='Évènement bonus Escarmouches en arène', ['c'] = 'Évènement bonus Champs de bataille', ['d'] = 'Évènement Donjon de Draenor', ['e'] = 'Évènement bonus Combats de mascottes', ['f'] = 'Évènement Donjon des Marcheurs du temps', ['Q'] = "AQ", }
 
@@ -11665,6 +11729,7 @@ elseif locale == "frFR" then
 elseif locale == "itIT" then
 	me.bodyGuardLevel = { 'Guardia del Corpo', 'Guardia Fidata', 'Scorta Personale' }
 	me.friendshipLevel = { 'Estraneo', 'Conoscente', 'Compagno', 'Amico', 'Amico Intimo', 'Miglior Amico' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Incerta', 'Ambivalent', 'Cordial', 'Appreciative' }
 
 me.holidayMapping = {
     ['A'] = "Amore nell'Aria",
@@ -11725,6 +11790,7 @@ me.professionMapping = {
 elseif locale == "koKR" then
 	me.bodyGuardLevel = { '경호원', '믿음직스러운 경호원', '개인 호위무사' }
 	me.friendshipLevel = { '이방인', '지인', '동료', '친구', '좋은 친구', '가장 친한 친구' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', '불확신', 'Ambivalent', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = '온누리에 사랑을', ['B'] = '가을 축제', ['C'] = "어린이 주간", ['D'] = '망자의 날', ['E'] = 'WoW Anniversary', ['F'] = '다크문 축제', ['H'] = '추수절', ['K'] = '칼루아크 낚시 대회', ['L'] = '달의 축제', ['M'] = '한여름 불꽃축제', ['N'] = '귀족의 정원', ['P'] = "해적의 날", ['U'] = '새해맞이 전야제', ['V'] = '겨울맞이 축제', ['W'] = "할로윈 축제", ['X'] = '가시덤불 골짜기 낚시왕 선발대회', ['Y'] = "순례자의 감사절", ['Z'] = "한겨울 축제 주간", ['a'] = '에펙시스 보너스 이벤트', ['b'] ='투기장 연습 전투 보너스 이벤트', ['c'] = '전장 보너스 이벤트', ['d'] = '드레노어 던전 이벤트', ['e'] = '애완동물 대전 보너스 이벤트', ['f'] = '시간여행 던전 이벤트', ['Q'] = "AQ", }
 
@@ -11761,6 +11827,7 @@ elseif locale == "koKR" then
 elseif locale == "ptBR" then
 	me.bodyGuardLevel = { 'Guarda-costas', 'Guarda-costas de Confiança', 'Copiloto Pessoal' }
 	me.friendshipLevel = { 'Estranho', 'Conhecido', 'Camarada', 'Amigo', 'Bom Amigo', 'Grande Amigo' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Hesitação', 'Ambivalent', 'Cordial', 'Appreciative' }
 
 me.holidayMapping = { ['A'] = "O Amor Está No Ar", ['B'] = 'CervaFest', ['C'] = "Semana das Crianças", ['D'] = 'Dia dos Mortos', ['E'] = 'WoW Anniversary', ['F'] = 'Feira de Negraluna', ['H'] = 'Festival da Colheita', ['K'] = "Campeonato de Pesca dos Kalu'ak", ['L'] = 'Festival da Lua', ['M'] = "Festival do Fogo do Solsticio", ['N'] = 'Jardinova', ['P'] = "Dia dos Piratas", ['U'] = 'New Year', ['V'] = "Festa do Véu de Inverno", ['W'] = "Noturnália", ['X'] = 'Stranglethorn Fishing Extravaganza', ['Y'] = "Festa da Fartura", ['Z'] = "Semana Natalina", ['a'] = 'Evento Bônus de Apexis', ['b'] ='Evento Bônus de Escaramuças da Arena', ['c'] = 'Evento Bônus de Campos de Batalha', ['d'] = 'Evento das Masmorras de Draenor', ['e'] = 'Evento Bônus de Batalha de Mascotes', ['f'] = 'Evento das Masmorras de Caminhada Temporal', ['Q'] = "AQ", }
 
@@ -11806,6 +11873,7 @@ me.professionMapping = {
 elseif locale == "ruRU" then
 	me.bodyGuardLevel = { 'Телохранитель', 'Доверенный боец', 'Боевой товарищ' }
 	me.friendshipLevel = { 'Незнакомец', 'Знакомый', 'Приятель', 'Друг', 'Хороший друг', 'Лучший друг' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Настороженность', 'Ambivalent', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = 'Любовная лихорадка', ['B'] = 'Хмельной фестиваль', ['C'] = "Детская неделя", ['D'] = 'День мертвых', ['E'] = 'WoW Anniversary', ['F'] = 'Ярмарка Новолуния', ['H'] = 'Неделя урожая', ['K'] = "Калуакское рыбоборье", ['L'] = 'Лунный фестиваль', ['M'] = 'Огненный солнцеворот', ['N'] = 'Сад чудес', ['P'] = "День пирата", ['U'] = 'Канун Нового Года', ['V'] = 'Зимний Покров', ['W'] = "Тыквовин", ['X'] = 'Рыбная феерия Тернистой долины', ['Y'] = "Пиршество странников", ['Z'] = "Рождественская неделя", ['a'] = 'Событие: бонус к апекситовым кристаллам', ['b'] ='Событие: бонус за стычки на арене', ['c'] = 'Событие: бонус на полях боя', ['d'] = 'Событие: подземелья Дренора', ['e'] = 'Событие: бонус за битвы питомцев', ['f'] = 'Событие: путешествие во времени по подземельям', ['Q'] = "AQ", }
 
@@ -11842,6 +11910,7 @@ elseif locale == "ruRU" then
 elseif locale == "zhCN" then
 	me.bodyGuardLevel = { '保镖', '贴身保镖', '亲密搭档' }
 	me.friendshipLevel = { 'Stranger', 'Acquaintance', 'Buddy', 'Friend', 'Good Friend', '挚友' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', '犹豫', 'Ambivalent', 'Cordial', 'Appreciative' }
 	me.holidayMapping = { ['A'] = '情人节', ['B'] = '美酒节', ['C'] = "儿童周", ['D'] = '死人节', ['E'] = 'WoW Anniversary', ['F'] = '暗月马戏团', ['H'] = '收获节', ['K'] = "Tournoi de pêche kalu'ak", ['L'] = '春节', ['M'] = '仲夏火焰节', ['N'] = '复活节', ['P'] = "海盗日", ['U'] = '除夕夜', ['V'] = '冬幕节', ['W'] = "万圣节", ['X'] = '荆棘谷钓鱼大赛', ['Y'] = "感恩节", ['Z'] = "圣诞周", ['a'] = '埃匹希斯假日活动', ['b'] ='竞技场练习赛假日活动', ['c'] = '战场假日活动', ['d'] = '德拉诺地下城活动', ['e'] = '宠物对战假日活动', ['f'] = '时空漫游地下城活动', ['Q'] = "AQ", }
 
 	me.professionMapping = { ['A'] = '炼金术', ['B'] = '锻造', ['C'] = '烹饪', ['E'] = '附魔', ['F'] = '钓鱼', ['H'] = '草药学', ['I'] = '铭文', ['J'] = '珠宝加工', ['L'] = '制皮', ['M'] = '采矿', ['N'] = '工程学', ['R'] = '骑术', ['S'] = '剥皮', ['T'] = '裁缝', ['X'] = '考古学', ['Z'] = '急救', }
@@ -11877,6 +11946,7 @@ elseif locale == "zhCN" then
 elseif locale == "zhTW" then
 	me.bodyGuardLevel = { '保鏢', '信任的保鑣', '個人的搭檔' }
 	me.friendshipLevel = { '陌生人', '熟識', '夥伴', '朋友', '好朋友', '最好的朋友' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', '猶豫', 'Ambivalent', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = '愛就在身邊', ['B'] = '啤酒節', ['C'] = "兒童週", ['D'] = '亡者節', ['E'] = 'WoW Anniversary', ['F'] = '暗月馬戲團', ['H'] = '收穫節', ['K'] = "卡魯耶克釣魚大賽", ['L'] = '新年慶典', ['M'] = '仲夏火焰節慶', ['N'] = '貴族花園', ['P'] = "海賊日", ['U'] = '除夕夜', ['V'] = '冬幕節', ['W'] = "萬鬼節", ['X'] = '荊棘谷釣魚大賽', ['Y'] = "旅人豐年祭", ['Z'] = "聖誕週", ['a'] = '頂尖獎勵事件', ['b'] ='競技場練習戰獎勵事件', ['c'] = '戰場獎勵事件', ['d'] = '德拉諾地城事件', ['e'] = '寵物對戰獎勵事件', ['f'] = '時光漫遊地城事件', ['Q'] = "AQ", }
 

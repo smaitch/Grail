@@ -29343,4 +29343,30 @@ G[529411]='O que é agora?'
 G[529428]='O que é agora?'
 end
 
+if release >= 37176 then
+G[41699]='Larica marisca'
+G[41821]='PROCURA-SE: Shara Hálito Vil'
+G[43771]='A magia do voo'
+G[49198]='Ponto de Invasão Maior: Inquisidor Métos'
+G[50874]='Hakbi, o Revivido'
+G[50962]='Recuperação de carga'
+G[50977]='Recadinho para o contrabandista'
+G[51847]='Queixalisca'
+G[51897]='Pedrageada'
+G[54561]='Zalas Cascasseca'
+G[54604]='Molok, o Esmagador'
+G[56019]='Debaixo de quatro runas'
+G[59660]='Uma nova corte'
+G[60920]='Akros'
+G[61616]='A Corte das Brasas'
+G[61789]='Aventureira: Sibila Perdida'
+G[61790]='Aventureira: Vulca'
+G[61792]='Aventureiro: Bogdan'
+G[62637]='Chamado à batalha'
+G[62867]='Almas perdidas precisam de resgate'
+G[62868]='Almas perdidas precisam de resgate'
+G[63065]='Aprimoramento de Santuário: a Corte das Brasas'
+G[63179]='Afogados e despedaçados'
+end
+
 --	End of localized quest names

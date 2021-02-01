@@ -29666,7 +29666,26 @@ G[529428]='¿Y ahora qué?'
 end
 
 if release >= 37176 then
+G[43771]='La magia del vuelo'
+G[50874]='Hakbi el Resucitado'
+G[50977]='Ajuste de cuentas de contrabandistas'
+G[51847]='Tortíbula'
+G[54604]='Molok el Triturador'
+G[56019]='Cofre con candado rúnico'
 G[58160]='¡Por la reina y la arboleda!'
+G[59660]='Una corte nueva'
+G[60920]='Akros'
+G[61616]='La Corte de Brasas'
+G[61789]='Aventurera: Sybille, la perdida'
+G[61790]='Aventurera: Vulca'
+G[61792]='Aventurero: Bogdan'
+G[62637]='Un llamado a la batalla'
+G[62867]='La salvación de las almas perdidas'
+G[62868]='La salvación de las almas perdidas'
+G[62967]='La prisión de los olvidados'
+G[63029]='El llamado del alto señor'
+G[63065]='Mejora de sagrario: la Corte de Brasas'
+G[63179]='Ahogados y destruidos'
 end
 
 --	End of localized quest names

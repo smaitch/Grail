@@ -27067,4 +27067,33 @@ G[529411]='E ora?'
 G[529428]='E ora?'
 end
 
+if release >= 37176 then
+G[41089]='I signori della collina'
+G[41699]='Crocchette irritabili'
+G[41821]='RICERCATO: Shara Fiato Vile'
+G[43771]='La magia del volo'
+G[45047]='Come il Vento'
+G[49198]='Punto di Invasione Maggiore: Inquisitore Meto'
+G[50874]='Hakbi il Risorto'
+G[50962]='Reclamare la merce'
+G[50977]='Contrabbando allo sbando'
+G[51379]='Tempio di Sethraliss: Seguire la corrente'
+G[51847]='Zannaruga'
+G[51897]='Pietrabrina'
+G[54561]='Zalas Scorzasecca'
+G[54604]='Molok il Frantumatore'
+G[56019]='Cassa con chiusura runica'
+G[59660]='Una nuova corte'
+G[60920]='Akros'
+G[61616]='La Corte delle Braci'
+G[61789]='Avventuriera: Sibilla Perduta'
+G[61790]='Avventuriera: Vulca'
+G[61792]='Avventuriero: Bogdan'
+G[62637]='Chiamata alla battaglia'
+G[62867]='Il ritorno delle anime perdute'
+G[62868]='Il ritorno delle anime perdute'
+G[63065]='Potenziamento del Santuario: Corte delle Braci'
+G[63179]='Annegati e fatti a pezzi'
+end
+
 --	End of localized quest names
