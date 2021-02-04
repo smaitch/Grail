@@ -533,6 +533,8 @@
 --		115 Updates some Quest/NPC information.
 --			Removes redefinition of LE_GARRISON_TYPE_6_0 and uses Enum.GarrisonType.Type_6_0 instead.
 --			Adds the ability to have groups of weekly quests behave like groups of daily quests.
+--			Changes zone names to include floors if map is part of a group, and not to duplicate entries if possible.  Maps with the same name as another map will get a mapId added to it.
+--			Adds color to debug statements for quests marked completed when others completed or accepted.
 --
 --	Known Issues
 --
@@ -3408,10 +3410,28 @@ end,
 		end,
 
 		_AddMapId = function(self, zoneTable, zoneName, mapId, continentMapId)
-			zoneTable[#zoneTable + 1] = { name = zoneName, mapID = mapId }
-			while nil ~= self.zoneNameMapping[zoneName] do
-				zoneName = zoneName .. ' '
+			-- If we have processed this mapId already we do not need to do so again
+			if self.mapToContinentMapping[mapId] then return end
+			
+			-- If this map is part of a group there is a good chance that zoneName is going to exist more than
+			-- once and therefore we will add the specific "floor" name to the zone name.
+			local mapGroupId = C_Map.GetMapGroupID(mapId)
+			if nil ~= mapGroupId then
+				local groupMembers = C_Map.GetMapGroupMembersInfo(mapGroupId)
+				if nil ~= groupMembers then
+					for _, info in ipairs(groupMembers) do
+						if mapId == info.mapID then
+							zoneName = zoneName .. ' - ' .. info.name
+						end
+					end
+				end
 			end
+
+			-- Instead of the old technique of appending spaces to make the zone names unique we now append the mapId
+			if nil ~= self.zoneNameMapping[zoneName] then
+				zoneName = zoneName .. ' ('..mapId..')'
+			end
+			zoneTable[#zoneTable + 1] = { name = zoneName, mapID = mapId }
 			self.zoneNameMapping[zoneName] = mapId
 			self.mapToContinentMapping[mapId] = continentMapId
 		end,
@@ -9967,15 +9987,23 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			local newlyCompletedQuests, newlyLostQuests = {}, {}
 			self:_ProcessServerCompare(newlyCompletedQuests, newlyLostQuests)
 			if #newlyCompletedQuests > 0 then
+				local odcCodes = self.quests[questId]['ODC'] or {}
 				for _, aQuestId in pairs(newlyCompletedQuests) do
 					if aQuestId ~= questId then
-						print("   *** Completed:", aQuestId, self:QuestName(aQuestId) or "UNKNOWN NAME")
+						local foundODC = false
+						for i = 1, #odcCodes do
+							if aQuestId == odcCodes[i] then
+								foundODC = true
+							end
+						end
+						local colorToUse = foundODC and "ff00ff00" or "ffa50000"
+						print(strformat("|c%s   *** Completed:|r %d %s", colorToUse, aQuestId, self:QuestName(aQuestId) or "UNKNOWN NAME"))
 					end
 				end
 			end
 			if #newlyLostQuests > 0 then
 				for _, aQuestId in pairs(newlyLostQuests) do
-					print("   *** Lost:", aQuestId, self:QuestName(aQuestId) or "UNKNOWN NAME")
+					print("|cffff0000   *** Lost:|r", aQuestId, self:QuestName(aQuestId) or "UNKNOWN NAME")
 				end
 			end
 			-- TODO: Actually do something with this information to update quest database so it can be used to do things like provide ODC: codes
