@@ -535,6 +535,7 @@
 --			Adds the ability to have groups of weekly quests behave like groups of daily quests.
 --			Changes zone names to include floors if map is part of a group, and not to duplicate entries if possible.  Maps with the same name as another map will get a mapId added to it.
 --			Adds color to debug statements for quests marked completed when others completed or accepted.
+--			Changes IsLowLevel to now use the maximum variable level for a quest in its computation.  Changes QuestLevelString to include a range if there is a maximum variable level for the quest.
 --
 --	Known Issues
 --
@@ -963,9 +964,22 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		--	log would be made at least once for each quest, so caching makes things a little quicker.
 		cachedQuestsInLog = nil,
 		checksReputationRewardsOnAcceptance = true,
-		classMapping = { ['K'] = 'DEATHKNIGHT', ['D'] = 'DRUID', ['H'] = 'HUNTER', ['M'] = 'MAGE', ['O'] = 'MONK', ['P'] = 'PALADIN', ['T'] = 'PRIEST', ['R'] = 'ROGUE', ['S'] = 'SHAMAN', ['L'] = 'WARLOCK', ['W'] = 'WARRIOR', },
-		classToBitMapping = { ['K'] = 0x00000004, ['D'] = 0x00000008, ['H'] = 0x00000010, ['M'] = 0x00000020, ['O'] = 0x00000040, ['P'] = 0x00000080, ['T'] = 0x00000100, ['R'] = 0x00000200, ['S'] = 0x00000400, ['L'] = 0x00000800, ['W'] = 0x00001000, },
-		classToMapAreaMapping = { ['CK'] = 200011, ['CD'] = 200004, ['CH'] = 200008, ['CM'] = 200013, ['CO'] = 200015, ['CP'] = 200016, ['CT'] = 200020, ['CR'] = 200018, ['CS'] = 200019, ['CL'] = 200012, ['CW'] = 200023, },
+		classMapping = {
+			['D'] = 'DRUID',
+			['E'] = 'DEMONHUNTER',
+			['H'] = 'HUNTER',
+			['K'] = 'DEATHKNIGHT',
+			['L'] = 'WARLOCK',
+			['M'] = 'MAGE',
+			['O'] = 'MONK',
+			['P'] = 'PALADIN',
+			['R'] = 'ROGUE',
+			['S'] = 'SHAMAN',
+			['T'] = 'PRIEST',
+			['W'] = 'WARRIOR',
+		},
+		classToBitMapping = { ['K'] = 0x00000004, ['D'] = 0x00000008, ['E'] = 0x10000000, ['H'] = 0x00000010, ['M'] = 0x00000020, ['O'] = 0x00000040, ['P'] = 0x00000080, ['T'] = 0x00000100, ['R'] = 0x00000200, ['S'] = 0x00000400, ['L'] = 0x00000800, ['W'] = 0x00001000, },
+		classToMapAreaMapping = { ['CK'] = 200011, ['CD'] = 200004, ['CE'] = 200005, ['CH'] = 200008, ['CM'] = 200013, ['CO'] = 200015, ['CP'] = 200016, ['CT'] = 200020, ['CR'] = 200018, ['CS'] = 200019, ['CL'] = 200012, ['CW'] = 200023, },
 		completedQuestThreshold = 0.5,
 		continents = {},	-- key is mapId for the continent, value is { name = string, zones = {}, mapID = int, dungeons = {} }
 							-- and zones and dungeons are just arrays of { name = string, mapID = int }
@@ -1358,12 +1372,6 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.questStatusCache = { ["A"] = {}, ["B"] = {}, ["C"] = {}, ["D"] = {}, ["E"] = {}, ["F"] = {}, ["G"] = {}, ["H"] = {}, ["I"] = {}, ["J"] = {}, ["K"] = {}, ["L"] = {}, ["M"] = {}, ["P"] = {}, ["Q"] = {}, ["R"] = {}, ["S"] = {}, ["V"] = {}, ["W"] = {}, ["X"] = {}, ["Y"] = {}, ["Z"] = {}, }
 						self.npcStatusCache = { ["A"] = {}, ["B"] = {}, ["C"] = {}, ["D"] = {}, ["E"] = {}, ["F"] = {}, ["G"] = {}, ["H"] = {}, ["I"] = {}, ["J"] = {}, ["K"] = {}, ["L"] = {}, ["M"] = {}, ["P"] = {}, ["Q"] = {}, ["R"] = {}, ["S"] = {}, ["V"] = {}, ["W"] = {}, ["X"] = {}, ["Y"] = {}, ["Z"] = {}, }
 					end
-
--- TODO: Move this to the place where the rest of the classes are done
-					-- Deal with the Demon Hunter introduced in Legion
-					self.classMapping['E'] = 'DEMONHUNTER'
-					self.classToBitMapping['E'] = 0x10000000
-					self.classToMapAreaMapping['CE'] = 200005
 
 					-- Create some convenience tables
 					self.raceNameToBitMapping = {}
@@ -3716,6 +3724,10 @@ end,
 --	260	Faction Assault Elite World Quest
 --	266 Combat Ally Quest
 
+--	268	Threat Wrapper
+
+--	271	Calling Quest
+
 
 						if nil ~= v.mapID and v.mapID ~= mapId then
 							self:_PrepareWorldQuestSelfNPCs(v.mapID)
@@ -3788,6 +3800,7 @@ end,
 			if nil == questId then return end
 			local kCodeToAdd, pCodeToAdd = 'K', 'P:a'..questId
 			local tagId, tagName = self:GetQuestTagInfo(questId)
+			if tagId == 268 or tagId == 271 then return end
 			if tagName == "Calling Quest" or tagName == "Threat Wrapper" then return end
 			local professionRequirement = self._LearnedWorldQuestProfessionMapping[tagId]
 			local typeModifier = self._LearnedWorldQuestTypeMapping[tagId]
@@ -4304,6 +4317,9 @@ end,
 			elseif 'L' == holidayCode and self.existsClassic then
 				-- Lunar Festival 2/1 -> 2/7 10h00
 				if 2020 == year and 2 == month and (day <= 6 or (7 == day and (elapsedMinutes <= 10 * 60))) then
+					retval = true
+				end
+				if 2021 == year and 2 == month and (day >=5 and (day < 19 or (day == 19 and elapsedMinutes <= 10 * 60))) then
 					retval = true
 				end
 			elseif 'A' == holidayCode and self.existsClassic then
@@ -7755,6 +7771,12 @@ end
 			comparisonLevel = tonumber(comparisonLevel) or UnitLevel("player")
 			local questLevel = self:QuestLevel(questId) or 1
 			if 0 ~= questLevel then		-- 0 is the special marker indicating the quest is actually the same level as the player
+				local possibleVariableQuestLevel = self:QuestLevelVariableMax(questId)
+				if 255 ~= possibleVariableQuestLevel then	-- 255 means no variable level
+					if possibleVariableQuestLevel > questLevel then
+						questLevel = possibleVariableQuestLevel
+					end
+				end
 				retval = (comparisonLevel > (questLevel + self:GetQuestGreenRange()))
 			end
 			return retval
@@ -10142,18 +10164,15 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 			return bitband(self:CodeLevel(questId), self.bitMaskQuestVariableLevel) / self.bitMaskQuestVariableLevelOffset
 		end,
 
+		-- Assumes the variable level of 255 means the quest is not a scaling quest.
 		QuestLevelString = function(self, questId)
-			local retval = ""
 			local possibleLevel = self:QuestLevel(questId)
-			if 0 == possibleLevel then
-				possibleLevel = self:QuestLevelVariableMax(questId)
-				if 0 ~= possibleLevel then
-					retval = strformat("%d<", possibleLevel)
-				end
-			else
-				retval = strformat("%d", possibleLevel)
+			local possibleVariableLevel = self:QuestLevelVariableMax(questId)
+			local variableAspect = ""
+			if possibleVariableLevel ~= 255 then
+				variableAspect = strformat(" - %d", possibleVariableLevel)
 			end
-			return retval
+			return strformat("%d%s", possibleLevel, variableAspect)
 		end,
 
 --		--	Historically this function was publicly available, but we want to hide the internal
