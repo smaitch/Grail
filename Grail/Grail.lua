@@ -1315,6 +1315,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 					self:_QuestCompleteCheckObserve(Grail.GDE.debug)
 					self:_QuestAcceptCheckObserve(Grail.GDE.debug)
+					self:_LevelGainedQuestCheckObserve(Grail.GDE.debug)
 
 					--	Specific quests become available when certain interactions are done with specific NPCs so
 					--	we use this routine in conjunction with the GOSSIP_SHOW and GOSSIP_CLOSED events to determine
@@ -1544,6 +1545,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						Grail.GDE.debug = not Grail.GDE.debug
 						Grail:_QuestCompleteCheckObserve(Grail.GDE.debug)
 						Grail:_QuestAcceptCheckObserve(Grail.GDE.debug)
+						Grail:_LevelGainedQuestCheckObserve(Grail.GDE.debug)
 						print(strformat("Grail Debug now %s", Grail.GDE.debug and "ON" or "OFF"))
 					end)
 					self:RegisterSlashOption("treasures", "|cFF00FF00treasures|r => toggles treasures on and off, printing new value", function()
@@ -3800,8 +3802,7 @@ end,
 			if nil == questId then return end
 			local kCodeToAdd, pCodeToAdd = 'K', 'P:a'..questId
 			local tagId, tagName = self:GetQuestTagInfo(questId)
-			if tagId == 268 or tagId == 271 then return end
-			if tagName == "Calling Quest" or tagName == "Threat Wrapper" then return end
+			if tagId == 268 or tagId == 271 then return end	-- It turns out tagName is localized so tagId is the smarter comparison.
 			local professionRequirement = self._LearnedWorldQuestProfessionMapping[tagId]
 			local typeModifier = self._LearnedWorldQuestTypeMapping[tagId]
 			local typeValue = tagId and 262144 or (isDaily and 2 or 0)
@@ -4458,7 +4459,9 @@ end,
 				elseif 'm' == code then
 					retval = self:HasQuestEverBeenAbandoned(numeric) and 'P' or 'C'
 				elseif 'N' == code then
-					retval = (self.classNameToCodeMapping[self.playerClass] == subcode) and 'C' or 'P'
+					retval = (self.classNameToCodeMapping[self.playerClass] == subcode) and 'C' or 'B'
+				elseif 'n' == code then
+					retval = (self.classNameToCodeMapping[self.playerClass] == subcode) and 'B' or 'C'
 				elseif 'P' == code then
 					retval = self:ProfessionExceeds(subcode, numeric) and 'C' or 'P'
 				elseif 'R' == code then
@@ -6099,7 +6102,7 @@ end,
 					numeric = tonumber(strsub(questCode, 5))
 
 				-- CS
-				elseif 'F' == code or 'N' == code then
+				elseif 'F' == code or 'N' == code or 'n' == code then
 					subcode = strsub(questCode, 2, 2)
 					numeric = ''
 
@@ -6500,7 +6503,7 @@ end
 				local questId = p and p.q or nil
 				local dangerous = p and p.d or false
 				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable, garrisonTalentResearched, questTurnedIndBeforeLastWeeklyReset = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent, checkQuestTurnedInBeforeLastWeeklyReset, checkRenownDoesNotMeetOrExceed = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent, checkQuestTurnedInBeforeLastWeeklyReset, checkRenownDoesNotMeetOrExceed, checkNotClass = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local forcingProfessionOnly, forcingReputationOnly = false, false
 
 				if forceSpecificChecksOnly then
@@ -6561,6 +6564,7 @@ end
 				elseif code == 'M' then	checkEverAbandoned = true
 				elseif code == 'm' then	checkNeverAbandoned = true
 				elseif code == 'N' then checkClass = true
+				elseif code == 'n' then checkNotClass = true
 				elseif code == 'O' then	checkEverAccepted = true
 				elseif code == 'P' then	checkProfession = true
 				elseif code == 'Q' or
@@ -6668,7 +6672,7 @@ end
 				if checkLevelLessThan then
 					levelLessThan = (Grail.levelingLevel < value)
 				end
-				if checkClass then
+				if checkClass or checkNotClass then
 					classMatches = (Grail.classNameToCodeMapping[Grail.playerClass] == subcode)
 				end
 				if checkArtifactKnowledgeLevel then
@@ -6744,6 +6748,7 @@ end
 					(checkGroupDoneOrComplete and groupDoneOrComplete) or
 					(checkNotLog and checkNotTurnin and not questCompleted and not questInLog) or
 					(checkClass and classMatches) or
+					(checkNotClass and not classMatches) or
 					(checkArtifactKnowledgeLevel and artifactKnowledgeLevelMatches) or
 					(checkWorldQuestAvailable and worldQuestAvailable) or
 					(checkArtifactLevel and artifactLevelMatches) or
@@ -6817,6 +6822,7 @@ end
 					and 'M' ~= code
 					and 'm' ~= code
 					and 'N' ~= code
+					and 'n' ~= code
 					and 'P' ~= code
 					and 'R' ~= code
 					and 'S' ~= code
@@ -7344,6 +7350,9 @@ end
 				self.questStatusCache["L"] = {}
 				self:_StatusCodeInvalidate(self.questStatusCache["V"])
 				self.questStatusCache["V"] = {}
+			end
+			if self.GDE.debug then
+				self:_PostDelayedNotification("PlayerLevelUp", self.levelingLevel, 1.0)
 			end
 		end,
 
@@ -10002,6 +10011,14 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			end
 		end,
 
+		_LevelGainedQuestCheckObserve = function(self, shouldObserve)
+			if shouldObserve then
+				self:RegisterObserver("PlayerLevelUp", Grail._QuestCompleteCheck)
+			else
+				self:UnregisterObserver("PlayerLevelUp")
+			end
+		end,
+
 		_QuestCompleteCheck = function(callbackType, questId)
 			print("*** Starting check", callbackType, questId)
 			local self = Grail
@@ -10009,7 +10026,7 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			local newlyCompletedQuests, newlyLostQuests = {}, {}
 			self:_ProcessServerCompare(newlyCompletedQuests, newlyLostQuests)
 			if #newlyCompletedQuests > 0 then
-				local odcCodes = self.quests[questId]['ODC'] or {}
+				local odcCodes = questId and self.quests[questId] and self.quests[questId]['ODC'] or {}
 				for _, aQuestId in pairs(newlyCompletedQuests) do
 					if aQuestId ~= questId then
 						local foundODC = false

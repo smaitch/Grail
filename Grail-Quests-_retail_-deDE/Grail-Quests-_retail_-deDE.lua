@@ -30232,4 +30232,8 @@ G[529411]='Was jetzt?'
 G[529428]='Was jetzt?'
 end
 
+if release >= 37176 then
+G[58160]='Für Königin und Hain!'
+end
+
 --	End of localized quest names

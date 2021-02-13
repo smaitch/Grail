@@ -29417,4 +29417,8 @@ G[529411]='O que é agora?'
 G[529428]='O que é agora?'
 end
 
+if release >= 37176 then
+G[58160]='Pela Rainha e pelo bosque!'
+end
+
 --	End of localized quest names
