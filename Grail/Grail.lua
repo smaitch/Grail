@@ -3649,7 +3649,7 @@ end,
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
-			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1565 }
+			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565 }
 
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
@@ -4326,6 +4326,9 @@ end,
 			elseif 'A' == holidayCode and self.existsClassic then
 				-- Love is in the Air 2/11 -> 2/16
 				if 2020 == year and 2 == month and day >= 11 and day <= 16 then
+					retval = true
+				end
+				if 2021 == year and 2 == month and day >= 12 and day <= 26 then
 					retval = true
 				end
 			elseif 'N' == holidayCode and self.existsClassic then
