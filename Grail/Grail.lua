@@ -2631,7 +2631,7 @@ end,
 			["980"] = "Ve'nari",
 			},
 
-		reputationFriendshipMawLevelMapping = { [28000] = 1, [29000] = 2, [35000] = 3, [42000] = 4, [49000] = 5, [70000] = 6, },
+		reputationFriendshipMawLevelMapping = { [0] = 1, [1000] = 2, [7000] = 3, [14000] = 4, [21000] = 5, [42000] = 6, },
 
 		--	The keys are the boundary values for specific reputation names.  Up to 8 indicates the names used for reputations.
 		--	For values > 100 the reputation level is the value / 1000000 and the value mod 1000000 is how much over is
@@ -10874,6 +10874,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			local factionId = reputationId and tonumber(reputationId, 16) or nil
 if factionId == nil then print("Rep nil issue:", reputationName, reputationId, reputationValue) end
 			if nil ~= factionId and nil ~= reputationValue and self.capabilities.usesFriendshipReputation then
+				local usingFriendsMaw = self.reputationFriendsMaw[reputationId] and true or false
 				local id, rep, maxRep, name, text, texture, reaction, threshold, nextThreshold = GetFriendshipReputation(factionId)
 				--	when withering, threshold is 0, but when stable threshold is 100
 				--	when withering, rep is 1, but when stable threshold is 101 - 199
@@ -10887,25 +10888,12 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 					if 0 ~= threshold then
 						amount = rep - threshold
 					end
-					actualEarnedValue = base + amount
+					actualEarnedValue = usingFriendsMaw and rep or (base + amount)
 					retval = (actualEarnedValue > reputationValue)
 				end
 			end
 			return retval, actualEarnedValue
 		end,
-		-- GetFriendshipReputation(2432)
-		-- id		2432
-		-- rep		8530		-- my UI says 1530/7000
-		-- maxRep	42000
-		-- name		"Ve'nari"
-		-- text		"Ve'nari's gaze feels Tentative."
-		-- texture	3729461
-		-- reaction	"Tentative"
-		-- threshold	7000
-		-- nextThreshold	14000
-		--- compute base = 42000 - 14000 + 7000 = 35000
-		--- compute amount = 8530 - 7000 = 1530
-		--- actualEarnedValue = 35000 + 1530 = 36530
 
 		--	Returns the localized values for the reputation name and the reputation level (including any modifications)
 		--	If no reputationValue exists, it is assumed it will be in the reputationCode.  If it does exist, then the
@@ -11656,7 +11644,7 @@ local me = Grail
 if locale == "deDE" then
 	me.bodyGuardLevel = { 'Leibwächter', 'Treuer Leibwächter', 'Persönlicher Flügelmann' }
 	me.friendshipLevel = { 'Fremder', 'Bekannter', 'Kumpel', 'Freund', 'guter Freund', 'bester Freund' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Unverbindlich', 'Ambivalent', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Unverbindlich', 'Zwiespältig', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = 'Liebe liegt in der Luft', ['B'] = 'Braufest', ['C'] = "Kinderwoche", ['D'] = 'Tag der Toten', ['E'] = 'WoW Anniversary', ['F'] = 'Dunkelmond-Jahrmarkt', ['H'] = 'Erntedankfest', ['K'] = "Angelwettstreit der Kalu'ak", ['L'] = 'Mondfest', ['M'] = 'Sonnenwendfest', ['N'] = 'Nobelgarten', ['P'] = "Piratentag", ['U'] = 'Neujahr', ['V'] = 'Winterhauch', ['W'] = "Schlotternächte", ['X'] = 'Anglerwettbewerb im Schlingendorntal', ['Y'] = "Die Pilgerfreuden", ['Z'] = "Weihnachtswoche", ['a'] = 'Bonusereignis: Apexis', ['b'] = 'Bonusereignis: Arenascharmützel', ['c'] = 'Bonusereignis: Schlachtfelder', ['d'] = 'Bonusereignis: Draenordungeons', ['e'] = 'Bonusereignis: Haustierkämpfe', ['f'] = 'Bonusereignis: Zeitwanderungsdungeons', ['Q'] = "AQ", }
 
@@ -11712,7 +11700,7 @@ if locale == "deDE" then
 elseif locale == "esES" then
 	me.bodyGuardLevel = { 'Guardaespaldas', 'Escolta leal', 'Compañero del alma' }
 	me.friendshipLevel = { 'Extraño', 'Conocido', 'Colega', 'Amigo', 'Buen amigo', 'Mejor amigo' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Indecisa', 'Ambivalent', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Indecisa', 'Ambivalente', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = 'Amor en el aire', ['B'] = 'Fiesta de la cerveza', ['C'] = "Semana de los Niños", ['D'] = 'Festividad de los Muertos', ['E'] = 'WoW Anniversary', ['F'] = 'Feria de la Luna Negra', ['H'] = 'Festival de la Cosecha', ['K'] = "Competición de pesca Kalu'ak", ['L'] = 'Festival Lunar', ['M'] = 'Festival de Fuego del Solsticio de Verano', ['N'] = 'Jardín Noble', ['P'] = "Día de los Piratas", ['U'] = 'Nochevieja', ['V'] = 'El festín del Festival del Invierno', ['W'] = "Halloween", ['X'] = 'Concurso de Pesca', ['Y'] = "Generosidad del Peregrino", ['Z'] = "Semana navideña", ['a'] = 'Evento de bonificación apexis', ['b'] ='Evento de bonificación de escaramuza de arena', ['c'] = 'Evento de bonificación de campo de batalla', ['d'] = 'Evento de mazmorra de Draenor', ['e'] = 'Evento de bonificación de duelo de mascotas', ['f'] = 'Evento de mazmorra de Paseo en el tiempo', ['Q'] = "AQ", }
 
@@ -11740,7 +11728,7 @@ elseif locale == "esES" then
 elseif locale == "esMX" then
 	me.bodyGuardLevel = { 'Guardaespaldas', 'De confianza', 'Copiloto personal' }
 	me.friendshipLevel = { 'Extraño', 'Conocido', 'Colega', 'Amigo', 'Buen amigo', 'Mejor amigo' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Vacilante', 'Ambivalent', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Vacilante', 'Ambivalente', 'Cordial', 'Appreciative' }
 
  	me.holidayMapping = { ['A'] = 'Amor en el Aire', ['B'] = 'Fiesta de la Cerveza', ['C'] = "Semana de los Niños", ['D'] = 'Día de los Muertos', ['E'] = 'WoW Anniversary', ['F'] = 'Feria de la Luna Negra', ['H'] = 'Festival de la Cosecha', ['K'] = "Competición de pesca Kalu'ak", ['L'] = 'Festival Lunar', ['M'] = 'Festival de Fuego del Solsticio de Verano', ['N'] = 'Jardín Noble', ['P'] = "Día de los Piratas", ['U'] = 'Nochevieja', ['V'] = 'Festival del Invierno', ['W'] = "Halloween", ['X'] = 'Concurso de Pesca', ['Y'] = "Generosidad del Peregrino", ['Z'] = "Semana navideña", ['a'] = 'Evento de ápices con bonificación', ['b'] ='Evento de refriegas de arena con bonificación', ['c'] = 'Evento de campos de batalla con bonificación', ['d'] = 'Evento de calabozo de Draenor', ['e'] = 'Evento de duelo de mascotas con bonificación', ['f'] = 'Evento de calabozo de cronoviaje', ['Q'] = "AQ", }
 
@@ -11768,7 +11756,7 @@ elseif locale == "esMX" then
 elseif locale == "frFR" then
 	me.bodyGuardLevel = { 'Garde du corps', 'Garde personnel', 'Bras droit' }
 	me.friendshipLevel = { 'Étranger', 'Connaissance', 'Camarade', 'Ami', 'Bon ami', 'Meilleur ami' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Hésitation', 'Ambivalent', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Hésitation', 'Incertitude', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = "De l'amour dans l'air", ['B'] = 'Fête des Brasseurs', ['C'] = "Semaine des enfants", ['D'] = 'Jour des morts', ['E'] = 'WoW Anniversary', ['F'] = 'Foire de Sombrelune', ['H'] = 'Fête des moissons', ['K'] = "Tournoi de pêche kalu'ak", ['L'] = 'Fête lunaire', ['M'] = "Fête du Feu du solstice d'été", ['N'] = 'Le Jardin des nobles', ['P'] = "Jour des pirates", ['U'] = 'Nouvel an', ['V'] = "Voile d'hiver", ['W'] = "Sanssaint", ['X'] = 'Concours de pêche de Strangleronce', ['Y'] = "Bienfaits du pèlerin", ['Z'] = "Vacances de Noël", ['a'] = 'Évènement bonus Apogides', ['b'] ='Évènement bonus Escarmouches en arène', ['c'] = 'Évènement bonus Champs de bataille', ['d'] = 'Évènement Donjon de Draenor', ['e'] = 'Évènement bonus Combats de mascottes', ['f'] = 'Évènement Donjon des Marcheurs du temps', ['Q'] = "AQ", }
 
@@ -11796,7 +11784,7 @@ elseif locale == "frFR" then
 elseif locale == "itIT" then
 	me.bodyGuardLevel = { 'Guardia del Corpo', 'Guardia Fidata', 'Scorta Personale' }
 	me.friendshipLevel = { 'Estraneo', 'Conoscente', 'Compagno', 'Amico', 'Amico Intimo', 'Miglior Amico' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Incerta', 'Ambivalent', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Incerta', 'Ambivalente', 'Cordial', 'Appreciative' }
 
 me.holidayMapping = {
     ['A'] = "Amore nell'Aria",
@@ -11857,7 +11845,7 @@ me.professionMapping = {
 elseif locale == "koKR" then
 	me.bodyGuardLevel = { '경호원', '믿음직스러운 경호원', '개인 호위무사' }
 	me.friendshipLevel = { '이방인', '지인', '동료', '친구', '좋은 친구', '가장 친한 친구' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', '불확신', 'Ambivalent', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', '불확신', '애증', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = '온누리에 사랑을', ['B'] = '가을 축제', ['C'] = "어린이 주간", ['D'] = '망자의 날', ['E'] = 'WoW Anniversary', ['F'] = '다크문 축제', ['H'] = '추수절', ['K'] = '칼루아크 낚시 대회', ['L'] = '달의 축제', ['M'] = '한여름 불꽃축제', ['N'] = '귀족의 정원', ['P'] = "해적의 날", ['U'] = '새해맞이 전야제', ['V'] = '겨울맞이 축제', ['W'] = "할로윈 축제", ['X'] = '가시덤불 골짜기 낚시왕 선발대회', ['Y'] = "순례자의 감사절", ['Z'] = "한겨울 축제 주간", ['a'] = '에펙시스 보너스 이벤트', ['b'] ='투기장 연습 전투 보너스 이벤트', ['c'] = '전장 보너스 이벤트', ['d'] = '드레노어 던전 이벤트', ['e'] = '애완동물 대전 보너스 이벤트', ['f'] = '시간여행 던전 이벤트', ['Q'] = "AQ", }
 
@@ -11894,7 +11882,7 @@ elseif locale == "koKR" then
 elseif locale == "ptBR" then
 	me.bodyGuardLevel = { 'Guarda-costas', 'Guarda-costas de Confiança', 'Copiloto Pessoal' }
 	me.friendshipLevel = { 'Estranho', 'Conhecido', 'Camarada', 'Amigo', 'Bom Amigo', 'Grande Amigo' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Hesitação', 'Ambivalent', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Hesitação', 'Ambivalência', 'Cordial', 'Appreciative' }
 
 me.holidayMapping = { ['A'] = "O Amor Está No Ar", ['B'] = 'CervaFest', ['C'] = "Semana das Crianças", ['D'] = 'Dia dos Mortos', ['E'] = 'WoW Anniversary', ['F'] = 'Feira de Negraluna', ['H'] = 'Festival da Colheita', ['K'] = "Campeonato de Pesca dos Kalu'ak", ['L'] = 'Festival da Lua', ['M'] = "Festival do Fogo do Solsticio", ['N'] = 'Jardinova', ['P'] = "Dia dos Piratas", ['U'] = 'New Year', ['V'] = "Festa do Véu de Inverno", ['W'] = "Noturnália", ['X'] = 'Stranglethorn Fishing Extravaganza', ['Y'] = "Festa da Fartura", ['Z'] = "Semana Natalina", ['a'] = 'Evento Bônus de Apexis', ['b'] ='Evento Bônus de Escaramuças da Arena', ['c'] = 'Evento Bônus de Campos de Batalha', ['d'] = 'Evento das Masmorras de Draenor', ['e'] = 'Evento Bônus de Batalha de Mascotes', ['f'] = 'Evento das Masmorras de Caminhada Temporal', ['Q'] = "AQ", }
 
@@ -11940,7 +11928,7 @@ me.professionMapping = {
 elseif locale == "ruRU" then
 	me.bodyGuardLevel = { 'Телохранитель', 'Доверенный боец', 'Боевой товарищ' }
 	me.friendshipLevel = { 'Незнакомец', 'Знакомый', 'Приятель', 'Друг', 'Хороший друг', 'Лучший друг' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Настороженность', 'Ambivalent', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Настороженность', 'Безразличие', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = 'Любовная лихорадка', ['B'] = 'Хмельной фестиваль', ['C'] = "Детская неделя", ['D'] = 'День мертвых', ['E'] = 'WoW Anniversary', ['F'] = 'Ярмарка Новолуния', ['H'] = 'Неделя урожая', ['K'] = "Калуакское рыбоборье", ['L'] = 'Лунный фестиваль', ['M'] = 'Огненный солнцеворот', ['N'] = 'Сад чудес', ['P'] = "День пирата", ['U'] = 'Канун Нового Года', ['V'] = 'Зимний Покров', ['W'] = "Тыквовин", ['X'] = 'Рыбная феерия Тернистой долины', ['Y'] = "Пиршество странников", ['Z'] = "Рождественская неделя", ['a'] = 'Событие: бонус к апекситовым кристаллам', ['b'] ='Событие: бонус за стычки на арене', ['c'] = 'Событие: бонус на полях боя', ['d'] = 'Событие: подземелья Дренора', ['e'] = 'Событие: бонус за битвы питомцев', ['f'] = 'Событие: путешествие во времени по подземельям', ['Q'] = "AQ", }
 
@@ -11977,7 +11965,7 @@ elseif locale == "ruRU" then
 elseif locale == "zhCN" then
 	me.bodyGuardLevel = { '保镖', '贴身保镖', '亲密搭档' }
 	me.friendshipLevel = { 'Stranger', 'Acquaintance', 'Buddy', 'Friend', 'Good Friend', '挚友' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', '犹豫', 'Ambivalent', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', '犹豫', '纠结', 'Cordial', 'Appreciative' }
 	me.holidayMapping = { ['A'] = '情人节', ['B'] = '美酒节', ['C'] = "儿童周", ['D'] = '死人节', ['E'] = 'WoW Anniversary', ['F'] = '暗月马戏团', ['H'] = '收获节', ['K'] = "Tournoi de pêche kalu'ak", ['L'] = '春节', ['M'] = '仲夏火焰节', ['N'] = '复活节', ['P'] = "海盗日", ['U'] = '除夕夜', ['V'] = '冬幕节', ['W'] = "万圣节", ['X'] = '荆棘谷钓鱼大赛', ['Y'] = "感恩节", ['Z'] = "圣诞周", ['a'] = '埃匹希斯假日活动', ['b'] ='竞技场练习赛假日活动', ['c'] = '战场假日活动', ['d'] = '德拉诺地下城活动', ['e'] = '宠物对战假日活动', ['f'] = '时空漫游地下城活动', ['Q'] = "AQ", }
 
 	me.professionMapping = { ['A'] = '炼金术', ['B'] = '锻造', ['C'] = '烹饪', ['E'] = '附魔', ['F'] = '钓鱼', ['H'] = '草药学', ['I'] = '铭文', ['J'] = '珠宝加工', ['L'] = '制皮', ['M'] = '采矿', ['N'] = '工程学', ['R'] = '骑术', ['S'] = '剥皮', ['T'] = '裁缝', ['X'] = '考古学', ['Z'] = '急救', }
@@ -12013,7 +12001,7 @@ elseif locale == "zhCN" then
 elseif locale == "zhTW" then
 	me.bodyGuardLevel = { '保鏢', '信任的保鑣', '個人的搭檔' }
 	me.friendshipLevel = { '陌生人', '熟識', '夥伴', '朋友', '好朋友', '最好的朋友' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', '猶豫', 'Ambivalent', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', '猶豫', '籠統', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = '愛就在身邊', ['B'] = '啤酒節', ['C'] = "兒童週", ['D'] = '亡者節', ['E'] = 'WoW Anniversary', ['F'] = '暗月馬戲團', ['H'] = '收穫節', ['K'] = "卡魯耶克釣魚大賽", ['L'] = '新年慶典', ['M'] = '仲夏火焰節慶', ['N'] = '貴族花園', ['P'] = "海賊日", ['U'] = '除夕夜', ['V'] = '冬幕節', ['W'] = "萬鬼節", ['X'] = '荊棘谷釣魚大賽', ['Y'] = "旅人豐年祭", ['Z'] = "聖誕週", ['a'] = '頂尖獎勵事件', ['b'] ='競技場練習戰獎勵事件', ['c'] = '戰場獎勵事件', ['d'] = '德拉諾地城事件', ['e'] = '寵物對戰獎勵事件', ['f'] = '時光漫遊地城事件', ['Q'] = "AQ", }
 
