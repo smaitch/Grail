@@ -993,6 +993,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		delayedEvents = {},
 		delayedEventsCount = 0,
 		delayQuestRemoved = 4.5,
+		diversionMapping = {	-- a mapping of talentID to associated questId
+			[1255] = 60304,
+			[1257] = 60305,
+			[1258] = 60299,
+		},
 		eventDispatch = {			-- table of functions whose keys are the events
 
 			['ACHIEVEMENT_EARNED'] = function(self, frame, arg1)
@@ -1661,6 +1666,7 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 						frame:RegisterEvent("COVENANT_CALLINGS_UPDATED")
 						frame:RegisterEvent("COVENANT_CHOSEN")
 						frame:RegisterEvent("COVENANT_SANCTUM_RENOWN_LEVEL_CHANGED")
+						frame:RegisterEvent("ANIMA_DIVERSION_OPEN")
 					end
 					frame:RegisterEvent("QUEST_DETAIL")
 					frame:RegisterEvent("QUEST_LOG_UPDATE")	-- just to indicate we are now available to read the Blizzard quest log without issues
@@ -1693,6 +1699,25 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 					self.timings.AddonLoaded = 	debugprofilestop() - debugStartTime
 --				end
 
+			end,
+
+			-- Because we cannot use C_AnimaDiversion.GetAnimaDiversionNodes() before the Anima Diversion UI has been opened to get real results
+			-- and because the results are only for your current covenant, we instead record the quest names and intend to populate all the quest
+			-- names over time by having all covenants and localizations eventually have their Anima DIversion UI opened.
+			['ANIMA_DIVERSION_OPEN'] = function(self, frame)
+				local diversionNodes = C_AnimaDiversion.GetAnimaDiversionNodes()
+				if nil ~= diversionNodes then
+					for _, node in pairs(diversionNodes) do
+						local id = tonumber(node.talentID)
+						if nil ~= id then
+							local questId = self.diversionMapping[id] or id + 100000
+							local questName = node.description
+							if nil ~= questName and questName ~= '' and questName ~= self.quest.name[questId] then
+								self:_LearnQuestName(questId, questName)
+							end
+						end
+					end
+				end
 			end,
 
 			['BAG_UPDATE'] = function(self, frame, bagId)
@@ -8799,22 +8824,31 @@ end
 
 		-- Providing -1 as the talendId prints out all the researched talents instead of doing the normal behavior
 		_GarrisonTalentResearched = function(self, talentId)
+			local retval = false
 			talentId = tonumber(talentId)
-			if nil == talentId then return false, nil, nil end
-			-- Note that we would normally try to use self.playerClassId as the second parameter, but that yields nil, and 0 returns them all.
-			local talentTreeIds = C_Garrison.GetTalentTreeIDsByClassID(Enum.GarrisonType.Type_9_0, 0)
-			if nil ~= talentTreeIds then
-				for _, talentTreeId in pairs(talentTreeIds) do
-					local treeInfo = C_Garrison.GetTalentTreeInfo(talentTreeId)
-					if nil ~= treeInfo then
-						local talents = treeInfo.talents
-						if nil ~= talents then
-							for _, talentInfo in pairs(talents) do
-								if talentInfo.researched then
-									if talentId == tonumber(talentInfo.id) then
-										return true, treeInfo.title, talentInfo.name
-									elseif talentId == -1 then
-										print(talentInfo.id, treeInfo.title, '-', talentInfo.name)
+			if nil ~= talentId then
+				-- Note that we would normally try to use self.playerClassId as the second parameter, but that yields nil, and 0 returns them all.
+				local talentTreeIds = C_Garrison.GetTalentTreeIDsByClassID(Enum.GarrisonType.Type_9_0, 0)
+				if nil ~= talentTreeIds then
+					for _, talentTreeId in pairs(talentTreeIds) do
+						local treeInfo = C_Garrison.GetTalentTreeInfo(talentTreeId)
+						if nil ~= treeInfo then
+							local talents = treeInfo.talents
+							if nil ~= talents then
+								for _, talentInfo in pairs(talents) do
+									local fakeQuestName = treeInfo.title .. ' - ' .. talentInfo.name
+									local id = tonumber(talentInfo.id)
+									local fakeQuestId = 400000 + id
+									if fakeQuestName ~= self.quest.name[fakeQuestId] then
+										self.quest.name[fakeQuestId] = fakeQuestName
+										self:_LearnQuestName(fakeQuestId, fakeQuestName)
+									end
+									if talentInfo.researched then
+										if talentId == id then
+											retval = true
+										elseif talentId == -1 then
+											print(id, fakeQuestName)
+										end
 									end
 								end
 							end
@@ -8822,7 +8856,7 @@ end
 					end
 				end
 			end
-			return false, nil, nil
+			return retval
 		end,
 
 		---
