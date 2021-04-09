@@ -536,6 +536,8 @@
 --			Changes zone names to include floors if map is part of a group, and not to duplicate entries if possible.  Maps with the same name as another map will get a mapId added to it.
 --			Adds color to debug statements for quests marked completed when others completed or accepted.
 --			Changes IsLowLevel to now use the maximum variable level for a quest in its computation.  Changes QuestLevelString to include a range if there is a maximum variable level for the quest.
+--			Changes interface to 90005.
+--			Changes check for renown level to ensure covenant matches as Blizzard renown API ignores covenant.
 --
 --	Known Issues
 --
@@ -1516,6 +1518,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self:RegisterObserverQuestAbandon(Grail._StatusCodeCallback)
 					self:RegisterObserverQuestAccept(Grail._StatusCodeCallback)
 					self:RegisterObserverQuestComplete(Grail._StatusCodeCallback)
+
+					self:RegisterObserver("CloseTradeSkillUI", Grail._CloseTradeSkillUI)
 
 					-- Starting with Grail 100 all the preferences are stored within an environment so we can differentiate
 					-- between _retail_, _ptr_, and _classic_ which is really going to be used for quest/NPC information
@@ -3274,7 +3278,7 @@ end,
 							kCodeValue = kCodeValue + 512
 						end
 					end
-					if isTask then kCodeValue = kCodeValue + 32768 end	-- bonus objective
+					if isTask and not Grail:IsWorldQuest(questId) then kCodeValue = kCodeValue + 32768 end	-- bonus objective
 					if Grail.capabilities.usesCampaignInfo then
 						local isCampaign = false
 						if C_CampaignInfo.IsCampaignQuest then
@@ -3283,7 +3287,7 @@ end,
 						if isCampaign then kCodeValue = kCodeValue + 4096 end -- war campaign (recorded as legendary)
 					end
 					local kCode = (kCodeValue > 0) and strformat("K%d", kCodeValue) or nil
-					local lCode = strformat("L%d", 255 + level * 256 + (difficultyLevel or 0) * 65536)
+					local lCode = "L" .. Grail:StringFromQuestLevels(difficultyLevel, level, 0)
 					Grail:_UpdateQuestDatabase(questId, questTitle, npcId, isDaily, 'A', nil, kCode, lCode)
 				end
 			end
@@ -3358,6 +3362,9 @@ end,
 
 		_customAchievementNames = {
 									[13997] = C_CampaignInfo and C_CampaignInfo.GetCampaignInfo(113).name or "",	-- Venthyr Campaign
+									[14234] = C_CampaignInfo and C_CampaignInfo.GetCampaignInfo(119).name or "",	-- Kyrian Campaign
+									[14279] = C_CampaignInfo and C_CampaignInfo.GetCampaignInfo(115).name or "",	-- The Art of War
+									[14282] = C_CampaignInfo and C_CampaignInfo.GetCampaignInfo(117).name or "",	-- Night Fae Campaign
 									},
 		-- The assumption is the value of each entry in the table would logically be considered a valid P:
 		_customAchievementPrerequisites = {
@@ -4684,7 +4691,7 @@ end,
 					local release, locale, npcId, npcLocation, aliasId = strsplit('|', npcLocationLine)
 					npcId = tonumber(npcId)
 					-- Note that we are not checking to ensure the locale matches self.playerLocale because locations should be universal
-					if  nil ~= npcId then
+					if nil ~= npcId then
 						if npcLocation ~= "" and not self:_LocationKnown(npcId, npcLocation, aliasId) then
 							self:_AddNPCLocation(npcId, npcLocation, aliasId)
 						else
@@ -4783,15 +4790,26 @@ end,
 				local newQuestCodes = {}
 				for _, questCodeLine in pairs(self.GDE.learned.QUEST_CODE) do
 					local shouldAdd = true
-					local release, locale, questId, questCode = strsplit('|', questCodeLine)
+					local grailVersion, release, locale, questId, questCode = strsplit('|', questCodeLine)
+					grailVersion = tonumber(grailVersion)
+					-- If we have one fewer values than expected, we are in an older version where we do not have the grailVersion recorded per entry.
+					if nil == questCode then
+						questCode = questId
+						questId = locale
+						locale = release
+						release = grailVersion
+						grailVersion = 114
+					end
 					questId = tonumber(questId)
 					-- Note that we are not checking to ensure the locale matches self.playerLocale because quest codes should be universal
 					if questId ~= nil and questCode ~= nil and 1 < strlen(questCode) then
 						local code = strsub(questCode, 1, 1)
 						local subcode = strsub(questCode, 2, 2)
 						if 'A' == code and ':' == subcode then
-							local npcId = strsub(questCode, 3)
-							if self:_GoodNPCAccept(questId, npcId) then
+							local npcId = tonumber(strsub(questCode, 3)) or 0
+							if npcId >= 3000000 and npcId < 4000000 then
+								shouldAdd = (nil ~= self.npc.aliases[npcId])
+							elseif self:_GoodNPCAccept(questId, npcId) then
 								shouldAdd = false
 							else
 								self:_UpdateWorldQuestSelfNPC(npcId)
@@ -4799,8 +4817,10 @@ end,
 								self.quests[questId]['A'] = self:_TableAppendCodes(self:_FromList(npcId), self.quests[questId], { 'A' })
 							end
 						elseif 'T' == code and ':' == subcode then
-							local npcId = strsub(questCode, 3)
-							if self:_GoodNPCTurnin(questId, npcId) then
+							local npcId = tonumber(strsub(questCode, 3)) or 0
+							if npcId >= 3000000 and npcId < 4000000 then
+								shouldAdd = (nil ~= self.npc.aliases[npcId])
+							elseif self:_GoodNPCTurnin(questId, npcId) then
 								shouldAdd = false
 							else
 								self:_UpdateWorldQuestSelfNPC(npcId)
@@ -4810,13 +4830,17 @@ end,
 						elseif 'K' == code then
 							shouldAdd = self:_LearnKCode(questId, questCode, true)
 						elseif 'L' == code then
-							local possibleQuestLevels = tonumber(strsub(questCode, 2))
-							if nil ~= possibleQuestLevels and 0 ~= possibleQuestLevels then
-								local questLevel = floor(possibleQuestLevels / 65536)
-								local questLevelRequired = floor((possibleQuestLevels - (questLevel * 65536)) / 256)
+							local questLevel, questLevelRequired
+							if grailVersion < 115 then
+								questLevel, questLevelRequired = self:QuestLevelsFromString(strsub(questCode, 2), true)
+							else
+								questLevel = tonumber(strsub(questCode, 2)) or 0
+								questLevelRequired = questLevel
+							end
+							if 0 ~= questLevel then
 								local questLevelMatches = (self:QuestLevel(questId) == questLevel)
 								local questLevelRequiredMatches = (self:QuestLevelRequired(questId) == questLevelRequired)
-								if questLevelMatches and questLevelRequiredMatches then
+								if (questLevelMatches and questLevelRequiredMatches) or 0 == self:_QuestLevelMatchesRangeInDatabase(questId, questLevelRequired) then
 									shouldAdd = false
 								else
 									if not questLevelMatches then
@@ -4826,6 +4850,13 @@ end,
 										self:_SetQuestRequiredLevel(questId, questLevelRequired)
 									end
 								end
+							end
+						elseif 'N' == code then
+							local suggestedVariableLevel = tonumber(strsub(questCode, 2))
+							if suggestedVariableLevel == self:QuestLevelVariableMax(questId) then
+								shouldAdd = false
+							else
+								self:_SetQuestVariableLevel(questId, suggestedVariableLevel)
 							end
 						elseif 'P' == code and ':' == subcode then
 							local codeToSeek = strsub(questCode, 3)
@@ -4890,7 +4921,8 @@ end,
 		_LearnQuestCode = function(self, questId, questCode)
 			self.GDE.learned = self.GDE.learned or {}
 			self.GDE.learned.QUEST_CODE = self.GDE.learned.QUEST_CODE or {}
-			tinsert(self.GDE.learned.QUEST_CODE, self.blizzardRelease .. '|' .. self.playerLocale .. '|' .. questId .. '|' .. questCode)
+			-- The Grail version is added because we need to be able to differentiate between different questCode structures
+			tinsert(self.GDE.learned.QUEST_CODE, self.versionNumber .. '|' .. self.blizzardRelease .. '|' .. self.playerLocale .. '|' .. questId .. '|' .. questCode)
 		end,
 
 		_LearnQuestName = function(self, questId, questName)
@@ -5804,7 +5836,9 @@ end,
 								typeValue = typeValue + (tonumber(strsub(c, 2)) or 0)
 							
 							elseif 'L' == code then
-								levelValue = levelValue + (tonumber(strsub(c, 2)) or 0)
+--								levelValue = levelValue + (tonumber(strsub(c, 2)) or 0)
+								local questLevel, questRequiredLevel, questMaximumScalingLevel = self:QuestLevelsFromString(strsub(c, 2))
+								levelValue = levelValue + questLevel * self.bitMaskQuestLevelOffset + questRequiredLevel * self.bitMaskQuestMinLevelOffset + questMaximumScalingLevel * self.bitMaskQuestVariableLevelOffset
 							
 --							elseif 'l' == code then
 --								-- lLLLNNNKKK+
@@ -5826,8 +5860,8 @@ end,
 							elseif 'M' == code then
 								levelValue = levelValue + ((tonumber(strsub(c, 2)) or 255) * self.bitMaskQuestMaxLevelOffset)
 
---							elseif 'N' == code then
---								levelValue = levelValue + ((tonumber(strsub(c, 2)) or 255) * self.bitMaskQuestVariableLevelOffset)
+							elseif 'N' == code then
+								levelValue = levelValue + ((tonumber(strsub(c, 2)) or 0) * self.bitMaskQuestVariableLevelOffset)
 
 							elseif 'H' == code then
 								bitValue = self.holidayToBitMapping[codeValue]
@@ -6013,6 +6047,13 @@ end,
 			local codeLevel = self:CodeLevel(questId)
 			codeLevel = codeLevel - bitband(codeLevel, self.bitMaskQuestMinLevel)
 			codeLevel = codeLevel + (requiredLevel * self.bitMaskQuestMinLevelOffset)
+			self:_SetQuestBitLevel(questId, codeLevel)
+		end,
+
+		_SetQuestVariableLevel = function(self, questId, variableLevel)
+			local codeLevel = self:CodeLevel(questId)
+			codeLevel = codeLevel - bitband(codeLevel, self.bitMaskQuestVariableLevel)
+			codeLevel = codeLevel + (variableLevel * self.bitMaskQuestVariableLevelOffset)
 			self:_SetQuestBitLevel(questId, codeLevel)
 		end,
 
@@ -7809,10 +7850,8 @@ end
 			local questLevel = self:QuestLevel(questId) or 1
 			if 0 ~= questLevel then		-- 0 is the special marker indicating the quest is actually the same level as the player
 				local possibleVariableQuestLevel = self:QuestLevelVariableMax(questId)
-				if 255 ~= possibleVariableQuestLevel then	-- 255 means no variable level
-					if possibleVariableQuestLevel > questLevel then
-						questLevel = possibleVariableQuestLevel
-					end
+				if possibleVariableQuestLevel > questLevel then
+					questLevel = possibleVariableQuestLevel
 				end
 				retval = (comparisonLevel > (questLevel + self:GetQuestGreenRange()))
 			end
@@ -8779,6 +8818,8 @@ end
 			covenant = tonumber(covenant)
 			desiredLevel = tonumber(desiredLevel)
 			if nil == covenant or nil == desiredLevel then return false end
+			local activeCovenant = C_Covenants and C_Covenants.GetActiveCovenantID() or nil
+			if covenant ~= activeCovenant then return false end
 			local levels = C_CovenantSanctumUI and C_CovenantSanctumUI.GetRenownLevels(covenant) or nil
 			if nil ~= levels then
 				for _, levelInfo in pairs(levels) do
@@ -9897,23 +9938,79 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 		-- TODO: Determine whether someone can have a 0 skillLineMaxRank at a lower expansion but a non-zero at a higher one (i.e.,
 		--		skipped over a "lower level" of the skill.
 		professionSkillLineIdMapping = {
-			A = { 2485, 2484, 2483, 2482, 2481, 2480, 2479, 2478, 2750, }, -- 'Alchemy',
-			B = { 2477, 2476, 2475, 2474, 2473, 2472, 2454, 2437, 2751, }, -- 'Blacksmithing',
-			E = { 2494, 2493, 2492, 2491, 2489, 2488, 2487, 2486, 2753, }, -- 'Enchanting',
-			H = { 2556, 2555, 2554, 2553, 2552, 2551, 2550, 2549, 2760, }, -- 'Herbalism',
-			I = { 2514, 2513, 2512, 2511, 2510, 2509, 2508, 2507, 2756, }, -- 'Inscription',
-			J = { 2524, 2523, 2522, 2521, 2520, 2519, 2518, 2517, 2757, }, -- 'Jewelcrafting',
-			L = { 2532, 2531, 2530, 2529, 2528, 2527, 2526, 2525, 2758, }, -- 'Leatherworking',
-			M = { 2572, 2571, 2570, 2569, 2568, 2567, 2566, 2565, 2761, }, -- 'Mining',
-			N = { 2506, 2505, 2504, 2503, 2502, 2501, 2500, 2499, 2755, }, -- 'Engineering',
-			S = { 2564, 2563, 2562, 2561, 2560, 2559, 2558, 2557, 2762, }, -- 'Skinning',
-			T = { 2540, 2539, 2538, 2537, 2536, 2535, 2534, 2533, 2759, }, -- 'Tailoring',
+			A = { 2485, 2484, 2483, 2482, 2481, 2480, 2479, 2478, 2750, }, -- 'Alchemy',		-- 171, -- this is parent skillId
+			B = { 2477, 2476, 2475, 2474, 2473, 2472, 2454, 2437, 2751, }, -- 'Blacksmithing',	-- 164,
+			E = { 2494, 2493, 2492, 2491, 2489, 2488, 2487, 2486, 2753, }, -- 'Enchanting',		-- 333,
+			H = { 2556, 2555, 2554, 2553, 2552, 2551, 2550, 2549, 2760, }, -- 'Herbalism',		-- 182,
+			I = { 2514, 2513, 2512, 2511, 2510, 2509, 2508, 2507, 2756, }, -- 'Inscription',	-- 773,
+			J = { 2524, 2523, 2522, 2521, 2520, 2519, 2518, 2517, 2757, }, -- 'Jewelcrafting',	-- 755,
+			L = { 2532, 2531, 2530, 2529, 2528, 2527, 2526, 2525, 2758, }, -- 'Leatherworking',	-- 165,
+			M = { 2572, 2571, 2570, 2569, 2568, 2567, 2566, 2565, 2761, }, -- 'Mining',			-- 186,
+			N = { 2506, 2505, 2504, 2503, 2502, 2501, 2500, 2499, 2755, }, -- 'Engineering',	-- 202,
+			S = { 2564, 2563, 2562, 2561, 2560, 2559, 2558, 2557, 2762, }, -- 'Skinning',		-- 393,
+			T = { 2540, 2539, 2538, 2537, 2536, 2535, 2534, 2533, 2759, }, -- 'Tailoring',		-- 197,
+			-- 'Ascension Crafting',	-- 2791,
+			-- 'Abominable Stiching',	-- 2787,
+			-- 'Soul Cyphering',		-- 2777,
+			-- 'Junkyard Tinkering',	-- 2720,
+			-- 'Stygia Crafting',		-- 2811,
+		},
+		-- The values for the following are returned from C_TradeSkillUI.GetCategories() on 2021-03-10
+		-- For Cooking and Fishing we need to use C_TradeSkillUI.GetCategoryInfo(categoryId) which returns
+		--		name, skillLineCurrentLevel, skillLineMaxLevel all in a table
+		-- It seems the UI needs to have been opened for the API to return values.  Also, Fishing returns
+		-- nil for values that the player does not have, but Cooking returns a structure (albeit with 0 value).
+		professionCategoryIdMapping = {
+			C = { 72, 73, 74, 75, 90, 342, 475, 1118, 1323, },	-- 'Cooking',
+			F = { 1100, 1102, 1104, 1106, 1108, 1110, 1112, 1114, 1391, },	-- 'Fishing',
+			-- X = { },	-- 'Archaeology',
+		},
+		professionUITradeSkill = {
+			C = 185,
+			F = 356,
+		},
+		professionUIOpened = {
+			C = false,
+			F = false,
+			X = false,
 		},
 
-		-- TODO: Get the maximum value for skills for Shadowlands and replace the 0 with that...
-		professionMaximumValuesPerExpansio = {
-			300, 75, 75, 75, 75, 100, 100, 175, 0,
-		},
+		--	Internal Use.
+		--	Returns the amount of skill the character has associated with the profession and expansion
+		_ProfessionSkillLevel = function(self, professionCode, expansion)
+			local skillLineDisplayName, skillLineRank, skillLineMaxRank = "NONE", self.NO_SKILL, self.NO_SKILL
+			local useCategory = false
+			local skillIds = self.professionSkillLineIdMapping[professionCode]
+			if nil == skillIds then
+				skillIds = self.professionCategoryIdMapping[professionCode]
+				useCategory = true
+			end
+			if nil ~= skillIds then
+				local id = skillIds[expansion]
+				if nil ~= id then
+					if useCategory then
+						if not self.professionUIOpened[professionCode] then
+							-- Cannot immediately close the trade skill UI with C_TradeSkillUI.CloseTradeSkill() because it does not close.
+							-- Cannot register for event TRADE_SKILL_SHOW and then close the trade skill UI in it because it messes up the trade skill UI and returns garbage.
+							C_TradeSkillUI.OpenTradeSkill(self.professionUITradeSkill[professionCode])
+							self.professionUIOpened[professionCode] = true
+							self:_PostDelayedNotification("CloseTradeSkillUI", 0, 0.5)
+							-- Experimentation shows that a delay of 0.25 did not work, but 0.5 does work.  However, the skills recorded can only be associated with the
+							-- last trade skill UI window opened.  For example, opening Cooking and then Fishing renders attempts to get Cooking information impossible.
+						end
+						local categoryInfo = C_TradeSkillUI.GetCategoryInfo(id)
+						if nil ~= categoryInfo then
+							skillLineDisplayName = categoryInfo.name
+							skillLineRank = categoryInfo.skillLineCurrentLevel
+							skillLineMaxRank = categoryInfo.skillLineMaxLevel
+						end
+					else
+						skillLineDisplayName, skillLineRank, skillLineMaxRank = C_TradeSkillUI.GetTradeSkillLineInfoByID(id)
+					end
+				end
+			end
+			return skillLineDisplayName, skillLineRank, skillLineMaxRank
+		end,
 
 		--	Internal Use.
 		--	Returns whether the character has the profession specified by the code exceeding the specified level.
@@ -10056,9 +10153,28 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			end
 		end,
 
+		_CloseTradeSkillUI = function(callbackType, questId)	-- these parameters are not used here
+			C_TradeSkillUI.CloseTradeSkill()
+		end,
+
 		_QuestCompleteCheck = function(callbackType, questId)
 			print("*** Starting check", callbackType, questId)
 			local self = Grail
+-- This code was debug code to check Blizzard's reported quest levels after the quest is in the quest log (which seems to be the only way to get this).
+--			if "QuestAcceptCheck" == callbackType then
+--				local index = 1
+--				while (true) do
+--					local questTitle, level, _, _, _, _, _, _, theQuestId, _, _, _, _, _, _, _, _, difficultyLevel = Grail:GetQuestLogTitle(index)
+--					if not questTitle then
+--						break
+--					else
+--						index = index + 1
+--					end
+--					if questId == theQuestId then
+--						print(strformat("   *** Quest %d [L%d REQ:%d]", questId, difficultyLevel, level))
+--					end
+--				end
+--			end
 			QueryQuestsCompleted()
 			local newlyCompletedQuests, newlyLostQuests = {}, {}
 			self:_ProcessServerCompare(newlyCompletedQuests, newlyLostQuests)
@@ -10205,43 +10321,124 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 		---
 		--	Returns the level of the quest with the specified questId.
 		--	@param questId The standard numeric questId representing a quest.
-		--	@return The level of the quest matching the questId or nil if none found.
+		--	@return The level of the quest matching the questId or 0 if none found.
 		QuestLevel = function(self, questId)
 			return bitband(self:CodeLevel(questId), self.bitMaskQuestLevel) / self.bitMaskQuestLevelOffset
 		end,
 
-		QuestLevelRequired = function(self, questId)
-			return bitband(self:CodeLevel(questId), self.bitMaskQuestMinLevel) / self.bitMaskQuestMinLevelOffset
+		---
+		--	Returns the level required for the player to be able to accept the quest for the specified questId.
+		--	@param questId The standard numeric questId representing a quest.
+		--	@param dontUseRawValue Boolean indicating whether the quest level should be returned if there is no required level specified.
+		--	@return The required level of the quest matching the questId or 0 if none found.  Note that 0 can be returned for the raw value.
+		QuestLevelRequired = function(self, questId, dontUseRawValue)
+			local retval = bitband(self:CodeLevel(questId), self.bitMaskQuestMinLevel) / self.bitMaskQuestMinLevelOffset
+			if retval == 0 and dontUseRawValue then
+				retval = self:QuestLevel(questId)
+			end
+			return retval
 		end,
 
 		QuestLevelVariableMax = function(self, questId)
 			return bitband(self:CodeLevel(questId), self.bitMaskQuestVariableLevel) / self.bitMaskQuestVariableLevelOffset
 		end,
 
-		-- Assumes the variable level of 255 means the quest is not a scaling quest.
+		-- The quest levels when represented as an L code are going to be an integer representation of three values.
+		-- The first is the quest level, the second is the required player level to accept the quest, and the third
+		-- is the maximum scaling level for the quest.  If the required player level is zero, it means its value is
+		-- the same as the quest level.  If the maximum scaling level is zero, it means the quest does not scale.
+		-- Conceptually you can think of the integers as <scaling level> <required level> <quest level> with values
+		-- that can range from 0-255 each, and therefore to create one integer that represents them, the scaling is
+		-- multiplied by 65536 and the required is multiplied by 256.
+
+		-- Returns the three quest levels from the provided string assuming the above information.
+		QuestLevelsFromString = function(self, questLevelString, oldStyle)
+			local questLevel, questRequiredLevel, questMaximumScalingLevel = 0, 0, 0
+			local possibleQuestLevels = tonumber(questLevelString)
+			if nil ~= possibleQuestLevels then
+				-- TODO: Deal with oldStyle to handle the quest levels before this new syntax (which we really do not use anyway at the moment)
+				questMaximumScalingLevel = floor(possibleQuestLevels / 65536)
+				possibleQuestLevels = possibleQuestLevels - questMaximumScalingLevel * 65536
+				questRequiredLevel = floor(possibleQuestLevels / 256)
+				questLevel = possibleQuestLevels - questRequiredLevel * 256
+				if 0 == questRequiredLevel then
+					questRequiredLevel = questLevel
+				end
+			end
+			return questLevel, questRequiredLevel, questMaximumScalingLevel
+		end,
+
+		-- Returns the string created from the provided quest levels assuming the above information.
+		StringFromQuestLevels = function(self, questLevel, questRequiredLevel, questMaximumScalingLevel)
+			questLevel = questLevel or 0
+			questRequiredLevel = questRequiredLevel or 0
+			if questRequiredLevel == questLevel then
+				questRequiredLevel = 0
+			end
+			questMaximumScalingLevel = questMaximumScalingLevel or 0
+			return strformat("%d", questMaximumScalingLevel * 65536 + questRequiredLevel * 256 + questLevel)
+		end,
+
+		-- Assumes the variable level of 0 means the quest is not a scaling quest.
 		QuestLevelString = function(self, questId)
 			local possibleLevel = self:QuestLevel(questId)
 			local possibleVariableLevel = self:QuestLevelVariableMax(questId)
 			local variableAspect = ""
-			if possibleVariableLevel ~= 255 then
+			if possibleVariableLevel ~= 0 then
 				variableAspect = strformat(" - %d", possibleVariableLevel)
 			end
 			return strformat("%d%s", possibleLevel, variableAspect)
 		end,
 
---		--	Historically this function was publicly available, but we want to hide the internal
---		--	use of codes for accept and turnin, so we will still provide this, but we will warn
---		--	clients to use new API instead.
---		QuestLocations = function(self, questId, acceptOrTurnin, requiresNPCAvailable, onlySingleReturn, onlyMapAreaReturn, preferredMapId, acceptsMultipleUniques, dungeonLevel, isStartup)
---			if 'A' == acceptOrTurnin and nil == self.warnedClientQuestLocationsAccept and not isStartup then
---				print("Grail:QuestLocations(questId, 'A', ...) is obsolete.  Please replace with Grail:QuestLocationsAccept(questId, ...) instead.")
---				self.warnedClientQuestLocationsAccept = true
---			elseif 'T' == acceptOrTurnin and nil == self.warnedClientQuestLocationsTurnin and not isStartup then
---				print("Grail:QuestLocations(questId, 'T', ...) is obsolete.  Please replace with Grail:QuestLocationsTurnin(questId, ...) instead.")
---				self.warnedClientQuestLocationsTurnin = true
---			end
---			return self:_QuestLocations(questId, acceptOrTurnin, requiresNPCAvailable, onlySingleReturn, onlyMapAreaReturn, preferredMapId, acceptsMultipleUniques, dungeonLevel, isStartup)
---		end,
+		--- Returns whether the testingQuestLevel is lower than (-1), within (0), or higher than (1) the
+		--- database concept of the range of levels for the questId.
+		_QuestLevelMatchesRangeInDatabase = function(self, questId, testingQuestLevel)
+			local retval = 0
+			local databaseLow = self:QuestLevelRequired(questId, true)
+			local databaseHigh = self:QuestLevelVariableMax(questId)
+			if databaseHigh == 0 then
+				databaseHigh = databaseLow
+			end
+			if testingQuestLevel < databaseLow then
+				retval = -1
+			elseif testingQuestLevel > databaseHigh then
+				retval = 1
+			end
+			return retval
+		end,
+		
+		--- The suggestedLevel is found from Blizzard API, though if the quest is variable is influenced by
+		--- the current level of the player.  This attempts to determine what should be done when presented
+		--- with a suggestedLevel (which is the required level of the quest).
+		_QuestLevelUpdate = function(self, questId, suggestedLevel)
+			local databaseRequiredLevel = self:QuestLevelRequired(questId, true)
+			local databaseVariableLevel = self:QuestLevelVariableMax(questId)	-- will be 0 if the quest is not variable
+			local playerLevel = self.levelingLevel
+			if suggestedLevel < databaseRequiredLevel then
+				-- Someone is able to get this quest at a level lower than was previously thought possible.
+				self:_LearnQuestCode(questId, strformat("L%d", suggestedLevel))
+			elseif suggestedLevel > databaseRequiredLevel then
+				if databaseRequiredLevel == 0 then
+					-- There was no required level entry in the database so record one.
+					self:_LearnQuestCode(questId, strformat("L%d", suggestedLevel))
+				elseif databaseVariableLevel == 0 then
+					-- The quest is indicated at a higher level than expected, so assume this is a variable quest.
+					self:_LearnQuestCode(questId, strformat("N%d", suggestedLevel))
+				elseif databaseVariableLevel >= suggestedLevel then
+					if suggestedLevel < playerLevel then
+						-- Because the level is lower than the player level this really should be the maximum for the variable level which means the data has changed so update the variable level.
+						self:_LearnQuestCode(questId, strformat("N%d", suggestedLevel))
+					else
+						-- Nothing to do since the suggestedLevel is already marked as the variable level or falls between the variable level and level required.
+					end
+				else
+					-- The suggestedLevel is higher than the current expected variable level, so update it.
+					self:_LearnQuestCode(questId, strformat("N%d", suggestedLevel))
+				end
+			else
+				-- Nothing to do since the suggestedLevel is the same as the required level
+			end
+		end,
 
 		QuestLocationsAccept = function(self, questId, requiresNPCAvailable, onlySingleReturn, onlyMapAreaReturn, preferredMapId, acceptsMultipleUniques, dungeonLevel, isStartup)
 			local debugStartTime = debugprofilestop()
@@ -11160,6 +11357,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[4431] = { 62017, 62711, 62827, },	-- Choosing Necrolord covenant	[for a level 60 prebuild NE druid]
 			[4499] = { 62019, 62827, },	-- Choosing Night Fae covenant	[for a level 60 prebuild NE druid]
 			[4565] = { 62023, 62708, 62827, },	-- Choosing Kyrian covenant	[for a level 60 prebuild NE druid]
+			[8862] = { 62023, 62708, 62827, },	-- Choosing Kyrian covenant [NE demon hunter]
 			[15801] = {62020, 62827 }, 	-- Choosing Venthyr covenant (for NE druid played through storyline)
 --			[20920] = XXX, -- Choosing "Replay Storyline" in Choose Your Shadowlands Experience [note that there is no quest completed]
 			[20947] = {		 -- Choosing "The Threads of Fate"
@@ -11606,22 +11804,25 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			end
 			
 			if lCode then
-				local possibleQuestLevels = tonumber(strsub(lCode, 2))
-				if nil ~= possibleQuestLevels and 0 ~= possibleQuestLevels then
-					local questLevel = floor(possibleQuestLevels / 65536)
-					local questLevelRequired = floor((possibleQuestLevels - (questLevel * 65536)) / 256)
+				local questLevel, questLevelRequired = self:QuestLevelsFromString(strsub(lCode, 2))
+				if questLevel ~= 0 then
 					local questLevelMatches = (self:QuestLevel(questId) == questLevel)
 					local questLevelRequiredMatches = (self:QuestLevelRequired(questId) == questLevelRequired)
 					if questLevelMatches and questLevelRequiredMatches then
 						-- do nothing as all is well
 					else
-						self:_LearnQuestCode(questId, lCode)
-						if not questLevelMatches then
-							self:_SetQuestLevel(questId, questLevel)
-						end
-						if not questLevelRequiredMatches then
-							self:_SetQuestRequiredLevel(questId, questLevelRequired)
-						end
+						self:_QuestLevelUpdate(questId, questLevelRequired)
+--						if 0 == self:_QuestLevelMatchesRangeInDatabase(questId, questLevelRequired) then
+--							-- This is the case when the required level falls within the range the database accepts for required to scaling max.
+--						else
+--							self:_LearnQuestCode(questId, lCode)
+--						end
+--						if not questLevelMatches then
+--							self:_SetQuestLevel(questId, questLevel)
+--						end
+--						if not questLevelRequiredMatches then
+--							self:_SetQuestRequiredLevel(questId, questLevelRequired)
+--						end
 					end
 				end
 			end
@@ -11678,7 +11879,7 @@ local me = Grail
 if locale == "deDE" then
 	me.bodyGuardLevel = { 'Leibwächter', 'Treuer Leibwächter', 'Persönlicher Flügelmann' }
 	me.friendshipLevel = { 'Fremder', 'Bekannter', 'Kumpel', 'Freund', 'guter Freund', 'bester Freund' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Unverbindlich', 'Zwiespältig', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Unsicher', 'Besorgt', 'Unverbindlich', 'Zwiespältig', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = 'Liebe liegt in der Luft', ['B'] = 'Braufest', ['C'] = "Kinderwoche", ['D'] = 'Tag der Toten', ['E'] = 'WoW Anniversary', ['F'] = 'Dunkelmond-Jahrmarkt', ['H'] = 'Erntedankfest', ['K'] = "Angelwettstreit der Kalu'ak", ['L'] = 'Mondfest', ['M'] = 'Sonnenwendfest', ['N'] = 'Nobelgarten', ['P'] = "Piratentag", ['U'] = 'Neujahr', ['V'] = 'Winterhauch', ['W'] = "Schlotternächte", ['X'] = 'Anglerwettbewerb im Schlingendorntal', ['Y'] = "Die Pilgerfreuden", ['Z'] = "Weihnachtswoche", ['a'] = 'Bonusereignis: Apexis', ['b'] = 'Bonusereignis: Arenascharmützel', ['c'] = 'Bonusereignis: Schlachtfelder', ['d'] = 'Bonusereignis: Draenordungeons', ['e'] = 'Bonusereignis: Haustierkämpfe', ['f'] = 'Bonusereignis: Zeitwanderungsdungeons', ['Q'] = "AQ", }
 
@@ -11734,7 +11935,7 @@ if locale == "deDE" then
 elseif locale == "esES" then
 	me.bodyGuardLevel = { 'Guardaespaldas', 'Escolta leal', 'Compañero del alma' }
 	me.friendshipLevel = { 'Extraño', 'Conocido', 'Colega', 'Amigo', 'Buen amigo', 'Mejor amigo' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Indecisa', 'Ambivalente', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Dubitativa', 'Aprensiva', 'Indecisa', 'Ambivalente', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = 'Amor en el aire', ['B'] = 'Fiesta de la cerveza', ['C'] = "Semana de los Niños", ['D'] = 'Festividad de los Muertos', ['E'] = 'WoW Anniversary', ['F'] = 'Feria de la Luna Negra', ['H'] = 'Festival de la Cosecha', ['K'] = "Competición de pesca Kalu'ak", ['L'] = 'Festival Lunar', ['M'] = 'Festival de Fuego del Solsticio de Verano', ['N'] = 'Jardín Noble', ['P'] = "Día de los Piratas", ['U'] = 'Nochevieja', ['V'] = 'El festín del Festival del Invierno', ['W'] = "Halloween", ['X'] = 'Concurso de Pesca', ['Y'] = "Generosidad del Peregrino", ['Z'] = "Semana navideña", ['a'] = 'Evento de bonificación apexis', ['b'] ='Evento de bonificación de escaramuza de arena', ['c'] = 'Evento de bonificación de campo de batalla', ['d'] = 'Evento de mazmorra de Draenor', ['e'] = 'Evento de bonificación de duelo de mascotas', ['f'] = 'Evento de mazmorra de Paseo en el tiempo', ['Q'] = "AQ", }
 
@@ -11762,7 +11963,7 @@ elseif locale == "esES" then
 elseif locale == "esMX" then
 	me.bodyGuardLevel = { 'Guardaespaldas', 'De confianza', 'Copiloto personal' }
 	me.friendshipLevel = { 'Extraño', 'Conocido', 'Colega', 'Amigo', 'Buen amigo', 'Mejor amigo' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Vacilante', 'Ambivalente', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Sospechosa', 'Aprensiva', 'Vacilante', 'Ambivalente', 'Cordial', 'Appreciative' }
 
  	me.holidayMapping = { ['A'] = 'Amor en el Aire', ['B'] = 'Fiesta de la Cerveza', ['C'] = "Semana de los Niños", ['D'] = 'Día de los Muertos', ['E'] = 'WoW Anniversary', ['F'] = 'Feria de la Luna Negra', ['H'] = 'Festival de la Cosecha', ['K'] = "Competición de pesca Kalu'ak", ['L'] = 'Festival Lunar', ['M'] = 'Festival de Fuego del Solsticio de Verano', ['N'] = 'Jardín Noble', ['P'] = "Día de los Piratas", ['U'] = 'Nochevieja', ['V'] = 'Festival del Invierno', ['W'] = "Halloween", ['X'] = 'Concurso de Pesca', ['Y'] = "Generosidad del Peregrino", ['Z'] = "Semana navideña", ['a'] = 'Evento de ápices con bonificación', ['b'] ='Evento de refriegas de arena con bonificación', ['c'] = 'Evento de campos de batalla con bonificación', ['d'] = 'Evento de calabozo de Draenor', ['e'] = 'Evento de duelo de mascotas con bonificación', ['f'] = 'Evento de calabozo de cronoviaje', ['Q'] = "AQ", }
 
@@ -11790,7 +11991,7 @@ elseif locale == "esMX" then
 elseif locale == "frFR" then
 	me.bodyGuardLevel = { 'Garde du corps', 'Garde personnel', 'Bras droit' }
 	me.friendshipLevel = { 'Étranger', 'Connaissance', 'Camarade', 'Ami', 'Bon ami', 'Meilleur ami' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Hésitation', 'Incertitude', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Méfiance', 'Crainte', 'Hésitation', 'Incertitude', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = "De l'amour dans l'air", ['B'] = 'Fête des Brasseurs', ['C'] = "Semaine des enfants", ['D'] = 'Jour des morts', ['E'] = 'WoW Anniversary', ['F'] = 'Foire de Sombrelune', ['H'] = 'Fête des moissons', ['K'] = "Tournoi de pêche kalu'ak", ['L'] = 'Fête lunaire', ['M'] = "Fête du Feu du solstice d'été", ['N'] = 'Le Jardin des nobles', ['P'] = "Jour des pirates", ['U'] = 'Nouvel an', ['V'] = "Voile d'hiver", ['W'] = "Sanssaint", ['X'] = 'Concours de pêche de Strangleronce', ['Y'] = "Bienfaits du pèlerin", ['Z'] = "Vacances de Noël", ['a'] = 'Évènement bonus Apogides', ['b'] ='Évènement bonus Escarmouches en arène', ['c'] = 'Évènement bonus Champs de bataille', ['d'] = 'Évènement Donjon de Draenor', ['e'] = 'Évènement bonus Combats de mascottes', ['f'] = 'Évènement Donjon des Marcheurs du temps', ['Q'] = "AQ", }
 
@@ -11818,7 +12019,7 @@ elseif locale == "frFR" then
 elseif locale == "itIT" then
 	me.bodyGuardLevel = { 'Guardia del Corpo', 'Guardia Fidata', 'Scorta Personale' }
 	me.friendshipLevel = { 'Estraneo', 'Conoscente', 'Compagno', 'Amico', 'Amico Intimo', 'Miglior Amico' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Incerta', 'Ambivalente', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Dubbiosa', 'Ansiosa', 'Incerta', 'Ambivalente', 'Cordial', 'Appreciative' }
 
 me.holidayMapping = {
     ['A'] = "Amore nell'Aria",
@@ -11879,7 +12080,7 @@ me.professionMapping = {
 elseif locale == "koKR" then
 	me.bodyGuardLevel = { '경호원', '믿음직스러운 경호원', '개인 호위무사' }
 	me.friendshipLevel = { '이방인', '지인', '동료', '친구', '좋은 친구', '가장 친한 친구' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', '불확신', '애증', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { '의심', '불안', '불확신', '애증', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = '온누리에 사랑을', ['B'] = '가을 축제', ['C'] = "어린이 주간", ['D'] = '망자의 날', ['E'] = 'WoW Anniversary', ['F'] = '다크문 축제', ['H'] = '추수절', ['K'] = '칼루아크 낚시 대회', ['L'] = '달의 축제', ['M'] = '한여름 불꽃축제', ['N'] = '귀족의 정원', ['P'] = "해적의 날", ['U'] = '새해맞이 전야제', ['V'] = '겨울맞이 축제', ['W'] = "할로윈 축제", ['X'] = '가시덤불 골짜기 낚시왕 선발대회', ['Y'] = "순례자의 감사절", ['Z'] = "한겨울 축제 주간", ['a'] = '에펙시스 보너스 이벤트', ['b'] ='투기장 연습 전투 보너스 이벤트', ['c'] = '전장 보너스 이벤트', ['d'] = '드레노어 던전 이벤트', ['e'] = '애완동물 대전 보너스 이벤트', ['f'] = '시간여행 던전 이벤트', ['Q'] = "AQ", }
 
@@ -11916,7 +12117,7 @@ elseif locale == "koKR" then
 elseif locale == "ptBR" then
 	me.bodyGuardLevel = { 'Guarda-costas', 'Guarda-costas de Confiança', 'Copiloto Pessoal' }
 	me.friendshipLevel = { 'Estranho', 'Conhecido', 'Camarada', 'Amigo', 'Bom Amigo', 'Grande Amigo' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Hesitação', 'Ambivalência', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Indecisão', 'Apreensão', 'Hesitação', 'Ambivalência', 'Cordial', 'Appreciative' }
 
 me.holidayMapping = { ['A'] = "O Amor Está No Ar", ['B'] = 'CervaFest', ['C'] = "Semana das Crianças", ['D'] = 'Dia dos Mortos', ['E'] = 'WoW Anniversary', ['F'] = 'Feira de Negraluna', ['H'] = 'Festival da Colheita', ['K'] = "Campeonato de Pesca dos Kalu'ak", ['L'] = 'Festival da Lua', ['M'] = "Festival do Fogo do Solsticio", ['N'] = 'Jardinova', ['P'] = "Dia dos Piratas", ['U'] = 'New Year', ['V'] = "Festa do Véu de Inverno", ['W'] = "Noturnália", ['X'] = 'Stranglethorn Fishing Extravaganza', ['Y'] = "Festa da Fartura", ['Z'] = "Semana Natalina", ['a'] = 'Evento Bônus de Apexis', ['b'] ='Evento Bônus de Escaramuças da Arena', ['c'] = 'Evento Bônus de Campos de Batalha', ['d'] = 'Evento das Masmorras de Draenor', ['e'] = 'Evento Bônus de Batalha de Mascotes', ['f'] = 'Evento das Masmorras de Caminhada Temporal', ['Q'] = "AQ", }
 
@@ -11962,7 +12163,7 @@ me.professionMapping = {
 elseif locale == "ruRU" then
 	me.bodyGuardLevel = { 'Телохранитель', 'Доверенный боец', 'Боевой товарищ' }
 	me.friendshipLevel = { 'Незнакомец', 'Знакомый', 'Приятель', 'Друг', 'Хороший друг', 'Лучший друг' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', 'Настороженность', 'Безразличие', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { 'Сомнения', 'Опасения', 'Настороженность', 'Безразличие', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = 'Любовная лихорадка', ['B'] = 'Хмельной фестиваль', ['C'] = "Детская неделя", ['D'] = 'День мертвых', ['E'] = 'WoW Anniversary', ['F'] = 'Ярмарка Новолуния', ['H'] = 'Неделя урожая', ['K'] = "Калуакское рыбоборье", ['L'] = 'Лунный фестиваль', ['M'] = 'Огненный солнцеворот', ['N'] = 'Сад чудес', ['P'] = "День пирата", ['U'] = 'Канун Нового Года', ['V'] = 'Зимний Покров', ['W'] = "Тыквовин", ['X'] = 'Рыбная феерия Тернистой долины', ['Y'] = "Пиршество странников", ['Z'] = "Рождественская неделя", ['a'] = 'Событие: бонус к апекситовым кристаллам', ['b'] ='Событие: бонус за стычки на арене', ['c'] = 'Событие: бонус на полях боя', ['d'] = 'Событие: подземелья Дренора', ['e'] = 'Событие: бонус за битвы питомцев', ['f'] = 'Событие: путешествие во времени по подземельям', ['Q'] = "AQ", }
 
@@ -11999,7 +12200,7 @@ elseif locale == "ruRU" then
 elseif locale == "zhCN" then
 	me.bodyGuardLevel = { '保镖', '贴身保镖', '亲密搭档' }
 	me.friendshipLevel = { 'Stranger', 'Acquaintance', 'Buddy', 'Friend', 'Good Friend', '挚友' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', '犹豫', '纠结', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { '猜忌', '防备', '犹豫', '纠结', 'Cordial', 'Appreciative' }
 	me.holidayMapping = { ['A'] = '情人节', ['B'] = '美酒节', ['C'] = "儿童周", ['D'] = '死人节', ['E'] = 'WoW Anniversary', ['F'] = '暗月马戏团', ['H'] = '收获节', ['K'] = "Tournoi de pêche kalu'ak", ['L'] = '春节', ['M'] = '仲夏火焰节', ['N'] = '复活节', ['P'] = "海盗日", ['U'] = '除夕夜', ['V'] = '冬幕节', ['W'] = "万圣节", ['X'] = '荆棘谷钓鱼大赛', ['Y'] = "感恩节", ['Z'] = "圣诞周", ['a'] = '埃匹希斯假日活动', ['b'] ='竞技场练习赛假日活动', ['c'] = '战场假日活动', ['d'] = '德拉诺地下城活动', ['e'] = '宠物对战假日活动', ['f'] = '时空漫游地下城活动', ['Q'] = "AQ", }
 
 	me.professionMapping = { ['A'] = '炼金术', ['B'] = '锻造', ['C'] = '烹饪', ['E'] = '附魔', ['F'] = '钓鱼', ['H'] = '草药学', ['I'] = '铭文', ['J'] = '珠宝加工', ['L'] = '制皮', ['M'] = '采矿', ['N'] = '工程学', ['R'] = '骑术', ['S'] = '剥皮', ['T'] = '裁缝', ['X'] = '考古学', ['Z'] = '急救', }
@@ -12035,7 +12236,7 @@ elseif locale == "zhCN" then
 elseif locale == "zhTW" then
 	me.bodyGuardLevel = { '保鏢', '信任的保鑣', '個人的搭檔' }
 	me.friendshipLevel = { '陌生人', '熟識', '夥伴', '朋友', '好朋友', '最好的朋友' }
-	me.friendshipMawLevel = { 'Dubious', 'Apprehensive', '猶豫', '籠統', 'Cordial', 'Appreciative' }
+	me.friendshipMawLevel = { '懷疑', '不安', '猶豫', '籠統', 'Cordial', 'Appreciative' }
 
 	me.holidayMapping = { ['A'] = '愛就在身邊', ['B'] = '啤酒節', ['C'] = "兒童週", ['D'] = '亡者節', ['E'] = 'WoW Anniversary', ['F'] = '暗月馬戲團', ['H'] = '收穫節', ['K'] = "卡魯耶克釣魚大賽", ['L'] = '新年慶典', ['M'] = '仲夏火焰節慶', ['N'] = '貴族花園', ['P'] = "海賊日", ['U'] = '除夕夜', ['V'] = '冬幕節', ['W'] = "萬鬼節", ['X'] = '荊棘谷釣魚大賽', ['Y'] = "旅人豐年祭", ['Z'] = "聖誕週", ['a'] = '頂尖獎勵事件', ['b'] ='競技場練習戰獎勵事件', ['c'] = '戰場獎勵事件', ['d'] = '德拉諾地城事件', ['e'] = '寵物對戰獎勵事件', ['f'] = '時光漫遊地城事件', ['Q'] = "AQ", }
 
