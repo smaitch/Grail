@@ -155,7 +155,7 @@ Grail.extraAchievements = {
 		[mapArgus] = { 512066, 512073, },
 		[mapZandalar] = { 512771, 512849, 512851, },
 		[mapKulTiras] = { 512510, 512853, 512852, 512995, },
-		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, },
+		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, },
 		},
 	[factionHorde] = {
 		[mapKalimdor] = { 504961, 505859, 505866, },
@@ -169,7 +169,7 @@ Grail.extraAchievements = {
 		[mapArgus] = { 512066, 512073, },
 		[mapZandalar] = { 512555, 512771, 512849, 512851, },
 		[mapKulTiras] = { 512509, 512853, 512852, 512995, },
-		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, },
+		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, },
 		},
 	}
 
@@ -6915,21 +6915,21 @@ G[35317]={508928}
 G[35379]={509615}
 G[35396]={508927}	-- needed for The Dark Heart of Oshu'Gun part of Nagrandeur
 G[35416]={508924}
-G[35687]={509492}	-- needed for The Fall of Shattrath part of Garrison Campaign (Horde)
-G[35835]={508925}   -- SECURING SOUTHPORT, SMUGGLER'S DEN, Between Arak and a Hard Place
-G[36473]={509607}
-G[36476]={509607}
 G[35482]={508925}	-- needed for Admiral Taylor's Garrison part of Between Arak and a Hard Place
 G[35634]={508925,508926}	-- needed for Legacy of the Apexis part of Between Arak and a Hard Place
 G[35649]={509605}
 G[35671]={508925,508926}	-- needed for Shadows Gather part of Between Arak and a Hard Place
+G[35687]={509492}	-- needed for The Fall of Shattrath part of Garrison Campaign (Horde)
 G[35702]={508923}	--	needed for In the Land of Giants  -  Chains of Iron
 G[35704]={508925,508926}	-- needed for When the Raven Swallows the Day part of Between Arak and a Hard Place
+G[35835]={508925}   -- SECURING SOUTHPORT, SMUGGLER'S DEN, Between Arak and a Hard Place
 G[35881]={509607}
 G[35884]={508921}	-- needed for Welcome to Draenor
 G[35896]={508925,508926}	-- needed for Terrok's Legend part of Between Arak and a Hard Place
 G[36183]={508926}
 G[36290]={509492}	-- needed for The Ring of Blood part of Garrison Campaign (Horde)
+G[36473]={509607}
+G[36476]={509607}
 G[36480]={509607}
 G[36500]={509607}
 G[36504]={509607}
@@ -7270,6 +7270,7 @@ G[60886]={514206}	-- House of the Chosen (Blade of the Primus) (Maldraxxus) (Sha
 G[60905]={514164}	-- This is the Way (Awaken, Ardenweald) (Ardenweald) (Shadowlands)
 G[60906]={514801}	-- The Spear of Kallipe (Sojourner of Bastion) (Bastion) (Shadowlands)
 G[61107]={514281}	-- A Land of Strife (The Path to Ascension) (Bastion) (Shadownlands)
+G[62557]={514234}	-- The Bell Tolls (Bastion Campaign) (Bastion) Shadowlands
 G[62921]={513997}	-- Sinfall (Venthyr Campaign) (Revendreth) (Shadowlands)
 
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime

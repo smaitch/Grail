@@ -6913,6 +6913,7 @@ end
 
 					local t = Grail.questStatusCache.Q[currentQuestId] or {}
 					if not tContains(t, questId) then tinsert(t, questId) end
+					if nil == currentQuestId then print("*** NIL from ", codeString, questId) end
 					Grail.questStatusCache.Q[currentQuestId] = t
 					local subCode = Grail:StatusCode(currentQuestId)
 					--	SMH 2014-02-09
@@ -11259,6 +11260,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			-- 2015-07-21 available on Alleria were 203 204
 --			[215] = 36680,	-- Socrethar's Rise Alliance
 --			[216] = 36649,	-- Shattrath Harbor Alliance
+			[217] = { 62019, 62710, 62827 },	-- Choosing Night Fae covenant [Kul Tiran druid]
 			-- 2015-07-29 Alleria 215 216
 --			[220] = 36649,	-- Shattrath Harbor Alliance
 --			[225] = 36678,	-- Mok'gol Watchpost Alliance
@@ -11343,6 +11345,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[645] = 44380,	-- Demon Hunter chossing Havoc artifact
 			[667] = 44433,	-- Druid choosing Feral artifact
 			[670] = 44444,	-- Druid choosing Balance artifact
+			[738] = { 35283, 35290, 37313, 37315 }	-- choosing (Alliance) Brewery in Spires of Arak
 			[783] = 48602,	-- Choosing Void Elf
 			[784] = 48603,	-- Choosing Lightforged Draenei
 --			[956] = xxxxx,	-- Choosing Duskwood from Hero's Call Board in Stormwind -- causes acceptance of 28564

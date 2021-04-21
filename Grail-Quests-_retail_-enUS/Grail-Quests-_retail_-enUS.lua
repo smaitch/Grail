@@ -34916,4 +34916,20 @@ G[62557]='Our Realm Reclaimed'
 G[63345]='Kyrian Tactician'
 end
 
+if release >= 38134 then
+G[58078]='Favor: Bottle of Redelav Wine'
+G[59852]='Tea Tales: Gubbins and Tubbins'
+G[59853]='Tea Tales: Lost Sybille'
+G[60160]='Mirror Attunement: The Banewood'
+G[61095]='Supplies from The Undying Army'
+G[61098]='Supplies from The Wild Hunt'
+G[61130]='RSVP: Sika'
+G[61256]='RSVP: Kleia and Pelagos'
+G[61526]='The Ember Court'
+G[61530]='Mining: Ligneous Phaedrum Cluster'
+G[61558]="The Highlord's Vision"
+G[61559]='A Mourneblade Born'
+G[62569]="The Jailer's Grasp"
+end
+
 --	End of localized quest names
