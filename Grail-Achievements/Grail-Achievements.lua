@@ -155,7 +155,7 @@ Grail.extraAchievements = {
 		[mapArgus] = { 512066, 512073, },
 		[mapZandalar] = { 512771, 512849, 512851, },
 		[mapKulTiras] = { 512510, 512853, 512852, 512995, },
-		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, },
+		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, },
 		},
 	[factionHorde] = {
 		[mapKalimdor] = { 504961, 505859, 505866, },
@@ -169,7 +169,7 @@ Grail.extraAchievements = {
 		[mapArgus] = { 512066, 512073, },
 		[mapZandalar] = { 512555, 512771, 512849, 512851, },
 		[mapKulTiras] = { 512509, 512853, 512852, 512995, },
-		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, },
+		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, },
 		},
 	}
 
@@ -7257,6 +7257,7 @@ G[59974]={514206}	-- Ritual for the Damned (Blade of the Primus) (Maldraxxus) (S
 G[60013]={514281}	-- Chasing a Memory (The Path to Ascension) (Bastion) (Shadownlands)
 G[60055]={514281}	-- The Temple of Courage (The Path to Ascension) (Bastion) (Shadownlands)
 G[60066]={514800}	-- Thread of Hope (Sojourner of Ardenweald) (Ardenweald) (Shadowlands)
+G[60108]={514282}	-- (Night Fall Campaign) (Ardenweald) (Shadowlands)
 G[60178]={514798}	-- Tithes of Darkhaven (Sojourner of Revendreth) (Revendreth) (Shadowlands)
 G[60272]={513997}	-- The Forgotten One (Venthyr Campaign) (Revendreth) (Shadowlands)
 G[60296]={514801}	-- Pride or Unit (Sojourner of Bastion) (Bastion) (Shadowlands)

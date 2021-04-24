@@ -11345,7 +11345,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[645] = 44380,	-- Demon Hunter chossing Havoc artifact
 			[667] = 44433,	-- Druid choosing Feral artifact
 			[670] = 44444,	-- Druid choosing Balance artifact
-			[738] = { 35283, 35290, 37313, 37315 }	-- choosing (Alliance) Brewery in Spires of Arak
+			[738] = { 35283, 35290, 37313, 37315 },	-- choosing (Alliance) Brewery in Spires of Arak
 			[783] = 48602,	-- Choosing Void Elf
 			[784] = 48603,	-- Choosing Lightforged Draenei
 --			[956] = xxxxx,	-- Choosing Duskwood from Hero's Call Board in Stormwind -- causes acceptance of 28564
