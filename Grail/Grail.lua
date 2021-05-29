@@ -1040,8 +1040,12 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					if IsTestBuild() then
 						self.environment = "_ptr_"
 					end
-
-					if self.existsClassic then
+					if self.existsClassicBasic then
+						self.environment = "_classic_"
+print("p1")
+					end
+					if self.existsClassicBurningCrusade then
+print("p12")
 						self.environment = "_classic_"
 					end
 					GrailDatabase[self.environment] = GrailDatabase[self.environment] or {}
@@ -1049,17 +1053,17 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 					-- Now we set up some capabilities flags
 					self.capabilities = {}
-					self.capabilities.usesFriendshipReputation = not self.existsClassic
-					self.capabilities.usesAchievements = not self.existsClassic
-					self.capabilities.usesGarrisons = not self.existsClassic
+					self.capabilities.usesFriendshipReputation = not self.existsClassic and not self.existsClassicBurningCrusade
+					self.capabilities.usesAchievements = not self.existsClassic and not self.existsClassicBurningCrusade
+					self.capabilities.usesGarrisons = not self.existsClassic and not self.existsClassicBurningCrusade
 					self.capabilities.usesArtifacts = false --not self.existsClassic
-					self.capabilities.usesCampaignInfo = not self.existsClassic
-					self.capabilities.usesCalendar = not self.existsClassic
+					self.capabilities.usesCampaignInfo = not self.existsClassic and not self.existsClassicBurningCrusade
+					self.capabilities.usesCalendar = not self.existsClassic and not self.existsClassicBurningCrusade
 					self.capabilities.usesAzerothAsCosmicMap = self.existsClassic
 					self.capabilities.usesQuestHyperlink = not self.existsClassic
-					self.capabilities.usesFollowers = not self.existsClassic
+					self.capabilities.usesFollowers = not self.existsClassic and not self.existsClassicBurningCrusade
 					self.capabilities.usesWorldEvents = not self.existsClassic
-					self.capabilities.usesWorldQuests = not self.existsClassic
+					self.capabilities.usesWorldQuests = not self.existsClassic and not self.existsClassicBurningCrusade
 
                     -- These values are no longer used, but kept for posterity.
 					self.existsPandaria = (self.blizzardRelease >= 15640)
@@ -1155,15 +1159,39 @@ experimental = false,	-- currently this implementation does not reduce memory si
  							[1530] = true, -- Valley of Eternal Blossoms 8.3
 							[1595] = true, -- Nyalotha 8.3
 							-- Shadowlands
+							[1360] = true, -- IceCrown Citadel 9.0 intro
 							[1409] = true, -- Exiles Reach 9.0
 							[1525] = true, -- Revendreth 9.0
 							[1533] = true, -- Bastion 9.0
 							[1536] = true, -- Maldraxxus 9.0
+							[1543] = true, -- The Maw 9.0 , during 57690, rescuing prince renathal
+							[1550] = true, -- Thorgast, The Maw,   quest 57693
 							[1565] = true, -- Ardenweald 9.0
+							[1648] = true, -- The Maw (intro version) 9.0
+							[1666] = true, -- Necrotic Wake 9.0 , (dungeon)
 							[1670] = true, -- Oribos 9.0 , TODO: so far no chests and rares
 							[1671] = true, -- Oribos 9.0, Part 2 , TODO: so far no chests and rares 
+							[1681] = true, -- IceCrown Citadel 9.0 intro
+							[1688] = true, -- Hof der Ernter 9.0 , during quest 58086
+							[1693] = true, -- Spire Of Ascension 9.0, (dungeon), has quests, hidden and visible
 							[1707] = true, -- Bastion: Elyssian Keep 9.0 , TODO: so far no chests and rares
+							[1755] = true, -- Schloss Nathria 9.0 , During Quest 57159
 							[1912] = true, -- Runecarver, TODO: so far no chests and rares
+							[1911] = true, -- Thorgast 9.0  Ring Entrance
+							[1631] = true, -- Thorgast 9.0 4 Kaltherzinterstitia Ebene 4
+							[1736] = true, -- Thorgast 9.0 4 Kaltherzinterstitia Ebene 1
+							[1797] = true, -- Thorgast 9.0 4 Kaltherzinterstitia Ebene 2
+							[1712] = true, -- Thorgast 9.0 4 Kaltherzinterstitia Ebene 3
+							[1784] = true, -- Thorgast 9.0 Doing quest 60139 LEVEL 1
+							[1771] = true, -- Thorgast 9.0 Doing quest 60139 LEVEL 2
+							[1749] = true, -- Thorgast 9.0 Doing quest 60139 LEVEL 3
+							[1785] = true, -- Thorgast 9.0 Doing quest 60139 LEVEL 4
+							[1773] = true, -- Thorgast 9.0 Doing quest 60139 LEVEL 5
+							[1772] = true, -- Thorgast 9.0 Doing quest 60139 LEVEL 6
+							[1632] = true, -- Thorgast 9.0 ?2? Kaltherzinterstitia Ebene 1
+							[1796] = true, -- Thorgast 9.0 ?2? Kaltherzinterstitia Ebene 5
+							[1630] = true, -- Thorgast 9.0 ?2? Kaltherzinterstitia Ebene 6
+
 							}
 						self.quest.name = {
 							[51570]=Grail:_GetMapNameByID(862),	-- Zuldazar
@@ -2203,7 +2231,8 @@ end,
 --			end,
 
 			},
-		existsClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC),
+		existsClassicBasic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC),
+		existsClassicBurningCrusade = (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC),
 		factionMapping = { ['A'] = 'Alliance', ['H'] = 'Horde', },
 		followerMapping = {},
 		forceLocalizedQuestNameLoad = true,
