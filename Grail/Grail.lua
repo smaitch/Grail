@@ -1041,6 +1041,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.environment = "_ptr_"
 					end
 
+					self.existsClassic = self.existsClassicBasic or self.existsClassicBurningCrusade
+
 					if self.existsClassic then
 						self.environment = "_classic_"
 					end
@@ -2227,7 +2229,8 @@ end,
 --			end,
 
 			},
-		existsClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC),
+		existsClassicBasic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC),
+		existsClassicBurningCrusade = (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC),
 		factionMapping = { ['A'] = 'Alliance', ['H'] = 'Horde', },
 		followerMapping = {},
 		forceLocalizedQuestNameLoad = true,
@@ -8215,10 +8218,9 @@ end
 		--  by returning the retail string since our files do not differentiate between
 		--  retail and PTR.
 		--  @return The string used for the environment aspect of loading files.
-		--  @calls IsTestBuild()
 		--  @requires Grail.environment
 		_EnvironmentForLoad = function(self)
-			return IsTestBuild() and "_retail_" or self.environment
+			return self.environment == "_ptr_" and "_retail_" or self.environment
 		end,
 
 		---
@@ -11244,6 +11246,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[55] = 32258,	-- Isle of Thunder Horde PvP
 			[64] = 32260,	-- Isle of Thunder Alliance PvE
 			[65] = 32261,	-- Isle of Thunder Alliance PvP
+			[85] = 34680,	-- Alliance Nagrand Workshop (Tanks)
 			[119] = 34560,	-- Artillery Tower Alliance Fort Wrynn -- 37301 37304
 			[120] = 34561,	-- Mage Tower Alliance Fort Wrynn -- Also, 34574 as well
 			[121] = 34568,	-- Artillery Tower Horde Talador
@@ -11280,6 +11283,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 --			[198] = 36685,	-- Heart of Shattrath Alliance (Group)
 			-- 2015-07-31 Alleria 197 198
 --			[203] = 36648,	-- Stonefury Cliffs Alliance
+			[203] = 44046,	-- Hunter choosing Marksmanship artifact
 --			[204] = 36685,	-- Shattrath Heart Alliance (Group)
 			-- 2015-07-21 available on Alleria were 203 204
 --			[215] = 36680,	-- Socrethar's Rise Alliance
@@ -11377,6 +11381,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[1196] = 51572,	-- Choosing Vol'dun from Zandalar Mission Board on ship in Boralus
 			[1197] = 51571,	-- Choosing Nazmir from Zandalar Mission Board on ship in Boralus
 			[1210] = 51802,	-- Choosing Stormsong Valley from Kul Tiras Mission Board on ship in Zuldazar
+			[1650] = 40621,	-- Hunter choosing Beast Mastery artifact
 			[2186] = 57042,	-- Choosing Nazjatar Alliance companion Inowari
 			[2214] = {55404, 57041},	-- Choosing Nazjatar Alliance companion Ori
 			[2215] = 57040, -- Choosing Nazjatar Alliance companion Akana

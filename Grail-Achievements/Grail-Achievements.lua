@@ -6926,6 +6926,7 @@ G[35835]={508925}   -- SECURING SOUTHPORT, SMUGGLER'S DEN, Between Arak and a Ha
 G[35881]={509607}
 G[35884]={508921}	-- needed for Welcome to Draenor
 G[35896]={508925,508926}	-- needed for Terrok's Legend part of Between Arak and a Hard Place
+--G[36165]={}	-- needed for Securing Southport
 G[36183]={508926}
 G[36290]={509492}	-- needed for The Ring of Blood part of Garrison Campaign (Horde)
 G[36473]={509607}

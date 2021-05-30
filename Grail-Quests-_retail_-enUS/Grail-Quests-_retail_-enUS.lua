@@ -34939,4 +34939,8 @@ G[529411]='What Now?'
 G[529428]='What Now?'
 end
 
+if release >= 38134 then
+G[61443]='Herbalism: Windswept Rising Glory'
+end
+
 --	End of localized quest names
