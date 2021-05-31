@@ -1097,6 +1097,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							['U'] = { 'Scourge',  'Undead',    'Undead',    0x00400000 },
 							}
 						self.bitMaskRaceAll = 0x01e78000
+						if self.existsClassicBurningCrusade then
+							self.races['B'] = { 'BloodElf', 'Blood Elf', 'Blood Elf', 0x02000000 }
+							self.races['D'] = { 'Draenei',  'Draenei',   'Draenei',   0x00080000 }
+							self.bitMaskRaceAll = 0x03ef8000
+						end
 						
 						--	To make things a little prettier, because we are using phase 0000 to represent the location of the Darkmoon Faire we
 						--	define the map area for 0000 to be that.
