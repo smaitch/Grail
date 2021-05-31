@@ -4243,4 +4243,11 @@ G[9664]='Establishing New Outposts'
 G[9665]='Bolstering Our Defenses'
 end
 
+if release >= 38835 then
+G[64031]='Tools for Survival'
+G[64034]='Combat Training'
+G[64035]='Talented'
+G[64037]='Eastern Plaguelands'
+end
+
 --	End of localized quest names
