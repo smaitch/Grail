@@ -10383,11 +10383,20 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 			local questLevel, questRequiredLevel, questMaximumScalingLevel = 0, 0, 0
 			local possibleQuestLevels = tonumber(questLevelString)
 			if nil ~= possibleQuestLevels then
-				-- TODO: Deal with oldStyle to handle the quest levels before this new syntax (which we really do not use anyway at the moment)
-				questMaximumScalingLevel = floor(possibleQuestLevels / 65536)
-				possibleQuestLevels = possibleQuestLevels - questMaximumScalingLevel * 65536
-				questRequiredLevel = floor(possibleQuestLevels / 256)
-				questLevel = possibleQuestLevels - questRequiredLevel * 256
+				if oldStyle then
+					questRequiredLevel = floor(possibleQuestLevels / 65536)
+					possibleQuestLevels = possibleQuestLevels - questRequiredLevel * 65536
+					questLevel = floor(possibleQuestLevels / 256)
+					local possibleScalingLevel = possibleQuestLevels - questLevel * 256
+					if possibleScalingLevel ~= 255 then
+						questMaximumScalingLevel = possibleScalingLevel
+					end
+				else
+					questMaximumScalingLevel = floor(possibleQuestLevels / 65536)
+					possibleQuestLevels = possibleQuestLevels - questMaximumScalingLevel * 65536
+					questRequiredLevel = floor(possibleQuestLevels / 256)
+					questLevel = possibleQuestLevels - questRequiredLevel * 256
+				end
 				if 0 == questRequiredLevel then
 					questRequiredLevel = questLevel
 				end
