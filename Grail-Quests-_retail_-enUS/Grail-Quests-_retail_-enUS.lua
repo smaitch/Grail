@@ -34943,4 +34943,9 @@ if release >= 38134 then
 G[61443]='Herbalism: Windswept Rising Glory'
 end
 
+if release >= 38556 then
+G[60245]='Trading Favors: De Other Side'
+G[60255]='A Valuable Find: De Other Side'
+end
+
 --	End of localized quest names

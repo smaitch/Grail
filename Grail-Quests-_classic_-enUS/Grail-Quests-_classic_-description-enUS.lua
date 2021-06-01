@@ -3478,4 +3478,20 @@ G[9664]="Capture Crown Guard Tower, Eastwall Tower, Northpass Tower and Plaguewo
 G[9665]="Capture Crown Guard Tower, Eastwall Tower, Northpass Tower and Plaguewood Tower in the Eastern Plaguelands, then return to Emmisary Gormok at Light's Hope Chapel."
 end
 
+if release >= 38835 then
+G[8325]='Kill 8 Mana Wyrms; they are located close to the Burning Crystals that are adjacent to the tower and gazebo.  Return to Magistrix Erona at the tower on Sunstrider Isle when you are done.'
+G[8326]='Collect 8 Lynx Collars from slain Springpaw Lynxes and Springpaw Cubs.  Return to Magistrix Erona on Sunstrider Isle when you are done.'
+G[8327]='Speak with Lanthan Perilon on Sunstrider Isle; he is standing close to the path running west away from the Sunspire.'
+G[8330]="Collect Well Watcher Solanian's Scrying Orb, his Scroll of Scourge Magic, and his Journal.  They are found on Sunstrider Isle by the pond, the fountain, and one of the Burning Crystals.  Return them to the Well Watcher at the Sunspire on Sunstrider Isle when you've collected them all."
+G[8334]='Kill 7 Tenders and 7 Feral Tenders, and then return to Lanthan Perilon on Sunstrider Isle.'
+G[8335]="Kill 8 Arcane Wraiths and 2 Tainted Arcane Wraiths, as well as Felendren the Banished; they are located in the Falthrien Academy.  Bring Felendren's Head to Lanthan Perilon on Sunstrider Isle."
+G[8336]='Collect 6 Arcane Slivers from any creature on the isle that uses mana, and then return to Arcanist Ithanas on Sunstrider Isle.'
+G[8345]="Read the plaque on the Shrine of Dath'Remar and then return to Well Watcher Solanian at the Sunspire on Sunstrider Isle."
+G[8346]='Use your Mana Tap racial ability on creatures with mana six times, then return to Arcanist Helion.'
+G[9393]='Speak with Ranger Sallina - the Hunter class trainer - inside the Sunspire on Sunstrider Isle.'
+G[9676]='Speak with Jesthenis Sunstriker - the Paladin class trainer - inside the Sunspire on Sunstrider Isle.'
+G[10069]='Speak with Well Watcher Solanian at the Sunspire on Sunstrider Isle.'
+G[10070]='Speak with Well Watcher Solanian at the Sunspire on Sunstrider Isle.'
+end
+
 --	End of localized quest descriptions

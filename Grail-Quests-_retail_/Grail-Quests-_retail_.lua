@@ -35240,6 +35240,10 @@ G[600001]='SP FA L0 A:-17 P:35884|37196+I176111,X35884+X37196'	-- Alliance Blast
 G[600002]='SP FH L0 A:-17 P:34446|37190+I176111,X34446+X37190'	-- Horde Blasted Lands pre-Iron Horde quest requirement
 end
 
+if release >= 38556 then
+G[54]='FA L1 A:197 T:240 P:26390'	-- TODO: Determine what is I: because Saab did not get this offered
+end
+
 -- Release information
 
 -- 12213 is the 3.3.5 release

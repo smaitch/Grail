@@ -4244,6 +4244,19 @@ G[9665]='Bolstering Our Defenses'
 end
 
 if release >= 38835 then
+G[8325]='Reclaiming Sunstrider Isle'
+G[8326]='Unfortunate Measures'
+G[8327]='Report to Lanthan Perilon'
+G[8330]="Solanian's Belongings"
+G[8334]='Aggression'
+G[8335]='Felendren the Banished'
+G[8336]='A Fistful of Slivers'
+G[8345]="The Shrine of Dath'Remar"
+G[8346]='Thirst Unending'
+G[9393]='Hunter Training'
+G[9676]='Paladin Training'
+G[10069]='Well Watcher Solanian'
+G[10070]='Well Watcher Solanian'
 G[64031]='Tools for Survival'
 G[64034]='Combat Training'
 G[64035]='Talented'

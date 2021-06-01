@@ -538,6 +538,7 @@
 --			Changes IsLowLevel to now use the maximum variable level for a quest in its computation.  Changes QuestLevelString to include a range if there is a maximum variable level for the quest.
 --			Changes interface to 90005.
 --			Changes check for renown level to ensure covenant matches as Blizzard renown API ignores covenant.
+--			Starts to add support for Classic Burning Crusade (using interface 20501).
 --
 --	Known Issues
 --
