@@ -1,4 +1,4 @@
-## Interface: 90005
+## Interface: 20501
 ## Title: Grail
 ## Author: Scott M Harrison
 ## Notes: Knows about quests

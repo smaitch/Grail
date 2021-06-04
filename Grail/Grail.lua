@@ -539,6 +539,7 @@
 --			Changes interface to 90005.
 --			Changes check for renown level to ensure covenant matches as Blizzard renown API ignores covenant.
 --			Starts to add support for Classic Burning Crusade (using interface 20501).
+--		116	Switched to a unified addon for all of Blizzard's releases.
 --
 --	Known Issues
 --
@@ -1475,13 +1476,12 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 					self:_LoadContinentData()
 
-					local environmentToUse = self:_EnvironmentForLoad()
-					self:LoadAddOn("Grail-Quests-" .. environmentToUse)
+					self:LoadAddOn("Grail-Quests")
 					local originalMem = gcinfo()
-					if self:LoadAddOn("Grail-NPCs-" .. environmentToUse) then
+					if self:LoadAddOn("Grail-NPCs") then
 						self:_ProcessNPCs(originalMem)
 					end
-					self:LoadAddOn("Grail-NPCs-" .. environmentToUse .. "-" .. self.playerLocale)
+					self:LoadAddOn("Grail-NPCs-" .. self.playerLocale)
 					self.npc.name[1] = ADVENTURE_JOURNAL
 
 					-- Now we need to update some information based on the server to which we are connected
@@ -8220,28 +8220,18 @@ end
 		end,
 
 		---
-		--  Returns the environment string accounting for the special situation for PTR
-		--  by returning the retail string since our files do not differentiate between
-		--  retail and PTR.
-		--  @return The string used for the environment aspect of loading files.
-		--  @requires Grail.environment
-		_EnvironmentForLoad = function(self)
-			return self.environment == "_ptr_" and "_retail_" or self.environment
-		end,
-
-		---
 		--  Attempts to load the quest names for both the environment and the locale.
-		--  @calls Grail:_EnvironmentForLoad(), Grail:LoadAddOn()
+		--  @calls Grail:LoadAddOn()
 		--  @requires Grail.playerLocale
 		LoadLocalizedQuestNames = function(self)
-			self:LoadAddOn("Grail-Quests-" .. self:_EnvironmentForLoad() .. "-" .. self.playerLocale)
+			self:LoadAddOn("Grail-Quests-" .. self.playerLocale)
 		end,
 
 		---
 		--  Attempts to load the reputation information for the environment.
-		--  @calls Grail:_EnvironmentForLoad(), Grail:LoadAddOn()
+		--  @calls Grail:LoadAddOn()
 		LoadReputations = function(self)
-			self:LoadAddOn("Grail-Reputations-" .. self:_EnvironmentForLoad())
+			self:LoadAddOn("Grail-Reputations")
 		end,
 
 		--	Check the internal npc.locations structure for a location close to
