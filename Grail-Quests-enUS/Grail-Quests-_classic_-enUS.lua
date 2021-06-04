@@ -4265,10 +4265,18 @@ end
 
 if release >= 38892 then
 G[8328]='Mage Training'
+G[8338]='Tainted Arcane Sliver'
 G[8344]='Windows to the Source'
+G[8347]='Aiding the Outrunners'
+G[8350]='Completing the Delivery'
+G[8463]='Unstable Mana Crystals'
+G[8468]='Wanted: Thaelis the Hungerer'
+G[8472]='Major Malfunction'
 G[8563]='Warlock Training'
 G[8564]='Priest Training'
 G[9392]='Rogue Training'
+G[9704]='Slain by the Wretched'
+G[9705]='Package Recovery'
 G[10068]='Well Watcher Solanian'
 G[10071]='Well Watcher Solanian'
 G[10072]='Well Watcher Solanian'

@@ -3496,10 +3496,18 @@ end
 
 if release >= 38892 then
 G[8328]='Speak with Julia Sunstriker - the Mage class trainer - inside the Sunspire on Sunstrider Isle.'
+G[8338]='Bring the Tainted Arcane Sliver to Arcanist Helion at the gazebo of the Sunspire on Sunstrider Isle.'
 G[8344]="Bring 4 Wraith Essences and 1 Tainted Wraith Essence to Summoner Teli'Larien at the Sunspire on Sunstrider Isle."
+G[8347]='Speak with Outrunner Alarion near the bridge leading south of Sunstrider Isle.'
+G[8350]="Deliver Erona's Package to Innkeeper Delaniel inside the inn at Falconwing Square in Eversong Woods."
+G[8463]='Bring back 6 Unstable Mana Crystals to Aeldon Sunbrand at Falconwing Square.'
+G[8468]="Bring Thaelis's Head to Sergeant Kan'ren at Falconwing Square in Eversong Woods."
+G[8472]='Collect 6 Arcane Cores from the Arcane Patrollers that roam the ruins of Silvermoon City and bring them to Magister Jaronis at Falconwing Square in Eversong Woods.'
 G[8563]="Speak with Summoner Teli'Larien - the Warlock class trainer - inside the Sunspire on Sunstrider Isle."
 G[8564]='Speak with Matron Arena - the Priest class trainer - inside the Sunspire on Sunstrider Isle.'
 G[9392]='Speak with Pathstalker Kariel - the Rogue class trainer - inside the Sunspire on Sunstrider Isle.'
+G[9704]='Go south into the ruins of Silvermoon and look for the Slain Outrunner in Dawning Lane.'
+G[9705]="Return to Outrunner Alarion with Erona's Package."
 G[10068]='Speak with Well Watcher Solanian at the Sunspire on Sunstrider Isle.'
 G[10071]='Speak with Well Watcher Solanian at the Sunspire on Sunstrider Isle.'
 G[10072]='Speak with Well Watcher Solanian at the Sunspire on Sunstrider Isle.'

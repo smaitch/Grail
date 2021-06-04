@@ -218,6 +218,7 @@ G[1180746]='Gently Shaken Gift'
 G[1180747]='Gaily Wrapped Present'
 G[1180748]='Ticking Present'
 G[1180793]='Festive Gift'
+G[1180918]='Wanted: Thaelis the Hungerer'
 G[1181073]='Fragrant Cauldron'
 end
 
