@@ -540,6 +540,7 @@
 --			Changes check for renown level to ensure covenant matches as Blizzard renown API ignores covenant.
 --			Starts to add support for Classic Burning Crusade (using interface 20501).
 --		116	Switched to a unified addon for all of Blizzard's releases.
+--			Augments _CovenantRenownMeetsOrExceeds to accept covenant 0 to represent the currrently active covenant, used to indicate that the renown level is at a specific level independent of covenant.
 --
 --	Known Issues
 --
@@ -8846,8 +8847,8 @@ end
 			desiredLevel = tonumber(desiredLevel)
 			if nil == covenant or nil == desiredLevel then return false end
 			local activeCovenant = C_Covenants and C_Covenants.GetActiveCovenantID() or nil
-			if covenant ~= activeCovenant then return false end
-			local levels = C_CovenantSanctumUI and C_CovenantSanctumUI.GetRenownLevels(covenant) or nil
+			if 0 ~= covenant and covenant ~= activeCovenant then return false end
+			local levels = C_CovenantSanctumUI and C_CovenantSanctumUI.GetRenownLevels(activeCovenant) or nil
 			if nil ~= levels then
 				for _, levelInfo in pairs(levels) do
 					if desiredLevel == levelInfo.level then

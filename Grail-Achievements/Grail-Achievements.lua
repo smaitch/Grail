@@ -7276,6 +7276,7 @@ G[62557]={514234}	-- The Bell Tolls (Bastion Campaign) (Bastion) Shadowlands
 G[62921]={513997}	-- Sinfall (Venthyr Campaign) (Revendreth) (Shadowlands)
 G[63639]={514961}	-- Battle of Adenweald (Chains of Dominion) (Shadowlands 9.1)
 G[63902]={514961}	-- Focusing the Eye (Chains of Dominion) (Shadowlands 9.1)
+G[64007]={514961}	-- Maw Walkers (Chains of Dominion) (Shadowlands 9.1)
 
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime
 debugStartTime = debugprofilestop()
