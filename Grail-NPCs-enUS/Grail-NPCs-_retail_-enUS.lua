@@ -1429,6 +1429,7 @@ G[1353472]='Radiant Sword'
 G[1353645]="Marileth's Journal"
 G[1353948]='Medallion of Desire'
 G[1353949]='Medallion of Avarice'
+G[1353953]='Medallion of Wrath'
 G[1353959]='Spear of Kalliope'
 G[1354213]="Lost Disciple's Notes"
 G[1355255]='Vessel of Ardenweald'

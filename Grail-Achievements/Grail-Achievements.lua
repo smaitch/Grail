@@ -7274,7 +7274,10 @@ G[60906]={514801}	-- The Spear of Kallipe (Sojourner of Bastion) (Bastion) (Shad
 G[61107]={514281}	-- A Land of Strife (The Path to Ascension) (Bastion) (Shadownlands)
 G[62557]={514234}	-- The Bell Tolls (Bastion Campaign) (Bastion) Shadowlands
 G[62921]={513997}	-- Sinfall (Venthyr Campaign) (Revendreth) (Shadowlands)
+G[63622]={514961}	-- An Army of Bone and Steel (Chains of Dominion) (Shadowlands 9.1)
 G[63639]={514961}	-- Battle of Adenweald (Chains of Dominion) (Shadowlands 9.1)
+G[63656]={514961}	-- The Unseen Guests (Chains of Dominion) (Shadowlands 9.1)
+G[63727]={514961}	-- The Last Sigil (Chains of Dominion) (Shadowlands 9.1)
 G[63902]={514961}	-- Focusing the Eye (Chains of Dominion) (Shadowlands 9.1)
 G[64007]={514961}	-- Maw Walkers (Chains of Dominion) (Shadowlands 9.1)
 
