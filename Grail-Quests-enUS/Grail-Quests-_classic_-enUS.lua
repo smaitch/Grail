@@ -4334,4 +4334,25 @@ G[10073]='Well Watcher Solanian'
 G[10166]="Whitebark's Memory"
 end
 
+if release >= 38988 then
+G[9280]='Replenishing the Healing Crystals'
+G[9293]='What Must Be Done...'
+G[9294]='Healing the Lake'
+G[9303]='Inoculation'
+G[9305]='Spare Parts'
+G[9309]='The Missing Scout'
+G[9313]='Travel to Azure Watch'
+G[9314]='Word from Azure Watch'
+G[9453]='Find Acteon!'
+G[9463]='Medicinal Purpose'
+G[9515]="Warlord Sriss'tiz"
+G[9523]='Precious and Fragile Things Need Special Handling'
+G[9527]='All That Remains'
+G[9544]='The Prophecy of Akida'
+G[9559]='Stillpine Hold'
+G[9623]='Coming of Age'
+G[10123]='Felspark Ravine'
+G[10124]="Forward Base: Reaver's Fall"
+end
+
 --	End of localized quest names

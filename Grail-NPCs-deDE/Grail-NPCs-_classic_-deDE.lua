@@ -182,7 +182,9 @@ G[1180746]='Leicht geschütteltes Geschenk'
 G[1180747]='Fröhlich verpacktes Geschenk'
 G[1180748]='Tickendes Geschenk'
 G[1180793]='Festtagsgeschenk'
+G[1180918]='GESUCHT: Thaelis der Manadurstige'
 G[1181073]='Duftender Kessel'
+G[1181748]='Blutkristall'
 end
 
 --	End of localized NPC names

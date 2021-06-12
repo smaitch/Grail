@@ -3565,4 +3565,25 @@ G[10073]='Speak with Well Watcher Solanian at the Sunspire on Sunstrider Isle.'
 G[10166]="Larianna Riverwind wants you to place Old Whitebark's Pendant by the runestone at the Scorched Grove."
 end
 
+if release >= 38988 then
+G[9280]='Acquire 8 Vials of Moth Blood from the nearby Vale Moths and give them to Proenitus at the Crash Site in Ammen Vale.'
+G[9293]='Gather 10 Lasher Samples and return them to Botanist Taerix at the Crash Site in Ammen Vale.'
+G[9294]='Disperse the Neutralizing Agent at the Irradiated Power Crystal, then return to Botanist Taerix at the Crash Site in Ammen Vale.'
+G[9303]='Use the Inoculating Crystal on 6 Nestlewood Owlkin. Then return to Vindicator Aldar at the Crash Site in Ammen Vale.'
+G[9305]='Collect 4 Emitter Spare Parts and then return to Technician Zhanaa at the Crash Site in Ammen Vale.'
+G[9309]='Find and speak with Tolaan at Shadow Ridge in Ammen Vale.'
+G[9313]='Speak with Technician Dyvuun at Azure Watch on Azuremyst Isle.'
+G[9314]='Speak with Caregiver Chellan at Azure Watch on Azuremyst Isle.'
+G[9453]='Deliver the Crate of Red Snapper to Acteon at Azure Watch.'
+G[9463]='Anchorite Fateema at Azure Watch wants you to bring her 8 Root Trapper Vines.'
+G[9515]="Priestess Kyleen Il'dinare at Odesyus' Landing on Azuremyst Isle wants you to kill Warlord Sriss'tiz."
+G[9523]="Archaeologist Adamant Ironheart at Odesyus' Landing on Azuremyst Isle wants you to bring him 8 Ancient Relics."
+G[9527]="Cowlen on Azuremyst Isle wants you to recover the Remains of Cowlen's Family."
+G[9544]='Free 8 Stillpine Captives from cages found in Bristlelimb Village. Return to Arugoo of the Stillpine at Azure Watch when you have completed this task.'
+G[9559]='Speak with High Chief Stillpine at Stillpine Hold.'
+G[9623]="Exarch Menelaous at Azure Watch has asked that you deliver the Exarch's Orders to Torallius the Pack Handler, standing outside of the Exodar."
+G[10123]='Sergeant Shatterskull at the Supply Caravan east of Thrallmar in Hellfire Peninsula wants you to kill 4 Flamewaker Imps, 6 Infernal Warbringers and 1 Dreadcaller.'
+G[10124]="Report to Forward Commander To'arch at Reaver's Fall."
+end
+
 --	End of localized quest descriptions
