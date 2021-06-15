@@ -35149,4 +35149,36 @@ G[529411]='What Now?'
 G[529428]='What Now?'
 end
 
+if release >= 36492 then
+G[34398]='The Dark Portal'
+end
+
+if release >= 36577 then
+G[60004]='A Valiant Effort'
+G[60727]='A Message from Icecrown'
+G[60827]='Advancing the Effort'
+G[62262]='Fungal Feeding'
+end
+
+if release >= 36665 then
+G[54343]='Darkshore Donations: Potion of Replenishment'
+end
+
+if release >= 36671 then
+G[9407]='Burning Crusade: Through the Dark Portal'
+end
+
+if release >= 36753 then
+G[36881]='Warlords of Draenor: The Dark Portal'
+end
+
+if release >= 37899 then
+G[62568]="Adventurers Wanted: Chromie's Call"
+end
+
+if release >= 38556 then
+G[43926]='Legion: The Legion Returns'
+G[54591]='Rumbling Goliath'
+end
+
 --	End of localized quest names
