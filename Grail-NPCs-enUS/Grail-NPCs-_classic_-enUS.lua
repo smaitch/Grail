@@ -219,7 +219,10 @@ G[1180747]='Gaily Wrapped Present'
 G[1180748]='Ticking Present'
 G[1180793]='Festive Gift'
 G[1180918]='Wanted: Thaelis the Hungerer'
+G[1181011]="Magister Duskwither's Journal"
 G[1181073]='Fragrant Cauldron'
+G[1181147]='Wanted Poster'
+G[1181698]='Voidstone'
 end
 
 --	End of localized NPC names
