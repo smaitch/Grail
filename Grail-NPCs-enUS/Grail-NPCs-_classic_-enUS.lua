@@ -222,6 +222,7 @@ G[1180918]='Wanted: Thaelis the Hungerer'
 G[1181011]="Magister Duskwither's Journal"
 G[1181073]='Fragrant Cauldron'
 G[1181147]='Wanted Poster'
+G[1181153]="Wanted Poster: Kel'gash the Wicked"
 G[1181698]='Voidstone'
 end
 

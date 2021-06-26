@@ -1065,6 +1065,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.capabilities.usesFollowers = not self.existsClassic
 					self.capabilities.usesWorldEvents = not self.existsClassic
 					self.capabilities.usesWorldQuests = not self.existsClassic
+					self.capabilities.usesCallingQuests = not self.existsClassic
+					self.capabilities.usesCampaignQuests = not self.existsClassic
+					self.capabilities.usesFlightPoints = not self.existsClassic
 
                     -- These values are no longer used, but kept for posterity.
 					self.existsPandaria = (self.blizzardRelease >= 15640)
