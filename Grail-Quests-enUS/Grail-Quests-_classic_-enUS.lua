@@ -6181,6 +6181,27 @@ G[12491]="Direbrew's Dire Brew"
 G[12492]="Direbrew's Dire Brew"
 G[12513]='Nice Hat...'
 G[12515]='Nice Hat...'
+G[63450]='A Deluxe Delivery'
+G[63767]='Imp in a Ball'
+G[63865]='A Special Thanks'
+G[64028]='A New Beginning'
+G[64031]='Tools for Survival'
+G[64034]='Combat Training'
+G[64035]='Talented'
+G[64037]='Eastern Plaguelands'
+G[64038]='The Dark Portal'
+G[64046]='A New Beginning'
+G[64047]='A New Beginning'
+G[64048]='Tools for Survival'
+G[64049]='Tools for Survival'
+G[64050]='Combat Training'
+G[64051]='Combat Training'
+G[64052]='Talented'
+G[64053]='Talented'
+G[64063]='The Dark Portal'
+G[64064]='Eastern Plaguelands'
+G[64128]='Eastern Plaguelands'
+G[64217]='The Dark Portal'
 end
 
 --	End of localized quest names
