@@ -539,8 +539,9 @@
 --			Changes interface to 90005.
 --			Changes check for renown level to ensure covenant matches as Blizzard renown API ignores covenant.
 --			Starts to add support for Classic Burning Crusade (using interface 20501).
---		116	Switched to a unified addon for all of Blizzard's releases.
+--		116	Switches to a unified addon for all of Blizzard's releases.
 --			Augments _CovenantRenownMeetsOrExceeds to accept covenant 0 to represent the currrently active covenant, used to indicate that the renown level is at a specific level independent of covenant.
+--			Changed retail interface to 90100.
 --
 --	Known Issues
 --
@@ -3515,6 +3516,8 @@ end,
 				zoneName = zoneName .. ' ('..mapId..')'
 			end
 			zoneTable[#zoneTable + 1] = { name = zoneName, mapID = mapId }
+--self.GDE.zoneNames = self.GDE.zoneNames or {}
+--tinsert(self.GDE.zoneNames, { name = zoneName, mapID = mapId, continent = continentMapId })
 			self.zoneNameMapping[zoneName] = mapId
 			self.mapToContinentMapping[mapId] = continentMapId
 		end,
