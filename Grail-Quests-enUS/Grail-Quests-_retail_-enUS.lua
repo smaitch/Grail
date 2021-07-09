@@ -35176,9 +35176,64 @@ if release >= 37899 then
 G[62568]="Adventurers Wanted: Chromie's Call"
 end
 
+if release >= 38134 then
+G[62714]='A Gift for an Acolyte'
+end
+
 if release >= 38556 then
 G[43926]='Legion: The Legion Returns'
 G[54591]='Rumbling Goliath'
+end
+
+if release >= 39185 then
+G[63784]="Gold's No Object"
+G[63787]="Continued Efforts: Mauler's Outlook"
+G[63823]='Night Fae Assault'
+G[63957]='Observational Records'
+end
+
+if release >= 39282 then
+G[63784]="Gold's No Object"
+G[63793]="Broker's Bounty: Ensydius the Defiler"
+end
+
+if release >= 39291 then
+G[63822]='Venthyr Assault'
+G[63963]="Broker's Bounty: Ripmaul"
+end
+
+if release >= 39335 then
+G[54385]='Darkshore Donations: Tidespray Linen Bandage'
+G[63736]='An Infusion of Anima'
+G[63737]="Finding One's True Purpose"
+G[63738]='Establishing the Archive'
+G[63739]='Hope Ascending'
+G[63740]='Consulting the Experts'
+G[63755]='A Matter of Urgency'
+G[63756]='Rescued from Torment'
+G[63757]='Looting the Looters'
+G[63758]='The Last Place You Look'
+G[63759]='Redirect the Search'
+G[63760]='Echoes of Fate'
+G[63761]='Revenge Delayed'
+G[63762]='Under the Illusion'
+G[63763]='They Could Be Anyone'
+G[63783]='Anima Reclamation'
+G[63827]='Encouraging Words'
+G[63829]='No One Floats Down Here'
+G[63860]='Talisman of the Eternal Scholar'
+G[63861]='Beginning the Collection'
+G[63863]='United In Pride'
+G[63864]='The Dreadful Blend'
+G[63892]="Diviner's Rune Chits"
+G[63903]='Storming the Sanctum'
+G[63962]='Observational Records'
+G[64103]='Old Tricks Work Best'
+G[64289]='Picking Up the Pieces'
+G[64290]='Collecting Research'
+G[64438]='Empowering Equipment'
+G[64506]='What Must Be Found'
+G[64531]="Mor'geth"
 end
 
 --	End of localized quest names

@@ -1446,6 +1446,8 @@ G[1364911]='Twisted Mawstone'
 G[1364932]='Blazing Ingot'
 G[1364937]='Phasic Siphoner'
 G[1364987]='Broker Journal'
+G[1368302]='Talisman of the Eternal Scholar'
+G[1368772]='Sigilscored Scroll'
 end
 
 if release >= 32978 then

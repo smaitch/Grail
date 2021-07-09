@@ -7279,7 +7279,7 @@ G[63639]={514961}	-- Battle of Adenweald (Chains of Dominion) (Shadowlands 9.1)
 G[63656]={514961}	-- The Unseen Guests (Chains of Dominion) (Shadowlands 9.1)
 G[63727]={514961}	-- The Last Sigil (Chains of Dominion) (Shadowlands 9.1)
 G[63902]={514961}	-- Focusing the Eye (Chains of Dominion) (Shadowlands 9.1)
-G[64007]={514961}	-- Maw Walkers (Chains of Dominion) (Shadowlands 9.1)
+G[64556]={514961}	-- Maw Walkers (Chains of Dominion) (Shadowlands 9.1)
 
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime
 debugStartTime = debugprofilestop()
