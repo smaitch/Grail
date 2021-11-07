@@ -1,4 +1,4 @@
-## Interface: 20501
+## Interface: 20502
 ## Title: Grail |cff69ccf0Quests |r|cffeda55fClassic|r|cff69ccf0 koKR|r
 ## Author: Scott M Harrison
 ## Notes: Provides localized koKR quest names to Grail for Classic

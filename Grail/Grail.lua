@@ -541,9 +541,10 @@
 --			Starts to add support for Classic Burning Crusade (using interface 20501).
 --		116	Switches to a unified addon for all of Blizzard's releases.
 --			Augments _CovenantRenownMeetsOrExceeds to accept covenant 0 to represent the currrently active covenant, used to indicate that the renown level is at a specific level independent of covenant.
---			Changed retail interface to 90100.
+--			Changes retail interface to 90100.
 --		117 Updates some Quest/NPC information.
 --			Updates some Ve'nari localized reputation levels.
+--			Changes retail interface to 90105, BCC to 20502 and Classic to 11400.
 --
 --	Known Issues
 --
@@ -8849,6 +8850,7 @@ end
 --		end,
 		
 		--	Returns a boolean indicating whether the player's renown level with the specified covenant meets or exceeds the desired level.
+		--	1=Bastion, 2=Venthyr, 3=Night Fae, 4=Necrolord
 		_CovenantRenownMeetsOrExceeds = function(self, covenant, desiredLevel)
 			local retval = false
 			covenant = tonumber(covenant)

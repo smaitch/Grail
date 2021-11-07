@@ -1687,4 +1687,8 @@ G[1258980]='Cursed Tome'
 G[1287081]='Ancient Tablet'
 end
 
+if release >= 40000 then
+G[1369432]='Misplaced Venthyr Tome'
+end
+
 --	End of localized NPC names

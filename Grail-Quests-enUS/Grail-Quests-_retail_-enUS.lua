@@ -35204,6 +35204,8 @@ end
 
 if release >= 39335 then
 G[54385]='Darkshore Donations: Tidespray Linen Bandage'
+G[60164]='Mirror Attunement: Dominance Keep'
+G[60165]="Mirror Attunement: Feeders' Thicket"
 G[63736]='An Infusion of Anima'
 G[63737]="Finding One's True Purpose"
 G[63738]='Establishing the Archive'
@@ -35218,22 +35220,147 @@ G[63760]='Echoes of Fate'
 G[63761]='Revenge Delayed'
 G[63762]='Under the Illusion'
 G[63763]='They Could Be Anyone'
+G[63775]='Cryptograms and Keys'
 G[63783]='Anima Reclamation'
 G[63827]='Encouraging Words'
 G[63829]='No One Floats Down Here'
+G[63834]='Weapons of the Tremaculum'
+G[63838]="Duelist's Challenge"
+G[63839]='If Even One is Worthy'
+G[63841]='The Skyhunt'
 G[63860]='Talisman of the Eternal Scholar'
 G[63861]='Beginning the Collection'
 G[63863]='United In Pride'
 G[63864]='The Dreadful Blend'
 G[63892]="Diviner's Rune Chits"
+G[63899]='Book of Binding: The Mad Witch'
 G[63903]='Storming the Sanctum'
+G[63909]='Guise of the Changeling'
+G[63911]='Singing Steel Ingot'
+G[63912]='Celestial Shadowlands Chart'
+G[63954]='Sealed Secrets'
 G[63962]='Observational Records'
 G[64103]='Old Tricks Work Best'
 G[64289]='Picking Up the Pieces'
 G[64290]='Collecting Research'
 G[64438]='Empowering Equipment'
 G[64506]='What Must Be Found'
+G[64511]='Missing Relics'
 G[64531]="Mor'geth"
+end
+
+if release >= 39497 then
+G[59625]='The Only Cure'
+G[61442]='Fishing: Glorious Shimmerfin'
+G[62587]='In Search of Inner Calm'
+G[63680]='Out On the Edge'
+G[63681]='Back to The Heart'
+G[63682]='The Power of Elune'
+G[63683]="Winter's Sigil"
+G[63778]='We Move Forward'
+G[63782]='Mawsworn Rituals'
+G[63785]="Continued Efforts: Seeker's Quorum"
+G[63786]='Sweep the Windswept Aerie'
+G[63792]="Broker's Bounty: Nocturnus the Unraveler"
+G[63828]="Mine's Bigger"
+G[63853]='Kill The Flame'
+G[63859]='Saved By The Bells'
+G[63934]='Assail Mail'
+G[63950]='Razorwing Talons'
+G[63951]='A Shady Place'
+G[63955]='Sealed Secrets'
+G[63964]="Broker's Bounty: Grimtalon"
+G[63969]='Looming Darkness'
+G[63970]='No Soul Left Behind'
+G[63973]='Double Dromans'
+G[63977]='Insider Trading'
+G[63979]='Things Best Kept Dark'
+G[63982]='Above My Station'
+G[63986]='Tazavesh: Raiders of the Lost Artifact'
+G[63989]='Oozing with Character'
+G[64018]='The Weight of Stone'
+G[64042]='Rituals of Night'
+G[64065]='Local Reagents'
+G[64070]='Staying Scrappy'
+G[64080]='Down to Earth'
+G[64090]='The Big Squeeze'
+G[64101]='The Proper Procedures'
+G[64129]='Charge of the Wild Hunt'
+G[64304]='New Opportunities Await'
+G[64432]='Strength to Weakness'
+G[64437]='Inform the Primus'
+G[64527]='Observing the Chase'
+G[64597]="Sanctum of Domination - Damned If You Don't"
+G[64598]="Sanctum of Domination - Damned If You Don't"
+G[64599]="Sanctum of Domination - Damned If You Don't"
+G[64607]='Tazavesh: A Hard Bargain'
+end
+
+if release >= 39498 then
+G[63543]='Necrolord Assault'
+G[63669]='Somebody Feed Kevin'
+G[63753]='Centurions March!'
+G[63772]='Waiting in the Wings'
+G[63773]='You and What Army'
+G[63774]='An Embarrassment of Corpses'
+end
+
+if release >= 39617 then
+G[59740]='Repair and Restore'
+end
+
+if release >= 39804 then
+G[61179]='Forge Ahead'
+G[61228]="Dug's Missing Shovel"
+G[61610]='Fishing: Skeletal Mudskipper'
+G[63580]='Wounded Memories'
+G[63581]='Step Into the Light'
+G[63582]='He Was My Student'
+G[63583]='I Intend to Live Forever'
+G[63585]='Blind Loyalty'
+G[63791]="Broker's Bounty: Valdinar the Curseborn"
+G[64210]='The Box of Many Things'
+end
+
+if release >= 40000 then
+G[63794]="Broker's Bounty: Hungering Behemoth"
+G[64216]='Tower Knowledge'
+G[64441]='A Loose Thread'
+end
+
+if release >= 40120 then
+G[54387]='Darkshore Donations: Blood-Stained Bone'
+G[58081]='Favor: Love and Terror'
+G[62184]='A Crate of Sinvyr Ore'
+G[63584]='A Triumphant Return'
+G[63586]='Compassion in Devotion'
+G[63587]='Reclaimable Anima'
+G[63588]='Rebuilding Faith'
+G[63589]='Directing Dedication'
+G[63590]='The Vesper Rings'
+G[63591]='The Grand Reception'
+G[63592]='The New Path'
+G[63593]='New Sigil of the Kyrian'
+G[63776]='Observational Records'
+G[63843]='Heart and Soul'
+G[63846]='The Ember Count'
+G[63858]='Courage of the Soul'
+G[63936]='Devoured Anima'
+G[63937]='Nasty, Big, Pointy Teeth'
+G[63958]='Observational Records'
+G[63959]='Observational Records'
+G[64015]='Into the Meat Grinder'
+G[64040]='Once More, with Healing'
+G[64089]='Teas and Tinctures'
+G[64211]='Doorway in the Dark'
+G[64212]='Doorway in the Dark'
+G[64213]='A Symbol of Hope'
+G[64214]='A Symbol of Hope'
+G[64240]='Flight of the Kyrian'
+G[64314]='Covenants Renewed'
+G[64430]='Spill the Tea'
+G[64468]='Adventurer: Madame Iza'
+G[64469]='Adventurer: Lucia'
 end
 
 --	End of localized quest names

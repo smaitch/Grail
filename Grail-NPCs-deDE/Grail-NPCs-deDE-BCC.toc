@@ -1,4 +1,4 @@
-## Interface: 20501
+## Interface: 20502
 ## Title: Grail |cff69ccf0NPCs |r|cffeda55fClassic|r|cff69ccf0 deDE|r
 ## Author: Scott M Harrison
 ## Notes: Provides localized deDE NPCs to Grail for Classic
