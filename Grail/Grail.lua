@@ -545,6 +545,9 @@
 --		117 Updates some Quest/NPC information.
 --			Updates some Ve'nari localized reputation levels.
 --			Changes retail interface to 90105, BCC to 20502 and Classic to 11400.
+--      118 Changes retail interface to 90200.
+--          Updates some Quest/NPC information.
+--          Adds factions for Zereth Mortis (9.2 release).
 --
 --	Known Issues
 --
@@ -2674,7 +2677,7 @@ end,
 			[6] = { 1445, 1515, 1520, 1679, 1681, 1682, 1708, 1710, 1711, 1731, 1732, 1733, 1735, 1736, 1737, 1738, 1739, 1740, 1741, 1847, 1848, 1849, 1850, },
 			[7] = { 1815, 1828, 1833, 1859, 1860, 1862, 1883, 1888, 1894, 1899, 1900, 1919, 1947, 1948, 1975, 1984, 1989, 2018, 2045, 2097, 2098, 2099, 2100, 2101, 2102, 2135, 2165, 2170, },
 			[8] = { 2103, 2111, 2120, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2233, 2264, 2265, 2371, 2372, 2373, 2374, 2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 2392, 2395, 2396, 2397, 2398, 2400, 2401, 2415, 2417, 2427, },
-			[9] = { 2407, 2410, 2413, 2432, 2439, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2462, 2463, 2464, 2465, 2470, 2472, },
+			[9] = { 2407, 2410, 2413, 2432, 2439, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2462, 2463, 2464, 2465, 2469, 2470, 2472, 2478, },
 			},
 
 		-- These reputations use the friendship names instead of normal reputation names
@@ -2993,8 +2996,10 @@ end,
 			["99F"] = "Marasmius", -- 2463
 			["9A0"] = "Court of Night", -- 2464
 			["9A1"] = "The Wild Hunt",	-- 2465
+            ["9A5"] = "Fractal Lore", -- 2469
 			["9A6"] = "Death's Advance", -- 2470
 			["9A8"] = "The Archivists' Codex", -- 2472
+            ["9AE"] = "The Enlightened", -- 2478
 			},
 
 		reputationMappingFaction = {
@@ -3257,8 +3262,10 @@ end,
 			["99F"] = "Neutral", -- 2463	-- TODO: Determine faction
 			["9A0"] = "Neutral", -- 2464	-- TODO: Determine faction
 			["9A1"] = "Neutral", -- 2465	-- TODO: Determine faction
+            ["9A5"] = "Neutral", -- 2469    -- TODO: Determine faction
 			["9A6"] = "Neutral", -- 2470	-- TODO: Determine faction
 			["9A8"] = "Neutral", -- 2472	-- TODO: Determine faction
+            ["9AE"] = "Neutral", -- 2478    -- TODO: Determine faction
 			},
 
 		slashCommandOptions = {},
@@ -3728,7 +3735,7 @@ end,
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
-			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565 }
+			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565, 1970 }
 
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)

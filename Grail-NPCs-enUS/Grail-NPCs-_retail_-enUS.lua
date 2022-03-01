@@ -1691,4 +1691,8 @@ if release >= 40000 then
 G[1369432]='Misplaced Venthyr Tome'
 end
 
+if release >= 42423 then
+G[1375972]='Wanted: Custos'
+end
+
 --	End of localized NPC names
