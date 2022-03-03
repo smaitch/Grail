@@ -1695,4 +1695,8 @@ if release >= 42423 then
 G[1375972]='Wanted: Custos'
 end
 
+if release >= 42538 then
+G[1375283]='Percolation Array'
+end
+
 --	End of localized NPC names

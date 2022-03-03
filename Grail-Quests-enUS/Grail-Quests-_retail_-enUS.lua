@@ -35461,6 +35461,7 @@ G[402042]='Cypher Research Console - Empty'
 end
 
 if release >= 42488 then
+G[48100]='The Defense of Eredath'
 G[63777]='Sealed Secrets'
 G[63779]='A Semblance of Normalcy'
 G[63956]='Sealed Secrets'
@@ -35496,6 +35497,7 @@ G[64824]='Fighting for the Forge'
 G[64825]='Seeking Haven'
 G[64846]='Torghast'
 G[64854]='Trappings of Success'
+G[64960]='Feed the Annelids'
 G[65020]='Practical Applications'
 G[65031]='Battlegrounds'
 G[65064]='Look Who I Found!'
@@ -35527,6 +35529,42 @@ G[65726]='The Burrowed Bufonid'
 G[65727]='The Burrowed Bufonid'
 G[65728]='The Burrowed Bufonid'
 G[65749]='The Necessity Of Equipment'
+end
+
+if release >= 42521 then
+G[64830]='Enlisting the Enlightened'
+G[64831]='Remnants of the First Ones'
+G[64832]='Reclaiming Provis Esper'
+G[64833]='Forging Unity from Diversity'
+G[64834]='Glow and Behold'
+G[64837]="The Pilgrim's Journey"
+G[65265]='Buried Remnants'
+G[65335]='News from Oribos'
+G[65349]='Lost Grace'
+G[65350]='Restore the Flow'
+G[65353]='An Automa-free Diet'
+G[66042]='Patterns Within Patterns'
+end
+
+if release >= 42538 then
+G[64835]='Pluck from the Vines'
+G[64836]='Nip It in the Bud'
+G[64838]="Where There's a Pilgrim, There's a Way"
+G[64839]='Root of the Problem'
+G[64840]='Unchecked Growth'
+G[64841]='Take Charge'
+G[64842]='Flora Frenzy'
+G[64843]='Key Crafting'
+G[64844]='The Pilgrimage Ends'
+G[64969]='In the Weeds'
+G[65143]='Antros'
+G[65234]='Sweet On Them'
+G[65255]='Forcing the Cycle'
+G[65264]='Operation: Relocation'
+G[65331]='Herbal Remedies'
+G[65405]='Perplexing Problem'
+G[65415]='Perplexing Problem'
+G[65448]='A Return to Grace'
 end
 
 --	End of localized quest names
