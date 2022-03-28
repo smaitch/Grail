@@ -155,7 +155,7 @@ Grail.extraAchievements = {
 		[mapArgus] = { 512066, 512073, },
 		[mapZandalar] = { 512771, 512849, 512851, },
 		[mapKulTiras] = { 512510, 512853, 512852, 512995, },
-		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514961, },
+		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514961, 515515, 515259, },
 		},
 	[factionHorde] = {
 		[mapKalimdor] = { 504961, 505859, 505866, },
@@ -169,7 +169,7 @@ Grail.extraAchievements = {
 		[mapArgus] = { 512066, 512073, },
 		[mapZandalar] = { 512555, 512771, 512849, 512851, },
 		[mapKulTiras] = { 512509, 512853, 512852, 512995, },
-		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514961, },
+		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514961, 515515, 515259, },
 		},
 	}
 
@@ -7283,14 +7283,18 @@ G[63902]={514961}	-- Focusing the Eye (Chains of Dominion) (Shadowlands 9.1)
 G[64314]={514961}	-- What Lies Ahead (Chains of Dominion) (Shadowlands 9.1)
 G[64437]={514961}	-- The Power of Night (Chains of Dominion) (Shadowlands 9.1)
 G[64556]={514961}	-- Maw Walkers (Chains of Dominion) (Shadowlands 9.1)
+G[64760]={515515}	-- Not Al Are Lost (Path to Enlightenment) (Shadowlands 9.2)
 G[64813]={515259}	-- Crown of Wills (Secrets of the First Ones) (Shadowlands 9.2)
 G[64825]={515259}	-- We Battle Onward (Secrets of the First Ones) (Shadowlands 9.2)
 G[64844]={515259}	-- Forging a New Path (Secrets of the First Ones) (Shadowlands 9.2)
 G[64935]={515259}	-- A Means to an End (Secrets of the First Ones) (Shadowlands 9.2)	-- this is here because as of 2022-03-19 Blizzard does not require 64935 to be turned in to progress in the chain, and in fact the UI will give a badge that indicates A Means to an End is finished when 65328 is turned in.  However, the UI will not show that complete in the story if 64935 is not turned in.  Note, also, that if you wait to turn it in, there is no way to do so either as the turn in is gone, and Blizzard puts on the map the turn in location of the logical point when you find the next point to transport to, but of course no one is there when you go back.
 G[64958]={515259}	-- Into the Unknown (Secrets of the First Ones) (Shadowlands 9.2)
+G[65070]={515515}	-- Small Pet Problems (Path to Enlightenment) (Shadowlands 9.2)
 G[65238]={515259}	-- Starting Over (Secrets of the First Ones) (Shadowlands 9.2)
 G[65305]={515259}	-- Forming An Understanding (Secrets of the First Ones) (Shadowlands 9.2)
 G[65328]={515259}	-- A Means to an End (Secrets of the First Ones) (Shadowlands 9.2)
+G[65448]={515515}	-- A Return to Grace (Path to Enlightenment) (Shadowlands 9.2)
+
 
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime
 debugStartTime = debugprofilestop()

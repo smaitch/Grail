@@ -549,6 +549,7 @@
 --          Updates some Quest/NPC information.
 --          Adds factions for Zereth Mortis (9.2 release).
 --			Adds support for quests that only become available after the next daily reset.
+--			Adds support for quests that only become available when currency requirements are met.
 --
 --	Known Issues
 --
@@ -4153,6 +4154,15 @@ end,
 			return currencyName, currencyAmount
 		end,
 
+		CurrencyAmountMeetsOrExceeds = function(self, currencyIndex, soughtAmount)
+			local retval = false
+			local _, currentAmount = self:GetCurrencyInfo(currencyIndex)
+			if nil ~= currentAmount and currentAmount >= soughtAmount then
+				retval = true
+			end
+			return retval
+		end,
+
 		ArtifactKnowledgeLevel = function(self)
 --	In 7.1 the following API does not work unless the artifact UI is already open.
 --			return C_ArtifactUI.GetArtifactKnowledgeLevel()
@@ -4610,6 +4620,8 @@ end,
 					retval = self:_GarrisonTalentResearched(numeric) and 'C' or 'P'
 				elseif '(' == code then
 					retval = self:_QuestTurnedInBeforeTodaysReset(numeric) and 'C' or 'P'
+				elseif ')' == code then
+					retval = self:CurrencyAmountMeetsOrExceeds(subcode, numeric) and 'C' or 'P'
 				elseif 'h' == code then
 					retval = (bitband(questBitMask, self.bitMaskEverCompleted) > 0) and 'P' or 'C'
 				else	-- A, B, C, D, E, H, O, X
@@ -6247,7 +6259,7 @@ end,
 					numeric = tonumber(strsub(questCode, 2, 5))
 
 				-- Cssssn+ (ssss must be numbers)
-				elseif '=' == code or '<' == code or '>' == code then
+				elseif '=' == code or '<' == code or '>' == code or ')' == code then
 					subcode = tonumber(strsub(questCode, 2, 5))
 					numeric = tonumber(strsub(questCode, 6))
 
@@ -6630,8 +6642,8 @@ end
 			if nil ~= codeString then
 				local questId = p and p.q or nil
 				local dangerous = p and p.d or false
-				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable, garrisonTalentResearched, questTurnedIndBeforeLastWeeklyReset, questTurnedIndBeforeTodaysReset = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent, checkQuestTurnedInBeforeLastWeeklyReset, checkRenownDoesNotMeetOrExceed, checkNotClass, checkQuestTurnedInBeforeaTodaysReset = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable, garrisonTalentResearched, questTurnedIndBeforeLastWeeklyReset, questTurnedIndBeforeTodaysReset, currencyAmountMatches = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent, checkQuestTurnedInBeforeLastWeeklyReset, checkRenownDoesNotMeetOrExceed, checkNotClass, checkQuestTurnedInBeforeTodaysReset, checkCurrencyAmount = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local forcingProfessionOnly, forcingReputationOnly = false, false
 
 				if forceSpecificChecksOnly then
@@ -6725,6 +6737,7 @@ end
 				elseif code == '^' then checkCallingQuestAvailable = true
 				elseif code == '%' then checkGarrisonTalent = true
 				elseif code == '(' then checkQuestTurnedInBeforeTodaysReset = true
+				elseif code == ')' then checkCurrencyAmount = true
 				else print("|cffff0000Grail|r _EvaluateCodeAsPrerequisite cannot process code", codeString)
 				end
 
@@ -6837,6 +6850,9 @@ end
 				if checkQuestTurnedInBeforeTodaysReset then
 					questTurnedIndBeforeTodaysReset = Grail:_QuestTurnedInBeforeTodaysReset(value)
 				end
+				if checkCurrencyAmount then
+					currencyAmountMatches = Grail:CurrencyAmountMeetsOrExceeds(subcode, value)
+				end
 
 				good =
 					(code == ' ') or
@@ -6892,7 +6908,8 @@ end
 					(checkCallingQuestAvailable and callingQuestAvailable) or
 					(checkGarrisonTalent and garrisonTalentResearched) or
 					(checkQuestTurnedInBeforeLastWeeklyReset and questTurnedIndBeforeLastWeeklyReset) or
-					(checkQuestTurnedInBeforeTodaysReset and questTurnedIndBeforeTodaysReset)
+					(checkQuestTurnedInBeforeTodaysReset and questTurnedIndBeforeTodaysReset) or
+					(checkCurrencyAmount and currencyAmountMatches)
 				if not good then tinsert(failures, codeString) end
 			end
 
@@ -9785,6 +9802,8 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 				-- TODO: We should take all these quests and put them into a table that is invalidated when the weekly reset happens (even though that is a pain to determine)
 			elseif '(' == code then
 				-- TODO: We should take all these quests and put them into a table that is invalidated when the daily reset happens (even though that is a pain to determine)
+			elseif ')' == code then
+				-- TODO: We should take all these quests and put them into a table that is invalidated when curreny amounts change (not sure we should really care about matching currencies, though it would be better for overall performance I guess)
 			end
 		end,
 

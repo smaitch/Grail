@@ -35606,4 +35606,8 @@ G[529411]='What Now?'
 G[529428]='What Now?'
 end
 
+if release >= 42698 then
+G[65410]='Puzzling Situation'
+end
+
 --	End of localized quest names
