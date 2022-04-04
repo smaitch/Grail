@@ -35610,4 +35610,28 @@ if release >= 42698 then
 G[65410]='Puzzling Situation'
 end
 
+if release >= 42852 then
+G[64829]='Finding Tahli'
+G[65408]='Pattern Recognition'
+end
+
+if release >= 42979 then
+G[65226]='Fleet-Footed and Fastidious'
+G[65249]="The Jailer's Defeat"
+G[65250]='Prisoner of Interest'
+G[65260]='A Long Walk'
+G[65263]='The Fate of Sylvanas'
+G[65297]='Penance and Renewal'
+G[65399]='Schematic Reassimilation: Curious Crystalsniffer'
+G[65411]='Puzzling Situation'
+G[65773]='Solo Mission'
+G[66383]='Legendary Assistance'
+G[101243]='Channel Anima to Glitterfall Basin, allowing access to a special treasure.'
+G[101244]='Channel Anima to Dreamsong Fenn, allowing you to fight an enemy champion.'
+G[101245]='Channel Anima to Tirna Vaal, unlocking a new World Quest.'
+G[101246]='Channel Anima to the Hibernal Hollow, unlocking new Daily Quests.'
+G[101247]='Channel Anima to Tirna Scithe, allowing you and your allies to challenge an elite foe.'
+G[101248]="Channel Anima to Claw's Edge, allowing access to mighty Night Fae enhancements."
+end
+
 --	End of localized quest names

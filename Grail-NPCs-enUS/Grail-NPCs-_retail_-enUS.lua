@@ -1566,4 +1566,21 @@ G[1375517]='Suspicious Rubble Pile'
 G[1375972]='Wanted: Custos'
 end
 
+if release >= 42852 then
+G[1349898]='Laestrite Deposit'
+G[1349900]='Elethium Deposit'
+G[1350082]='Rich Elethium Deposit'
+G[1373579]='Prying Eye Discovery'
+G[1374976]='Symphonic Vault'
+G[1375290]='Cypher-Bound Chest'
+G[1375331]='Elusive Progenium Deposit'
+G[1375423]='Offering to the First Ones'
+G[1375915]='Glimmer of Serenity'
+end
+
+if release >= 42979 then
+G[1374927]='Buried Artifact'
+G[1374928]='Buried Artifact'
+end
+
 --	End of localized NPC names

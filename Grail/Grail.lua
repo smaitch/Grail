@@ -545,7 +545,7 @@
 --		117 Updates some Quest/NPC information.
 --			Updates some Ve'nari localized reputation levels.
 --			Changes retail interface to 90105, BCC to 20502 and Classic to 11400.
---      118 Changes retail interface to 90200.
+--      118 Changes retail interface to 90200, BCC to 20504 and Classic to 11402.
 --          Updates some Quest/NPC information.
 --          Adds factions for Zereth Mortis (9.2 release).
 --			Adds support for quests that only become available after the next daily reset.
@@ -1209,6 +1209,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[1632] = true, -- Thorgast 9.0 ?2? Kaltherzinterstitia Ebene 1
 							[1796] = true, -- Thorgast 9.0 ?2? Kaltherzinterstitia Ebene 5
 							[1630] = true, -- Thorgast 9.0 ?2? Kaltherzinterstitia Ebene 6
+							[1970] = true, -- Zereth Mortis
 
 							}
 						self.quest.name = {
@@ -7473,7 +7474,7 @@ end
 				end
 			end
 -- And back to the original code...
-			if #newlyCompleted > 0 then
+			if #newlyCompleted > 0 or Grail.GDE.debug then
 				local lootingNameToUse = self.lootingName or "NO LOOTING OBJECT"
 				local guidParts = { strsplit('-', self.lootingGUID or "") }
 				if nil ~= guidParts and guidParts[1] == "GameObject" and self.lootingName ~= self.defaultUnfoundLootingName then
