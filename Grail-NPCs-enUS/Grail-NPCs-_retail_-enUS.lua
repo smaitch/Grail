@@ -12,12 +12,6 @@ release = tonumber(release)
 interface = tonumber(interface)
 
 if release >= 0 then
-G[-381961]='NukeMe -381961'
-G[-281970]='NukeMe -281970'
-G[-271970]='NukeMe -271970'
-G[-261970]='NukeMe -261970'
-G[-251970]='NukeMe -251970'
-G[-241970]='NukeMe -241970'
 G[0]='Self'
 G[500022]='Candy Bucket'
 G[500024]="Anson's Crate"
@@ -1561,6 +1555,7 @@ G[1364987]='Broker Journal'
 G[1368302]='Talisman of the Eternal Scholar'
 G[1368772]='Sigilscored Scroll'
 G[1369432]='Misplaced Venthyr Tome'
+G[1375021]='Perished Automa'
 G[1375283]='Percolation Array'
 G[1375517]='Suspicious Rubble Pile'
 G[1375972]='Wanted: Custos'
@@ -1579,8 +1574,22 @@ G[1375915]='Glimmer of Serenity'
 end
 
 if release >= 42979 then
+G[1373485]='Enigmatic Scrolls'
 G[1374927]='Buried Artifact'
 G[1374928]='Buried Artifact'
+G[1375222]='Protoform Tool'
+G[1375223]='Repository Vault'
+G[1375227]='Protoform Catalyst'
+G[1375333]='Summon Pocopoc'
+G[1375530]='Forgotten Treasure Vault'
+end
+
+if release >= 43114 then
+G[1370082]='Abandoned Automa'
+G[1370352]='Abandoned Automa'
+G[1370353]='Abandoned Automa'
+G[1373440]='Eternal Water'
+G[1375362]='Avian Nest'
 end
 
 --	End of localized NPC names
