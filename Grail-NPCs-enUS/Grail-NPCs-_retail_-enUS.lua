@@ -1585,11 +1585,85 @@ G[1375530]='Forgotten Treasure Vault'
 end
 
 if release >= 43114 then
+G[1334870]='Scorched Chair'
+G[1334872]='Scorched Trough'
+G[1334875]='Scorched Table'
+G[1339503]='Scorched Battle Standard'
+G[1339504]='Scorched Banner'
+G[1339848]='Anima Canister'
+G[1340028]='Heart of Tirna Noch'
+G[1342099]='Anima-charged Maldracite'
+G[1343617]='Long-Forgotten Sinstones'
+G[1343620]="Inquisitor Stelia's Sinstone"
+G[1344629]='Hidden Sinstone Fragment'
+G[1344695]='Hidden Sinstone Fragment'
+G[1344727]='Hidden Sinstone Fragment'
+G[1349565]='Chest of Envious Dreams'
+G[1349797]='Abandoned Curios'
+G[1349898]='Laestrite Deposit'
+G[1349899]='Rich Laestrite Deposit'
+G[1349981]='Oxxein Deposit'
+G[1349982]='Phaedrum Deposit'
+G[1349983]='Sinvyr Deposit'
+G[1350084]='Rich Sinvyr Deposit'
+G[1350085]='Rich Oxxein Deposit'
+G[1350087]='Rich Phaedrum Deposit'
+G[1352058]='Night Lily'
+G[1352488]='Forbidden Research Documents'
+G[1353152]='Drained Wildseed'
+G[1353680]='Fae Basket'
+G[1353751]='Fae Basket'
+G[1353763]='Fae Basket'
+G[1353765]='Fae Basket'
+G[1354646]='Ancient Cloudfeather Egg'
+G[1354647]='Hearty Dragon Plume'
+G[1355508]='Phaedrum Deposit'
+G[1357584]="Vyrtha's Dredglaive"
+G[1364345]='A Faintly Glowing Seed'
 G[1370082]='Abandoned Automa'
 G[1370352]='Abandoned Automa'
 G[1370353]='Abandoned Automa'
 G[1373440]='Eternal Water'
 G[1375362]='Avian Nest'
+end
+
+if release >= 43206 then
+G[1340839]='Skewering Needle'
+G[1340843]='Razorthread Spools'
+G[1355035]='Chosen Runecoffer'
+G[1355879]="Faldo's Keepsakes"
+G[1355915]='Razorthread Spools'
+G[1364498]='Bloodhoof Mace'
+G[1368218]='Mawsworn Myrmidon'
+end
+
+if release >= 43345 then
+G[1349980]='Solenium Deposit'
+G[1350074]='Construct Parts'
+G[1352239]='Ripe Purian'
+G[1353205]='Silver Strongbox'
+G[1353643]='Silver Strongbox'
+G[1353947]='Discarded Vial'
+G[1355825]='Tattered Scroll'
+G[1357094]="Foreman's Chest"
+G[1357329]='Chest'
+G[1357330]='Chest'
+G[1357331]='Chest'
+G[1357345]='Empowered Chest'
+G[1357566]='Winged Arcanum'
+G[1357567]='Paths of the First Ones'
+G[1357568]='Greater Wards and Barriers, Volume IV'
+G[1357569]='Binding of the Banished One'
+G[1357633]='Broker Shipment'
+G[1358319]="Sorcerer's Note"
+G[1358326]='Amethystine Powder'
+G[1363825]='Silver Strongbox'
+G[1370140]='Damaged Jiro Stash'
+G[1370177]='Orb Fragments'
+G[1370514]='Orb Fragments'
+G[1370515]='Orb Fragments'
+G[1375179]='Orb Fragments'
+G[1375333]='Elusive Rich Elethium Deposit'
 end
 
 --	End of localized NPC names

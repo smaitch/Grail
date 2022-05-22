@@ -36495,4 +36495,53 @@ G[65762]='Sepulcher of the First Ones - Heavy is the Crown'
 G[65775]='Soloing Strategy'
 end
 
+if release >= 43206 then
+G[57530]="Gharmal's Tower"
+G[58686]='Weapon of Mass Construction'
+G[101249]='Channel Anima to the House of the Chosen, allowing access to a special treasure.'
+G[101250]='Channel Anima to the House of Constructs, allowing you to fight an enemy champion.'
+G[101251]='Channel Anima to the House of Plagues, unlocking a new World Quest.'
+G[101252]='Channel Anima to the House of Eyes, unlocking new Daily Quests.'
+G[101253]='Channel Anima to the Theater of Pain, allowing you and your allies to challenge an elite foe.'
+G[101254]='Channel Anima to the House of Rituals, allowing access to mighty Necrolord enhancements.'
+end
+
+if release >= 43340 then
+G[65774]='The Catalyst Awakens'
+end
+
+if release >= 43345 then
+G[57470]='An Abominable Discovery'
+G[57473]='Prized Possession'
+G[57636]='Pride of Place'
+G[57644]='No Friend Left Behind'
+G[57648]='The Impossible Plan'
+G[57778]='The Maldraxxian Job'
+G[58472]='A Farewell to Arms'
+G[58504]='Accusatory Missive'
+G[58523]="You're Dead To Me"
+G[58599]='Drive A Dredge Between Them'
+G[58608]="It's Treason, Then"
+G[58624]='Pauldrons of Imperium'
+G[58820]='Bindings of Fleshcrafting'
+G[58833]='Calling in All Favors'
+G[59020]="The Third Fall of Kel'Thuzad"
+G[59645]='Death Rains'
+G[59648]='Peace by Piece'
+G[59650]='No Hesitation, No Surrender'
+G[59653]="Don't Cross Courage"
+G[59659]='Aerial Absolution'
+G[59678]='Sustain, In Vain'
+G[59700]='The Last Labor'
+G[59709]='Afterlife Goes On'
+G[59722]='Grand Theft Necropolis'
+G[59748]='No Peace In Death'
+G[59894]='The Golden Dawn'
+G[59910]='Fight and Flight'
+G[59916]='The Butchers of Bastion'
+G[59921]='All I Ever Will Be'
+G[59922]='Do Not Forget'
+G[62148]="It's Raining Anima"
+end
+
 --	End of localized quest names

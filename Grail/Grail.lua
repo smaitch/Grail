@@ -2088,7 +2088,7 @@ end,
 				self:_PostNotification("Accept", theQuestId)
 				-- Check to see whether there are any other quests that are also marked by Blizzard as being completed now.
 				if self.GDE.debug then
-					self:_PostDelayedNotification("QuestAcceptCheck", theQuestId, 1.0)
+					self:_CoalesceDelayedNotification("QuestAcceptCheck", 1.0, theQuestId)
 				end
 
 			end,
@@ -5689,7 +5689,7 @@ end,
 		--	of that type does not already exist in the system.  Using this allows the code to effectively
 		--	post as many of a type of notification as it wants, but when the delayed notifications are
 		--	processed only one type of notification will be sent to observers.
-		_CoalesceDelayedNotification = function(self, notificationName, delay)
+		_CoalesceDelayedNotification = function(self, notificationName, delay, questId)
 			local needToPost = true
 			if nil ~= self.delayedNotifications then
 				for i = 1, #(self.delayedNotifications) do
@@ -5699,7 +5699,7 @@ end,
 				end
 			end
 			if needToPost then
-				self:_PostDelayedNotification(notificationName, nil, delay)
+				self:_PostDelayedNotification(notificationName, questId, delay)
 			end
 		end,
 
@@ -8274,6 +8274,10 @@ end
 		--  @requires Grail.playerLocale
 		LoadLocalizedQuestNames = function(self)
 			self:LoadAddOn("Grail-Quests-" .. self.playerLocale)
+			self.quest.name[62017]=SPELL_FAILED_CUSTOM_ERROR_523	-- Necrolord
+			self.quest.name[62019]=SPELL_FAILED_CUSTOM_ERROR_521	-- Night Fae
+			self.quest.name[62020]=SPELL_FAILED_CUSTOM_ERROR_520	-- Venthyr
+			self.quest.name[62023]=SPELL_FAILED_CUSTOM_ERROR_522	-- Kyrian
 		end,
 
 		---
