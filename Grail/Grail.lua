@@ -545,7 +545,7 @@
 --		117 Updates some Quest/NPC information.
 --			Updates some Ve'nari localized reputation levels.
 --			Changes retail interface to 90105, BCC to 20502 and Classic to 11400.
---      118 Changes retail interface to 90200, BCC to 20504 and Classic to 11402.
+--      118 Changes retail interface to 90205, BCC to 20504 and Classic to 11402.
 --          Updates some Quest/NPC information.
 --          Adds factions for Zereth Mortis (9.2 release).
 --			Adds support for quests that only become available after the next daily reset.
