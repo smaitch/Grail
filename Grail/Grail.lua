@@ -1053,7 +1053,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.environment = "_ptr_"
 					end
 
-					self.existsClassic = self.existsClassicBasic or self.existsClassicBurningCrusade
+					self.existsClassic = self.existsClassicBasic or self.existsClassicBurningCrusade or self.existsClassicWotLK
 
 					if self.existsClassic then
 						self.environment = "_classic_"
@@ -1064,12 +1064,12 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					-- Now we set up some capabilities flags
 					self.capabilities = {}
 					self.capabilities.usesFriendshipReputation = not self.existsClassic
-					self.capabilities.usesAchievements = not self.existsClassic
+					self.capabilities.usesAchievements = not self.existsClassicBasic or self.existsClassicBurningCrusade
 					self.capabilities.usesGarrisons = not self.existsClassic
 					self.capabilities.usesArtifacts = false --not self.existsClassic
 					self.capabilities.usesCampaignInfo = not self.existsClassic
 					self.capabilities.usesCalendar = not self.existsClassic
-					self.capabilities.usesAzerothAsCosmicMap = self.existsClassic and not self.existsClassicBurningCrusade
+					self.capabilities.usesAzerothAsCosmicMap = self.existsClassic and not self.existsClassicBurningCrusade or self.existsClassicWotLK
 					self.capabilities.usesQuestHyperlink = not self.existsClassic
 					self.capabilities.usesFollowers = not self.existsClassic
 					self.capabilities.usesWorldEvents = not self.existsClassic
@@ -1112,7 +1112,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							['U'] = { 'Scourge',  'Undead',    'Undead',    0x00400000 },
 							}
 						self.bitMaskRaceAll = 0x01e78000
-						if self.existsClassicBurningCrusade then
+						if self.existsClassicBurningCrusade or self.existsClassicWotLK then
 							self.races['B'] = { 'BloodElf', 'Blood Elf', 'Blood Elf', 0x02000000 }
 							self.races['D'] = { 'Draenei',  'Draenei',   'Draenei',   0x00080000 }
 							self.bitMaskRaceAll = 0x03ef8000
@@ -2251,6 +2251,7 @@ end,
 			},
 		existsClassicBasic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC),
 		existsClassicBurningCrusade = (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC),
+		existsClassicWotLK = (WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC),
 		factionMapping = { ['A'] = 'Alliance', ['H'] = 'Horde', },
 		followerMapping = {},
 		forceLocalizedQuestNameLoad = true,
