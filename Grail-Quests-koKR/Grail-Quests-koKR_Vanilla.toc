@@ -1,0 +1,10 @@
+## Interface: 11403
+## Title: Grail |cff69ccf0Quests |r|cffeda55fClassic|r|cff69ccf0 koKR|r
+## Author: Scott M Harrison
+## Notes: Provides localized koKR quest names to Grail for Classic
+## Version: 33302
+## Dependencies: Grail
+## LoadOnDemand: 1
+
+Grail-Quests-_classic_-koKR.lua
+Grail-Quests-_classic_-description-koKR.lua

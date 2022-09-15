@@ -1,0 +1,10 @@
+## Interface: 11403
+## Title: Grail |cff69ccf0Quests |r|cffeda55fClassic|r|cff69ccf0 ptBR|r
+## Author: Scott M Harrison
+## Notes: Provides localized ptBR quest names to Grail for Classic
+## Version: 33302
+## Dependencies: Grail
+## LoadOnDemand: 1
+
+Grail-Quests-_classic_-ptBR.lua
+Grail-Quests-_classic_-description-ptBR.lua

@@ -550,6 +550,8 @@
 --          Adds factions for Zereth Mortis (9.2 release).
 --			Adds support for quests that only become available after the next daily reset.
 --			Adds support for quests that only become available when currency requirements are met.
+--		119 Adds support for Classic Wrath of the Lich King.
+--			Changes retail interface to 90207, Wrath to 30400 and Vanilla to 11403.
 --
 --	Known Issues
 --
@@ -1053,10 +1055,13 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.environment = "_ptr_"
 					end
 
-					self.existsClassic = self.existsClassicBasic or self.existsClassicBurningCrusade
+					self.existsClassic = self.existsClassicBasic or self.existsClassicWrathOfTheLichKing
 
 					if self.existsClassic then
 						self.environment = "_classic_"
+					end
+					if self.existsClassicWrathOfTheLichKing then
+						self.environment = "_classic_wotlk_"
 					end
 					GrailDatabase[self.environment] = GrailDatabase[self.environment] or {}
 					self.GDE = GrailDatabase[self.environment]
@@ -1064,12 +1069,12 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					-- Now we set up some capabilities flags
 					self.capabilities = {}
 					self.capabilities.usesFriendshipReputation = not self.existsClassic
-					self.capabilities.usesAchievements = not self.existsClassic
+					self.capabilities.usesAchievements = not self.existsClassic or self.existsClassicWrathOfTheLichKing
 					self.capabilities.usesGarrisons = not self.existsClassic
 					self.capabilities.usesArtifacts = false --not self.existsClassic
 					self.capabilities.usesCampaignInfo = not self.existsClassic
 					self.capabilities.usesCalendar = not self.existsClassic
-					self.capabilities.usesAzerothAsCosmicMap = self.existsClassic and not self.existsClassicBurningCrusade
+					self.capabilities.usesAzerothAsCosmicMap = self.existsClassic and not self.existsClassicWrathOfTheLichKing
 					self.capabilities.usesQuestHyperlink = not self.existsClassic
 					self.capabilities.usesFollowers = not self.existsClassic
 					self.capabilities.usesWorldEvents = not self.existsClassic
@@ -1112,7 +1117,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							['U'] = { 'Scourge',  'Undead',    'Undead',    0x00400000 },
 							}
 						self.bitMaskRaceAll = 0x01e78000
-						if self.existsClassicBurningCrusade then
+						if self.existsClassicWrathOfTheLichKing then
 							self.races['B'] = { 'BloodElf', 'Blood Elf', 'Blood Elf', 0x02000000 }
 							self.races['D'] = { 'Draenei',  'Draenei',   'Draenei',   0x00080000 }
 							self.bitMaskRaceAll = 0x03ef8000
@@ -1354,13 +1359,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 					--	For the choice of types of quest on Isle of Thunder the following function is eventually
 					--	called with anId which is associated with the button in the UI.
-					local newSendQuestChoiceFunction = function(anId) self:_SendQuestChoiceResponse(anId) end
 					if SendQuestChoiceResponse then
-						self.origSendQuestChoiceResponseFunction = SendQuestChoiceResponse
-						SendQuestChoiceResponse = newSendQuestChoiceFunction
+						hooksecurefunc("SendQuestChoiceResponse", function(anId) self:_SendQuestChoiceResponse(anId) end)
 					elseif SendPlayerChoiceResponse then
-						self.origSendQuestChoiceResponseFunction = SendPlayerChoiceResponse
-						SendPlayerChoiceResponse = newSendQuestChoiceFunction
+						hooksecurefunc("SendPlayerChoiceResponse", function(anId) self:_SendQuestChoiceResponse(anId) end)
 					else
 						if self.GDE.debug then
 							print("Grail did not replace any SendQuestChoiceResponse")
@@ -1427,6 +1429,69 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.questStatusCache = { ["A"] = {}, ["B"] = {}, ["C"] = {}, ["D"] = {}, ["E"] = {}, ["F"] = {}, ["G"] = {}, ["H"] = {}, ["I"] = {}, ["J"] = {}, ["K"] = {}, ["L"] = {}, ["M"] = {}, ["P"] = {}, ["Q"] = {}, ["R"] = {}, ["S"] = {}, ["V"] = {}, ["W"] = {}, ["X"] = {}, ["Y"] = {}, ["Z"] = {}, }
 						self.npcStatusCache = { ["A"] = {}, ["B"] = {}, ["C"] = {}, ["D"] = {}, ["E"] = {}, ["F"] = {}, ["G"] = {}, ["H"] = {}, ["I"] = {}, ["J"] = {}, ["K"] = {}, ["L"] = {}, ["M"] = {}, ["P"] = {}, ["Q"] = {}, ["R"] = {}, ["S"] = {}, ["V"] = {}, ["W"] = {}, ["X"] = {}, ["Y"] = {}, ["Z"] = {}, }
 					end
+					-- Contemplate switching the questStatusCache keys to make use of the quest prerequisite codes, with further refinement probably using numerals since
+					-- they are not used as prerequisite codes.
+--      Possible codes for prerequisite info:
+--		(if no code present A assumed for P: and C is assumed for I: and B:)
+--			A   quest must be turned in
+--			a	world quest must be available
+--			B   quest must be in log
+--			C   quest must be in log or turned in
+--			c	quest must NOT be in log and NOT turned in
+--			D   quest must be completed in log
+--			E   quest must be completed in log or turned in
+--			e	quest must be in log but not completed or not turned in
+--			Fx	must belong to faction x where A is Alliance and H is Horde
+--			Gbbbbppp	building bbbb (with negative meaning any of that type) present in garrison, with optional ppp plot location required
+--			H   quest has ever been completed
+--			I   spell effect present
+--			i	spell effect NOT present
+--			J   achievement completed
+--			j	achievement NOT completed
+--			K	item possessed
+--			k	item NOT possessed
+--			Lxxx	player level must be >= xxx
+--			lxxx	player level must be < xxx
+--			M	quest has been abandoned at least once
+--			m	quest has never been abandoned
+--			Nx	where x is the key to a required class (see classMapping).
+--			nx	where x is the key to a forbidden class (see classMapping).
+--			O	quest must be accepted
+--			Pxyyy	profession x (see professionMapping) must have a skill value of at least yyy
+--			Qxxxx	the equipped iLvl must be >= xxxx
+--			qxxxx	the equipped iLvl must be < xxxx
+--			R	spell effect has ever been present
+--			S	skill possessed (where the value is Blizzard's spell ID of the skill)
+--			s	skill not possessed (where the value is Blizzard's spell ID of the skill)
+--			Txxxyyyyy	reputation xxx must be at least yyyyy value
+--			txxxyyyyy	reputation xxx must be under yyyyy value
+--			Uxxxyyyyy	frienship reputation xxx must be at least yyyyy value -- used for withering
+--			uxxxyyyyy	frienship reputation xxx must be under yyyyy value -- used for withering
+--			Vxxxy	quest group xxx must have y quests accepted
+--			vxxxxx	quest must have been turned in prior to the previous weekly reset
+--			Wxxxy	quest group xxx must have y quests completed (turned in)
+--			wxxxy	quest group xxx must have y quests completed in log or turned in
+--			X	quest must not be turned in
+--			xyy	artifact knowledge level must be at least yy
+--			Y	achievement completed by this player
+--			y	achievement NOT completed by this player
+--			Z	spell has ever been cast by player
+--			zbbbb	building bbbb (with negative meaning any of that type) needs a worker	[I will eventually unify the letters above properly to free one instead of using 'z']
+--			=zzzzp	the current phase in zone zzzz must be phase p
+--			>zzzzp	the current phase in zone zzzz must be more than phase p
+--			<zzzzp	the current phase in zone zzzz must be less than phase p
+--			!xxxx	the NPC represented by xxxx needs to be killed		*** implement this ***
+--			?xxxx	when zone xxxx is entered	*** implement this ***
+--			@yyyxxxx	artifact item ID xxxx must be >= level y	*** implement this ***
+--			#xxx	the item represented by xxx needs to be available in a class hall mission
+--			$xyy	renown with covenant x must be at least yy
+--				0=any, 1=Kyrian, 2=Venthyr, 3=NightFae, 4=Necrolord
+--			^	calling quest must be available
+--			&xxx	Azerite level is at least
+--			%xxxx	garrison (covenant) talent must be researched
+--			*xyy	renown with covenant x must be less than yy
+--			(xxx	quest xxx must be completed prior to today's reset
+--			)xxxxyyy	currency xxxx must equal or exceed yyy
 
 					-- Create some convenience tables
 					self.raceNameToBitMapping = {}
@@ -2250,7 +2315,9 @@ end,
 
 			},
 		existsClassicBasic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC),
-		existsClassicBurningCrusade = (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC),
+		-- I don't think we need to know about Classic Burning Crusade any more so am removing this...
+--		existsClassicBurningCrusade = (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC),
+		existsClassicWrathOfTheLichKing = (WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC),
 		factionMapping = { ['A'] = 'Alliance', ['H'] = 'Horde', },
 		followerMapping = {},
 		forceLocalizedQuestNameLoad = true,
@@ -11510,7 +11577,6 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 					self:_MarkQuestComplete(questToComplete, true)
 				end
 			end
-			self.origSendQuestChoiceResponseFunction(anId)
 		end,
 
 		SetMapAreaQuests = function(self, mapAreaId, title, questTable, useKey)
