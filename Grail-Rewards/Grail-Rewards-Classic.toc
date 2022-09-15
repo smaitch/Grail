@@ -1,9 +1,0 @@
-## Interface: 11402
-## Title: Grail |r|cff69ccf0Rewards|r
-## Author: Scott M Harrison
-## Notes: Provides (non-reputation) reward award information to Grail
-## Version: 001
-## Dependencies: Grail
-## LoadOnDemand: 1
-
-Grail-Rewards.lua
