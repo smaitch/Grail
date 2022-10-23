@@ -6,5 +6,5 @@
 ## Dependencies: Grail
 ## LoadOnDemand: 1
 
-Grail-Quests-_classic_-zhTW.lua
-Grail-Quests-_classic_-description-zhTW.lua
+Grail-Quests-_wrath_-zhTW.lua
+Grail-Quests-_wrath_-description-zhTW.lua

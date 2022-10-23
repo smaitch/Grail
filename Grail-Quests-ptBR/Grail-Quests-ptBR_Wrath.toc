@@ -6,5 +6,5 @@
 ## Dependencies: Grail
 ## LoadOnDemand: 1
 
-Grail-Quests-_classic_-ptBR.lua
-Grail-Quests-_classic_-description-ptBR.lua
+Grail-Quests-_classic_wrath_-ptBR.lua
+Grail-Quests-_classic_wrath_-description-ptBR.lua
