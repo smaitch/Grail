@@ -1534,7 +1534,12 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						reputationIndex = tonumber(hexIndex, 16)
 						local name = GetFactionInfoByID(reputationIndex)
 						if nil == name and self.capabilities.usesFriendshipReputation then
-							local id, rep, maxRep, friendName, text, texture, reaction, threshold, nextThreshold = GetFriendshipReputation(reputationIndex)
+							local version, build, date, tocversion = GetBuildInfo()
+								if tocversion >= 100000 then
+									local id, rep, maxRep, friendName, text, texture, reaction, threshold, nextThreshold = C_GossipInfo.GetFriendshipReputation(reputationIndex)
+								else
+									local id, rep, maxRep, friendName, text, texture, reaction, threshold, nextThreshold = GetFriendshipReputation(reputationIndex)
+								end
 							if friendName == nil then
 --								name = "*** UNKNOWN " .. reputationIndex .. " ***"
 --								if self.reputationMapping[hexIndex] then
