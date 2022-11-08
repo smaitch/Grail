@@ -32580,4 +32580,16 @@ G[65463]='Die Quelle der Ersten'
 G[66383]='Legendäre Unterstützung'
 end
 
+if release >= 46479 then
+G[65991]='Zeit für eine Abrechnung'
+G[66101]='Vom Himmel hoch'
+G[66106]='Muscheln kuscheln'
+G[66108]='Lösung mit dem Vorschlaghammer'
+G[66112]='Immer zur Hand'
+G[69965]='Qualitätssicherung'
+G[70135]='Eindringende Elementare'
+G[70148]='Ohne Zweck'
+G[72709]='Die Finanzierung einer Schatzsuche'
+end
+
 --	End of localized quest names

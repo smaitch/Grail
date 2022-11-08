@@ -52,6 +52,7 @@ local mapArgus = 905
 local mapZandalar = 875
 local mapKulTiras = 876
 local mapShadowlands = 1550
+local mapDragonIsles = 1978
 
 --	Each of the expansions adds maps that need to be processed.  One should be able to determine what expansions are supported, and then using
 --	this structure determine what maps need to be processed.
@@ -65,6 +66,7 @@ local expansionMaps = {
 	[6] = { mapBrokenIsles, mapArgus },
 	[7] = { mapZandalar, mapKulTiras },
 	[8] = { mapShadowlands },
+	[9] = { mapDragonIsles },	-- Dragonflight
 }
 
 --	These are the achievements organized by zone for completing the "loremaster" achievements (basically completing a specific number of quests in each zone).
@@ -82,6 +84,7 @@ Grail.loremasterAchievements = {
 		[mapZandalar] = {  },
 		[mapKulTiras] = { 512473, 512496, 512497, },
 		[mapShadowlands] = { 514281, 514206, 514164, 514334, 513878, },
+		[mapDragonIsles] = { },
 		},
 	[factionHorde] = {
 		[mapKalimdor] = { 504976, 504927, 504930, 504978, 504931, 504979, 504933, 504934, 504981, 504980, 504935, 504938, 504939, 504940, 504870, 504872, },
@@ -96,6 +99,7 @@ Grail.loremasterAchievements = {
 		[mapZandalar] = { 511861, 511868, 512478, },
 		[mapKulTiras] = { },
 		[mapShadowlands] = { 514281, 514206, 514164, 514334, 513878, },
+		[mapDragonIsles] = { },
 		},
 	}
 
@@ -156,6 +160,7 @@ Grail.extraAchievements = {
 		[mapZandalar] = { 512771, 512849, 512851, },
 		[mapKulTiras] = { 512510, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514279, 514961, 515515, 515259, },
+		[mapDragonIsles] = { },
 		},
 	[factionHorde] = {
 		[mapKalimdor] = { 504961, 505859, 505866, },
@@ -170,6 +175,7 @@ Grail.extraAchievements = {
 		[mapZandalar] = { 512555, 512771, 512849, 512851, },
 		[mapKulTiras] = { 512509, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514961, 515515, 515259, },
+		[mapDragonIsles] = { },
 		},
 	}
 

@@ -1,0 +1,10 @@
+## Interface: 20504
+## Title: Grail |cff69ccf0Quests |r|cffeda55fClassic|r|cff69ccf0 zhCN|r
+## Author: Scott M Harrison
+## Notes: Provides localized zhCN quest names to Grail for Classic
+## Version: 33302
+## Dependencies: Grail
+## LoadOnDemand: 1
+
+Grail-Quests-_classic_-zhCN.lua
+Grail-Quests-_classic_-description-zhCN.lua

@@ -32131,4 +32131,16 @@ G[65463]='El Manantial de los Primeros'
 G[66383]='Asistencia legendaria'
 end
 
+if release >= 46479 then
+G[65991]='Solución de raíz'
+G[66101]='Desde las grandes alturas'
+G[66106]='No te cierres en tu caparazón'
+G[66108]='Solución a mazazos'
+G[66112]='Producción incesante'
+G[69965]='Control de calidad'
+G[70135]='Elementales al acecho'
+G[70148]='Sin propósito'
+G[72709]='Financiamiento de una búsqueda del tesoro'
+end
+
 --	End of localized quest names

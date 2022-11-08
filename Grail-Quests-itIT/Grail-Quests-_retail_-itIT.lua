@@ -29552,4 +29552,31 @@ G[65463]='La Fonte dei Primi'
 G[66383]='Assistenza Leggendaria'
 end
 
+if release >= 46479 then
+G[65760]='A rapporto'
+G[65989]='Invasore Djaradin'
+G[65990]='Libera i draghetti dal male'
+G[65991]="L'ora della resa dei conti"
+G[66101]='Una vista spettacolare'
+G[66104]='Perizia ecologica'
+G[66105]='Una soluzione chirurgica'
+G[66106]='Questione di gusci'
+G[66107]='Salvataggio della fauna'
+G[66108]='Una soluzione aggressiva'
+G[66112]='Andiam... Andiam... Andiamo a crear!'
+G[67053]='Possibilità di pace'
+G[69911]='Scusa il disordine'
+G[69912]='La mia prima, vera emergenza!'
+G[69914]='I Djaradin si sono risvegliati'
+G[69965]='Controllo qualità'
+G[70122]='Esploratori in pericolo'
+G[70123]='Parassiti primordiali'
+G[70124]='Materiali per la professione'
+G[70125]="Dov'è Irathion?"
+G[70135]='Elementali invasori'
+G[70148]='Senza uno scopo'
+G[72122]='Un paio di ecologi in meno'
+G[72709]='Investire in una Caccia del Tesoro.'
+end
+
 --	End of localized quest names

@@ -32505,4 +32505,31 @@ G[65463]='La source-vive des Fondateurs'
 G[66383]='Aide légendaire'
 end
 
+if release >= 46479 then
+G[65760]='Au rapport'
+G[65989]='Invasion djaradine'
+G[65990]='Délivrer les Dragonnets du mal'
+G[65991]='L’heure du jugement'
+G[66101]='Depuis de telles hauteurs'
+G[66104]='Autopsie écologique'
+G[66105]='Une solution au scalpel'
+G[66106]='Sortez-les de leurs coquilles !'
+G[66107]='Sauvetage de la faune'
+G[66108]='Une solution au marteau-pilon'
+G[66112]='L’artisanat avant tout'
+G[67053]='Une chance de paix'
+G[69911]='Pardon pour le désordre'
+G[69912]='Ma première urgence véritable !'
+G[69914]='Les Djaradins se sont réveillés'
+G[69965]='Assurance qualité'
+G[70122]='Périlleuse exploration'
+G[70123]='Vermine primordiale'
+G[70124]='Matériel d’entraînement'
+G[70125]='Où est Irion ?'
+G[70135]='Élémentaires envahissants'
+G[70148]='Sans but'
+G[72122]='Écologistes d’autrefois'
+G[72709]='Financement d’une chasse au trésor'
+end
+
 --	End of localized quest names

@@ -1,0 +1,10 @@
+## Interface: 20504
+## Title: Grail |r|cff69ccf0When|r
+## Author: Scott M Harrison
+## Notes: Provides completion date information to Grail
+## Version: 003
+## Dependencies: Grail
+## LoadOnDemand: 1
+## SavedVariablesPerCharacter: GrailWhenPlayer
+
+Grail-When.lua

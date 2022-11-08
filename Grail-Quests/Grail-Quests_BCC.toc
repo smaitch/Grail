@@ -1,0 +1,9 @@
+## Interface: 20504
+## Title: Grail |cff69ccf0Quests |r|cffeda55fClassic (WotLK)|r
+## Author: Scott M Harrison
+## Notes: Provides quests to Grail for Classic
+## Version: 27178
+## Dependencies: Grail
+## LoadOnDemand: 1
+
+Grail-Quests-_classic_wrath_.lua

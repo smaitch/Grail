@@ -31822,4 +31822,16 @@ G[65463]='A Nascente dos Primogênitos'
 G[66383]='Ajuda lendária'
 end
 
+if release >= 46479 then
+G[65991]='Hora dum ajuste de contas'
+G[66101]='A grandes alturas'
+G[66106]='Não seja moluscocêntrico'
+G[66108]='Uma marreta de solução'
+G[66112]='Sempre criando'
+G[69965]='Controle de qualidade'
+G[70135]='Elementais invasores'
+G[70148]='Sem propósito'
+G[72709]='Verbas para uma caça ao tesouro'
+end
+
 --	End of localized quest names

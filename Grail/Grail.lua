@@ -551,7 +551,11 @@
 --			Adds support for quests that only become available after the next daily reset.
 --			Adds support for quests that only become available when currency requirements are met.
 --		119 Adds support for Classic Wrath of the Lich King.
---			Changes retail interface to 90207, Wrath to 30400 and Vanilla to 11403.
+--			Changes retail interface to 100000, Wrath to 30400 and Vanilla to 11403.
+--			Switched to using C_GossipInfo.GetFriendshipReputation instead of GetFriendshipReputation.
+--			Adds support for Evoker class.
+--			Adds support for Dracthyr race.
+--			Adds missing race localizations.
 --
 --	Known Issues
 --
@@ -832,14 +836,14 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		bitMaskCanGetUnused10	=	0x01000000,
 		bitMaskCanGetUnused11	=	0x02000000,
 		bitMaskCanGetUnused12	=	0x04000000,
-		bitMaskCanGetUnused13	=	0x08000000,
+		bitMaskClassEvoker		=	0x08000000,	-- *** CLASS ***, kept in bit order
 		bitMaskClassDemonHunter =	0x10000000,	-- *** CLASS ***, kept in bit order
 		bitMaskCanGetUnused14	=	0x20000000,
 		bitMaskCanGetUnused15	=	0x40000000,
 		bitMaskCanGetUnused16	=	0x80000000,
 		-- Some convenience values
 		bitMaskFactionAll		=	0x00000003,
-		bitMaskClassAll			=	0x10001ffc,
+		bitMaskClassAll			=	0x18001ffc,
 		bitMaskGenderAll		=	0x00006000,
 		-- End of bit mask values
 
@@ -856,7 +860,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 			bitMaskRaceUnused6			=	0x00000200,
 			bitMaskRaceUnused7			=	0x00000400,
 			bitMaskRaceUnused8			=	0x00000800,
-			bitMaskRaceUnused9			=	0x00001000,
+		bitMaskRaceDracthyr				=	0x00001000,
 		bitMaskRaceMechagnome			=	0x00002000,
 		bitMaskRaceVulpera				=	0x00004000,
 		bitMaskRaceHuman				=	0x00008000,
@@ -877,7 +881,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		bitMaskRaceLightforgedDraenei	=	0x40000000,
 		bitMaskKulTiran					=	0x80000000,
 		-- Convenience values
-		bitMaskRaceAll			=	0xffffe00f,
+		bitMaskRaceAll			=	0xfffff00f,
 
 		-- Enf of bit mask values
 
@@ -992,10 +996,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 			['R'] = 'ROGUE',
 			['S'] = 'SHAMAN',
 			['T'] = 'PRIEST',
+			['V'] = 'EVOKER',
 			['W'] = 'WARRIOR',
 		},
-		classToBitMapping = { ['K'] = 0x00000004, ['D'] = 0x00000008, ['E'] = 0x10000000, ['H'] = 0x00000010, ['M'] = 0x00000020, ['O'] = 0x00000040, ['P'] = 0x00000080, ['T'] = 0x00000100, ['R'] = 0x00000200, ['S'] = 0x00000400, ['L'] = 0x00000800, ['W'] = 0x00001000, },
-		classToMapAreaMapping = { ['CK'] = 200011, ['CD'] = 200004, ['CE'] = 200005, ['CH'] = 200008, ['CM'] = 200013, ['CO'] = 200015, ['CP'] = 200016, ['CT'] = 200020, ['CR'] = 200018, ['CS'] = 200019, ['CL'] = 200012, ['CW'] = 200023, },
+		classToBitMapping = { ['K'] = 0x00000004, ['D'] = 0x00000008, ['E'] = 0x10000000, ['H'] = 0x00000010, ['M'] = 0x00000020, ['O'] = 0x00000040, ['P'] = 0x00000080, ['T'] = 0x00000100, ['R'] = 0x00000200, ['S'] = 0x00000400, ['L'] = 0x00000800, ['V'] = 0x08000000, ['W'] = 0x00001000, },
+		classToMapAreaMapping = { ['CK'] = 200011, ['CD'] = 200004, ['CE'] = 200005, ['CH'] = 200008, ['CM'] = 200013, ['CO'] = 200015, ['CP'] = 200016, ['CT'] = 200020, ['CR'] = 200018, ['CS'] = 200019, ['CL'] = 200012, ['CV'] = 200022, ['CW'] = 200023, },
 		completedQuestThreshold = 0.5,
 		continents = {},	-- key is mapId for the continent, value is { name = string, zones = {}, mapID = int, dungeons = {} }
 							-- and zones and dungeons are just arrays of { name = string, mapID = int }
@@ -1534,7 +1539,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						reputationIndex = tonumber(hexIndex, 16)
 						local name = GetFactionInfoByID(reputationIndex)
 						if nil == name and self.capabilities.usesFriendshipReputation then
-							local id, rep, maxRep, friendName, text, texture, reaction, threshold, nextThreshold = GetFriendshipReputation(reputationIndex)
+							local id, rep, maxRep, friendName, text, texture, reaction, threshold, nextThreshold = self:GetFriendshipReputation(reputationIndex)
 							if friendName == nil then
 --								name = "*** UNKNOWN " .. reputationIndex .. " ***"
 --								if self.reputationMapping[hexIndex] then
@@ -2720,6 +2725,7 @@ end,
 			['U'] = { 'Scourge',  'Undead',    'Undead',    0x00400000 },
 			['V'] = { 'VoidElf',  'Void Elf',  'Void Elf',	0x20000000 },
 			['W'] = { 'Worgen',   'Worgen',    'Worgen',    0x00100000 },
+			['Y'] = { 'Dracthyr', 'Dracthyr',  'Dracthyr',	0x00001000 },
 			['Z'] = { 'ZandalariTroll', 'Zandalari Troll', 'Zandalari Troll', 0x10000000 },
 			},
 		receivedCalendarUpdateEventList = false,
@@ -3516,7 +3522,7 @@ end,
 			local retval = 0
 			-- As of 2020-10-15 Classic has EXPANSION_NAME 0..6 defined, while Retail has 0..8 defined.
 			-- It would be great if we could support what is defined in the system, but it seems we cannot
-			-- and therefor if in Classic we limit ourselves to EXPANSION_NAME0 only.
+			-- and therefore if in Classic we limit ourselves to EXPANSION_NAME0 only.
 			if not self.existsClassic then
 				for expansionIndex = 1, 100 do
 					if nil == self:_ExpansionName(expansionIndex) then
@@ -7222,6 +7228,12 @@ end
 
 		GarrisonBuildingLevelString = function(self, garrisonBuildingId)
 			return self.garrisonBuildingLevelMapping[garrisonBuildingId]
+		end,
+
+		-- Blizzard changed from using GetFriendshipReputation to C_GossipInfo.GetFriendshipReputation and we will
+		-- make use of whichever is available to us.
+		GetFriendshipReputation = function(self, factionIndex)
+			return (C_GossipInfo.GetFriendshipReputation or GetFriendshipReputation)(factionIndex)
 		end,
 
 		--	This routine returns the current "weekly" day which is the start time date for
@@ -11268,7 +11280,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 if factionId == nil then print("Rep nil issue:", reputationName, reputationId, reputationValue) end
 			if nil ~= factionId and nil ~= reputationValue and self.capabilities.usesFriendshipReputation then
 				local usingFriendsMaw = self.reputationFriendsMaw[reputationId] and true or false
-				local id, rep, maxRep, name, text, texture, reaction, threshold, nextThreshold = GetFriendshipReputation(factionId)
+				local id, rep, maxRep, name, text, texture, reaction, threshold, nextThreshold = self:GetFriendshipReputation(factionId)
 				--	when withering, threshold is 0, but when stable threshold is 100
 				--	when withering, rep is 1, but when stable threshold is 101 - 199
 				--	maxRep seems to be 42999 in any case
@@ -12052,52 +12064,55 @@ if locale == "deDE" then
 	me.professionMapping = { ['A'] = 'Alchemie', ['B'] = 'Schmiedekunst', ['C'] = 'Kochkunst', ['E'] = 'Verzauberkunst', ['F'] = 'Angeln', ['H'] = 'Kräuterkunde', ['I'] = 'Inschriftenkunde', ['J'] = 'Juwelenschleifen', ['L'] = 'Lederverarbeitung', ['M'] = 'Bergbau', ['N'] = 'Ingenieurskunst', ['R'] = 'Reiten', ['S'] = 'Kürschnerei', ['T'] = 'Schneiderei', ['X'] = 'Archäologie', ['Z'] = 'Erste Hilfe', }
 
 	local G = me.races
-	G['H'][2] = 'Mensch'
-	G['H'][3] = 'Mensch'
-	G['F'][2] = 'Zwerg'
-	G['F'][3] = 'Zwerg'
-	G['E'][2] = 'Nachtelf'
-	G['E'][3] = 'Nachtelfe'
-	G['N'][2] = 'Gnom'
-	G['N'][3] = 'Gnom'
-		G['D'][2] = 'Draenei'
-		G['D'][3] = 'Draenei'
-		G['W'][2] = 'Worgen'
-		G['W'][3] = 'Worgen'
-		G['O'][2] = 'Orc'
-		G['O'][3] = 'Orc'
-	G['U'][2] = 'Untoter'
-	G['U'][3] = 'Untote'
-		G['T'][2] = 'Tauren'
-		G['T'][3] = 'Tauren'
-		G['L'][2] = 'Troll'
-		G['L'][3] = 'Troll'
-	G['B'][2] = 'Blutelf'
-	G['B'][3] = 'Blutelfe'
-		G['G'][2] = 'Goblin'
-		G['G'][3] = 'Goblin'
 		G['A'][2] = 'Pandaren'
 		G['A'][3] = 'Pandaren'
+	G['B'][2] = 'Blutelf'
+	G['B'][3] = 'Blutelfe'
 	G['C'][2] = 'Dunkeleisenzwerg'
 	G['C'][3] = 'Dunkeleisenzwergin'
+		G['D'][2] = 'Draenei'
+		G['D'][3] = 'Draenei'
+	G['E'][2] = 'Nachtelf'
+	G['E'][3] = 'Nachtelfe'
+	G['F'][2] = 'Zwerg'
+	G['F'][3] = 'Zwerg'
+		G['G'][2] = 'Goblin'
+		G['G'][3] = 'Goblin'
+	G['H'][2] = 'Mensch'
+	G['H'][3] = 'Mensch'
 	G['I'][2] = 'Lichtgeschmiedeter Draenei'
 	G['I'][3] = 'Lichtgeschmiedete Draenei'
 	G['J'][2] = "Mag'har"
 	G['J'][3] = "Mag'har"
 	G['K'][2] = 'Kul Tiraner'
 	G['K'][3] = 'Kul Tiranerin'
+		G['L'][2] = 'Troll'
+		G['L'][3] = 'Troll'
 	G['M'][2] = 'Hochbergtauren'
 	G['M'][3] = 'Hochbergtauren'
+	G['N'][2] = 'Gnom'
+	G['N'][3] = 'Gnom'
+		G['O'][2] = 'Orc'
+		G['O'][3] = 'Orc'
 	G['Q'][2] = 'Mechagnom'
 	G['Q'][3] = 'Mechagnom'
 	G['R'][2] = 'Nachtgeborener'
 	G['R'][3] = 'Nachtgeborene'
 		G['S'][2] = 'Vulpera'
 		G['S'][3] = 'Vulpera'
+		G['T'][2] = 'Tauren'
+		G['T'][3] = 'Tauren'
+	G['U'][2] = 'Untoter'
+	G['U'][3] = 'Untote'
 	G['V'][2] = 'Leerenelf'
 	G['V'][3] = 'Leerenelfe'
+		G['W'][2] = 'Worgen'
+		G['W'][3] = 'Worgen'
+		G['Y'][2] = 'Dracthyr'
+		G['Y'][3] = 'Dracthyr'
 	G['Z'][2] = 'Zandalaritroll'
 	G['Z'][3] = 'Zandalaritroll'
+
 elseif locale == "esES" then
 	me.bodyGuardLevel = { 'Guardaespaldas', 'Escolta leal', 'Compañero del alma' }
 	me.friendshipLevel = { 'Extraño', 'Conocido', 'Colega', 'Amigo', 'Buen amigo', 'Mejor amigo' }
@@ -12108,24 +12123,55 @@ elseif locale == "esES" then
 	me.professionMapping = { ['A'] = 'Alquimia', ['B'] = 'Herrería', ['C'] = 'Cocina', ['E'] = 'Encantamiento', ['F'] = 'Pesca', ['H'] = 'Hebalismo', ['I'] = 'Inscripción', ['J'] = 'Joyería', ['L'] = 'Peletería', ['M'] = 'Minería', ['N'] = 'Ingeniería', ['R'] = 'Equitación', ['S'] = 'Desuello', ['T'] = 'Sastrería', ['X'] = 'Arqueología', ['Z'] = 'Primeros auxilios', }
 
 	local G = me.races
-	G['H'][2] = 'Humano'
-	G['H'][3] = 'Humana'
-	G['F'][2] = 'Enano'
-	G['F'][3] = 'Enana'
-	G['E'][2] = 'Elfo de la noche'
-	G['E'][3] = 'Elfa de la noche'
-	G['N'][2] = 'Gnomo'
-	G['N'][3] = 'Gnoma'
-	G['W'][2] = 'Huargen'
-	G['W'][3] = 'Huargen'
-	G['O'][2] = 'Orco'
-	G['O'][3] = 'Orco'
-	G['U'][2] = 'No-muerto'
-	G['U'][3] = 'No-muerta'
-	G['L'][2] = 'Trol'
-	G['L'][3] = 'Trol'
+		G['A'][2] = 'Pandaren'
+		G['A'][3] = 'Pandaren'
 	G['B'][2] = 'Elfo de sangre'
 	G['B'][3] = 'Elfa de sangre'
+	G['C'][2] = 'Enano Hierro Negro'
+	G['C'][3] = 'Enana Hierro Negro'
+		G['D'][2] = 'Draenei'
+		G['D'][3] = 'Draenei'
+	G['E'][2] = 'Elfo de la noche'
+	G['E'][3] = 'Elfa de la noche'
+	G['F'][2] = 'Enano'
+	G['F'][3] = 'Enana'
+		G['G'][2] = 'Goblin'
+		G['G'][3] = 'Goblin'
+	G['H'][2] = 'Humano'
+	G['H'][3] = 'Humana'
+	G['I'][2] = 'Draenei forjado por la Luz'
+	G['I'][3] = 'Draenei forjada por la Luz'
+	G['J'][2] = "Orco Mag'har"
+	G['J'][3] = "Orco Mag'har"
+	G['K'][2] = 'Ciudadano de Kul Tiras'
+	G['K'][3] = 'Ciudadana de Kul Tiras'
+	G['L'][2] = 'Trol'
+	G['L'][3] = 'Trol'
+	G['M'][2] = 'Tauren Monte Alto'
+	G['M'][3] = 'Tauren Monte Alto'
+	G['N'][2] = 'Gnomo'
+	G['N'][3] = 'Gnoma'
+	G['O'][2] = 'Orco'
+	G['O'][3] = 'Orco'
+	G['Q'][2] = 'Mecagnomo'
+	G['Q'][3] = 'Mecagnoma'
+	G['R'][2] = 'Nocheterna'
+	G['R'][3] = 'Nocheterna'
+		G['S'][2] = 'Vulpera'
+		G['S'][3] = 'Vulpera'
+		G['T'][2] = 'Tauren'
+		G['T'][3] = 'Tauren'
+	G['U'][2] = 'No-muerto'
+	G['U'][3] = 'No-muerta'
+	G['V'][2] = 'Elfo del Vacío'
+	G['V'][3] = 'Elfa del Vacío'
+	G['W'][2] = 'Huargen'
+	G['W'][3] = 'Huargen'
+		G['Y'][2] = 'Dracthyr'
+		G['Y'][3] = 'Dracthyr'
+	G['Z'][2] = 'Trol Zandalari'
+	G['Z'][3] = 'Trol Zandalari'
+	
 elseif locale == "esMX" then
 	me.bodyGuardLevel = { 'Guardaespaldas', 'De confianza', 'Copiloto personal' }
 	me.friendshipLevel = { 'Extraño', 'Conocido', 'Colega', 'Amigo', 'Buen amigo', 'Mejor amigo' }
@@ -12136,24 +12182,55 @@ elseif locale == "esMX" then
 	me.professionMapping = { ['A'] = 'Alquimia', ['B'] = 'Herrería', ['C'] = 'Cocina', ['E'] = 'Encantamiento', ['F'] = 'Pesca', ['H'] = 'Hebalismo', ['I'] = 'Inscripción', ['J'] = 'Joyería', ['L'] = 'Peletería', ['M'] = 'Minería', ['N'] = 'Ingeniería', ['R'] = 'Equitación', ['S'] = 'Desuello', ['T'] = 'Sastrería', ['X'] = 'Arqueología', ['Z'] = 'Primeros auxilios', }
 
 	local G = me.races
-	G['H'][2] = 'Humano'
-	G['H'][3] = 'Humana'
-	G['F'][2] = 'Enano'
-	G['F'][3] = 'Enana'
-	G['E'][2] = 'Elfo de la noche'
-	G['E'][3] = 'Elfa de la noche'
-	G['N'][2] = 'Gnomo'
-	G['N'][3] = 'Gnoma'
-	G['W'][2] = 'Huargen'
-	G['W'][3] = 'Huargen'
-	G['O'][2] = 'Orco'
-	G['O'][3] = 'Orco'
-	G['U'][2] = 'No-muerto'
-	G['U'][3] = 'No-muerta'
-	G['L'][2] = 'Trol'
-	G['L'][3] = 'Trol'
+		G['A'][2] = 'Pandaren'
+		G['A'][3] = 'Pandaren'
 	G['B'][2] = 'Elfo de sangre'
 	G['B'][3] = 'Elfa de sangre'
+	G['C'][2] = 'Enano Hierro Negro'
+	G['C'][3] = 'Enana Hierro Negro'
+		G['D'][2] = 'Draenei'
+		G['D'][3] = 'Draenei'
+	G['E'][2] = 'Elfo de la noche'
+	G['E'][3] = 'Elfa de la noche'
+	G['F'][2] = 'Enano'
+	G['F'][3] = 'Enana'
+		G['G'][2] = 'Goblin'
+		G['G'][3] = 'Goblin'
+	G['H'][2] = 'Humano'
+	G['H'][3] = 'Humana'
+	G['I'][2] = 'Draenei templeluz'
+	G['I'][3] = 'Draenei templeluz'
+	G['J'][2] = "Orco mag'har"
+	G['J'][3] = "Orco mag'har"
+	G['K'][2] = 'Kultirano'
+	G['K'][3] = 'Kultirana'
+	G['L'][2] = 'Trol'
+	G['L'][3] = 'Trol'
+	G['M'][2] = 'Tauren de Altamontaña'
+	G['M'][3] = 'Tauren de Altamontaña'
+	G['N'][2] = 'Gnomo'
+	G['N'][3] = 'Gnoma'
+	G['O'][2] = 'Orco'
+	G['O'][3] = 'Orco'
+	G['Q'][2] = 'Mecagnomo'
+	G['Q'][3] = 'Mecagnoma'
+	G['R'][2] = 'Natonocturno'
+	G['R'][3] = 'Natonocturna'
+		G['S'][2] = 'Vulpera'
+		G['S'][3] = 'Vulpera'
+		G['T'][2] = 'Tauren'
+		G['T'][3] = 'Tauren'
+	G['U'][2] = 'No-muerto'
+	G['U'][3] = 'No-muerta'
+	G['V'][2] = 'Elfo del Vacío'
+	G['V'][3] = 'Elfa del Vacío'
+	G['W'][2] = 'Huargen'
+	G['W'][3] = 'Huargen'
+		G['Y'][2] = 'Dracthyr'
+		G['Y'][3] = 'Dracthyr'
+	G['Z'][2] = 'Trol zandalari'
+	G['Z'][3] = 'Trol zandalari'
+
 elseif locale == "frFR" then
 	me.bodyGuardLevel = { 'Garde du corps', 'Garde personnel', 'Bras droit' }
 	me.friendshipLevel = { 'Étranger', 'Connaissance', 'Camarade', 'Ami', 'Bon ami', 'Meilleur ami' }
@@ -12164,23 +12241,54 @@ elseif locale == "frFR" then
 	me.professionMapping = { ['A'] = 'Alchimie', ['B'] = 'Forge', ['C'] = 'Cuisine', ['E'] = 'Enchantement', ['F'] = 'Pêche', ['H'] = 'Herboristerie', ['I'] = 'Calligraphie', ['J'] = 'Joaillerie', ['L'] = 'Travail du cuir', ['M'] = 'Minage', ['N'] = 'Ingénierie', ['R'] = 'Monte', ['S'] = 'Dépeçage', ['T'] = 'Couture', ['X'] = 'Archéologie', ['Z'] = 'Secourisme', }
 
 	local G = me.races
-	G['H'][2] = 'Humain'
-	G['H'][3] = 'Humaine'
-	G['F'][2] = 'Nain'
-	G['F'][3] = 'Naine'
-	G['E'][2] = 'Elfe de la nuit'
-	G['E'][3] = 'Elfe de la nuit'
-	G['D'][2] = 'Draeneï'
-	G['D'][3] = 'Draeneï'
-	G['O'][3] = 'Orque'
-	G['U'][2] = 'Mort-vivant'
-	G['U'][3] = 'Morte-vivante'
-	G['T'][3] = 'Taurène'
-	G['L'][3] = 'Trollesse'
+		G['A'][2] = 'Pandaren'
+	G['A'][3] = 'Pandarène'
 	G['B'][2] = 'Elfe de sang'
 	G['B'][3] = 'Elfe de sang'
+	G['C'][2] = 'Nain sombrefer'
+	G['C'][3] = 'Naine sombrefer'
+	G['D'][2] = 'Draeneï'
+	G['D'][3] = 'Draeneï'
+	G['E'][2] = 'Elfe de la nuit'
+	G['E'][3] = 'Elfe de la nuit'
+	G['F'][2] = 'Nain'
+	G['F'][3] = 'Naine'
 	G['G'][2] = 'Gobelin'
 	G['G'][3] = 'Gobeline'
+	G['H'][2] = 'Humain'
+	G['H'][3] = 'Humaine'
+	G['I'][2] = 'Draeneï sancteforge'
+	G['I'][3] = 'Draeneï sancteforge'
+	G['J'][2] = "Orc mag’har"
+	G['J'][3] = "Orque mag’har"
+	G['K'][2] = 'Kultirassien'
+	G['K'][3] = 'Kultirassienne'
+		G['L'][2] = 'Troll'
+	G['L'][3] = 'Trollesse'
+	G['M'][2] = 'Tauren de Haut-Roc'
+	G['M'][3] = 'Taurène de Haut-Roc'
+		G['N'][2] = 'Gnome'
+		G['N'][3] = 'Gnome'
+		G['O'][2] = 'Orc'
+	G['O'][3] = 'Orque'
+	G['Q'][2] = 'Mécagnome'
+	G['Q'][3] = 'Mécagnome'
+	G['R'][2] = 'Sacrenuit'
+	G['R'][3] = 'Sacrenuit'
+	G['S'][2] = 'Vulpérin'
+	G['S'][3] = 'Vulpérine'
+		G['T'][2] = 'Tauren'
+	G['T'][3] = 'Taurène'
+	G['U'][2] = 'Mort-vivant'
+	G['U'][3] = 'Morte-vivante'
+	G['V'][2] = 'Elfe du Vide'
+	G['V'][3] = 'Elfe du Vide'
+		G['W'][2] = 'Worgen'
+		G['W'][3] = 'Worgen'
+		G['Y'][2] = 'Dracthyr'
+		G['Y'][3] = 'Dracthyr'
+	G['Z'][2] = 'Troll zandalari'
+	G['Z'][3] = 'Trolle zandalari'
 
 elseif locale == "itIT" then
 	me.bodyGuardLevel = { 'Guardia del Corpo', 'Guardia Fidata', 'Scorta Personale' }
@@ -12228,20 +12336,54 @@ me.professionMapping = {
     }
 
 	local G = me.races
-	G['H'][2] = 'Umano'
-	G['H'][3] = 'Umana'
-	G['F'][2] = 'Nano'
-	G['F'][3] = 'Nana'
+		G['A'][2] = 'Pandaren'
+		G['A'][3] = 'Pandaren'
+	G['B'][2] = 'Elfo del Sangue'
+	G['B'][3] = 'Elfa del Sangue'
+	G['C'][2] = 'Nano Ferroscuro'
+	G['C'][3] = 'Nana Ferroscuro'
+		G['D'][2] = 'Draenei'
+		G['D'][3] = 'Draenei'
 	G['E'][2] = 'Elfo della Notte'
 	G['E'][3] = 'Elfa della Notte'
+	G['F'][2] = 'Nano'
+	G['F'][3] = 'Nana'
+		G['G'][2] = 'Goblin'
+		G['G'][3] = 'Goblin'
+	G['H'][2] = 'Umano'
+	G['H'][3] = 'Umana'
+	G['I'][2] = 'Draenei Forgialuce'
+	G['I'][3] = 'Draenei Forgialuce'
+	G['J'][2] = "Orco mag'har"
+	G['J'][3] = "Orchessa Mag'har"
+	G['K'][2] = 'Kul Tirano'
+	G['K'][3] = 'Kul Tirana'
+		G['L'][2] = 'Troll'
+		G['L'][3] = 'Troll'
+	G['M'][2] = 'Tauren di Alto Monte'
+	G['M'][3] = 'Tauren di Alto Monte'
 	G['N'][2] = 'Gnomo'
 	G['N'][3] = 'Gnoma'
 	G['O'][2] = 'Orco'
 	G['O'][3] = 'Orchessa'
+	G['Q'][2] = 'Meccagnomo'
+	G['Q'][3] = 'Meccagnoma'
+	G['R'][2] = 'Nobile Oscuro'
+	G['R'][3] = 'Nobile Oscura'
+		G['S'][2] = 'Vulpera'
+		G['S'][3] = 'Vulpera'
+		G['T'][2] = 'Tauren'
+		G['T'][3] = 'Tauren'
 	G['U'][2] = 'Non Morto'
 	G['U'][3] = 'Non Morta'
-	G['B'][2] = 'Elfo del Sangue'
-	G['B'][3] = 'Elfa del Sangue'
+	G['V'][2] = 'Elfo del Vuoto'
+	G['V'][3] = 'Elfa del Vuoto'
+		G['W'][2] = 'Worgen'
+		G['W'][3] = 'Worgen'
+		G['Y'][2] = 'Dracthyr'
+		G['Y'][3] = 'Dracthyr'
+	G['Z'][2] = 'Troll Zandalari'
+	G['Z'][3] = 'Troll Zandalari'
 
 elseif locale == "koKR" then
 	me.bodyGuardLevel = { '경호원', '믿음직스러운 경호원', '개인 호위무사' }
@@ -12253,32 +12395,54 @@ elseif locale == "koKR" then
 	me.professionMapping = { ['A'] = '연금술', ['B'] = '대장기술', ['C'] = '요리', ['E'] = '마법부여', ['F'] = '낚시', ['H'] = '약초채집', ['I'] = '주문각인', ['J'] = '보석세공', ['L'] = '가죽세공', ['M'] = '채광', ['N'] = '기계공학', ['R'] = '탈것 숙련', ['S'] = '무두질', ['T'] = '재봉술', ['X'] = '고고학', ['Z'] = '응급치료', }
 
 	local G = me.races
-	G['H'][2] = '인간'
-	G['H'][3] = '인간'
-	G['F'][2] = '드워프'
-	G['F'][3] = '드워프'
-	G['E'][2] = '나이트 엘프'
-	G['E'][3] = '나이트 엘프'
-	G['N'][2] = '노움'
-	G['N'][3] = '노움'
-		G['D'][2] = '드레나이'
-		G['D'][3] = '드레나이'
-		G['W'][2] = '늑대인간'
-		G['W'][3] = '늑대인간'
-		G['O'][2] = '오크'
-		G['O'][3] = '오크'
-	G['U'][2] = '언데드'
-	G['U'][3] = '언데드'
-		G['T'][2] = '타우렌'
-		G['T'][3] = '타우렌'
-		G['L'][2] = '트롤'
-		G['L'][3] = '트롤'
+	G['A'][2] = '판다렌'
+	G['A'][3] = '판다렌'
 	G['B'][2] = '블러드 엘프'
 	G['B'][3] = '블러드 엘프'
-		G['G'][2] = '고블린'
-		G['G'][3] = '고블린'
-		G['A'][2] = '판다렌'
-		G['A'][3] = '판다렌'
+	G['C'][2] = '검은무쇠 드워프'
+	G['C'][3] = '검은무쇠 드워프'
+	G['D'][2] = '드레나이'
+	G['D'][3] = '드레나이'
+	G['E'][2] = '나이트 엘프'
+	G['E'][3] = '나이트 엘프'
+	G['F'][2] = '드워프'
+	G['F'][3] = '드워프'
+	G['G'][2] = '고블린'
+	G['G'][3] = '고블린'
+	G['H'][2] = '인간'
+	G['H'][3] = '인간'
+	G['I'][2] = '빛벼림 드레나이'
+	G['I'][3] = '빛벼림 드레나이'
+	G['J'][2] = "마그하르 오크"
+	G['J'][3] = "마그하르 오크"
+	G['K'][2] = '쿨 티란'
+	G['K'][3] = '쿨 티란'
+	G['L'][2] = '트롤'
+	G['L'][3] = '트롤'
+	G['M'][2] = '높은산 타우렌'
+	G['M'][3] = '높은산 타우렌'
+	G['N'][2] = '노움'
+	G['N'][3] = '노움'
+	G['O'][2] = '오크'
+	G['O'][3] = '오크'
+	G['Q'][2] = '기계노움'
+	G['Q'][3] = '기계노움'
+	G['R'][2] = '나이트본'
+	G['R'][3] = '나이트본'
+	G['S'][2] = '불페라'
+	G['S'][3] = '불페라'
+	G['T'][2] = '타우렌'
+	G['T'][3] = '타우렌'
+	G['U'][2] = '언데드'
+	G['U'][3] = '언데드'
+	G['V'][2] = '공허 엘프'
+	G['V'][3] = '공허 엘프'
+	G['W'][2] = '늑대인간'
+	G['W'][3] = '늑대인간'
+	G['Y'][2] = '드랙티르'
+	G['Y'][3] = '드랙티르'
+	G['Z'][2] = '잔달라 트롤'
+	G['Z'][3] = '잔달라 트롤'
 
 elseif locale == "ptBR" then
 	me.bodyGuardLevel = { 'Guarda-costas', 'Guarda-costas de Confiança', 'Copiloto Pessoal' }
@@ -12307,24 +12471,54 @@ me.professionMapping = {
 	}
 
 	local G = me.races
-	G['H'][2] = 'Humano'
-	G['H'][3] = 'Humana'
-	G['F'][2] = 'Anão'
-	G['F'][3] = 'Anã'
-	G['E'][2] = 'Elfo Noturno'
-	G['E'][3] = 'Elfa Noturna'
-	G['N'][2] = 'Gnomo'
-	G['N'][3] = 'Gnomida'
-	G['D'][3] = 'Draenaia'
-	G['W'][3] = 'Worgenin'
-	G['O'][3] = 'Orquisa'
-	G['U'][2] = 'Morto-vivo'
-	G['U'][3] = 'Morta-viva'
-	G['T'][3] = 'Taurena'
-	G['L'][3] = 'Trolesa'
+		G['A'][2] = 'Pandaren'
+	G['A'][3] = 'Pandarena'
 	G['B'][2] = 'Elfo Sangrento'
 	G['B'][3] = 'Elfa Sangrenta'
+	G['C'][2] = 'Anão Ferro Negro'
+	G['C'][3] = 'Anã Ferro Negro'
+		G['D'][2] = 'Draenei'
+	G['D'][3] = 'Draenaia'
+	G['E'][2] = 'Elfo Noturno'
+	G['E'][3] = 'Elfa Noturna'
+	G['F'][2] = 'Anão'
+	G['F'][3] = 'Anã'
+		G['G'][2] = 'Goblin'
 	G['G'][3] = 'Goblina'
+	G['H'][2] = 'Humano'
+	G['H'][3] = 'Humana'
+	G['I'][2] = 'Draenei Forjado a Luz'
+	G['I'][3] = 'Draeneia Forjada a Luz'
+	G['J'][2] = "Orc Mag'har"
+	G['J'][3] = "Orc Mag'har"
+	G['K'][2] = 'Kultireno'
+	G['K'][3] = 'Kultirena'
+		G['L'][2] = 'Troll'
+	G['L'][3] = 'Trolesa'
+	G['M'][2] = 'Tauren Altamontês'
+	G['M'][3] = 'Taurena Altamontesa'
+	G['N'][2] = 'Gnomo'
+	G['N'][3] = 'Gnomida'
+		G['O'][2] = 'Orc'
+	G['O'][3] = 'Orquisa'
+	G['Q'][2] = 'Gnomecânico'
+	G['Q'][3] = 'Gnomecânica'
+	G['R'][2] = 'Filho do Noite'
+	G['R'][3] = 'Filha da Noite'
+		G['S'][2] = 'Vulpera'
+		G['S'][3] = 'Vulpera'
+		G['T'][2] = 'Tauren'
+	G['T'][3] = 'Taurena'
+	G['U'][2] = 'Morto-vivo'
+	G['U'][3] = 'Morta-viva'
+	G['V'][2] = 'Elfo Caótico'
+	G['V'][3] = 'Elfa Caótica'
+		G['W'][2] = 'Worgen'
+	G['W'][3] = 'Worgenin'
+		G['Y'][2] = 'Dracthyr'
+		G['Y'][3] = 'Dracthyr'
+	G['Z'][2] = 'Troll Zandalari'
+	G['Z'][3] = 'Trolesa Zandalari'
 
 elseif locale == "ruRU" then
 	me.bodyGuardLevel = { 'Телохранитель', 'Доверенный боец', 'Боевой товарищ' }
@@ -12336,32 +12530,54 @@ elseif locale == "ruRU" then
 	me.professionMapping = { ['A'] = 'Алхимия', ['B'] = 'Кузнечное дело', ['C'] = 'Кулинария', ['E'] = 'Наложение чар', ['F'] = 'Рыбная ловля', ['H'] = 'Травничество', ['I'] = 'Начертание', ['J'] = 'Ювелирное дело', ['L'] = 'Кожевничество', ['M'] = 'Горное дело', ['N'] = 'Механика', ['R'] = 'Верховая езда', ['S'] = 'Снятие шкур', ['T'] = 'Портняжное дело', ['X'] = 'Археология', ['Z'] = 'Первая помощь', }
 
 	local G = me.races
-	G['H'][2] = 'Человек'
-	G['H'][3] = 'Человек'
-	G['F'][2] = 'Дворф'
-	G['F'][3] = 'Дворф'
-	G['E'][2] = 'Ночной эльф'
-	G['E'][3] = 'Ночная эльфийка'
-	G['N'][2] = 'Гном'
-	G['N'][3] = 'Гном'
-	G['D'][2] = 'Дреней'
-	G['D'][3] = 'Дреней'
-	G['W'][2] = 'Ворген'
-	G['W'][3] = 'Ворген'
-	G['O'][2] = 'Орк'
-	G['O'][3] = 'Орк'
-	G['U'][2] = 'Нежить'
-	G['U'][3] = 'Нежить'
-	G['T'][2] = 'Таурен'
-	G['T'][3] = 'Таурен'
-	G['L'][2] = 'Тролль'
-	G['L'][3] = 'Тролль'
+	G['A'][2] = 'Пандарен'
+	G['A'][3] = 'Пандаренка'
 	G['B'][2] = 'Эльф крови'
 	G['B'][3] = 'Эльфийка крови'
+	G['C'][2] = 'Дворф из клана Черного Железа'
+	G['C'][3] = 'Дворфийка из клана Черного Железа'
+	G['D'][2] = 'Дреней'
+	G['D'][3] = 'Дреней'
+	G['E'][2] = 'Ночной эльф'
+	G['E'][3] = 'Ночная эльфийка'
+	G['F'][2] = 'Дворф'
+	G['F'][3] = 'Дворф'
 	G['G'][2] = 'Гоблин'
 	G['G'][3] = 'Гоблин'
-	G['A'][2] = 'Пандарен'
-	G['A'][3] = 'Пандарен'
+	G['H'][2] = 'Человек'
+	G['H'][3] = 'Человек'
+	G['I'][2] = 'Озаренный дреней'
+	G['I'][3] = 'Озаренная дренейка'
+	G['J'][2] = "Маг'хар"
+	G['J'][3] = "Маг'харка"
+	G['K'][2] = 'Култирасец'
+	G['K'][3] = 'Култираска'
+	G['L'][2] = 'Тролль'
+	G['L'][3] = 'Тролль'
+	G['M'][2] = 'Таурен Крутогорья'
+	G['M'][3] = 'Тауренка Крутогорья'
+	G['N'][2] = 'Гном'
+	G['N'][3] = 'Гном'
+	G['O'][2] = 'Орк'
+	G['O'][3] = 'Орк'
+	G['Q'][2] = 'Механогном'
+	G['Q'][3] = 'Механогномка'
+	G['R'][2] = 'Ночнорожденный'
+	G['R'][3] = 'Ночнорожденная'
+	G['S'][2] = 'Вульпера'
+	G['S'][3] = 'Вульпера'
+	G['T'][2] = 'Таурен'
+	G['T'][3] = 'Таурен'
+	G['U'][2] = 'Нежить'
+	G['U'][3] = 'Нежить'
+	G['V'][2] = 'Эльф Бездны'
+	G['V'][3] = 'Эльфийка Бездны'
+	G['W'][2] = 'Ворген'
+	G['W'][3] = 'Ворген'
+	G['Y'][2] = 'Драктир'
+	G['Y'][3] = 'Драктир'
+	G['Z'][2] = 'Зандалар'
+	G['Z'][3] = 'Зандаларка'
 
 elseif locale == "zhCN" then
 	me.bodyGuardLevel = { '保镖', '贴身保镖', '亲密搭档' }
@@ -12372,32 +12588,54 @@ elseif locale == "zhCN" then
 	me.professionMapping = { ['A'] = '炼金术', ['B'] = '锻造', ['C'] = '烹饪', ['E'] = '附魔', ['F'] = '钓鱼', ['H'] = '草药学', ['I'] = '铭文', ['J'] = '珠宝加工', ['L'] = '制皮', ['M'] = '采矿', ['N'] = '工程学', ['R'] = '骑术', ['S'] = '剥皮', ['T'] = '裁缝', ['X'] = '考古学', ['Z'] = '急救', }
 
 	local G = me.races
-	G['H'][2] = '人类'
-	G['H'][3] = '人类'
-	G['F'][2] = '矮人'
-	G['F'][3] = '矮人'
-	G['E'][2] = '暗夜精灵'
-	G['E'][3] = '暗夜精灵'
-	G['N'][2] = '侏儒'
-	G['N'][3] = '侏儒'
-	G['D'][2] = '德莱尼'
-	G['D'][3] = '德莱尼'
-	G['W'][2] = '狼人'
-	G['W'][3] = '狼人'
-	G['O'][2] = '兽人'
-	G['O'][3] = '兽人'
-	G['U'][2] = '亡灵'
-	G['U'][3] = '亡灵'
-	G['T'][2] = '牛头人'
-	G['T'][3] = '牛头人'
-	G['L'][2] = '巨魔'
-	G['L'][3] = '巨魔'
-	G['B'][2] = '血精灵'
-	G['B'][3] = '血精灵'
-	G['G'][2] = '地精'
-	G['G'][3] = '地精'
 	G['A'][2] = '熊猫人'
 	G['A'][3] = '熊猫人'
+	G['B'][2] = '血精灵'
+	G['B'][3] = '血精灵'
+	G['C'][2] = '黑铁矮人'
+	G['C'][3] = '黑铁矮人'
+	G['D'][2] = '德莱尼'
+	G['D'][3] = '德莱尼'
+	G['E'][2] = '暗夜精灵'
+	G['E'][3] = '暗夜精灵'
+	G['F'][2] = '矮人'
+	G['F'][3] = '矮人'
+	G['G'][2] = '地精'
+	G['G'][3] = '地精'
+	G['H'][2] = '人类'
+	G['H'][3] = '人类'
+	G['I'][2] = '光铸德莱尼'
+	G['I'][3] = '光铸德莱尼'
+	G['J'][2] = "玛格汉兽人"
+	G['J'][3] = "玛格汉兽人"
+	G['K'][2] = '库尔提拉斯人'
+	G['K'][3] = '库尔提拉斯人'
+	G['L'][2] = '巨魔'
+	G['L'][3] = '巨魔'
+	G['M'][2] = '至高岭牛头人'
+	G['M'][3] = '至高岭牛头人'
+	G['N'][2] = '侏儒'
+	G['N'][3] = '侏儒'
+	G['O'][2] = '兽人'
+	G['O'][3] = '兽人'
+	G['Q'][2] = '机械侏儒'
+	G['Q'][3] = '机械侏儒'
+	G['R'][2] = '夜之子'
+	G['R'][3] = '夜之子'
+	G['S'][2] = '狐人'
+	G['S'][3] = '狐人'
+	G['T'][2] = '牛头人'
+	G['T'][3] = '牛头人'
+	G['U'][2] = '亡灵'
+	G['U'][3] = '亡灵'
+	G['V'][2] = '虚空精灵'
+	G['V'][3] = '虚空精灵'
+	G['W'][2] = '狼人'
+	G['W'][3] = '狼人'
+	G['Y'][2] = '龙希尔'
+	G['Y'][3] = '龙希尔'
+	G['Z'][2] = '赞达拉巨魔'
+	G['Z'][3] = '赞达拉巨魔'
 
 elseif locale == "zhTW" then
 	me.bodyGuardLevel = { '保鏢', '信任的保鑣', '個人的搭檔' }
@@ -12409,32 +12647,54 @@ elseif locale == "zhTW" then
 	me.professionMapping = { ['A'] = '鍊金術', ['B'] = '鍛造', ['C'] = '烹飪', ['E'] = '附魔', ['F'] = '釣魚', ['H'] = '草藥學', ['I'] = '銘文學', ['J'] = '珠寶設計', ['L'] = '製皮', ['M'] = '採礦', ['N'] = '工程學', ['R'] = '騎術', ['S'] = '剝皮', ['T'] = '裁縫', ['X'] = '考古學', ['Z'] = '急救', }
 
 	local G = me.races
-	G['H'][2] = '人類'
-	G['H'][3] = '人類'
-	G['F'][2] = '矮人'
-	G['F'][3] = '矮人'
-	G['E'][2] = '夜精靈'
-	G['E'][3] = '夜精靈'
-	G['N'][2] = '地精'
-	G['N'][3] = '地精'
-	G['D'][2] = '德萊尼'
-	G['D'][3] = '德萊尼'
-	G['W'][2] = '狼人'
-	G['W'][3] = '狼人'
-	G['O'][2] = '獸人'
-	G['O'][3] = '獸人'
-	G['U'][2] = '不死族'
-	G['U'][3] = '不死族'
-	G['T'][2] = '牛頭人'
-	G['T'][3] = '牛頭人'
-	G['L'][2] = '食人妖'
-	G['L'][3] = '食人妖'
-	G['B'][2] = '血精靈'
-	G['B'][3] = '血精靈'
-	G['G'][2] = '哥布林'
-	G['G'][3] = '哥布林'
 	G['A'][2] = '熊貓人'
 	G['A'][3] = '熊貓人'
+	G['B'][2] = '血精靈'
+	G['B'][3] = '血精靈'
+	G['C'][2] = '黑鐵矮人'
+	G['C'][3] = '黑鐵矮人'
+	G['D'][2] = '德萊尼'
+	G['D'][3] = '德萊尼'
+	G['E'][2] = '夜精靈'
+	G['E'][3] = '夜精靈'
+	G['F'][2] = '矮人'
+	G['F'][3] = '矮人'
+	G['G'][2] = '哥布林'
+	G['G'][3] = '哥布林'
+	G['H'][2] = '人類'
+	G['H'][3] = '人類'
+	G['I'][2] = '光鑄德萊尼'
+	G['I'][3] = '光鑄德萊尼'
+	G['J'][2] = "瑪格哈獸人"
+	G['J'][3] = "瑪格哈獸人"
+	G['K'][2] = '庫爾提拉斯人'
+	G['K'][3] = '庫爾提拉斯人'
+	G['L'][2] = '食人妖'
+	G['L'][3] = '食人妖'
+	G['M'][2] = '高嶺牛頭人'
+	G['M'][3] = '高嶺牛頭人'
+	G['N'][2] = '地精'
+	G['N'][3] = '地精'
+	G['O'][2] = '獸人'
+	G['O'][3] = '獸人'
+	G['Q'][2] = '機械地精'
+	G['Q'][3] = '機械地精'
+	G['R'][2] = '夜裔精靈'
+	G['R'][3] = '夜裔精靈'
+	G['S'][2] = '狐狸人'
+	G['S'][3] = '狐狸人'
+	G['T'][2] = '牛頭人'
+	G['T'][3] = '牛頭人'
+	G['U'][2] = '不死族'
+	G['U'][3] = '不死族'
+	G['V'][2] = '虛無精靈'
+	G['V'][3] = '虛無精靈'
+	G['W'][2] = '狼人'
+	G['W'][3] = '狼人'
+	G['Y'][2] = '半龍人'
+	G['Y'][3] = '半龍人'
+	G['Z'][2] = '贊達拉食人妖'
+	G['Z'][3] = '贊達拉食人妖'
 
 elseif locale == "enUS" or locale == "enGB" then
 	-- do nothing as the default values are already in English
