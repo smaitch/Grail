@@ -2754,6 +2754,7 @@ end,
 			[7] = { 1815, 1828, 1833, 1859, 1860, 1862, 1883, 1888, 1894, 1899, 1900, 1919, 1947, 1948, 1975, 1984, 1989, 2018, 2045, 2097, 2098, 2099, 2100, 2101, 2102, 2135, 2165, 2170, },
 			[8] = { 2103, 2111, 2120, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2233, 2264, 2265, 2371, 2372, 2373, 2374, 2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 2392, 2395, 2396, 2397, 2398, 2400, 2401, 2415, 2417, 2427, },
 			[9] = { 2407, 2410, 2413, 2432, 2439, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2462, 2463, 2464, 2465, 2469, 2470, 2472, 2478, },
+			[10] = { 2503, 2507, 2509, 2510, 2511, 2512, 2513, 2517, 2518, 2520, 2522, 2526, 2542, 2544, 2550, 2554, 2555, }
 			},
 
 		-- These reputations use the friendship names instead of normal reputation names
@@ -3076,6 +3077,23 @@ end,
 			["9A6"] = "Death's Advance", -- 2470
 			["9A8"] = "The Archivists' Codex", -- 2472
             ["9AE"] = "The Enlightened", -- 2478
+            ["9C7"] = "Maruuk Centaur", -- 2503
+            ["9CB"] = "Dragonscale Expedition", -- 2507
+            ["9CD"] = "Clan Shikaar", -- 2509
+            ["9CE"] = "Valdrakken Accord", -- 2510
+            ["9CF"] = "Iskaara Tuskarr", -- 2511
+            ["9D0"] = "Clan Aylaag", -- 2512
+            ["9D1"] = "Clan Ohn'ir", -- 2513
+            ["9D5"] = "Wrathion", -- 2517
+            ["9D6"] = "Sabellian", -- 2518
+            ["9D8"] = "Clan Nokhud", -- 2520
+            ["9DA"] = "Clan Teerai", -- 2522
+            ["9DE"] = "Winterpelt Furbolg", -- 2526
+            ["9EE"] = "Clan Ukhel", -- 2542
+            ["9F0"] = "Artisan's Consortium - Dragon Isles Branch", -- 2544
+            ["9F6"] = "Cobalt Assembly", -- 2550
+            ["9FA"] = "Clan Toghus", -- 2554
+            ["9FB"] = "Clan Kaighan", -- 2555
 			},
 
 		reputationMappingFaction = {
@@ -3342,6 +3360,23 @@ end,
 			["9A6"] = "Neutral", -- 2470	-- TODO: Determine faction
 			["9A8"] = "Neutral", -- 2472	-- TODO: Determine faction
             ["9AE"] = "Neutral", -- 2478    -- TODO: Determine faction
+            ["9C7"] = "Neutral", -- 2503    -- TODO: Determine faction
+            ["9CB"] = "Neutral", -- 2507    -- TODO: Determine faction
+            ["9CD"] = "Neutral", -- 2509    -- TODO: Determine faction
+            ["9CE"] = "Neutral", -- 2510    -- TODO: Determine faction
+            ["9CF"] = "Neutral", -- 2511    -- TODO: Determine faction
+            ["9D0"] = "Neutral", -- 2512    -- TODO: Determine faction
+            ["9D1"] = "Neutral", -- 2513    -- TODO: Determine faction
+            ["9D5"] = "Neutral", -- 2517    -- TODO: Determine faction
+            ["9D6"] = "Neutral", -- 2518    -- TODO: Determine faction
+            ["9D8"] = "Neutral", -- 2520    -- TODO: Determine faction
+            ["9DA"] = "Neutral", -- 2522    -- TODO: Determine faction
+            ["9DE"] = "Neutral", -- 2526    -- TODO: Determine faction
+            ["9EE"] = "Neutral", -- 2542    -- TODO: Determine faction
+            ["9F0"] = "Neutral", -- 2544    -- TODO: Determine faction
+            ["9F6"] = "Neutral", -- 2550    -- TODO: Determine faction
+            ["9FA"] = "Neutral", -- 2554    -- TODO: Determine faction
+            ["9FB"] = "Neutral", -- 2555    -- TODO: Determine faction
 			},
 
 		slashCommandOptions = {},
