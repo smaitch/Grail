@@ -6,4 +6,4 @@
 ## Dependencies: Grail
 ## LoadOnDemand: 1
 
-Grail-NPCs-_classic_-zhTW.lua
+Grail-NPCs-_classic_wrath_-zhTW.lua

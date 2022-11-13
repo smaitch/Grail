@@ -6,5 +6,5 @@
 ## Dependencies: Grail
 ## LoadOnDemand: 1
 
-Grail-Quests-_classic_-zhCN.lua
-Grail-Quests-_classic_-description-zhCN.lua
+Grail-Quests-_classic_wrath_-zhCN.lua
+Grail-Quests-_classic_wrath_-description-zhCN.lua

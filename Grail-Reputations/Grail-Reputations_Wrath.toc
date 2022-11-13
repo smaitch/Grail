@@ -6,4 +6,4 @@
 ## Dependencies: Grail
 ## LoadOnDemand: 1
 
-Grail-Reputations-_classic_.lua
+Grail-Reputations-_wrath_.lua

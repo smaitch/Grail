@@ -6,5 +6,5 @@
 ## Dependencies: Grail
 ## LoadOnDemand: 1
 
-Grail-Quests-_classic_-esMX.lua
-Grail-Quests-_classic_-description-esMX.lua
+Grail-Quests-_classic_wrath_-esMX.lua
+Grail-Quests-_classic_wrath_-description-esMX.lua
