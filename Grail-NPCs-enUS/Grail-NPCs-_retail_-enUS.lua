@@ -1666,4 +1666,14 @@ G[1375179]='Orb Fragments'
 G[1375333]='Elusive Rich Elethium Deposit'
 end
 
+if release >= 46479 then
+G[1377499]='On the Origin of Draconic Species'
+G[1380902]='Fields of Ferocity'
+G[1381701]="WANTED: Mara'nar the Thunderous"
+end
+
+if release >= 46619 then
+G[1379321]='Mysterious Paw Print'
+end
+
 --	End of localized NPC names
