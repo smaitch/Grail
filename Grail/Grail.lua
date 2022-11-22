@@ -556,6 +556,7 @@
 --			Adds support for Evoker class.
 --			Adds support for Dracthyr race.
 --			Adds missing race localizations.
+--			Switched to using C_Container routines.
 --
 --	Known Issues
 --
@@ -7265,10 +7266,28 @@ end
 			return self.garrisonBuildingLevelMapping[garrisonBuildingId]
 		end,
 
+		GetContainerItemID = function(self, container, slot)
+			return (C_Container.GetContainerItemID or GetContainerItemID)(container, slot)
+		end,
+
+		GetContainerItemInfo = function(self, container, slot)
+			return (C_Container.GetContainerItemInfo or GetContainerItemInfo)(container, slot)
+		end,
+
+		GetContainerNumSlots = function(self, bagSlot)
+			return (C_Container.GetContainerNumSlots or GetContainerNumSlots)(bagSlot)
+		end,
+
 		-- Blizzard changed from using GetFriendshipReputation to C_GossipInfo.GetFriendshipReputation and we will
 		-- make use of whichever is available to us.
 		GetFriendshipReputation = function(self, factionIndex)
-			return (C_GossipInfo.GetFriendshipReputation or GetFriendshipReputation)(factionIndex)
+			if C_GossipInfo then
+				local info = C_GossipInfo.GetFriendshipReputation(factionIndex)
+				-- reversedColor
+				return info.friendshipFactionID, info.standing, info.maxRep, info.name, info.text, info.texture, info.reaction, info.reactionThreshold, info.nextThreshold
+			else
+				return GetFriendshipReputation(factionIndex)
+			end
 		end,
 
 		--	This routine returns the current "weekly" day which is the start time date for
@@ -8335,9 +8354,9 @@ end
 				local c = self.cachedBagItems
 				local id
 				for bag = 0, 4 do
-					local numSlots = GetContainerNumSlots(bag)
+					local numSlots = self:GetContainerNumSlots(bag)
 					for slot = 1, numSlots do
-						id = GetContainerItemID(bag, slot)
+						id = self:GetContainerItemID(bag, slot)
 						if nil ~= id then
 							c[id] = true
 						end
@@ -11093,9 +11112,9 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 		--	queries to be made against the "current artifact".
 		_RecordArtifactLevels = function(self)
 			for bag = 0, 4 do
-				local numSlots = GetContainerNumSlots(bag)
+				local numSlots = self:GetContainerNumSlots(bag)
 				for slot = 1, numSlots do
-					local _, _, _, quality, _, _, _, _, _, itemID = GetContainerItemInfo(bag, slot)
+					local _, _, _, quality, _, _, _, _, _, itemID = self:GetContainerItemInfo(bag, slot)
 					if LE_ITEM_QUALITY_ARTIFACT == quality then
 						local classID = select(12, GetItemInfo(itemID))
 						if LE_ITEM_CLASS_WEAPON == classID or LE_ITEM_CLASS_ARMOR == classID then

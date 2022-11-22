@@ -1559,6 +1559,7 @@ G[1375021]='Perished Automa'
 G[1375283]='Percolation Array'
 G[1375517]='Suspicious Rubble Pile'
 G[1375972]='Wanted: Custos'
+G[1376757]='WANTED: Frigellus'
 end
 
 if release >= 42852 then

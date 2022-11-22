@@ -36544,6 +36544,14 @@ G[59922]='Do Not Forget'
 G[62148]="It's Raining Anima"
 end
 
+if release >= 46366 then
+G[402164]='Expedition Supplies - Cartographer Flag'
+G[402178]='Hunting Party Loadout - Active: Fatal Bite'
+G[402179]='Hunting Party Loadout - Passive: Harrowing Howl'
+G[402180]='Hunting Party Loadout - Passive: Razor Winds'
+G[402181]='Hunting Party Loadout - Active: Avian Alacrity'
+end
+
 if release >= 46479 then
 G[34398]='Warlords of Draenor: The Dark Portal'
 G[40519]='Legion: The Legion Returns'
@@ -38380,6 +38388,23 @@ G[72280]='Dragon Isles Supplies'
 G[72314]='A Gift of Secrets'
 G[72324]='Iskaaran Crafting Mastery'
 G[72747]='A Piece of Gold'
+end
+
+if release >= 46702 then
+G[29118]='Follow That Cat'
+G[44885]='Shipwrecked Survivors'
+G[66458]='Legacy of Tyr: Secrets of the Past'
+G[66586]='Legacy of Tyr: Secrets of the Past'
+G[66616]='Oranomonos the Everbranching'
+G[66619]='Antros'
+G[66695]='Tempting Fate: Sepulcher of the First Ones'
+G[69923]='A Primal Threat'
+G[69925]='Calming the Storms'
+G[69944]='Chasing Storms'
+G[69992]='Sigil of Storms'
+G[70048]='A Primal Threat'
+G[70049]='Calming the Storms'
+G[70055]='Sigil of Storms'
 end
 
 --	End of localized quest names
