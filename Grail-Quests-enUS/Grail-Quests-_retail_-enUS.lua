@@ -38398,6 +38398,7 @@ G[66586]='Legacy of Tyr: Secrets of the Past'
 G[66616]='Oranomonos the Everbranching'
 G[66619]='Antros'
 G[66695]='Tempting Fate: Sepulcher of the First Ones'
+G[67024]='Smoldering Reinforcement'
 G[69923]='A Primal Threat'
 G[69925]='Calming the Storms'
 G[69944]='Chasing Storms'
@@ -38405,6 +38406,7 @@ G[69992]='Sigil of Storms'
 G[70048]='A Primal Threat'
 G[70049]='Calming the Storms'
 G[70055]='Sigil of Storms'
+G[70602]='History Lesson: War of the Shifting Sands'
 end
 
 --	End of localized quest names
