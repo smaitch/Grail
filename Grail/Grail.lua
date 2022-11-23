@@ -7267,15 +7267,15 @@ end
 		end,
 
 		GetContainerItemID = function(self, container, slot)
-			return (C_Container.GetContainerItemID or GetContainerItemID)(container, slot)
+			return (C_Container and C_Container.GetContainerItemID or GetContainerItemID)(container, slot)
 		end,
 
 		GetContainerItemInfo = function(self, container, slot)
-			return (C_Container.GetContainerItemInfo or GetContainerItemInfo)(container, slot)
+			return (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(container, slot)
 		end,
 
 		GetContainerNumSlots = function(self, bagSlot)
-			return (C_Container.GetContainerNumSlots or GetContainerNumSlots)(bagSlot)
+			return (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bagSlot)
 		end,
 
 		-- Blizzard changed from using GetFriendshipReputation to C_GossipInfo.GetFriendshipReputation and we will
