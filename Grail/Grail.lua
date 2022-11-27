@@ -1227,6 +1227,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2022] = true, -- Dragon Isles: The Waking Shores
 							[2023] = true, -- Dragon Isles: Ohn'ahran Plains
 							[2024] = true, -- Dragon Isles: The Azure Span
+							[2025] = true, -- Dragon Isles: Thaldraszus
 
 							}
 						self.quest.name = {
