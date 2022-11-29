@@ -551,7 +551,7 @@
 --			Adds support for quests that only become available after the next daily reset.
 --			Adds support for quests that only become available when currency requirements are met.
 --		119 Adds support for Classic Wrath of the Lich King.
---			Changes retail interface to 100000, Wrath to 30400 and Vanilla to 11403.
+--			Changes retail interface to 100002, Wrath to 30400 and Vanilla to 11403.
 --			Switched to using C_GossipInfo.GetFriendshipReputation instead of GetFriendshipReputation.
 --			Adds support for Evoker class.
 --			Adds support for Dracthyr race.
