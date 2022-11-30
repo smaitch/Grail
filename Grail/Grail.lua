@@ -557,6 +557,8 @@
 --			Adds support for Dracthyr race.
 --			Adds missing race localizations.
 --			Switched to using C_Container routines.
+--		120	Corrects the problem where NPC tooltips did not show items dropped that start quests.
+--			Updates some Quest/NPC information.
 --
 --	Known Issues
 --
@@ -8278,7 +8280,7 @@ end
 						tinsert(retval, { self.NPC_TYPE_KILL, questId } )
 					end
 				end
-				local has = self.npc.has[npcid]
+				local has = self.npc.has[npcId]
 				if nil ~= has then
 					for _, anotherNPCId in pairs(has) do
 						tinsert(retval, { self.NPC_TYPE_DROP, anotherNPCId } )
