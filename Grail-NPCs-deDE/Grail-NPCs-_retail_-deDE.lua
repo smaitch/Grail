@@ -648,4 +648,77 @@ G[100128231]='Ausstattungsbaupläne: Abgerichtete Haie'
 G[100128232]='Ausstattungsbaupläne: Hochleistungsnebelleuchten'
 end
 
+if release >= 46479 then
+G[1370526]='Verpflegung'
+G[1370527]='Waffenständer'
+G[1370528]='Kiste mit Kriegsschuppenrüstungen'
+G[1376123]='Verdächtige Flasche'
+G[1376124]='Tasche mit verzaubertem Wind'
+G[1376213]='Geheimnisvoller Zauberstab'
+G[1377233]='Hessethiashs erbärmlich versteckter Schatz'
+G[1377458]='Zurückgelassener Waffenständer'
+G[1377466]='Verlorenes drakonisches Stundenglas'
+end
+
+if release >= 46619 then
+G[1376081]='Niedergetrampelter Busch'
+G[1376082]='Sauerblüte'
+G[1376113]='Überreste von Keskahz'
+G[1376172]="On'tuq-Mammut"
+G[1376189]='Blauer Protodrache'
+G[1376695]='Reptilieneierschale'
+G[1376902]='Gestörte heilige Erde'
+G[1377002]='Wildspreizerbusch'
+G[1377009]='Haufen winderfüllter Muscheln'
+G[1377014]='Haufen wassererfüllter Muscheln'
+G[1377138]='Ausgegrabener Speer'
+G[1377197]='Holzhaufen'
+G[1377226]='Opfergefäß'
+G[1378862]='Eznuu'
+G[1380654]='Brustplatte des toten Mannes'
+G[1380840]='Zerfledderter Reiterbeutel'
+G[1380842]='Goldmünze'
+G[1380859]='Spielzeugboot der Tuskarr'
+G[1380860]='Zentaurenhorn'
+G[1380902]='Felder der Wildheit'
+G[1381207]='Steinbrich'
+G[1381209]='Hochblume'
+G[1381214]='Eisige Hochblume'
+G[1381701]="GESUCHT: Mara'nar der Donnernde"
+G[1381960]='Üppige Hochblume'
+end
+
+if release >= 46702 then
+G[1035591]='Schwimmer'
+G[1375024]='Königliche Kästen'
+G[1375241]='Blasenmohn'
+G[1375266]='Modernder Saft'
+G[1375513]='Königlicher Schlüssel'
+G[1376174]="On'tuq-Mammutmatriarch"
+G[1376335]='Auffälliger Kristall'
+G[1376350]='Gestohlene Teile'
+G[1376451]='Bronzestoppuhr'
+G[1376584]='Vorratstruhe der Dracthyr'
+G[1376587]='Expeditionsspäherpack'
+G[1377139]='Großer Stein'
+G[1377199]='Bronzehorn'
+G[1377203]='Drachenblatt'
+G[1377207]='Blutbeeren'
+G[1377224]='Uraltes Artefakt'
+G[1377560]='Windzerzauste Feder'
+G[1378052]='Spinnenseidenkokon'
+G[1380843]='Gummifisch'
+G[1381043]='Blitzgebundene Kiste'
+G[1381213]='Windgepeitschte Hochblume'
+end
+
+if release >= 46781 then
+G[1376386]='Bewegte Erde'
+G[1377189]='Kugel der Urstürme'
+G[1381160]='Verlorener Kompass'
+G[1381296]='Fürchterliche Sauerei'
+G[1381297]='Verlegtes Gepäck'
+G[1382029]='Bewegte Erde'
+end
+
 --	End of localized NPC names
