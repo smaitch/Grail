@@ -129,6 +129,7 @@
 --			*xyy	renown with covenant x must be less than yy
 --			(xxx	quest xxx must be completed prior to today's reset
 --			)xxxxyyy	currency xxxx must equal or exceed yyy
+--			_xxxy	renown with major faction xxx must be at least y value
 --
 --		Note that garrison level is examined by using phase comparisons to zone 971 so, e.g., >09711 would mean a garrison of level 2 or higher.
 --
@@ -37415,8 +37416,8 @@ G[66117]='K32768 L61 A:-2022 T:-2022 P:66116 E46479'
 G[66118]='K4096 L61 A:187119 T:187119 P:66116 E46479'
 G[66119]='L61 A:187145 P:66118 E46479'
 G[66121]='K4096 L61 A:187129 T:191895 P:66118 E46479'
-G[66122]='K4096 L61 A:187119 T:191895 P:66118 ODC:69223 E46479'
-G[66123]='K4096 L61 A:191895 T:191895 P:66121+66122 E46479'	-- TODO: Verify requires 66122
+G[66122]='K4096 L61 A:187119 T:191895,187129 P:66118 ODC:69223 E46479'	-- TODO: Mark 187129 only available as long as 66121 is not turned in.  at that point it is only 191895
+G[66123]='K4096 L61 A:191895 T:191895 P:66121+66122 E46479'
 G[66124]='K4096 L62 A:191895 T:187278 P:66123 E46479'
 G[66126]='L0 E46479'
 G[66129]='L0 E46479'
@@ -38587,7 +38588,7 @@ G[72090]='L0 E46781'
 G[72113]='L0 E46479'
 G[72114]='K32768 L69 A:-2025 E46781'
 G[72116]='K32768 L69 A:-2025 E46479'
-G[72117]='SP L0 T:196707 P:66258 E46479'	-- TODO: Assumed P: because of centaur toy reward
+G[72117]='SP L0 A:196707 T:196707 P:_9C73 E46479'	-- TODO: Assumed P: because of centaur toy reward
 G[72121]='L0 E46479'
 G[72122]='L60 A:195303 T:186410 P:65989'
 G[72126]='L0 E46479'

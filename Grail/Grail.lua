@@ -559,6 +559,7 @@
 --			Switched to using C_Container routines.
 --		120	Corrects the problem where NPC tooltips did not show items dropped that start quests.
 --			Updates some Quest/NPC information.
+--			Adds support for major faction renown level prerequisites.
 --
 --	Known Issues
 --
@@ -1024,6 +1025,26 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		},
 		eventDispatch = {			-- table of functions whose keys are the events
 
+			['MAJOR_FACTION_RENOWN_LEVEL_CHANGED'] = function(self, frame, arg1, arg2, arg3)
+				local factionId = tonumber(arg1)
+				local newRenownLevel = tonumber(arg2)
+				local oldRenownLevel = tonumber(arg3)
+				if not self.inCombat or not self.GDE.delayEvents then
+					self:_HandleEventMajorFactionRenownLevelChanged(factionId, newRenownLevel, oldRenownLevel)
+				else
+					self:_RegisterDelayedEvent(frame, { 'MAJOR_FACTION_RENOWN_LEVEL_CHANGED', factionId, newRenownLevel, oldRenownLevel } )
+				end
+			end,
+
+			['MAJOR_FACTION_UNLOCKED'] = function(self, frame, arg1)
+				local factionId = tonumber(arg1)
+				if not self.inCombat or not self.GDE.delayEvents then
+					self:_HandleEventMajorFactionUnlocked(factionId)
+				else
+					self:_RegisterDelayedEvent(frame, { 'MAJOR_FACTION_UNLOCKED', factionId } )
+				end
+			end,
+
 			['ACHIEVEMENT_EARNED'] = function(self, frame, arg1)
 				local achievementNumber = tonumber(arg1)
 				if nil ~= achievementNumber and nil ~= self.questStatusCache['A'][achievementNumber] then
@@ -1090,6 +1111,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.capabilities.usesCallingQuests = not self.existsClassic
 					self.capabilities.usesCampaignQuests = not self.existsClassic
 					self.capabilities.usesFlightPoints = not self.existsClassic
+					self.capabilities.usesMajorFactions = not self.existsClassic
 
                     -- These values are no longer used, but kept for posterity.
 					self.existsPandaria = (self.blizzardRelease >= 15640)
@@ -1775,6 +1797,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("GOSSIP_CONFIRM")	-- gossipIndex, text, cost
 frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
+					if self.capabilities.usesMajorFactions then
+						frame:RegisterEvent("MAJOR_FACTION_RENOWN_LEVEL_CHANGED")
+						frame:RegisterEvent("MAJOR_FACTION_UNLOCKED")
+					end
 
 -- ReloadUI in Classic same as startup
 -- Normal startup in Classic		startup in Retail		ReloadUI in Retail
@@ -2069,6 +2095,10 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						self:_HandleEventGarrisonBuildingActivated(t[2])
 					elseif 'GARRISON_BUILDING_UPDATE' == type then
 						self:_HandleEventGarrisonBuildingUpdate(t[2])
+					elseif 'MAJOR_FACTION_UNLOCKED' == type then
+						self:_HandleEventMajorFactionUnlocked(t[2])
+					elseif 'MAJOR_FACTION_RENOWN_LEVEL_CHANGED' == type then
+						self:_HandleEventMajorFactionRenownLevelChanged(t[2], t[3], t[4])
 					end
 					tremove(self.delayedEvents, 1)
 					self.delayedEventsCount = self.delayedEventsCount - 1
@@ -2639,6 +2669,7 @@ end,
 		invalidateGroupCurrentCallingQuests = 7,
 		invalidateGroupCurrentGarrisonTalentQuests = 8,
 		invalidateGroupRenownQuests = 9,
+		invalidateGroupMajorFactionQuests = 10,
 		invalidateGroupBaseAchievement = 1000000,	-- the actual achievement ID is added to this
 		invalidateGroupBaseBuff = 2000000,	-- the actual buff ID is added to this
 		invalidateGroupBaseItem = 3000000,	-- the actual item ID is added to this
@@ -4741,6 +4772,8 @@ end,
 					retval = self:_QuestTurnedInBeforeTodaysReset(numeric) and 'C' or 'P'
 				elseif ')' == code then
 					retval = self:CurrencyAmountMeetsOrExceeds(subcode, numeric) and 'C' or 'P'
+				elseif '_' == code then
+					retval = self:MajorFactionRenownLevelMeetsOrExceeds(Grail.reputationMapping[subcode], numeric) and 'C' or 'P'
 				elseif 'h' == code then
 					retval = (bitband(questBitMask, self.bitMaskEverCompleted) > 0) and 'P' or 'C'
 				else	-- A, B, C, D, E, H, O, X
@@ -6351,7 +6384,7 @@ end,
 				numeric = tonumber(strsub(questCode, 2))
 
 				-- CSSSn+ (sss can have letters)
-				if 'T' == code or 't' == code or 'U' == code or 'u' == code then
+				if 'T' == code or 't' == code or 'U' == code or 'u' == code or '_' == code then
 					subcode = strsub(questCode, 2, 4)
 					numeric = tonumber(strsub(questCode, 5))
 
@@ -6761,8 +6794,8 @@ end
 			if nil ~= codeString then
 				local questId = p and p.q or nil
 				local dangerous = p and p.d or false
-				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable, garrisonTalentResearched, questTurnedIndBeforeLastWeeklyReset, questTurnedIndBeforeTodaysReset, currencyAmountMatches = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent, checkQuestTurnedInBeforeLastWeeklyReset, checkRenownDoesNotMeetOrExceed, checkNotClass, checkQuestTurnedInBeforeTodaysReset, checkCurrencyAmount = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable, garrisonTalentResearched, questTurnedIndBeforeLastWeeklyReset, questTurnedIndBeforeTodaysReset, currencyAmountMatches, majorFactionRenownLevelMatches = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent, checkQuestTurnedInBeforeLastWeeklyReset, checkRenownDoesNotMeetOrExceed, checkNotClass, checkQuestTurnedInBeforeTodaysReset, checkCurrencyAmount, checkMajorFactionRenownLevel = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local forcingProfessionOnly, forcingReputationOnly = false, false
 
 				if forceSpecificChecksOnly then
@@ -6857,6 +6890,7 @@ end
 				elseif code == '%' then checkGarrisonTalent = true
 				elseif code == '(' then checkQuestTurnedInBeforeTodaysReset = true
 				elseif code == ')' then checkCurrencyAmount = true
+				elseif code == '_' then checkMajorFactionRenownLevel = true
 				else print("|cffff0000Grail|r _EvaluateCodeAsPrerequisite cannot process code", codeString)
 				end
 
@@ -6971,6 +7005,9 @@ end
 				end
 				if checkCurrencyAmount then
 					currencyAmountMatches = Grail:CurrencyAmountMeetsOrExceeds(subcode, value)
+				end
+				if checkMajorFactionRenownLevel then
+					majorFactionRenownLevelMatches = Grail:MajorFactionRenownLevelMeetsOrExceeds(Grail.reputationMapping[subcode], value)
 				end
 
 				good =
@@ -7559,6 +7596,24 @@ end
 		_HandleEventAchievementEarned = function(self, achievementId)
 			self:_StatusCodeInvalidate(self.questStatusCache['A'][achievementId])
 			self:_NPCLocationInvalidate(self.npcStatusCache['A'][achievementId])
+		end,
+
+		_HandleEventMajorFactionUnlocked = function(self, factionId)
+			if self.GDE.debug then
+				local message = "Major faction unlocked: " .. factionId
+				print(message)
+				self:_AddTrackingMessage(message)
+			end
+			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupMajorFactionQuests])
+		end,
+
+		_HandleEventMajorFactionRenownLevelChanged = function(self, factionId, newRenownLevel, oldRenownLevel)
+			if self.GDE.debug then
+				local message = "Major faction: " .. factionId .. " renown changed from " .. oldRenownLevel .. " to " .. newRenownLevel
+				print(message)
+				self:_AddTrackingMessage(message)
+			end
+			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupMajorFactionQuests])
 		end,
 
 		_HandleEventGarrisonBuildingActivated = function(self, buildingId)
@@ -9951,6 +10006,13 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 				-- TODO: We should take all these quests and put them into a table that is invalidated when the daily reset happens (even though that is a pain to determine)
 			elseif ')' == code then
 				-- TODO: We should take all these quests and put them into a table that is invalidated when curreny amounts change (not sure we should really care about matching currencies, though it would be better for overall performance I guess)
+			elseif '_' == code then
+				-- This records a quest to be invalidated if ANY of the major faction renown levels change
+				local t = self.invalidateControl[self.invalidateGroupMajorFactionQuests] or {}
+				if not tContains(t, questId) then
+					tinsert(t, questId)
+				end
+				self.invalidateControl[self.invalidateGroupMajorFactionQuests] = t
 			end
 		end,
 
@@ -11334,6 +11396,23 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			return retval, actualEarnedValue
 		end,
 
+		MajorFactionRenownLevelMeetsOrExceeds = function(self, reputationName, soughtRenownLevel)
+			local retval = false
+			local actualRenownLevel = nil
+			soughtRenownLevel = tonumber(soughtRenownLevel)
+			local reputationId = self.reverseReputationMapping[reputationName]
+			local factionId = reputationId and tonumber(reputationId, 16) or nil
+			if nil ~= factionId and nil ~= soughtRenownLevel then
+				if C_MajorFactions and C_MajorFactions.GetCurrentRenownLevel then
+					actualRenownLevel = C_MajorFactions.GetCurrentRenownLevel(factionId)
+					if actualRenownLevel >= soughtRenownLevel then
+						retval = true
+					end
+				end
+			end
+			return retval, actualRenownLevel
+		end,
+		
 		_FriendshipReputationExceeds = function(self, reputationName, reputationValue)
 			local retval = false
 			local actualEarnedValue = nil
