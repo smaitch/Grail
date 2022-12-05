@@ -1680,6 +1680,10 @@ G[1379321]='Mysterious Paw Print'
 end
 
 if release >= 46924 then
+G[1376081]='Trampled Bush'
+G[1376082]='Sourbloom'
+G[1376189]='Cirrus Flowers'
+G[1376695]='Reptilian Eggshell'
 G[1376902]='Disturbed Sacred Soil'
 G[1376941]='The Titanic Comedy'
 G[1376944]='The Lord of the Wings'
