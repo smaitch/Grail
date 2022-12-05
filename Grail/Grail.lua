@@ -606,7 +606,6 @@ local GetAddOnMetadata					= GetAddOnMetadata
 local GetAverageItemLevel				= GetAverageItemLevel
 local GetBuildInfo						= GetBuildInfo
 local GetContainerItemID				= GetContainerItemID
-local GetContainerNumSlots				= GetContainerNumSlots
 local GetCurrentMapDungeonLevel			= GetCurrentMapDungeonLevel
 local GetCVar							= GetCVar
 local GetFactionInfoByID				= GetFactionInfoByID
