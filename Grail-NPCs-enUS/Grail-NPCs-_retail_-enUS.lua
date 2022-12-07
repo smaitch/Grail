@@ -1682,6 +1682,7 @@ end
 if release >= 46924 then
 G[1376081]='Trampled Bush'
 G[1376082]='Sourbloom'
+G[1376113]='Remains of Keskahz'
 G[1376189]='Cirrus Flowers'
 G[1376695]='Reptilian Eggshell'
 G[1376902]='Disturbed Sacred Soil'
@@ -1691,10 +1692,13 @@ G[1376945]='The Red and the Black Flights'
 G[1376946]='Pride and Protodrakes'
 G[1377002]='Wildsprings Shrub'
 G[1377138]='Exhumed Spear'
+G[1377560]='Windtossed Feather'
 G[1379252]='Draconium Deposit'
-G[1381102]='Serevite Deposit'
+G[1381102]='Sundered Enforcer'
 G[1381104]='Rich Serevite Deposit'
 G[1381515]='Hardened Serevite Deposit'
+G[1381575]='Duck Trap Kit'
+G[1382299]='Sundered Flame Supply Crate'
 end
 
 --	End of localized NPC names

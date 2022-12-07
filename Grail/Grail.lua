@@ -560,6 +560,7 @@
 --		120	Corrects the problem where NPC tooltips did not show items dropped that start quests.
 --			Updates some Quest/NPC information.
 --			Adds support for major faction renown level prerequisites.
+--			Implemented GetContainerItemInfo to return the values the old API did.
 --
 --	Known Issues
 --
@@ -7316,7 +7317,13 @@ end
 		end,
 
 		GetContainerItemInfo = function(self, container, slot)
-			return (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(container, slot)
+			if C_Container then
+				local info = C_Container.GetContainerItemInfo(container, slot)
+				if nil == info then return nil, nil, nil, nil, nil, nil, nil, nil, nil, nil end
+				return info.iconFileID, info.stackCount, info.isLocked, info.quality, info.isReadable, info.hasLoot, info.hyperlink, info.isFiltered, info.hasNoValue, info.itemID, info.isBound
+			else
+				return GetContainerItemInfo(container, slot)
+			end
 		end,
 
 		GetContainerNumSlots = function(self, bagSlot)
