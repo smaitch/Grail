@@ -7065,7 +7065,8 @@ end
 					(checkGarrisonTalent and garrisonTalentResearched) or
 					(checkQuestTurnedInBeforeLastWeeklyReset and questTurnedIndBeforeLastWeeklyReset) or
 					(checkQuestTurnedInBeforeTodaysReset and questTurnedIndBeforeTodaysReset) or
-					(checkCurrencyAmount and currencyAmountMatches)
+					(checkCurrencyAmount and currencyAmountMatches) or
+					(checkMajorFactionRenownLevel and majorFactionRenownLevelMatches)
 				if not good then tinsert(failures, codeString) end
 			end
 
