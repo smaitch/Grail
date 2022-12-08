@@ -1562,6 +1562,7 @@ G[1375972]='Wanted: Custos'
 G[1376757]='WANTED: Frigellus'
 G[1377114]='Coil of Heavy Rope'
 G[1377226]='Offering Vessel'
+G[1380859]='Tuskarr Toy Boat'
 end
 
 if release >= 42852 then
