@@ -1252,6 +1252,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2023] = true, -- Dragon Isles: Ohn'ahran Plains
 							[2024] = true, -- Dragon Isles: The Azure Span
 							[2025] = true, -- Dragon Isles: Thaldraszus
+							[2112] = true, -- Dragon Isles: Valdrakken
+--							[2092] = true, -- Dragon Isles: Northrend Timeline Azmerloth
 
 							}
 						self.quest.name = {
