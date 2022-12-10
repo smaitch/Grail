@@ -38463,4 +38463,8 @@ G[72791]="Contribute Supplies: Khaz'gorite Wire"
 G[72806]='Pleasant Alpha'
 end
 
+if release >= 46924 then
+G[70652]='Take One Down, Pass It Around'
+end
+
 --	End of localized quest names
