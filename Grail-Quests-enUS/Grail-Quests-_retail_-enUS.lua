@@ -38465,6 +38465,7 @@ end
 
 if release >= 46924 then
 G[70652]='Take One Down, Pass It Around'
+G[73864]='Tracking Quest'
 end
 
 --	End of localized quest names
