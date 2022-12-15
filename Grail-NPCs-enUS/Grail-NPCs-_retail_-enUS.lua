@@ -1743,4 +1743,10 @@ G[1382299]='Sundered Flame Supply Crate'
 G[1383820]='Brackenhide Supply Crate'
 end
 
+if release >= 47067 then
+G[1376220]='Oathstone Fragment'
+G[1376919]='Oathstone Fragment'
+G[1377012]='Cindershard Coal'
+end
+
 --	End of localized NPC names

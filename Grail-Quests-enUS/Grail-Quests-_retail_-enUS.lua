@@ -38468,4 +38468,8 @@ G[70652]='Take One Down, Pass It Around'
 G[73864]='Tracking Quest'
 end
 
+if release >= 47067 then
+G[67039]='An Amazing Journey'
+end
+
 --	End of localized quest names

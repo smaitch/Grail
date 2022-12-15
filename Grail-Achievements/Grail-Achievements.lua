@@ -160,7 +160,7 @@ Grail.extraAchievements = {
 		[mapZandalar] = { 512771, 512849, 512851, },
 		[mapKulTiras] = { 512510, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514279, 514961, 515515, 515259, },
-		[mapDragonIsles] = { },
+		[mapDragonIsles] = { 516401, },
 		},
 	[factionHorde] = {
 		[mapKalimdor] = { 504961, 505859, 505866, },
@@ -175,7 +175,7 @@ Grail.extraAchievements = {
 		[mapZandalar] = { 512555, 512771, 512849, 512851, },
 		[mapKulTiras] = { 512509, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514961, 515515, 515259, },
-		[mapDragonIsles] = { },
+		[mapDragonIsles] = { 516401, },
 		},
 	}
 
@@ -7315,6 +7315,7 @@ G[65305]={515259}	-- Forming An Understanding (Secrets of the First Ones) (Shado
 G[65328]={515259}	-- A Means to an End (Secrets of the First Ones) (Shadowlands 9.2)
 G[65448]={515515}	-- A Return to Grace (Path to Enlightenment) (Shadowlands 9.2)
 G[65613]={515638}	-- The Dark Talons (Dracthyr, Awaken) (Dragonflight)
+G[65691]={516401}	-- The Shadow of His Wings (Sojourner of the Waking Shores) (Dragonflight)
 G[65794]={516334}	-- A Purpose Restored (Waking Hope) (Dragonflight)
 G[65806]={515394}	-- Into the Plains (Ohn'a'Roll) (Dragonflight)
 G[65855]={516336}	-- Into the Archives (Azure Spanner) (Dragonflight)
@@ -7325,11 +7326,19 @@ G[66015]={516336}	-- Vakthros (Azure Spanner) (Dragonflight)
 G[66025]={515394}	-- Maruukai (Ohn'a'Roll) (Dragonflight)
 G[66026]={516336}	-- Tuskarr Troubles (Azure Spanner) (Dragonflight)
 G[66057]={516334}	-- Wrathion's Gambit (Waking Hope) (Dragonflight)
+G[66108]={516401}	-- Save the Hippos! (Sojourner of the Waking Shores) (Dragonflight)
 G[66124]={516334}	-- In Defense of Life (Waking Hope) (Dragonflight)
 G[66221]={516363}	-- Big Time Adventurer (Just Don't Ask Me to Spell It) (Dragonflight)
 G[66252]={516363}	-- Valdrakken, City of Dragons (Just Don't Ask Me to Spell It) (Dragonflight)
 G[66259]={515394}	-- Ohn'ahra's Blessing (Ohn'a'Roll) (Dragonflight)
+G[66447]={516401}	-- Beyond the Barrier (Sojourner of the Waking Shores) (Dragonflight)
+G[66529]={516401}	-- Professional Protographer (Sojourner of the Waking Shores) (Dragonflight)
+G[66737]={516401}	-- Ruby Lifecalling (Sojourner of the Waking Shores) (Dragonflight)
 G[66783]={515394}	-- Bonds Renewed (Ohn'a'Roll) (Dragonflight)
+G[66831]={516401}	-- Ruby Lifecalling (Sojourner of the Waking Shores) (Dragonflight)
+G[66892]={516401}	-- Ruby Lifecalling (Sojourner of the Waking Shores) (Dragonflight)
+G[66893]={516401}	-- Ruby Lifecalling (Sojourner of the Waking Shores) (Dragonflight)
+G[69902]={516401}	-- Brave Researchers (Sojourner of the Waking Shores) (Dragonflight)
 G[69914]={516334}	-- The Dragonscale Expedition (Waking Hope) (Dragonflight)
 
 
