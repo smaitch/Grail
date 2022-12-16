@@ -1744,9 +1744,15 @@ G[1383820]='Brackenhide Supply Crate'
 end
 
 if release >= 47067 then
+G[1376083]='Crate of Horseshoes'
+G[1376085]='Bundle of Pelts'
+G[1376152]='River Reeds'
 G[1376220]='Oathstone Fragment'
 G[1376919]='Oathstone Fragment'
 G[1377012]='Cindershard Coal'
+G[1377119]='Basket of Dried Fish'
+G[1377120]='Weapon Rack'
+G[1377122]='Medicinal Feralbloom'
 end
 
 --	End of localized NPC names
