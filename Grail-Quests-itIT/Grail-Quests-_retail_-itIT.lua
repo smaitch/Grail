@@ -31153,4 +31153,8 @@ G[120237102]='Campo Aylaag'
 G[120237103]='Campo Aylaag'
 end
 
+if release >= 47187 then
+G[67039]='Un viaggio incredibile'
+end
+
 --	End of localized quest names

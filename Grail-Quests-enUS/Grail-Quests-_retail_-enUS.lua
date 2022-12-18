@@ -38475,4 +38475,8 @@ if release >= 47067 then
 G[67039]='An Amazing Journey'
 end
 
+if release >= 47187 then
+G[72762]='Sharing the Bounty'
+end
+
 --	End of localized quest names
