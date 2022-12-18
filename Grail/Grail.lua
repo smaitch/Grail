@@ -1253,6 +1253,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2023] = true, -- Dragon Isles: Ohn'ahran Plains
 							[2024] = true, -- Dragon Isles: The Azure Span
 							[2025] = true, -- Dragon Isles: Thaldraszus
+							[2085] = true, -- Dragon Isles: Thaldraszus - Primalists Tomorrow
 							[2112] = true, -- Dragon Isles: Valdrakken
 --							[2092] = true, -- Dragon Isles: Northrend Timeline Azmerloth
 
@@ -3890,7 +3891,7 @@ end,
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
-			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565, 1970, 2022, 2023, 2024, 2025, 2112, }
+			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565, 1970, 2022, 2023, 2024, 2025, 2085, 2112, }
 
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
