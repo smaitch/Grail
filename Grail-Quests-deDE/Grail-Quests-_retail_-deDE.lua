@@ -31648,6 +31648,9 @@ G[402040]='Chiffrenforschungskonsole - Leer'
 G[402042]='Chiffrenforschungskonsole - Leer'
 G[529411]='Was jetzt?'
 G[529428]='Was jetzt?'
+G[120237101]='Lager der Aylaag'
+G[120237102]='Lager der Aylaag'
+G[120237103]='Lager der Aylaag'
 end
 
 if release >= 43114 then

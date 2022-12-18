@@ -561,6 +561,7 @@
 --			Updates some Quest/NPC information.
 --			Adds support for major faction renown level prerequisites.
 --			Implemented GetContainerItemInfo to return the values the old API did.
+--			Adds support for POI presence prerequisites.
 --
 --	Known Issues
 --
@@ -4776,6 +4777,8 @@ end,
 					retval = self:CurrencyAmountMeetsOrExceeds(subcode, numeric) and 'C' or 'P'
 				elseif '_' == code then
 					retval = self:MajorFactionRenownLevelMeetsOrExceeds(Grail.reputationMapping[subcode], numeric) and 'C' or 'P'
+				elseif '`' == code then
+					retval = self:POIPresent(subcode, numeric) and 'C' or 'P'
 				elseif 'h' == code then
 					retval = (bitband(questBitMask, self.bitMaskEverCompleted) > 0) and 'P' or 'C'
 				else	-- A, B, C, D, E, H, O, X
@@ -6413,7 +6416,7 @@ end,
 					numeric = tonumber(strsub(questCode, 2, 5))
 
 				-- Cssssn+ (ssss must be numbers)
-				elseif '=' == code or '<' == code or '>' == code or ')' == code then
+				elseif '=' == code or '<' == code or '>' == code or ')' == code or '`' == code then
 					subcode = tonumber(strsub(questCode, 2, 5))
 					numeric = tonumber(strsub(questCode, 6))
 
@@ -6796,8 +6799,8 @@ end
 			if nil ~= codeString then
 				local questId = p and p.q or nil
 				local dangerous = p and p.d or false
-				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable, garrisonTalentResearched, questTurnedIndBeforeLastWeeklyReset, questTurnedIndBeforeTodaysReset, currencyAmountMatches, majorFactionRenownLevelMatches = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent, checkQuestTurnedInBeforeLastWeeklyReset, checkRenownDoesNotMeetOrExceed, checkNotClass, checkQuestTurnedInBeforeTodaysReset, checkCurrencyAmount, checkMajorFactionRenownLevel = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable, garrisonTalentResearched, questTurnedIndBeforeLastWeeklyReset, questTurnedIndBeforeTodaysReset, currencyAmountMatches, majorFactionRenownLevelMatches, poiPresent = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent, checkQuestTurnedInBeforeLastWeeklyReset, checkRenownDoesNotMeetOrExceed, checkNotClass, checkQuestTurnedInBeforeTodaysReset, checkCurrencyAmount, checkMajorFactionRenownLevel, checkPOIPresent = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local forcingProfessionOnly, forcingReputationOnly = false, false
 
 				if forceSpecificChecksOnly then
@@ -6893,6 +6896,7 @@ end
 				elseif code == '(' then checkQuestTurnedInBeforeTodaysReset = true
 				elseif code == ')' then checkCurrencyAmount = true
 				elseif code == '_' then checkMajorFactionRenownLevel = true
+				elseif code == '`' then checkPOIPresent = true
 				else print("|cffff0000Grail|r _EvaluateCodeAsPrerequisite cannot process code", codeString)
 				end
 
@@ -7011,6 +7015,9 @@ end
 				if checkMajorFactionRenownLevel then
 					majorFactionRenownLevelMatches = Grail:MajorFactionRenownLevelMeetsOrExceeds(Grail.reputationMapping[subcode], value)
 				end
+				if checkPOIPresent then
+					poiPresent = Grail:POIPresent(subcode, value)
+				end
 
 				good =
 					(code == ' ') or
@@ -7068,7 +7075,8 @@ end
 					(checkQuestTurnedInBeforeLastWeeklyReset and questTurnedIndBeforeLastWeeklyReset) or
 					(checkQuestTurnedInBeforeTodaysReset and questTurnedIndBeforeTodaysReset) or
 					(checkCurrencyAmount and currencyAmountMatches) or
-					(checkMajorFactionRenownLevel and majorFactionRenownLevelMatches)
+					(checkMajorFactionRenownLevel and majorFactionRenownLevelMatches) or
+					(checkPOIPresent and poiPresent)
 				if not good then tinsert(failures, codeString) end
 			end
 
@@ -7145,6 +7153,8 @@ end
 					and 'a' ~= code
 					and 'b' ~= code
 					and 'c' ~= code
+					and '_' ~= code
+					and '`' ~= code
 					then
 
 --					local currentQuestId = tonumber(codeString)
@@ -10022,6 +10032,8 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 					tinsert(t, questId)
 				end
 				self.invalidateControl[self.invalidateGroupMajorFactionQuests] = t
+			elseif '`' == code then
+				-- TODO: Invalidate any quest that depends on a POI position if we can be told when a POI changes
 			end
 		end,
 
@@ -11420,6 +11432,16 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 				end
 			end
 			return retval, actualRenownLevel
+		end,
+		
+		POIPresent = function(self, mapId, poiId)
+			local retval = false
+			mapId = tonumber(mapId)
+			poiId = tonumber(poiId)
+			if mapId and poiId and C_AreaPoiInfo and C_AreaPoiInfo.GetAreaPOIInfo and C_AreaPoiInfo.GetAreaPOIInfo(mapId,poiId) then
+				retval = true
+			end
+			return retval
 		end,
 		
 		_FriendshipReputationExceeds = function(self, reputationName, reputationValue)

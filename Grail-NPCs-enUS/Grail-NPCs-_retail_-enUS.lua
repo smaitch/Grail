@@ -1755,4 +1755,8 @@ G[1377120]='Weapon Rack'
 G[1377122]='Medicinal Feralbloom'
 end
 
+if release >= 47120 then
+G[1381042]='Simmering Chest'
+end
+
 --	End of localized NPC names

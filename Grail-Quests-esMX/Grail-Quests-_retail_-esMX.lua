@@ -33842,6 +33842,9 @@ G[72280]='Suministros de las Islas Dragón'
 G[72294]='Conocimientos de fabricación de expedición'
 G[72318]='Conocimientos de fabricante de Iskaara'
 G[72331]='Los primeros pasos'
+G[120237101]='Campamento Aylaag'
+G[120237102]='Campamento Aylaag'
+G[120237103]='Campamento Aylaag'
 end
 
 --	End of localized quest names

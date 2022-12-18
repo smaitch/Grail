@@ -38309,6 +38309,9 @@ G[402215]='Cobalt Assembly Arcana - Unhelpful Fireworks'
 G[402216]='Cobalt Assembly Arcana - Cobalt Cutthroat'
 G[402221]='Expedition Supplies - Climbing Gear'
 G[402222]='Expedition Supplies - Cataloging Gear'
+G[120237101]='Aylaag Camp'
+G[120237102]='Aylaag Camp'
+G[120237103]='Aylaag Camp'
 end
 
 if release >= 46619 then

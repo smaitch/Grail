@@ -33536,6 +33536,9 @@ G[72280]='Suprimentos das Ilhas do Dragão'
 G[72294]='Conhecimento de criação da Expedição'
 G[72318]='Conhecimento do Artesão de Iskaara'
 G[72331]='Moldando seu começo'
+G[120237101]='Acampamento Aylaag'
+G[120237102]='Acampamento Aylaag'
+G[120237103]='Acampamento Aylaag'
 end
 
 --	End of localized quest names

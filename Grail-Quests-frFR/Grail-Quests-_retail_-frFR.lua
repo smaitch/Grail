@@ -34106,6 +34106,9 @@ G[72869]='Encore des trophées de chasse'
 G[72875]='Fournitures des îles aux Dragons'
 G[72876]='Plusieurs artéfacts des îles aux Dragons'
 G[72877]='Plusieurs artéfacts des îles aux Dragons'
+G[120237101]='Camp Aylaag'
+G[120237102]='Camp Aylaag'
+G[120237103]='Camp Aylaag'
 end
 
 --	End of localized quest names

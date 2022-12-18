@@ -31148,6 +31148,9 @@ G[72869]='Altri Trofei di Caccia'
 G[72875]='Rifornimenti delle Isole dei Draghi'
 G[72876]='Molti manufatti delle Isole dei Draghi'
 G[72877]='Molti manufatti delle Isole dei Draghi'
+G[120237101]='Campo Aylaag'
+G[120237102]='Campo Aylaag'
+G[120237103]='Campo Aylaag'
 end
 
 --	End of localized quest names

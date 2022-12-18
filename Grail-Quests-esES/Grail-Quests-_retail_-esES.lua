@@ -33453,6 +33453,9 @@ G[72869]='Más trofeos de caza'
 G[72875]='Suministros de las Islas Dragón'
 G[72876]='Varios artefactos de las Islas Dragón'
 G[72877]='Varios artefactos de las Islas Dragón'
+G[120237101]='Campamento Aylaag'
+G[120237102]='Campamento Aylaag'
+G[120237103]='Campamento Aylaag'
 end
 
 --	End of localized quest names
