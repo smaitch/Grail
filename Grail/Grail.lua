@@ -1026,6 +1026,14 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		},
 		eventDispatch = {			-- table of functions whose keys are the events
 
+			['AREA_POIS_UPDATED'] = function(self, frame)
+				if not self.inCombat or not self.GDE.delayEvents then
+					self:_HandleEventAreaPOIsUpdated()
+				else
+					self:_RegisterDelayedEvent(frame, { 'AREA_POIS_UPDATED' } )
+				end
+			end,
+
 			['MAJOR_FACTION_RENOWN_LEVEL_CHANGED'] = function(self, frame, arg1, arg2, arg3)
 				local factionId = tonumber(arg1)
 				local newRenownLevel = tonumber(arg2)
@@ -1113,6 +1121,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.capabilities.usesCampaignQuests = not self.existsClassic
 					self.capabilities.usesFlightPoints = not self.existsClassic
 					self.capabilities.usesMajorFactions = not self.existsClassic
+					self.capabilities.usesAreaPOIs = not self.existsClassic
 
                     -- These values are no longer used, but kept for posterity.
 					self.existsPandaria = (self.blizzardRelease >= 15640)
@@ -1805,6 +1814,9 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 						frame:RegisterEvent("MAJOR_FACTION_RENOWN_LEVEL_CHANGED")
 						frame:RegisterEvent("MAJOR_FACTION_UNLOCKED")
 					end
+					if self.capabilities.usesAreaPOIs then
+						frame:RegisterEvent("AREA_POIS_UPDATED")
+					end
 
 -- ReloadUI in Classic same as startup
 -- Normal startup in Classic		startup in Retail		ReloadUI in Retail
@@ -2103,6 +2115,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						self:_HandleEventMajorFactionUnlocked(t[2])
 					elseif 'MAJOR_FACTION_RENOWN_LEVEL_CHANGED' == type then
 						self:_HandleEventMajorFactionRenownLevelChanged(t[2], t[3], t[4])
+					elseif 'AREA_POIS_UPDATED' == type then
+						self:_HandleEventAreaPOIsUpdated()
 					end
 					tremove(self.delayedEvents, 1)
 					self.delayedEventsCount = self.delayedEventsCount - 1
@@ -2674,6 +2688,7 @@ end,
 		invalidateGroupCurrentGarrisonTalentQuests = 8,
 		invalidateGroupRenownQuests = 9,
 		invalidateGroupMajorFactionQuests = 10,
+		invalidateGroupAreaPOIQuests = 11,
 		invalidateGroupBaseAchievement = 1000000,	-- the actual achievement ID is added to this
 		invalidateGroupBaseBuff = 2000000,	-- the actual buff ID is added to this
 		invalidateGroupBaseItem = 3000000,	-- the actual item ID is added to this
@@ -7637,6 +7652,10 @@ end
 			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupMajorFactionQuests])
 		end,
 
+		_HandleEventAreaPOIsUpdated = function(self)
+			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupAreaPOIQuests])
+		end,
+
 		_HandleEventGarrisonBuildingActivated = function(self, buildingId)
 			if nil ~= self.questStatusCache then
 				self:_StatusCodeInvalidate(self.questStatusCache.M[buildingId])
@@ -10035,7 +10054,12 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 				end
 				self.invalidateControl[self.invalidateGroupMajorFactionQuests] = t
 			elseif '`' == code then
-				-- TODO: Invalidate any quest that depends on a POI position if we can be told when a POI changes
+				-- This records a quest to be invalidated if ANY area POI change happens
+				local t = self.invalidateControl[self.invalidateGroupAreaPOIQuests] or {}
+				if not tContains(t, questId) then
+					tinsert(t, questId)
+				end
+				self.invalidateControl[self.invalidateGroupAreaPOIQuests] = t
 			end
 		end,
 
