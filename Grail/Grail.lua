@@ -3750,11 +3750,12 @@ end,
 		--	@param msg The string that will be added to the tracking system.
 		_AddTrackingMessage = function(self, msg)
 			self.GDE.Tracking = self.GDE.Tracking or {}
+			local weekday, month, day, year, hour, minute = self:CurrentDateTime()
 			if not self.trackingStarted then
-				local weekday, month, day, year, hour, minute = self:CurrentDateTime()
 				tinsert(self.GDE.Tracking, strformat("%4d-%02d-%02d %02d:%02d %s/%s/%s/%s/%s/%s/%s/%s/%d/%d:%d", year, month, day, hour, minute, self.playerRealm, self.playerName, self.playerFaction, self.playerClass, self.playerRace, self.playerGender, self.playerLocale, self.portal, self.blizzardRelease, self.covenant, self.renownLevel))
 				self.trackingStarted = true
 			end
+			msg = strformat("%02d:%02d %s", hour, minute, msg)
 			tinsert(self.GDE.Tracking, msg)
 		end,
 

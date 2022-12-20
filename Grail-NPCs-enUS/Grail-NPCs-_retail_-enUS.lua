@@ -1759,4 +1759,19 @@ if release >= 47120 then
 G[1381042]='Simmering Chest'
 end
 
+if release >= 47187 then
+G[1035591]='Temporal Dragonhead Pool'
+G[1375234]='Hardened Draconium Deposit'
+G[1376299]='Sweetsuckle'
+G[1379248]='Draconium Deposit'
+G[1379267]='Rich Draconium Deposit'
+G[1381102]='Wild Crystalspine'
+G[1381103]='Serevite Deposit'
+G[1381516]='Molten Serevite Deposit'
+G[1381518]='Primal Serevite Deposit'
+G[1381687]='Discarded Note'
+G[1382029]='Disturbed Dirt'
+G[1383733]='Disturbed Dirt'
+end
+
 --	End of localized NPC names

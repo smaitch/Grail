@@ -33541,4 +33541,10 @@ G[120237102]='Acampamento Aylaag'
 G[120237103]='Acampamento Aylaag'
 end
 
+if release >= 47187 then
+G[44028]='PROCURA-SE: Tenente Strathmar'
+G[54366]='Doações da Costa Negra: Beijo-do-inverno'
+G[67039]='Uma jornada incrível'
+end
+
 --	End of localized quest names

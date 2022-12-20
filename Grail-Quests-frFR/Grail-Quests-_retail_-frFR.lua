@@ -34111,4 +34111,15 @@ G[120237102]='Camp Aylaag'
 G[120237103]='Camp Aylaag'
 end
 
+if release >= 47187 then
+G[44028]='AVIS DE RECHERCHE : lieutenant Strathmar'
+G[49994]='Glisse sensationnelle'
+G[54366]='Donations pour Sombrivage : bise-d’hiver'
+G[54387]='Donations pour Sombrivage : os taché de sang'
+G[65363]='Statut : danger'
+G[65445]='Ressources indispensables'
+G[67039]='Un voyage extraordinaire'
+G[72762]='Partage du butin'
+end
+
 --	End of localized quest names

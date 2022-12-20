@@ -34278,4 +34278,10 @@ G[70602]='Geschichtsstunde: Krieg der Sandstürme'
 G[72114]='Acrosoth'
 end
 
+if release >= 47187 then
+G[44028]='GESUCHT: Leutnant Strathmar'
+G[54366]='Spenden für die Dunkelküste: Winterkuss'
+G[67039]='Eine erstaunliche Reise'
+end
+
 --	End of localized quest names
