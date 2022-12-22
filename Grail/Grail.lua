@@ -8515,6 +8515,7 @@ end
 			self.quest.name[62019]=SPELL_FAILED_CUSTOM_ERROR_521	-- Night Fae
 			self.quest.name[62020]=SPELL_FAILED_CUSTOM_ERROR_520	-- Venthyr
 			self.quest.name[62023]=SPELL_FAILED_CUSTOM_ERROR_522	-- Kyrian
+			self.quest.name[70872]="~ " .. self:GetBasicAchievementInfo(16409) .. " ~"	-- Let's Get Quacking
 		end,
 
 		---
