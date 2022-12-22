@@ -38587,4 +38587,10 @@ G[72772]='Our Great Bounty'
 G[74382]='Community Feast'
 end
 
+if release >= 47213 then
+G[66862]='Relic Recovery: Ruby Life Pools'
+G[72169]='Proving in Arenas'
+G[72723]='A Call to Battle'
+end
+
 --	End of localized quest names

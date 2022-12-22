@@ -1774,4 +1774,13 @@ G[1382029]='Disturbed Dirt'
 G[1383733]='Disturbed Dirt'
 end
 
+if release >= 47213 then
+G[1376587]="Expedition Scout's Pack"
+G[1377055]='Submerged Basket'
+G[1378175]='Strange Ice Crystal'
+G[1378176]='Drakmoss'
+G[1381102]='Serevite Deposit'
+G[1383575]='Rebel Supply Crate'
+end
+
 --	End of localized NPC names
