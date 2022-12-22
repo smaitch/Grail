@@ -160,7 +160,7 @@ Grail.extraAchievements = {
 		[mapZandalar] = { 512771, 512849, 512851, },
 		[mapKulTiras] = { 512510, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514279, 514961, 515515, 515259, },
-		[mapDragonIsles] = { 516401, 516398, 516428, },
+		[mapDragonIsles] = { 516401, 516398, 516428, 516409, },
 		},
 	[factionHorde] = {
 		[mapKalimdor] = { 504961, 505859, 505866, },
@@ -175,7 +175,7 @@ Grail.extraAchievements = {
 		[mapZandalar] = { 512555, 512771, 512849, 512851, },
 		[mapKulTiras] = { 512509, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514961, 515515, 515259, },
-		[mapDragonIsles] = { 516401, 516398, 516428, },
+		[mapDragonIsles] = { 516401, 516398, 516428, 516409, },
 		},
 	}
 
@@ -7359,6 +7359,7 @@ G[66412]={516398}	-- Gardens of Unity (Sojourner of Thaldraszus) (Dragonflight)
 G[69934]={516398}	-- Bleeding Hearts (Sojourner of Thaldraszus) (Dragonflight)
 G[70338]={516428}	-- Slyvern Plunge (Sojourner of Azure Span) (Dragonflight)
 G[70745]={516398}	-- Serene Dreams Spa (Sojourner of Thaldraszus) (Dragonflight)
+G[70919]={516409}	-- Let's Get Qucking (Dragonflight)
 G[70970]={516428}	-- Lost Ruins (Sojourner of Azure Span) (Dragonflight)
 G[71135]={516428}	-- Grimtusk Hideaway (Sojourner of Azure Span) (Dragonflight)
 
