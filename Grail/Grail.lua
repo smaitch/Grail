@@ -1181,6 +1181,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[81]  = true, -- Silithus
 							[371] = true, -- Jade Forest, MoP
 							[379] = true, -- Kun-Lai Summit ,MoP
+							[429] = true, -- Temple of the Jade Serpent, MoP
 							[525] = true,
 							[534] = true,
 							[535] = true,
@@ -1191,7 +1192,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[554] = true,
 							[625] = true,
 							[630] = true,
-							[634] = true,
+							[634] = true, -- Legion: Stormheim
 							[641] = true, -- Legion: Val'shara
 							[646] = true,
 							[649] = true,
@@ -1265,6 +1266,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2085] = true, -- Dragon Isles: Thaldraszus - Primalists Tomorrow
 							[2112] = true, -- Dragon Isles: Valdrakken
 --							[2092] = true, -- Dragon Isles: Northrend Timeline Azmerloth
+							[2080] = true, -- Dragon Isles: Neltharus
+							[2082] = true, -- Dragon Isles: Halls of Infusion
 
 							}
 						self.quest.name = {
@@ -7722,7 +7725,7 @@ end
 				end
 				if self.GDE.debug then
 					local message = "Looting from " .. (self.lootingGUID or "NO LOOTING GUID") .. " locale: " .. self.playerLocale .. " name: " .. lootingNameToUse
-					print(message)
+					--print(message)
 					self:_AddTrackingMessage(message)
 				end
 			end
