@@ -38590,6 +38590,7 @@ end
 if release >= 47213 then
 G[66862]='Relic Recovery: Ruby Life Pools'
 G[72169]='Proving in Arenas'
+G[72722]='Emissary of War'
 G[72723]='A Call to Battle'
 end
 
