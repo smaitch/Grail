@@ -1268,7 +1268,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 --							[2092] = true, -- Dragon Isles: Northrend Timeline Azmerloth
 							[2080] = true, -- Dragon Isles: Neltharus
 							[2082] = true, -- Dragon Isles: Halls of Infusion
-
+							[2119] = true, -- Dragon Isles: Gewölbe der Inkarnationen: Primalistenbollwerk
+							[2120] = true, -- Dragon Isles: Gewölbe der Inkarnationen: Elementarkonklave
 							}
 						self.quest.name = {
 							[51570]=Grail:_GetMapNameByID(862),	-- Zuldazar
@@ -7725,7 +7726,7 @@ end
 				end
 				if self.GDE.debug then
 					local message = "Looting from " .. (self.lootingGUID or "NO LOOTING GUID") .. " locale: " .. self.playerLocale .. " name: " .. lootingNameToUse
-					--print(message)
+					print(message)
 					self:_AddTrackingMessage(message)
 				end
 			end
