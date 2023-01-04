@@ -759,6 +759,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		abandonPostNotificationDelay = 1.0,
 		abandoningQuestIndex = nil,
 		artifactLevels = {},	-- key is itemID, value is level
+		accountUnlock = "Account Unlock",
 		availableWorldQuests = {},
 
 		-- Bit mask system for quest status
@@ -4792,8 +4793,8 @@ end,
 					retval = self:_QuestTurnedInBeforeTodaysReset(numeric) and 'C' or 'P'
 				elseif ')' == code then
 					retval = self:CurrencyAmountMeetsOrExceeds(subcode, numeric) and 'C' or 'P'
-				elseif '_' == code then
-					retval = self:MajorFactionRenownLevelMeetsOrExceeds(Grail.reputationMapping[subcode], numeric) and 'C' or 'P'
+				elseif '_' == code or '~' == code then
+					retval = self:MajorFactionRenownLevelMeetsOrExceeds(Grail.reputationMapping[subcode], numeric, code == '~') and 'C' or 'P'
 				elseif '`' == code then
 					retval = self:POIPresent(subcode, numeric) and 'C' or 'P'
 				elseif 'h' == code then
@@ -6406,7 +6407,7 @@ end,
 				numeric = tonumber(strsub(questCode, 2))
 
 				-- CSSSn+ (sss can have letters)
-				if 'T' == code or 't' == code or 'U' == code or 'u' == code or '_' == code then
+				if 'T' == code or 't' == code or 'U' == code or 'u' == code or '_' == code or '~' == code then
 					subcode = strsub(questCode, 2, 4)
 					numeric = tonumber(strsub(questCode, 5))
 
@@ -6816,8 +6817,8 @@ end
 			if nil ~= codeString then
 				local questId = p and p.q or nil
 				local dangerous = p and p.d or false
-				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable, garrisonTalentResearched, questTurnedIndBeforeLastWeeklyReset, questTurnedIndBeforeTodaysReset, currencyAmountMatches, majorFactionRenownLevelMatches, poiPresent = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent, checkQuestTurnedInBeforeLastWeeklyReset, checkRenownDoesNotMeetOrExceed, checkNotClass, checkQuestTurnedInBeforeTodaysReset, checkCurrencyAmount, checkMajorFactionRenownLevel, checkPOIPresent = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable, garrisonTalentResearched, questTurnedIndBeforeLastWeeklyReset, questTurnedIndBeforeTodaysReset, currencyAmountMatches, majorFactionRenownLevelMatches, poiPresent, majorFactionRenownLevelMatchesAccountWide = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent, checkQuestTurnedInBeforeLastWeeklyReset, checkRenownDoesNotMeetOrExceed, checkNotClass, checkQuestTurnedInBeforeTodaysReset, checkCurrencyAmount, checkMajorFactionRenownLevel, checkPOIPresent, checkMajorFactionRenownLevelAccountWide = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local forcingProfessionOnly, forcingReputationOnly = false, false
 
 				if forceSpecificChecksOnly then
@@ -6913,6 +6914,7 @@ end
 				elseif code == '(' then checkQuestTurnedInBeforeTodaysReset = true
 				elseif code == ')' then checkCurrencyAmount = true
 				elseif code == '_' then checkMajorFactionRenownLevel = true
+				elseif code == '~' then checkMajorFactionRenownLevelAccountWide = true
 				elseif code == '`' then checkPOIPresent = true
 				else print("|cffff0000Grail|r _EvaluateCodeAsPrerequisite cannot process code", codeString)
 				end
@@ -7032,6 +7034,9 @@ end
 				if checkMajorFactionRenownLevel then
 					majorFactionRenownLevelMatches = Grail:MajorFactionRenownLevelMeetsOrExceeds(Grail.reputationMapping[subcode], value)
 				end
+				if checkMajorFactionRenownLevelAccountWide then
+					majorFactionRenownLevelMatchesAccountWide = Grail:MajorFactionRenownLevelMeetsOrExceeds(Grail.reputationMapping[subcode], value, true)
+				end
 				if checkPOIPresent then
 					poiPresent = Grail:POIPresent(subcode, value)
 				end
@@ -7093,6 +7098,7 @@ end
 					(checkQuestTurnedInBeforeTodaysReset and questTurnedIndBeforeTodaysReset) or
 					(checkCurrencyAmount and currencyAmountMatches) or
 					(checkMajorFactionRenownLevel and majorFactionRenownLevelMatches) or
+					(checkMajorFactionRenownLevelAccountWide and majorFactionRenownLevelMatchesAccountWide) or
 					(checkPOIPresent and poiPresent)
 				if not good then tinsert(failures, codeString) end
 			end
@@ -7171,6 +7177,7 @@ end
 					and 'b' ~= code
 					and 'c' ~= code
 					and '_' ~= code
+					and '~' ~= code
 					and '`' ~= code
 					then
 
@@ -10047,7 +10054,7 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 				-- TODO: We should take all these quests and put them into a table that is invalidated when the daily reset happens (even though that is a pain to determine)
 			elseif ')' == code then
 				-- TODO: We should take all these quests and put them into a table that is invalidated when curreny amounts change (not sure we should really care about matching currencies, though it would be better for overall performance I guess)
-			elseif '_' == code then
+			elseif '_' == code or '~' == code then
 				-- This records a quest to be invalidated if ANY of the major faction renown levels change
 				local t = self.invalidateControl[self.invalidateGroupMajorFactionQuests] or {}
 				if not tContains(t, questId) then
@@ -11444,7 +11451,8 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			return retval, actualEarnedValue
 		end,
 
-		MajorFactionRenownLevelMeetsOrExceeds = function(self, reputationName, soughtRenownLevel)
+		MajorFactionRenownLevelMeetsOrExceeds = function(self, reputationName, soughtRenownLevel, accountWide)
+			-- TODO: Determine how to ascertain whether a reputation is available to the account at the sought renown level
 			local retval = false
 			local actualRenownLevel = nil
 			soughtRenownLevel = tonumber(soughtRenownLevel)
@@ -12255,6 +12263,7 @@ local locale = GetLocale()
 local me = Grail
 
 if locale == "deDE" then
+	me.accountUnlock = "Accountfreischaltung"
 	me.bodyGuardLevel = { 'Leibwächter', 'Treuer Leibwächter', 'Persönlicher Flügelmann' }
 	me.friendshipLevel = { 'Fremder', 'Bekannter', 'Kumpel', 'Freund', 'guter Freund', 'bester Freund' }
 	me.friendshipMawLevel = { 'Unsicher', 'Besorgt', 'Unverbindlich', 'Zwiespältig', 'Herzlich', 'Appreciative' }
@@ -12314,6 +12323,7 @@ if locale == "deDE" then
 	G['Z'][3] = 'Zandalaritroll'
 
 elseif locale == "esES" then
+	me.accountUnlock = "Desbloqueo ligado a la cuenta"
 	me.bodyGuardLevel = { 'Guardaespaldas', 'Escolta leal', 'Compañero del alma' }
 	me.friendshipLevel = { 'Extraño', 'Conocido', 'Colega', 'Amigo', 'Buen amigo', 'Mejor amigo' }
 	me.friendshipMawLevel = { 'Dubitativa', 'Aprensiva', 'Indecisa', 'Ambivalente', 'Cordial', 'Appreciative' }
@@ -12373,6 +12383,7 @@ elseif locale == "esES" then
 	G['Z'][3] = 'Trol Zandalari'
 	
 elseif locale == "esMX" then
+	me.accountUnlock = "Para toda la cuenta"
 	me.bodyGuardLevel = { 'Guardaespaldas', 'De confianza', 'Copiloto personal' }
 	me.friendshipLevel = { 'Extraño', 'Conocido', 'Colega', 'Amigo', 'Buen amigo', 'Mejor amigo' }
 	me.friendshipMawLevel = { 'Sospechosa', 'Aprensiva', 'Vacilante', 'Ambivalente', 'Cordial', 'Appreciative' }
@@ -12432,6 +12443,7 @@ elseif locale == "esMX" then
 	G['Z'][3] = 'Trol zandalari'
 
 elseif locale == "frFR" then
+	me.accountUnlock = "Accès accordé au compte"
 	me.bodyGuardLevel = { 'Garde du corps', 'Garde personnel', 'Bras droit' }
 	me.friendshipLevel = { 'Étranger', 'Connaissance', 'Camarade', 'Ami', 'Bon ami', 'Meilleur ami' }
 	me.friendshipMawLevel = { 'Méfiance', 'Crainte', 'Hésitation', 'Incertitude', 'Bienveillance', 'Appreciative' }
@@ -12491,6 +12503,7 @@ elseif locale == "frFR" then
 	G['Z'][3] = 'Trolle zandalari'
 
 elseif locale == "itIT" then
+	me.accountUnlock = "Sblocco a livello di account"
 	me.bodyGuardLevel = { 'Guardia del Corpo', 'Guardia Fidata', 'Scorta Personale' }
 	me.friendshipLevel = { 'Estraneo', 'Conoscente', 'Compagno', 'Amico', 'Amico Intimo', 'Miglior Amico' }
 	me.friendshipMawLevel = { 'Dubbiosa', 'Ansiosa', 'Incerta', 'Ambivalente', 'Cordiale', 'Appreciative' }
@@ -12586,6 +12599,7 @@ me.professionMapping = {
 	G['Z'][3] = 'Troll Zandalari'
 
 elseif locale == "koKR" then
+	me.accountUnlock = "계정 공유 해제"
 	me.bodyGuardLevel = { '경호원', '믿음직스러운 경호원', '개인 호위무사' }
 	me.friendshipLevel = { '이방인', '지인', '동료', '친구', '좋은 친구', '가장 친한 친구' }
 	me.friendshipMawLevel = { '의심', '불안', '불확신', '애증', '호감', 'Appreciative' }
@@ -12645,6 +12659,7 @@ elseif locale == "koKR" then
 	G['Z'][3] = '잔달라 트롤'
 
 elseif locale == "ptBR" then
+	me.accountUnlock = "Desbloqueio de Conta"
 	me.bodyGuardLevel = { 'Guarda-costas', 'Guarda-costas de Confiança', 'Copiloto Pessoal' }
 	me.friendshipLevel = { 'Estranho', 'Conhecido', 'Camarada', 'Amigo', 'Bom Amigo', 'Grande Amigo' }
 	me.friendshipMawLevel = { 'Indecisão', 'Apreensão', 'Hesitação', 'Ambivalência', 'Cordialidade', 'Appreciative' }
@@ -12721,6 +12736,7 @@ me.professionMapping = {
 	G['Z'][3] = 'Trolesa Zandalari'
 
 elseif locale == "ruRU" then
+	me.accountUnlock = "Доступ для всей учетной записи"
 	me.bodyGuardLevel = { 'Телохранитель', 'Доверенный боец', 'Боевой товарищ' }
 	me.friendshipLevel = { 'Незнакомец', 'Знакомый', 'Приятель', 'Друг', 'Хороший друг', 'Лучший друг' }
 	me.friendshipMawLevel = { 'Сомнения', 'Опасения', 'Настороженность', 'Безразличие', 'Сердечность', 'Appreciative' }
@@ -12780,6 +12796,7 @@ elseif locale == "ruRU" then
 	G['Z'][3] = 'Зандаларка'
 
 elseif locale == "zhCN" then
+	me.accountUnlock = "账号解锁"
 	me.bodyGuardLevel = { '保镖', '贴身保镖', '亲密搭档' }
 	me.friendshipLevel = { 'Stranger', 'Acquaintance', 'Buddy', 'Friend', 'Good Friend', '挚友' }
 	me.friendshipMawLevel = { '猜忌', '防备', '犹豫', '纠结', '和善', 'Appreciative' }
@@ -12838,6 +12855,7 @@ elseif locale == "zhCN" then
 	G['Z'][3] = '赞达拉巨魔'
 
 elseif locale == "zhTW" then
+	me.accountUnlock = "帳號解鎖"
 	me.bodyGuardLevel = { '保鏢', '信任的保鑣', '個人的搭檔' }
 	me.friendshipLevel = { '陌生人', '熟識', '夥伴', '朋友', '好朋友', '最好的朋友' }
 	me.friendshipMawLevel = { '懷疑', '不安', '猶豫', '籠統', '友善', 'Appreciative' }
