@@ -1279,6 +1279,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2082] = true, -- Dragon Isles: Halls of Infusion
 							[2119] = true, -- Dragon Isles: Gewölbe der Inkarnationen: Primalistenbollwerk
 							[2120] = true, -- Dragon Isles: Gewölbe der Inkarnationen: Elementarkonklave
+							[2121] = true, -- Dragon Isles: Gewölbe der Inkarnationen: Orkanhauchfels
+							[2122] = true, -- Dragon Isles: Gewölbe der Inkarnationen: Gewölbeannäherung
+							[2124] = true, -- Dragon Isles: Gewölbe der Inkarnationen: Urzeitliche Konvergenz
 							}
 						self.quest.name = {
 							[51570]=Grail:_GetMapNameByID(862),	-- Zuldazar
