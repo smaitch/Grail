@@ -160,7 +160,7 @@ Grail.extraAchievements = {
 		[mapZandalar] = { 512771, 512849, 512851, },
 		[mapKulTiras] = { 512510, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514279, 514961, 515515, 515259, },
-		[mapDragonIsles] = { 516401, 516398, 516428, 516409, },
+		[mapDragonIsles] = { 516401, 516398, 516428, 516409, 516405, },
 		},
 	[factionHorde] = {
 		[mapKalimdor] = { 504961, 505859, 505866, },
@@ -175,7 +175,7 @@ Grail.extraAchievements = {
 		[mapZandalar] = { 512555, 512771, 512849, 512851, },
 		[mapKulTiras] = { 512509, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514961, 515515, 515259, },
-		[mapDragonIsles] = { 516401, 516398, 516428, 516409, },
+		[mapDragonIsles] = { 516401, 516398, 516428, 516409, 516405, },
 		},
 	}
 
@@ -7325,6 +7325,8 @@ G[65911]={516336}	-- Decayed Roots (Azure Spanner) (Dragonflight)
 G[65920]={516398}	-- Tyrhold Reservoir (Sojourner of Thaldraszus) (Dragonflight)
 G[65962]={516363}	-- Time Management (Just Don't Ask Me to Spell It) (Dragonflight)
 G[66001]={516334}	-- Dragons in Distress (Waking Hope) (Dragonflight)
+G[66006]={516405}	-- Mudfin Village (Sojourner of Ohn'ahran Plains) (Dragonflight)
+G[66011]={516405}	-- Lilac Ramble (Sojourner of Ohn'ahran Plains) (Dragonflight)
 G[66015]={516336}	-- Vakthros (Azure Spanner) (Dragonflight)
 G[66025]={515394}	-- Maruukai (Ohn'a'Roll) (Dragonflight)
 G[66026]={516336}	-- Tuskarr Troubles (Azure Spanner) (Dragonflight)
@@ -7347,12 +7349,18 @@ G[66472]={516398}	-- Gelikyr Overlook (Sojourner of Thaldraszus) (Dragonflight)
 G[66529]={516401}	-- Professional Protographer (Sojourner of the Waking Shores) (Dragonflight)
 G[66556]={516428}	-- Winterpelt Hollow (Sojourner of Azure Span) (Dragonflight)
 G[66559]={516428}	-- Gorloc Shore (Sojourner of Azure Span) (Dragonflight)
+G[66658]={516405}	-- The Eternal Kurgans (Sojourner of Ohn'ahran Plains) (Dragonflight)
+G[66676]={516405}	-- Initiate's Day Out (Sojourner of Ohn'ahran Plains) (Dragonflight)
+G[66684]={516405}	-- Pinewood Post (Sojourner of Ohn'ahran Plains) (Dragonflight)
+G[66690]={516405}	-- Elder Nazuun (Sojourner of Ohn'ahran Plains) (Dragonflight)
+G[66700]={516405}	-- Nelthazan Ruins (Sojourner of Ohn'ahran Plains) (Dragonflight)
 G[66730]={516428}	-- Snowhide Camp (Sojourner of Azure Span) (Dragonflight)
 G[66737]={516401}	-- Ruby Lifecalling (Sojourner of the Waking Shores) (Dragonflight)
 G[66783]={515394}	-- Bonds Renewed (Ohn'a'Roll) (Dragonflight)
 G[66831]={516401}	-- Ruby Lifecalling (Sojourner of the Waking Shores) (Dragonflight)
 G[66892]={516401}	-- Ruby Lifecalling (Sojourner of the Waking Shores) (Dragonflight)
 G[66893]={516401}	-- Ruby Lifecalling (Sojourner of the Waking Shores) (Dragonflight)
+G[69096]={516405}	-- Taivan's Purpose (Sojourner of Ohn'ahran Plains) (Dragonflight)
 G[69902]={516401}	-- Brave Researchers (Sojourner of the Waking Shores) (Dragonflight)
 G[69914]={516334}	-- The Dragonscale Expedition (Waking Hope) (Dragonflight)
 G[66412]={516398}	-- Gardens of Unity (Sojourner of Thaldraszus) (Dragonflight)
