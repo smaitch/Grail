@@ -562,6 +562,8 @@
 --			Adds support for major faction renown level prerequisites.
 --			Implemented GetContainerItemInfo to return the values the old API did.
 --			Adds support for POI presence prerequisites.
+--			Adds support for items with specific counts as prerequisites.
+--			Changes retail interface to 100005.
 --
 --	Known Issues
 --
@@ -4722,9 +4724,9 @@ end,
 				elseif 'j' == code then
 					retval = self:AchievementComplete(numeric) and 'B' or 'C'
 				elseif 'K' == code then
-					retval = self:ItemPresent(numeric) and 'C' or 'P'
+					retval = self:ItemPresent(numeric, subcode) and 'C' or 'P'
 				elseif 'k' == code then
-					retval = self:ItemPresent(numeric) and 'P' or 'C'
+					retval = self:ItemPresent(numeric, subcode) and 'P' or 'C'
 				elseif 'L' == code then
 					retval = (self.levelingLevel >= numeric) and 'C' or 'P'
 				elseif 'l' == code then
@@ -6425,12 +6427,13 @@ end,
 					subcode = strsub(questCode, 2, 2)
 					numeric = ''
 
-				-- Cnnnns+
-				elseif 'G' == code then
+				-- Cnnnns+	(for K it is Cnnnnnnnnns+)
+				elseif 'G' == code or 'K' == code then
 					-- Note numeric and subcode are reverse from traditional codes
-					numeric = tonumber(strsub(questCode, 2, 5))
-					if 5 < strlen(questCode) then
-						subcode = tonumber(strsub(questCode, 6))
+					local lengthToUse = 'G' == code and 5 or 10
+					numeric = tonumber(strsub(questCode, 2, lengthToUse))
+					if lengthToUse < strlen(questCode) then
+						subcode = tonumber(strsub(questCode, lengthToUse + 1))
 					end
 
 				-- Cnnnnn
@@ -6946,7 +6949,7 @@ end
 				if checkAchievementLack then achievementNotComplete = not Grail:AchievementComplete(value) end
 				if checkPlayerAchievement then playerAchievementComplete = Grail:AchievementComplete(value, true) end
 				if checkPlayerAchievementLack then playerAchievementNotComplete = not Grail:AchievementComplete(value, true) end
-				if checkItem or checkItemLack then itemPresent = Grail:ItemPresent(value) end
+				if checkItem or checkItemLack then itemPresent = Grail:ItemPresent(value, subcode) end
 				if checkEverAbandoned or checkNeverAbandoned then questEverAbandoned = Grail:HasQuestEverBeenAbandoned(value) end
 				if checkProfession then professionGood = Grail:ProfessionExceeds(subcode, value) end
 				if checkEverAccepted then questEverAccepted = Grail:HasQuestEverBeenAccepted(value) end
@@ -8452,14 +8455,20 @@ end
 		--	@return True if an item with the same ID is in the player's bags, or false/nil otherwise.
 		--  @calls GetContainerNumSlots(), GetContainerItemID()
 		--  @alters self.cachedBagItems
-		ItemPresent = function(self, soughtItemId)
+		ItemPresent = function(self, soughtItemId, soughtCount)
 			soughtItemId = tonumber(soughtItemId)
+			soughtCount = tonumber(soughtCount) or 1
 			if nil == soughtItemId then return false end
 
 			--	The itemId is really our NPC representation of the item so its value
 			--	needs to be adjusted back to Blizzard values.
 			if soughtItemId > 100000000 then
 				soughtItemId = soughtItemId - 100000000
+			end
+
+			if GetItemCount then
+				local count = GetItemCount(soughtItemId, nil, nil, true)	-- also include reagent bank
+				return count >= soughtCount
 			end
 
 			-- If the items in the bags are not cached, create a cache of them.

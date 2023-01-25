@@ -33147,4 +33147,9 @@ G[120237102]='艾拉格營地'
 G[120237103]='艾拉格營地'
 end
 
+if release >= 47213 then
+G[43638]='幽暗地道：純銀龍鰻'
+G[70649]='拭抹史瓦格蛙'
+end
+
 --	End of localized quest names

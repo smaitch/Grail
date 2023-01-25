@@ -36549,4 +36549,9 @@ G[120237102]='Camp Aylaag'
 G[120237103]='Camp Aylaag'
 end
 
+if release >= 47213 then
+G[53721]='Armure ancestrale des Zandalari'
+G[56641]='Coupure de courant'
+end
+
 --	End of localized quest names

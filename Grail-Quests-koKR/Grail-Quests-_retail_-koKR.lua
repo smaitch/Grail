@@ -33965,4 +33965,8 @@ G[120237102]='아일라그 야영지'
 G[120237103]='아일라그 야영지'
 end
 
+if release >= 47213 then
+G[43638]='비전로: 은빛 뱀'
+end
+
 --	End of localized quest names

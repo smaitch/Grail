@@ -33682,4 +33682,9 @@ G[120237102]='Campo Aylaag'
 G[120237103]='Campo Aylaag'
 end
 
+if release >= 47213 then
+G[43638]="L'Arcavia: Serpente d'argento"
+G[70649]='Campionamento di drospo'
+end
+
 --	End of localized quest names

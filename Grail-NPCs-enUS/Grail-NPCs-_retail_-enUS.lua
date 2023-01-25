@@ -1742,6 +1742,7 @@ G[1381575]='Duck Trap Kit'
 G[1381687]='Discarded Note'
 G[1381701]="WANTED: Mara'nar the Thunderous"
 G[1382029]='Disturbed Dirt'
+G[1382166]='The Ruby Feast!'
 G[1382299]='Sundered Flame Supply Crate'
 G[1383575]='Rebel Supply Crate'
 G[1383733]='Disturbed Dirt'

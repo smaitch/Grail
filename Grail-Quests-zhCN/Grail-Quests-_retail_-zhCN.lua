@@ -33008,4 +33008,9 @@ G[120237102]='艾拉格营地'
 G[120237103]='艾拉格营地'
 end
 
+if release >= 47213 then
+G[43638]='魔法回廊：白银之蛇'
+G[70649]='擦抹龙蛙'
+end
+
 --	End of localized quest names
