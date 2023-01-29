@@ -7343,7 +7343,6 @@ G[66299]={516398}	-- The Screetchflight Scramble (Sojourner of Thaldraszus) (Dra
 G[66412]={516398}	-- Gardens of Unity (Sojourner of Thaldraszus) (Dragonflight)
 G[66429]={516428}	-- Ruins of Karnthar (Sojourner of Azure Span) (Dragonflight)
 G[66447]={516401}	-- Beyond the Barrier (Sojourner of the Waking Shores) (Dragonflight)
-G[66465]={516398}	-- Drawing Conclusions (Sojourner of Thaldraszus) (Dragonflight)	-- TODO: Verify this is required
 G[66467]={516398}	-- Drawing Conclusions (Sojourner of Thaldraszus) (Dragonflight)
 G[66472]={516398}	-- Gelikyr Overlook (Sojourner of Thaldraszus) (Dragonflight)
 G[66529]={516401}	-- Professional Protographer (Sojourner of the Waking Shores) (Dragonflight)

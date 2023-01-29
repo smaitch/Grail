@@ -1483,7 +1483,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						-- X is a table whose key is a group number and whose value is a table of quests interested in that group for accepting.
 						-- Y is a table whose key is a spellId that has ever been experienced and whose value is a table of quests associated with it
 						-- Z is a table whose key is a spellId that has ever been cast and whose value is a table of quests associated with it
-						self.questStatusCache = { ["A"] = {}, ["B"] = {}, ["C"] = {}, ["D"] = {}, ["E"] = {}, ["F"] = {}, ["G"] = {}, ["H"] = {}, ["I"] = {}, ["J"] = {}, ["K"] = {}, ["L"] = {}, ["M"] = {}, ["P"] = {}, ["Q"] = {}, ["R"] = {}, ["S"] = {}, ["V"] = {}, ["W"] = {}, ["X"] = {}, ["Y"] = {}, ["Z"] = {}, }
+						self.questStatusCache = { ["A"] = {}, ["B"] = {}, ["C"] = {}, ["D"] = {}, ["E"] = {}, ["F"] = {}, ["G"] = {}, ["H"] = {}, ["I"] = {}, ["J"] = {}, ["K"] = {}, ["L"] = {}, ["M"] = {}, ["P"] = {}, ["Q"] = {}, ["R"] = {}, ["S"] = {}, ["V"] = {}, ["W"] = {}, ["X"] = {}, ["Y"] = {}, ["Z"] = {},
+							["questToItemCountGroup"] = {},	-- this contains all the groups to which quests have interest, probably only one in reality
+							["itemCountGroupToQuest"] = {},	-- this contains a table of questId and the count of the item needed for that quest
+							}
 						self.npcStatusCache = { ["A"] = {}, ["B"] = {}, ["C"] = {}, ["D"] = {}, ["E"] = {}, ["F"] = {}, ["G"] = {}, ["H"] = {}, ["I"] = {}, ["J"] = {}, ["K"] = {}, ["L"] = {}, ["M"] = {}, ["P"] = {}, ["Q"] = {}, ["R"] = {}, ["S"] = {}, ["V"] = {}, ["W"] = {}, ["X"] = {}, ["Y"] = {}, ["Z"] = {}, }
 					end
 					-- Contemplate switching the questStatusCache keys to make use of the quest prerequisite codes, with further refinement probably using numerals since
@@ -5895,6 +5898,40 @@ end,
 			end
 		end,
 
+		_QuestCode = function(self, questId, soughtCode)
+			questId = tonumber(questId)
+			if nil ~= questId then
+				local codeString = self.questCodes[questId]
+				if nil ~= codeString then
+					local start, length = 1, strlen(codeString)
+					local stop = length
+					local c, code, codeValue
+					while start < length do
+						local foundSpace = strfind(codeString, " ", start, true)
+						if nil == foundSpace then
+							if 1 < start then
+								stop = strlen(codeString)
+							end
+						else
+							stop = foundSpace - 1
+						end
+						c = strsub(codeString, start, stop)
+						if '' == c then
+							code = '!'
+						else
+							code = strsub(c, 1, 1)
+							codeValue = strsub(c, 2)
+						end
+						if code == soughtCode then
+							return code, codeValue
+						end
+						start = stop + 2
+					end
+				end
+			end
+			return nil, nil
+		end,
+
 		--	Populates the internal caches for all the fixed codes that are derived from quest data.
 		--	@param questId The standard numeric questId representing a quest.
 		_CodeAllFixed = function(self, questId)
@@ -5990,6 +6027,25 @@ end,
 								if nil ~= group then
 									self:_InsertSet(self.questStatusCache.J, group, questId)
 									self:_InsertSet(self.questStatusCache.K, questId, group)
+								else
+									hasError = true
+								end
+
+							-- The "item counts" quests are grouped together because they all have the
+							-- same item as a requirement, but the counts of that item differ.  The game
+							-- only presents the quest to the user that has the most of that item that
+							-- the user has.  So, for quests that require 20, 5, and 1 of an item, if the
+							-- user has 27, the quest with 20 will be presented, but if the user has 17,
+							-- the quest with 5 will be presented.
+							-- The system needs to ensure each of the quests associated with the item have
+							-- their cached status cleared if the count of the item ever changes.
+							-- When determining if a quest is available, all the quests in the group need to
+							-- be checked and this is only avaiable if it requires the most of the item out of
+							-- all the quests in the group that could be available by item count.
+							elseif 'V' == code then
+								local group = tonumber(strsub(c, 2))
+								if nil ~= group then
+									self:_InsertSet(self.questStatusCache.questToItemCountGroup, questId, group)
 								else
 									hasError = true
 								end
@@ -6950,6 +7006,21 @@ end
 				if checkPlayerAchievement then playerAchievementComplete = Grail:AchievementComplete(value, true) end
 				if checkPlayerAchievementLack then playerAchievementNotComplete = not Grail:AchievementComplete(value, true) end
 				if checkItem or checkItemLack then itemPresent = Grail:ItemPresent(value, subcode) end
+				if checkItem and nil ~= Grail.questStatusCache.itemCountGroupToQuest[value] then
+					local mostAvailable = nil
+					local questWithMostAvailable = nil
+					for aQuestId, anItemCount in pairs(Grail.questStatusCache.itemCountGroupToQuest[value]) do
+						if Grail:ItemPresent(value, anItemCount) then
+							if mostAvailable == nil or anItemCount > mostAvailable then
+								mostAvailable = anItemCount
+								questWithMostAvailable = aQuestId
+							end
+						end
+					end
+					if questWithMostAvailable ~= questId then
+						itemPresent = false
+					end
+				end
 				if checkEverAbandoned or checkNeverAbandoned then questEverAbandoned = Grail:HasQuestEverBeenAbandoned(value) end
 				if checkProfession then professionGood = Grail:ProfessionExceeds(subcode, value) end
 				if checkEverAccepted then questEverAccepted = Grail:HasQuestEverBeenAccepted(value) end
@@ -10010,6 +10081,18 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			if 't' == code or 'u' == code then numeric = numeric * -1 end
 			local mappedCode = self._ProcessQuestsForHandlersMapping[code]
 			if nil ~= mappedCode then
+				-- If we have a prerequisite that deals with an item and the quest also has a V code for that same item process it
+				if code == 'K' then
+					numeric = tonumber(numeric)
+					local foundCode, codeValue = self:_QuestCode(questId, 'V')
+-- Cannot use the following because we cannot guarantee that the V code will be processed first (which it is not with the current ordering)
+--					local table = self.questStatusCache.questToItemCountGroup[questId]
+--					if nil ~= table and tContains(table, numeric) then
+					if nil ~= codeValue and tonumber(codeValue) == numeric then
+						self.questStatusCache.itemCountGroupToQuest[numeric] = self.questStatusCache.itemCountGroupToQuest[numeric] or {}
+						self.questStatusCache.itemCountGroupToQuest[numeric][questId] = tonumber(subcode)
+					end
+				end
 				destinationTable[mappedCode] = destinationTable[mappedCode] or {}
 				destinationTable[mappedCode][numeric] = destinationTable[mappedCode][numeric] or {}
 				tinsert(destinationTable[mappedCode][numeric], questId)
