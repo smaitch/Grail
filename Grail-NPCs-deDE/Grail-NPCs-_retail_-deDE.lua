@@ -708,4 +708,58 @@ G[100128231]='Ausstattungsbaupläne: Abgerichtete Haie'
 G[100128232]='Ausstattungsbaupläne: Hochleistungsnebelleuchten'
 end
 
+if release >= 47213 then
+G[1035591]='Schwimmer'
+G[1375642]='Haltegriff'
+G[1376034]='Duftende Blüte'
+G[1376084]='Weltenbrecherwache'
+G[1376102]='Waffe des Weltenbrechers'
+G[1376103]="Wu're Kauzfuß"
+G[1376426]='Magiegebundene Truhe'
+G[1376580]='Depot der Djaradin'
+G[1376582]='Kiste der Tuskarr'
+G[1376801]='Haufen Treibholz'
+G[1376802]='Haufen Treibholz'
+G[1376805]='Erneuerter Protodrache'
+G[1377055]='Touchytouch-Frostwolf'
+G[1377159]="Sàmirâ, Hand von A'dal"
+G[1377560]='Windzerzauste Feder'
+G[1377955]='Gefülltes Fischernetz'
+G[1379314]='Gefülltes Fischernetz'
+G[1381069]='Gefülltes Fischernetz'
+G[1381070]='Gefülltes Fischernetz'
+G[1381190]='Speer der Nokhud'
+G[1381191]='Schild der Nokhud'
+G[1381192]='Axt der Nokhud'
+G[1381249]='Verbände der Tuskarr'
+G[1381510]='Knochen fliegender Fische'
+G[1381511]='Harpunenspitze'
+G[1381512]='Holzstab'
+G[1381513]='Alte Spitzhacke'
+G[1381584]='Anfrage des Archivars'
+G[1381654]='Zerbrochene Angelrute'
+G[1381655]='Kuschelentchen'
+G[1381668]='Anfrage des Archivars'
+G[1381669]='Anfrage des Archivars'
+G[1381670]='Anfrage des Archivars'
+G[1381738]='Magnetisierte Splitter'
+G[1381911]='Entlegenes Fragment'
+G[1381972]='Schatz des Herausforderers'
+G[1382033]='Vorratsglas der Djaradin'
+G[1382193]='Hoss, Champion der Naaru'
+G[1382247]='Haltegriff'
+G[1382248]='Haltegriff'
+G[1382251]='Energieerfüllte Gletscherprobe'
+G[1382255]='Haltegriff'
+G[1382283]='Triefende Klauendistel'
+G[1384405]='Halbgarer Fisch'
+end
+
+if release >= 47631 then
+G[1035591]='Grusara'
+G[1375642]='Verlorene Vorräte'
+G[1376034]='Schlag des Windlords'
+G[1381672]='Anfrage des Archivars'
+end
+
 --	End of localized NPC names

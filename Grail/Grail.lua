@@ -564,6 +564,7 @@
 --			Adds support for POI presence prerequisites.
 --			Adds support for items with specific counts as prerequisites.
 --			Changes retail interface to 100005.
+--			Adds support group membership completion counts being exact (to support Dragon Isles Waygate quests).
 --
 --	Known Issues
 --
@@ -4746,6 +4747,8 @@ end,
 					retval = self:ProfessionExceeds(subcode, numeric) and 'C' or 'P'
 				elseif 'R' == code then
 					retval = self:EverExperiencedSpell(numeric) and 'C' or 'P'
+				elseif 'r' == code then
+					retval = self:MeetsRequirementGroupControl({groupNumber = subcode, minimum = numeric, inLog = true, turnedIn = true, exactMatch = true }) and 'C' or 'P'
 				elseif 'S' == code then
 					retval = self:_HasSkill(numeric) and 'C' or 'P'
 				elseif 's' == code then
@@ -4763,12 +4766,10 @@ end,
 						retval = 'C'
 					end
 				elseif 'V' == code then
---					retval = self:MeetsRequirementGroupAccepted(subcode, numeric) and 'C' or 'P'
 					retval = self:MeetsRequirementGroupControl({groupNumber = subcode, minimum = numeric, accepted = true}) and 'C' or 'P'
 				elseif 'v' == code then
 					retval = self:_QuestTurnedInBeforeLastWeeklyReset(numeric) and 'C' or 'P'
 				elseif 'W' == code then
---					retval = self:MeetsRequirementGroup(subcode, numeric) and 'C' or 'P'
 					retval = self:MeetsRequirementGroupControl({groupNumber = subcode, minimum = numeric, turnedIn = true}) and 'C' or 'P'
 				elseif 'w' == code then
 					retval = self:MeetsRequirementGroupControl({ groupNumber = subcode, minimum = numeric, turnedIn = true, completeInLog = true}) and 'C' or 'P'
@@ -6474,7 +6475,7 @@ end,
 					numeric = tonumber(strsub(questCode, 5))
 
 				-- Csssn+ (sss must be numbers)
-				elseif 'V' == code or 'W' == code or 'w' == code then
+				elseif 'V' == code or 'W' == code or 'w' == code or 'r' == code then
 					subcode = tonumber(strsub(questCode, 2, 4))
 					numeric = tonumber(strsub(questCode, 5))
 
@@ -6880,8 +6881,8 @@ end
 			if nil ~= codeString then
 				local questId = p and p.q or nil
 				local dangerous = p and p.d or false
-				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable, garrisonTalentResearched, questTurnedIndBeforeLastWeeklyReset, questTurnedIndBeforeTodaysReset, currencyAmountMatches, majorFactionRenownLevelMatches, poiPresent, majorFactionRenownLevelMatchesAccountWide = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
-				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent, checkQuestTurnedInBeforeLastWeeklyReset, checkRenownDoesNotMeetOrExceed, checkNotClass, checkQuestTurnedInBeforeTodaysReset, checkCurrencyAmount, checkMajorFactionRenownLevel, checkPOIPresent, checkMajorFactionRenownLevelAccountWide = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable, garrisonTalentResearched, questTurnedIndBeforeLastWeeklyReset, questTurnedIndBeforeTodaysReset, currencyAmountMatches, majorFactionRenownLevelMatches, poiPresent, majorFactionRenownLevelMatchesAccountWide, groupInLogOrTurnedIn = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
+				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent, checkQuestTurnedInBeforeLastWeeklyReset, checkRenownDoesNotMeetOrExceed, checkNotClass, checkQuestTurnedInBeforeTodaysReset, checkCurrencyAmount, checkMajorFactionRenownLevel, checkPOIPresent, checkMajorFactionRenownLevelAccountWide, checkGroupInLogOrTurnedIn = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local forcingProfessionOnly, forcingReputationOnly = false, false
 
 				if forceSpecificChecksOnly then
@@ -6948,6 +6949,7 @@ end
 				elseif code == 'Q' or
 					   code == 'q' then checkILvl = true
 				elseif code == 'R' then checkEverExperiencedSpell = true
+				elseif code == 'r' then checkGroupInLogOrTurnedIn = true
 				elseif code == 'S' then	checkHasSkill = true
 				elseif code == 's' then checkSkillLack = true
 				elseif code == 'T' then checkReputationExceeds = true
@@ -7027,11 +7029,10 @@ end
 				if checkHasSkill or checkSkillLack then hasSkill = Grail:_HasSkill(value) end
 				if checkEverCastSpell then spellEverCast = Grail:_EverCastSpell(value) end
 				if checkEverExperiencedSpell then spellEverExperienced = Grail:EverExperiencedSpell(value) end
---				if checkGroupDone then groupDone = Grail:MeetsRequirementGroup(subcode, value) end
 				if checkGroupDone then groupDone = Grail:MeetsRequirementGroupControl({groupNumber = subcode, minimum = value, turnedIn = true}) end
 				if checkGroupDoneOrComplete then groupDoneOrComplete = Grail:MeetsRequirementGroupControl({ groupNumber = subcode, minimum = value, turnedIn = true, completeInLog = true}) end
---				if checkGroupAccepted then groupAccepted = Grail:MeetsRequirementGroupAccepted(subcode, value) end
 				if checkGroupAccepted then groupAccepted = Grail:MeetsRequirementGroupControl({groupNumber = subcode, minimum = value, accepted = true}) end
+				if checkGroupInLogOrTurnedIn then groupInLogOrTurnedIn = Grail:MeetsRequirementGroupControl({groupNumber = subcode, minimum = value, inLog = true, turnedIn = true, exactMatch = true }) end
 				if checkReputationUnder or checkReputationExceeds then
 					local exceeds, earnedValue = Grail:_ReputationExceeds(Grail.reputationMapping[subcode], value)
 					if not exceeds then reputationUnder = true end
@@ -7177,7 +7178,8 @@ end
 					(checkCurrencyAmount and currencyAmountMatches) or
 					(checkMajorFactionRenownLevel and majorFactionRenownLevelMatches) or
 					(checkMajorFactionRenownLevelAccountWide and majorFactionRenownLevelMatchesAccountWide) or
-					(checkPOIPresent and poiPresent)
+					(checkPOIPresent and poiPresent) or
+					(checkGroupInLogOrTurnedIn and groupInLogOrTurnedIn)
 				if not good then tinsert(failures, codeString) end
 			end
 
@@ -7195,17 +7197,19 @@ end
 				local code, subcode, numeric = Grail:CodeParts(codeString)
 				local anyFailure = nil
 				if 'V' == code then
---					if not Grail:MeetsRequirementGroupAccepted(subcode, numeric) then
 					if not Grail:MeetsRequirementGroupControl({groupNumber = subcode, minimum = numeric, accepted = true}) then
 						anyFailure = Grail.bitMaskInvalidated
 					end
 				elseif 'W' == code then
---					if not Grail:MeetsRequirementGroupPossibleToComplete(subcode, numeric) then
 					if not Grail:MeetsRequirementGroupControl({ groupNumber = subcode, minimum = numeric, possible = true}) then
 						anyFailure = Grail.bitMaskInvalidated
 					end
 				elseif 'w' == code then
 					if not Grail:MeetsRequirementGroupControl({ groupNumber = subcode, minimum = numeric, turnedIn = true, completeInLog = true}) then
+						anyFailure = Grail.bitMaskInvalidated
+					end
+				elseif 'r' == code then
+					if not Grail:MeetsRequirementGroupControl({groupNumber = subcode, minimum = numeric, inLog = true, turnedIn = true, exactMatch = true }) then
 						anyFailure = Grail.bitMaskInvalidated
 					end
 				elseif 'T' == code or 't' == code then
@@ -9072,7 +9076,9 @@ end
 		--	of the controlTable, which can have in it:
 		--		groupNumber		integer		number of group for quests	(required)
 		--		minimum			integer		number needing to match		(required)
+		--		exactMatch		boolean		indicates count must match exactly instead of >=
 		--		turnedIn		boolean		indicating a match succeeds when quest completed and turned in
+		--		inLog			boolean		indicating a match succeeds when quest in log
 		--		completeInLog	boolean		indicating a match succeeds when quest complete in log
 		--		accepted		boolean		indicating a match succeeds when quest has been accepted
 		--		possible		boolean		indicating a match succeeds when quest is not invalidated
@@ -9091,6 +9097,10 @@ end
 					if not foundMatch and controlTable.turnedIn then
 						if self:IsQuestCompleted(questId) then foundMatch = true end
 					end
+					if not foundMatch and controlTable.inLog then
+						local questInLog, questStatus = Grail:IsQuestInQuestLog(questId)
+						if questInLog then foundMatch = true end
+					end
 					if not foundMatch and controlTable.completeInLog then
 						local questInLog, questStatus = Grail:IsQuestInQuestLog(questId)
 						if questInLog and questStatus ~= nil and questStatus > 0 then foundMatch = true end
@@ -9104,53 +9114,11 @@ end
 					if foundMatch then numberMatching = numberMatching + 1 end
 				end
 			end
-			return (numberMatching >= controlTable.minimum)
-		end,
-
-		MeetsRequirementGroup = function(self, groupNumber, minimumDone)
-			if not Grail.warnedAboutMeetsRequirementGroup then
-				print("Grail:MeetsRequirementGroup(g, m) is obsolete (071).  Please replace with Grail:MeetsRequirementGroupControl({groupNumber = g, minimum = m, turnedIn = true}) instead.")
-				Grail.warnedAboutMeetsRequirementGroup = true
+			if controlTable.exactMatch then
+				return (numberMatching == controlTable.minimum)
+			else
+				return (numberMatching >= controlTable.minimum)
 			end
-			return self:MeetsRequirementGroupControl({groupNumber = groupNumber, minimum = minimumDone, turnedIn = true})
-		end,
-
-		MeetsRequirementGroupAccepted = function(self, groupNumber, minimumAccepted)
-			if not Grail.warnedAboutMeetsRequirementGroupAccepted then
-				print("Grail:MeetsRequirementGroupAccepted(g, m) is obsolete (071).  Please replace with Grail:MeetsRequirementGroupControl({groupNumber = g, minimum = m, accepted = true}) instead.")
-				Grail.warnedAboutMeetsRequirementGroupAccepted = true
-			end
-			return self:MeetsRequirementGroupControl({groupNumber = groupNumber, minimum = minimumAccepted, accepted = true})
---			local numberAccepted = 0
---			local questTable = self.questStatusCache['G'][groupNumber] or {}
---			if #questTable >= minimumAccepted then
---				local dailyDay = self:_GetDailyDay()
---				local dailyGroup = GrailDatabasePlayer["dailyGroups"][dailyDay] and GrailDatabasePlayer["dailyGroups"][dailyDay][groupNumber] or {}
---				for _, questId in pairs(questTable) do
---					if tContains(dailyGroup, questId) then
---						numberAccepted = numberAccepted + 1
---					end
---				end
---			end
---			return (numberAccepted >= minimumAccepted)
-		end,
-
-		MeetsRequirementGroupPossibleToComplete = function(self, groupNumber, minimumDone)
-			if not Grail.warnedAboutMeetsRequirementGroupPossibleToComplete  then
-				print("Grail:MeetsRequirementGroupPossibleToComplete(g, m) is obsolete (071).  Please replace with Grail:MeetsRequirementGroupControl({groupNumber = g, minimum = m, possible = true}) instead.")
-				Grail.warnedAboutMeetsRequirementGroupPossibleToComplete  = true
-			end
-			return self:MeetsRequirementGroupControl({groupNumber = groupNumber, minimum = minimumDone, possible = true})
---			local numberAvailableToDo = 0
---			local questTable = self.questStatusCache['G'][groupNumber] or {}
---			if #questTable >= numberAvailableToDo then
---				for _, questId in pairs(questTable) do
---					if not self:IsInvalidated(questId) then
---						numberAvailableToDo = numberAvailableToDo + 1
---					end
---				end
---			end
---			return (numberAvailableToDo >= minimumDone)
 		end,
 
 		---

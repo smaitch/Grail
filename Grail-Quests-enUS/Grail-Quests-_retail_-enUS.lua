@@ -39005,4 +39005,9 @@ G[74466]='Huntmaster Yrgena'
 G[74467]='Bloodbeak the Ravenous'
 end
 
+if release >= 47936 then
+G[66959]='Tour the Trading Post'
+G[72681]='Report to the Trading Post'
+end
+
 --	End of localized quest names
