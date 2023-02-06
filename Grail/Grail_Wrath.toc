@@ -1,8 +1,8 @@
-## Interface: 30400
+## Interface: 30401
 ## Title: Grail
 ## Author: Scott M Harrison
 ## Notes: Knows about quests
-## Version: 120
+## Version: 121
 ## SavedVariables: GrailDatabase
 ## SavedVariablesPerCharacter: GrailDatabasePlayer
 
