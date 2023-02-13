@@ -39007,7 +39007,19 @@ end
 
 if release >= 47936 then
 G[66959]='Tour the Trading Post'
+G[70426]='Dragonrider Racing - Azure Span Slalom'
+G[70440]='Dead Eyes'
+G[70712]='Dragonrider Racing - River Rapids Route'
 G[72681]='Report to the Trading Post'
+G[72721]='The Very Best'
+end
+
+if release >= 47967 then
+G[69928]='Liskanoth'
+end
+
+if release >= 48001 then
+G[67010]='Boiling Over'
 end
 
 --	End of localized quest names

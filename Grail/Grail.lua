@@ -567,6 +567,8 @@
 --			Adds support group membership completion counts being exact (to support Dragon Isles Waygate quests).
 --		121 Changes Classic Wrath interface to 30401.
 --			Corrects problem where attempting to use modern achievement name in Classic causes crash.
+--		122	Updates some Quest/NPC information.
+--			Adds better support for The Ruby Feast quests.
 --
 --	Known Issues
 --
@@ -8614,6 +8616,7 @@ end
 			self.quest.name[62019]=SPELL_FAILED_CUSTOM_ERROR_521	-- Night Fae
 			self.quest.name[62020]=SPELL_FAILED_CUSTOM_ERROR_520	-- Venthyr
 			self.quest.name[62023]=SPELL_FAILED_CUSTOM_ERROR_522	-- Kyrian
+			self.quest.name[72009]="~ " .. (self:QuestName(71238) or "The Ruby Feast") .. " ~"
 			self.quest.name[70872]="~ " .. (self:GetBasicAchievementInfo(16409) or "") .. " ~"	-- Let's Get Quacking
 		end,
 
