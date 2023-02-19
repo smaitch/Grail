@@ -39022,4 +39022,9 @@ if release >= 48001 then
 G[67010]='Boiling Over'
 end
 
+if release >= 48069 then
+G[70073]='Bluefeather Banners'
+G[72727]='A Burning Path Through Time'
+end
+
 --	End of localized quest names

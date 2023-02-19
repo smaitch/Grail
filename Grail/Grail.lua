@@ -8616,6 +8616,7 @@ end
 			self.quest.name[62019]=SPELL_FAILED_CUSTOM_ERROR_521	-- Night Fae
 			self.quest.name[62020]=SPELL_FAILED_CUSTOM_ERROR_520	-- Venthyr
 			self.quest.name[62023]=SPELL_FAILED_CUSTOM_ERROR_522	-- Kyrian
+			self.quest.name[67030]="~ " .. (CHROMIE_TIME_CAMPAIGN_COMPLETE or "Campaign completed") .. " ~"
 			self.quest.name[72009]="~ " .. (self:QuestName(71238) or "The Ruby Feast") .. " ~"
 			self.quest.name[70872]="~ " .. (self:GetBasicAchievementInfo(16409) or "") .. " ~"	-- Let's Get Quacking
 		end,
