@@ -36554,4 +36554,9 @@ G[53721]='Armure ancestrale des Zandalari'
 G[56641]='Coupure de courant'
 end
 
+if release >= 48069 then
+G[73716]='Ancienne aylaag'
+G[73848]='Ancien iskaarien Shomkol'
+end
+
 --	End of localized quest names

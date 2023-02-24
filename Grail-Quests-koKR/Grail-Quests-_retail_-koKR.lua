@@ -33969,4 +33969,9 @@ if release >= 47213 then
 G[43638]='비전로: 은빛 뱀'
 end
 
+if release >= 48069 then
+G[73716]='아일라그 장로'
+G[73848]='이스카라 장로 솜콜'
+end
+
 --	End of localized quest names

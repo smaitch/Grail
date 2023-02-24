@@ -36681,4 +36681,9 @@ G[41260]='Speckstreifen'
 G[69942]='Brackenfellmysterien'
 end
 
+if release >= 48069 then
+G[73716]='Älteste der Aylaag'
+G[73848]='Ältester Shomkol von Iskaara'
+end
+
 --	End of localized quest names

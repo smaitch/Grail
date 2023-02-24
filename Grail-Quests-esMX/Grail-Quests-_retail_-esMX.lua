@@ -36247,4 +36247,9 @@ G[120237102]='Campamento Aylaag'
 G[120237103]='Campamento Aylaag'
 end
 
+if release >= 48069 then
+G[73716]='Ancestra aylaag'
+G[73848]='Ancestro de Iskaara Shomkol'
+end
+
 --	End of localized quest names

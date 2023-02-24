@@ -33687,4 +33687,9 @@ G[43638]="L'Arcavia: Serpente d'argento"
 G[70649]='Campionamento di drospo'
 end
 
+if release >= 48069 then
+G[73716]='Anziana degli Aylaag'
+G[73848]='Anziano di Iskaara Shomkol'
+end
+
 --	End of localized quest names

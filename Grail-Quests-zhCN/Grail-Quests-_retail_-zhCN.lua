@@ -33013,4 +33013,9 @@ G[43638]='魔法回廊：白银之蛇'
 G[70649]='擦抹龙蛙'
 end
 
+if release >= 48069 then
+G[73716]='艾拉格长者'
+G[73848]='伊斯卡拉长者桑克尔'
+end
+
 --	End of localized quest names

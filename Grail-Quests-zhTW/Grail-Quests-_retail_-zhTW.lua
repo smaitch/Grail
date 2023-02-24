@@ -33152,4 +33152,9 @@ G[43638]='幽暗地道：純銀龍鰻'
 G[70649]='拭抹史瓦格蛙'
 end
 
+if release >= 48069 then
+G[73716]='艾拉格長者'
+G[73848]='伊斯凱拉長者修寇爾'
+end
+
 --	End of localized quest names
