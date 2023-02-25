@@ -39024,6 +39024,7 @@ end
 
 if release >= 48069 then
 G[70073]='Bluefeather Banners'
+G[70656]='Not Mushroom For Error'
 G[72727]='A Burning Path Through Time'
 end
 
