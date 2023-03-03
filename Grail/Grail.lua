@@ -2600,6 +2600,7 @@ end,
 		memoryUsage = {},	-- see timings
 		nameTaleElders = "Tale of the Elders",
 		nameTaleOutsider = "Tale of the Outsider",
+		nameTaleWarlord = "Tale of the Warlord",
 		nonPatternExperiment = true,
 
 		--	The NPC database contains all we need to know about NPCs with data in specifc tables based on need.
@@ -8625,6 +8626,8 @@ end
 			self.quest.name[70768]="- " .. self.nameTaleOutsider .. " -"	-- listened to
 			self.quest.name[70769]="- " .. self.nameTaleElders .. " -"		-- listened to
 			self.quest.name[70770]="+ " .. self.nameTaleElders .. " +"		-- availalble to listen to
+			self.quest.name[70771]="- " .. self.nameTaleWarlord .. " -"		-- listened to
+			self.quest.name[70772]="+ " .. self.nameTaleWarlord .. " +"		-- availalble to listen to
 			self.quest.name[70872]="~ " .. (self:GetBasicAchievementInfo(16409) or "") .. " ~"	-- Let's Get Quacking
 		end,
 

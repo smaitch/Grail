@@ -39023,9 +39023,29 @@ G[67010]='Boiling Over'
 end
 
 if release >= 48069 then
+G[70072]='Time-Lost and Found'
 G[70073]='Bluefeather Banners'
 G[70656]='Not Mushroom For Error'
 G[72727]='A Burning Path Through Time'
+G[402164]="Expedition Supplies - Cartographer's Flag"
+G[402181]='Hunting Party Loadout - Avian Alacrity'
+end
+
+if release >= 48317 then
+G[66409]='Pressing Matters'
+G[66410]='Worst Impressions'
+G[66411]='Troubled Waters'
+G[66413]='Encroaching Heat'
+G[66414]='All But One'
+G[66415]='The Only Way Past Is Through'
+G[66417]='Salvaging Supplies'
+G[66418]='Testing the Tuskarrsenal'
+G[66431]='In Mourning'
+G[66440]='Closure'
+G[66443]='Calling the Hunting Party'
+G[66444]='While the Iron Is Hot'
+G[68640]='Sudden Isolation'
+G[68863]='A Lost Tribe'
 end
 
 --	End of localized quest names

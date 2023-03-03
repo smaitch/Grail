@@ -1744,6 +1744,7 @@ G[1381518]='Primal Serevite Deposit'
 G[1381575]='Duck Trap Kit'
 G[1381662]="Archivists' Request"
 G[1381664]="Archivists' Request"
+G[1381668]="Archivists' Request"
 G[1381671]="Archivists' Request"
 G[1381672]="Archivists' Request"
 G[1381687]='Discarded Note'
