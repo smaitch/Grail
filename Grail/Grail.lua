@@ -570,6 +570,7 @@
 --		122	Updates some Quest/NPC information.
 --			Adds better support for The Ruby Feast quests.
 --			Adds better support for quest 70779.
+--			Changed retail interface to 100007.
 --
 --	Known Issues
 --
@@ -1329,9 +1330,6 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.invalidateControl[i] = {}
 					end
 
-					if self.forceLocalizedQuestNameLoad then
-						self:LoadLocalizedQuestNames()
-					end
 -- This was causing problems with ElvUI and is removed since we don't do this.
 --					if self.capabilities.usesArtifacts then
 --						self:LoadAddOn("Blizzard_ArtifactUI")
@@ -1347,6 +1345,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.tooltipNPC = CreateFrame("GameTooltip", "com_mithrandir_grailTooltipNPC", UIParent, "GameTooltipTemplate")
 					self.tooltipNPC:SetFrameStrata("TOOLTIP")
 					self.tooltipNPC:Hide()
+
+					-- This needs to be done after the tooltipNPC is created because it uses NPC names for some quests.
+					if self.forceLocalizedQuestNameLoad then
+						self:LoadLocalizedQuestNames()
+					end
 
 					--
 					--	Set up the slash command
@@ -2599,8 +2602,11 @@ end,
 		mapAreasWithTreasures = {},	-- index is the mapId, and the value is a table of treasure questIds
 		memoryUsage = {},	-- see timings
 		nameTaleElders = "Tale of the Elders",
+		nameTaleMagmaPact = "Tale of the Magma Pact",
 		nameTaleOutsider = "Tale of the Outsider",
+		nameTaleSlumbering = "Tale of the Slumbering",
 		nameTaleWarlord = "Tale of the Warlord",
+		nameTaleWeakling = "Tale of the Weakling",
 		nonPatternExperiment = true,
 
 		--	The NPC database contains all we need to know about NPCs with data in specifc tables based on need.
@@ -2832,7 +2838,7 @@ end,
 			[7] = { 1815, 1828, 1833, 1859, 1860, 1862, 1883, 1888, 1894, 1899, 1900, 1919, 1947, 1948, 1975, 1984, 1989, 2018, 2045, 2097, 2098, 2099, 2100, 2101, 2102, 2135, 2165, 2170, },
 			[8] = { 2103, 2111, 2120, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2233, 2264, 2265, 2371, 2372, 2373, 2374, 2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 2392, 2395, 2396, 2397, 2398, 2400, 2401, 2415, 2417, 2427, },
 			[9] = { 2407, 2410, 2413, 2432, 2439, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2462, 2463, 2464, 2465, 2469, 2470, 2472, 2478, },
-			[10] = { 2503, 2507, 2509, 2510, 2511, 2512, 2513, 2517, 2518, 2520, 2522, 2526, 2542, 2544, 2550, 2554, 2555, }
+			[10] = { 2503, 2507, 2509, 2510, 2511, 2512, 2513, 2517, 2518, 2520, 2522, 2523, 2524, 2526, 2542, 2544, 2550, 2554, 2555, 2557, }
 			},
 
 		-- These reputations use the friendship names instead of normal reputation names
@@ -3166,12 +3172,15 @@ end,
             ["9D6"] = "Sabellian", -- 2518
             ["9D8"] = "Clan Nokhud", -- 2520
             ["9DA"] = "Clan Teerai", -- 2522
+            ["9DB"] = "Dark Talons", -- 2523
+            ["9DC"] = "Obsidian Warders", -- 2524
             ["9DE"] = "Winterpelt Furbolg", -- 2526
             ["9EE"] = "Clan Ukhel", -- 2542
             ["9F0"] = "Artisan's Consortium - Dragon Isles Branch", -- 2544
             ["9F6"] = "Cobalt Assembly", -- 2550
             ["9FA"] = "Clan Toghus", -- 2554
             ["9FB"] = "Clan Kaighan", -- 2555
+            ["9FD"] = "XXX", -- 2557
 			},
 
 		reputationMappingFaction = {
@@ -3449,12 +3458,15 @@ end,
             ["9D6"] = "Neutral", -- 2518    -- TODO: Determine faction
             ["9D8"] = "Neutral", -- 2520    -- TODO: Determine faction
             ["9DA"] = "Neutral", -- 2522    -- TODO: Determine faction
-            ["9DE"] = "Neutral", -- 2526    -- TODO: Determine faction
+            ["9DB"] = "Horde", -- 2523
+            ["9DC"] = "Alliance", -- 2524
+            ["9DE"] = "Neutral", -- 2526
             ["9EE"] = "Neutral", -- 2542    -- TODO: Determine faction
             ["9F0"] = "Neutral", -- 2544    -- TODO: Determine faction
             ["9F6"] = "Neutral", -- 2550    -- TODO: Determine faction
             ["9FA"] = "Neutral", -- 2554    -- TODO: Determine faction
             ["9FB"] = "Neutral", -- 2555    -- TODO: Determine faction
+            ["9FD"] = "Neutral", -- 2555    -- TODO: Determine faction
 			},
 
 		slashCommandOptions = {},
@@ -8620,6 +8632,9 @@ end
 			self.quest.name[62019]=SPELL_FAILED_CUSTOM_ERROR_521	-- Night Fae
 			self.quest.name[62020]=SPELL_FAILED_CUSTOM_ERROR_520	-- Venthyr
 			self.quest.name[62023]=SPELL_FAILED_CUSTOM_ERROR_522	-- Kyrian
+-- TODO: Need to deal with the fact that self:ItemName(202081) is going to return "Retrieving some information" initially, so we will
+--		want to defer setting this name until we can actually get that information properly
+			self.quest.name[64764]="~ " .. self.accountUnlock .. " - " .. (self:NPCName(100202081) or "Dragon Isles Supply Bag") .. " ~"
 			self.quest.name[67030]="~ " .. (CHROMIE_TIME_CAMPAIGN_COMPLETE or "Campaign completed") .. " ~"
 			self.quest.name[72009]="~ " .. (self:QuestName(71238) or "The Ruby Feast") .. " ~"
 			self.quest.name[70767]="+ " .. self.nameTaleOutsider .. " +"	-- available to listen to
@@ -8628,6 +8643,12 @@ end
 			self.quest.name[70770]="+ " .. self.nameTaleElders .. " +"		-- availalble to listen to
 			self.quest.name[70771]="- " .. self.nameTaleWarlord .. " -"		-- listened to
 			self.quest.name[70772]="+ " .. self.nameTaleWarlord .. " +"		-- availalble to listen to
+			self.quest.name[70773]="- " .. self.nameTaleSlumbering .. " -"		-- listened to
+			self.quest.name[70774]="+ " .. self.nameTaleSlumbering .. " +"		-- availalble to listen to
+			self.quest.name[70775]="- " .. self.nameTaleMagmaPact .. " -"		-- listened to
+			self.quest.name[70776]="+ " .. self.nameTaleMagmaPact .. " +"		-- availalble to listen to
+			self.quest.name[70777]="- " .. self.nameTaleWeakling .. " -"		-- listened to
+			self.quest.name[70778]="+ " .. self.nameTaleWeakling .. " +"		-- availalble to listen to
 			self.quest.name[70872]="~ " .. (self:GetBasicAchievementInfo(16409) or "") .. " ~"	-- Let's Get Quacking
 		end,
 
@@ -12354,6 +12375,10 @@ if locale == "deDE" then
 
 	me.nameTaleElders = "Geschichte von den Ältesten"
 	me.nameTaleOutsider = "Geschichte vom Fremdling"
+	me.nameTaleWarlord = "Geschichte von der Kriegsfürstin"
+	me.nameTaleSlumbering = "Geschichte von den Schlummernden"
+	me.nameTaleMagmaPact = "Geschichte vom Magmapakt"
+	me.nameTaleWeakling = "Geschichte vom Schwächling"
 
 	me.professionMapping = { ['A'] = 'Alchemie', ['B'] = 'Schmiedekunst', ['C'] = 'Kochkunst', ['E'] = 'Verzauberkunst', ['F'] = 'Angeln', ['H'] = 'Kräuterkunde', ['I'] = 'Inschriftenkunde', ['J'] = 'Juwelenschleifen', ['L'] = 'Lederverarbeitung', ['M'] = 'Bergbau', ['N'] = 'Ingenieurskunst', ['R'] = 'Reiten', ['S'] = 'Kürschnerei', ['T'] = 'Schneiderei', ['X'] = 'Archäologie', ['Z'] = 'Erste Hilfe', }
 
@@ -12417,6 +12442,10 @@ elseif locale == "esES" then
 
 	me.nameTaleElders = "La historia de los ancianos"
 	me.nameTaleOutsider = "La historia del forastero"
+	me.nameTaleWarlord = "La historia de la señora de la guerra"
+	me.nameTaleSlumbering = "La historia de los durmientes"
+	me.nameTaleMagmaPact = "La historia del pacto de magma"
+	me.nameTaleWeakling = "La historia de la criatura débil"
 
 	me.professionMapping = { ['A'] = 'Alquimia', ['B'] = 'Herrería', ['C'] = 'Cocina', ['E'] = 'Encantamiento', ['F'] = 'Pesca', ['H'] = 'Hebalismo', ['I'] = 'Inscripción', ['J'] = 'Joyería', ['L'] = 'Peletería', ['M'] = 'Minería', ['N'] = 'Ingeniería', ['R'] = 'Equitación', ['S'] = 'Desuello', ['T'] = 'Sastrería', ['X'] = 'Arqueología', ['Z'] = 'Primeros auxilios', }
 
@@ -12480,6 +12509,10 @@ elseif locale == "esMX" then
 
 	me.nameTaleElders = "Historia de los ancianos"
 	me.nameTaleOutsider = "Historia del forastero"
+	me.nameTaleWarlord = "Historia de la señora de la guerra"
+	me.nameTaleSlumbering = "Historia del largo sueño"
+	me.nameTaleMagmaPact = "Historia del pacto de magma"
+	me.nameTaleWeakling = "Historia del patético ser"
 
 	me.professionMapping = { ['A'] = 'Alquimia', ['B'] = 'Herrería', ['C'] = 'Cocina', ['E'] = 'Encantamiento', ['F'] = 'Pesca', ['H'] = 'Hebalismo', ['I'] = 'Inscripción', ['J'] = 'Joyería', ['L'] = 'Peletería', ['M'] = 'Minería', ['N'] = 'Ingeniería', ['R'] = 'Equitación', ['S'] = 'Desuello', ['T'] = 'Sastrería', ['X'] = 'Arqueología', ['Z'] = 'Primeros auxilios', }
 
@@ -12543,6 +12576,10 @@ elseif locale == "frFR" then
 
 	me.nameTaleElders = "Conte des anciens"
 	me.nameTaleOutsider = "Conte de l’étrangère"
+	me.nameTaleWarlord = "Conte de la dame de guerre"
+	me.nameTaleSlumbering = "Conte du sommeil"
+	me.nameTaleMagmaPact = "Conte du pacte magmatique"
+	me.nameTaleWeakling = "Conte de l’avorton"
 
 	me.professionMapping = { ['A'] = 'Alchimie', ['B'] = 'Forge', ['C'] = 'Cuisine', ['E'] = 'Enchantement', ['F'] = 'Pêche', ['H'] = 'Herboristerie', ['I'] = 'Calligraphie', ['J'] = 'Joaillerie', ['L'] = 'Travail du cuir', ['M'] = 'Minage', ['N'] = 'Ingénierie', ['R'] = 'Monte', ['S'] = 'Dépeçage', ['T'] = 'Couture', ['X'] = 'Archéologie', ['Z'] = 'Secourisme', }
 
@@ -12625,6 +12662,10 @@ me.holidayMapping = {
 
 	me.nameTaleElders = "Storia degli anziani"
 	me.nameTaleOutsider = "Storia dello straniero"
+	me.nameTaleWarlord = "Storia della Signora della Guerra"
+	me.nameTaleSlumbering = "Storia del torpore"
+	me.nameTaleMagmaPact = "Storia del patto di magma"
+	me.nameTaleWeakling = "Storia della debole creatura"
 
 me.professionMapping = {
     ['A'] = 'Alchimia',
@@ -12705,6 +12746,10 @@ elseif locale == "koKR" then
 
 	me.nameTaleElders = "장로 이야기"
 	me.nameTaleOutsider = "이방인 이야기"
+	me.nameTaleWarlord = "전쟁군주 이야기"
+	me.nameTaleSlumbering = "잠자는 자 이야기"
+	me.nameTaleMagmaPact = "용암의 서약 이야기"
+	me.nameTaleWeakling = "나약한 자 이야기"
 
 	me.professionMapping = { ['A'] = '연금술', ['B'] = '대장기술', ['C'] = '요리', ['E'] = '마법부여', ['F'] = '낚시', ['H'] = '약초채집', ['I'] = '주문각인', ['J'] = '보석세공', ['L'] = '가죽세공', ['M'] = '채광', ['N'] = '기계공학', ['R'] = '탈것 숙련', ['S'] = '무두질', ['T'] = '재봉술', ['X'] = '고고학', ['Z'] = '응급치료', }
 
@@ -12768,6 +12813,10 @@ me.holidayMapping = { ['A'] = "O Amor Está No Ar", ['B'] = 'CervaFest', ['C'] =
 
 	me.nameTaleElders = "Contos dos Anciãos"
 	me.nameTaleOutsider = "Contos do Forasteiro"
+	me.nameTaleWarlord = "Contos da Senhora da Guerra"
+	me.nameTaleSlumbering = "Contos do Adormecido"
+	me.nameTaleMagmaPact = "Contos do Pacto de Magma"
+	me.nameTaleWeakling = "Contos do Fraco"
 
 me.professionMapping = {
 	['A'] = 'Alquimia',
@@ -12848,6 +12897,10 @@ elseif locale == "ruRU" then
 
 	me.nameTaleElders = "История о старейшинах"
 	me.nameTaleOutsider = "История о чужаке"
+	me.nameTaleWarlord = "История о вожде"
+	me.nameTaleSlumbering = "История о спящих"
+	me.nameTaleMagmaPact = "История о договоре Магмы"
+	me.nameTaleWeakling = "История о ничтожестве"
 
 	me.professionMapping = { ['A'] = 'Алхимия', ['B'] = 'Кузнечное дело', ['C'] = 'Кулинария', ['E'] = 'Наложение чар', ['F'] = 'Рыбная ловля', ['H'] = 'Травничество', ['I'] = 'Начертание', ['J'] = 'Ювелирное дело', ['L'] = 'Кожевничество', ['M'] = 'Горное дело', ['N'] = 'Механика', ['R'] = 'Верховая езда', ['S'] = 'Снятие шкур', ['T'] = 'Портняжное дело', ['X'] = 'Археология', ['Z'] = 'Первая помощь', }
 
@@ -12910,6 +12963,10 @@ elseif locale == "zhCN" then
 
 	me.nameTaleElders = "长老的故事"
 	me.nameTaleOutsider = "外来者的故事"
+	me.nameTaleWarlord = "督军的故事"
+	me.nameTaleSlumbering = "沉眠的故事"
+	me.nameTaleMagmaPact = "熔岩契约的故事"
+	me.nameTaleWeakling = "弱者的故事"
 
 	me.professionMapping = { ['A'] = '炼金术', ['B'] = '锻造', ['C'] = '烹饪', ['E'] = '附魔', ['F'] = '钓鱼', ['H'] = '草药学', ['I'] = '铭文', ['J'] = '珠宝加工', ['L'] = '制皮', ['M'] = '采矿', ['N'] = '工程学', ['R'] = '骑术', ['S'] = '剥皮', ['T'] = '裁缝', ['X'] = '考古学', ['Z'] = '急救', }
 
@@ -12973,6 +13030,10 @@ elseif locale == "zhTW" then
 
 	me.nameTaleElders = "長老的故事"
 	me.nameTaleOutsider = "外來者的故事"
+	me.nameTaleWarlord = "督軍的故事"
+	me.nameTaleSlumbering = "沉睡的故事"
+	me.nameTaleMagmaPact = "熔岩契約的故事"
+	me.nameTaleWeakling = "弱者的故事"
 
 	me.professionMapping = { ['A'] = '鍊金術', ['B'] = '鍛造', ['C'] = '烹飪', ['E'] = '附魔', ['F'] = '釣魚', ['H'] = '草藥學', ['I'] = '銘文學', ['J'] = '珠寶設計', ['L'] = '製皮', ['M'] = '採礦', ['N'] = '工程學', ['R'] = '騎術', ['S'] = '剝皮', ['T'] = '裁縫', ['X'] = '考古學', ['Z'] = '急救', }
 

@@ -33682,14 +33682,48 @@ G[120237102]='Campo Aylaag'
 G[120237103]='Campo Aylaag'
 end
 
+if release >= 46619 then
+G[70027]="Rifornimenti dell'Artigiano: Polsiere di Stoffa dell'Esploratore"
+end
+
 if release >= 47213 then
 G[43638]="L'Arcavia: Serpente d'argento"
 G[70649]='Campionamento di drospo'
 end
 
 if release >= 48069 then
+G[43175]='PERICOLO: Graffiofondo'
+G[53254]='Donazioni per Arathi: Incantamento Anello - Suggello del Colpo Critico'
+G[70420]='Corsa Cavalcadraghi - Volo nel Pantano'
+G[70656]='Questo fungo non funge'
+G[72528]='Catalizzatore del Ripristino'
+G[73172]='Anziana Shikaar'
 G[73716]='Anziana degli Aylaag'
+G[73717]="Anziana degli Ohn'ir"
 G[73848]='Anziano di Iskaara Shomkol'
+G[73858]='Anziano di Iskaara Nemaglek'
+G[73859]="Anziano di Iskaara Sik'ek"
+G[73860]='Anziano Dekidig'
+G[73861]='Anziano Razlok'
+G[74440]='Cercaventi Avash'
+G[74441]='Maestra delle Aquile Niraak'
+end
+
+if release >= 48676 then
+G[66409]='Questioni urgenti'
+G[66410]='Brutte impressioni'
+G[66411]='Acque torbide'
+G[66413]='Calura opprimente'
+G[66414]='Tutti tranne una'
+G[66415]='Una questione da affrontare di petto'
+G[66417]='Recuperare rifornimenti'
+G[66418]='Provare il Tuskarrsenale'
+G[66431]='In lutto'
+G[66440]='Trovare pace'
+G[66443]='Chiamare il gruppo di caccia'
+G[66444]='Finché il ferro è caldo'
+G[67014]='Basta Gorloc'
+G[75154]='Portale: Isola di Morqut'
 end
 
 --	End of localized quest names

@@ -35966,9 +35966,51 @@ G[120237102]='Acampamento Aylaag'
 G[120237103]='Acampamento Aylaag'
 end
 
+if release >= 46619 then
+G[66846]='O coração do convés'
+G[70027]='Suprimentos do Artífice: embraces de tecido do explorador'
+end
+
 if release >= 48069 then
+G[43175]='PERIGO: Garrafunda'
+G[53254]='Doações de Arathi: Encantamento de Selo de Acerto Crítico - Anel'
+G[70420]='Corrida Dragoneira - Travessia do Charco'
+G[70656]='Sem cogumerros'
+G[72528]='Catalisador de Revivescência'
+G[73172]='Ancião Shikaar'
 G[73716]='Anciã Aylaag'
+G[73717]="Anciã Ohn'ir"
 G[73848]='Ancião de Iskaara Shomkol'
+G[73858]='Ancião de Iskaara Nemaglek'
+G[73859]="Ancião de Iskaara Sik'ek"
+G[73860]='Ancião Dekidig'
+G[73861]='Ancião Razlok'
+G[74440]='Perseguidor dos Ventos Avash'
+G[74441]='Mestre de Águias Niraak'
+end
+
+if release >= 48676 then
+G[66012]='A porta lacrada'
+G[66203]='Água neles'
+G[66409]='Questões urgentes'
+G[66410]='Piores impressões'
+G[66411]='Águas agitadas'
+G[66413]='Calor Envolvente'
+G[66414]='Todos, menos um'
+G[66415]='Pra frente é que se anda'
+G[66417]='Resgate de suprimentos'
+G[66418]='Testando o Morsanarsenal'
+G[66431]='De luto'
+G[66440]='Conclusão'
+G[66443]='Chamando o grupo de caça'
+G[66444]='Enquanto o ferro está quente'
+G[66902]='Abelha e tchau'
+G[67009]='Zapo-de-chifre é vapo!'
+G[67024]='Reforço fumegante'
+G[70410]='Corrida Dragoneira - Sobrevoo do Gelo Súbito'
+G[70418]='Corrida Dragoneira - Circuito da Reserva Selvagem'
+G[74840]='Afiado feito pederneira'
+G[75154]='Pórtico: Ilhota Morqut'
 end
 
 --	End of localized quest names

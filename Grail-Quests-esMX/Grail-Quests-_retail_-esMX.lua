@@ -36247,9 +36247,49 @@ G[120237102]='Campamento Aylaag'
 G[120237103]='Campamento Aylaag'
 end
 
+if release >= 46619 then
+G[70027]='Suministros de artesanos: Braciles de tela de expedicionario'
+end
+
 if release >= 48069 then
+G[53254]='Donaciones de Arathi: Encantar anillo: Sello de golpe crítico'
+G[70420]='Carrera de dracoequitación - Sobrevuelo pantanoso'
+G[70656]='La búsqueda de los hongos'
+G[72528]='Catalizador de reanimación'
+G[73172]='Anciana shikaar'
 G[73716]='Ancestra aylaag'
+G[73717]="Ancestra ohn'ir"
 G[73848]='Ancestro de Iskaara Shomkol'
+G[73858]='Ancestro de Iskaara Nemaglek'
+G[73859]="Ancestro de Iskaara Sik'ek"
+G[73860]='Ancestro Dekidig'
+G[73861]='Antiguo Razlok'
+G[74440]='Hijo del viento Avash'
+G[74441]='Maestra de águilas Niraak'
+end
+
+if release >= 48676 then
+G[66012]='La puerta sellada'
+G[66203]='Día de limpieza'
+G[66409]='Asuntos urgentes'
+G[66410]='La primera impresión vale doble'
+G[66411]='A río revuelto'
+G[66413]='Calor arrasador'
+G[66414]='Todos menos una'
+G[66415]='Un duelo demoledor'
+G[66417]='Recuperación de suministros'
+G[66418]='Prueba de colmillarrmamento'
+G[66431]='De luto'
+G[66440]='Cierre'
+G[66443]='Llamado al grupo de caza'
+G[66444]='Con la sartén caliente'
+G[66902]='¡Sean libres, abejitas!'
+G[67009]='Croacuernos criacuervos'
+G[67024]='Refuerzos ardientes'
+G[70410]='Carrera de dracoequitación - Carrera aérea Rayogélido'
+G[70418]='Carrera de dracoequitación - Circuito de la Reserva Salvaje'
+G[74840]='Con un poco de chispa'
+G[75154]='Portal: Islote Morqut'
 end
 
 --	End of localized quest names

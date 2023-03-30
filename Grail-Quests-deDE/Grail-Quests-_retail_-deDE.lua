@@ -36633,6 +36633,10 @@ G[120237102]='Lager der Aylaag'
 G[120237103]='Lager der Aylaag'
 end
 
+if release >= 46619 then
+G[70027]='Handwerkerversorgung: Stoffbänder des Forschers'
+end
+
 if release >= 47213 then
 G[66012]='Die versiegelte Tür'
 G[66013]='Untersucht die Tür'
@@ -36682,8 +36686,25 @@ G[69942]='Brackenfellmysterien'
 end
 
 if release >= 48069 then
+G[70656]='Ich hoffe, das funghi-tioniert'
+G[72528]='Belebungskatalysator'
+G[73172]='Älteste der Shikaar'
 G[73716]='Älteste der Aylaag'
+G[73717]="Älteste der Ohn'ir"
 G[73848]='Ältester Shomkol von Iskaara'
+G[73858]='Ältester Nemaglek von Iskaara'
+G[73859]="Ältester Sik'ek von Iskaara"
+G[73860]='Ältester Dekidig'
+G[73861]='Ältester Razlok'
+G[74440]='Windsucher Avash'
+G[74441]='Adlermeisterin Niraak'
+end
+
+if release >= 48676 then
+G[66203]='Spült über sie hinweg'
+G[70410]='Drachenreiterrennen - Blitzfrost-Überflug'
+G[74840]='Scharf wie Feuerstein'
+G[75154]='Portal: Morqutinsel'
 end
 
 --	End of localized quest names

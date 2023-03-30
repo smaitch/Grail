@@ -36549,14 +36549,49 @@ G[120237102]='Camp Aylaag'
 G[120237103]='Camp Aylaag'
 end
 
+if release >= 46619 then
+G[66845]='Feuille légendaire'
+G[66846]='Au cœur du pont'
+G[70027]='Ravitaillement du Consortium : poignets d’exploration en tissu'
+end
+
 if release >= 47213 then
 G[53721]='Armure ancestrale des Zandalari'
 G[56641]='Coupure de courant'
 end
 
 if release >= 48069 then
+G[53254]='Donations pour Arathi : enchantement d’anneau (Sceau de Coup critique)'
+G[70420]='Course draconique – Traversée des marais'
+G[70656]='Champitoyable'
+G[72528]='Catalyseur de renouveau'
+G[73172]='Ancienne shikaar'
 G[73716]='Ancienne aylaag'
+G[73717]='Ancienne ohn’ir'
 G[73848]='Ancien iskaarien Shomkol'
+G[73858]='Ancien iskaarien Nemaglek'
+G[73859]='Ancien iskaarien Sik’ek'
+G[73860]='Ancien Dekidig'
+G[73861]='Ancien Razlok'
+G[74440]='Cherchevent Avash'
+G[74441]='Maîtresse des aigles Niraak'
+end
+
+if release >= 48676 then
+G[66409]='Affaire pressante'
+G[66410]='Impressions catastrophiques'
+G[66411]='Eaux troubles'
+G[66413]='Une chaleur envahissante'
+G[66414]='Le compte y est… presque'
+G[66415]='La seule solution est d’avancer'
+G[66417]='Sauvetage de fournitures'
+G[66418]='Test du roharsenal'
+G[66431]='Jour de deuil'
+G[66440]='Tourner la page'
+G[66443]='Appel à la chasse'
+G[66444]='Tant que le fer est chaud'
+G[67014]='Choc avec les Gorlocs'
+G[75154]='Portail : îlot Morqut'
 end
 
 --	End of localized quest names

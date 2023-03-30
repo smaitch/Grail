@@ -35955,9 +35955,43 @@ G[120237102]='Campamento Aylaag'
 G[120237103]='Campamento Aylaag'
 end
 
+if release >= 46619 then
+G[70027]='Suministros de artesano: braciles de tela de expedicionario'
+end
+
 if release >= 48069 then
+G[43175]='PELIGRO: Pinzaprofunda'
+G[53254]='Donaciones de Arathi: vitelas de encantar anillo: Sello de golpe crítico'
+G[70420]='Carrera de jinete de dragones - Vuelo del pantano'
+G[70656]='No hay hongo para el error'
+G[72528]='El catalizador de reanimación'
+G[73172]='La anciana Shikaar'
 G[73716]='La anciana Aylaag'
+G[73717]="La anciana Ohn'ir"
 G[73848]='El anciano Shomkol de Iskaara'
+G[73858]='El anciano Nemaglek de Iskaara'
+G[73859]="El anciano Sik'ek de Iskaara"
+G[73860]='El anciano Dekidig'
+G[73861]='Anciano Razlok'
+G[74440]='El procuravientos Avash'
+G[74441]='La maestra de águilas Niraak'
+end
+
+if release >= 48676 then
+G[66409]='Asuntos urgentes'
+G[66410]='Últimas impresiones'
+G[66411]='Aguas turbulentas'
+G[66413]='Calor acechante'
+G[66414]='Todos menos uno'
+G[66415]='La única forma de pasar es a través'
+G[66417]='Recuperando suministros'
+G[66418]='Probando el colmillarrsenal'
+G[66431]='De luto'
+G[66440]='Final'
+G[66443]='Llamando al grupo de caza'
+G[66444]='A hierro'
+G[67014]='Adióslocs a los górlocs'
+G[75154]='Puerta: Islote Morqut'
 end
 
 --	End of localized quest names

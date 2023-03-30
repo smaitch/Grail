@@ -1742,9 +1742,16 @@ G[1381516]='Molten Serevite Deposit'
 G[1381517]='Titan-Touched Serevite Deposit'
 G[1381518]='Primal Serevite Deposit'
 G[1381575]='Duck Trap Kit'
+G[1381579]="Archivists' Request"
+G[1381584]="Archivists' Request"
+G[1381650]="Archivists' Request"
+G[1381661]="Archivists' Request"
 G[1381662]="Archivists' Request"
 G[1381664]="Archivists' Request"
+G[1381667]="Archivists' Request"
 G[1381668]="Archivists' Request"
+G[1381669]="Archivists' Request"
+G[1381670]="Archivists' Request"
 G[1381671]="Archivists' Request"
 G[1381672]="Archivists' Request"
 G[1381687]='Discarded Note'
@@ -1755,6 +1762,7 @@ G[1382299]='Sundered Flame Supply Crate'
 G[1383575]='Rebel Supply Crate'
 G[1383733]='Disturbed Dirt'
 G[1383820]='Brackenhide Supply Crate'
+G[1385952]='Unusual Ring'
 end
 
 --	End of localized NPC names
