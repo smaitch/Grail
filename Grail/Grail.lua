@@ -1282,6 +1282,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2121] = true, -- Dragon Isles: Gewölbe der Inkarnationen: Orkanhauchfels
 							[2122] = true, -- Dragon Isles: Gewölbe der Inkarnationen: Gewölbeannäherung
 							[2124] = true, -- Dragon Isles: Gewölbe der Inkarnationen: Urzeitliche Konvergenz
+							[2151] = true, -- Forbidden Reach (10.0.7)
 							}
 						self.quest.name = {
 							[51570]=Grail:_GetMapNameByID(862),	-- Zuldazar
@@ -3943,7 +3944,7 @@ end,
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
-			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565, 1970, 2022, 2023, 2024, 2025, 2085, 2112, }
+			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565, 1970, 2022, 2023, 2024, 2025, 2085, 2112, 2151 }
 
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
