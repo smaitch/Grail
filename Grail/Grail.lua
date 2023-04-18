@@ -1428,6 +1428,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						hooksecurefunc("SendQuestChoiceResponse", function(anId) self:_SendQuestChoiceResponse(anId) end)
 					elseif SendPlayerChoiceResponse then
 						hooksecurefunc("SendPlayerChoiceResponse", function(anId) self:_SendQuestChoiceResponse(anId) end)
+					elseif C_PlayerChoice and C_PlayerChoice.SendPlayerChoiceResponse then
+						hooksecurefunc(C_PlayerChoice, "SendPlayerChoiceResponse", function(anId) self:_SendQuestChoiceResponse(anId) end)
 					else
 						if self.GDE.debug then
 							print("Grail did not replace any SendQuestChoiceResponse")
@@ -11703,6 +11705,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[54] = 32259,	-- Isle of Thunder Horde PvE
 			[55] = 32258,	-- Isle of Thunder Horde PvP
 			[64] = 32260,	-- Isle of Thunder Alliance PvE
+--			[64] = XXX,	-- Choosing "Kraxxus's Bidding" in the Forbidden Reach -- does not complete a quest, but gives "Valdrakken's Favor"
 			[65] = 32261,	-- Isle of Thunder Alliance PvP
 			[85] = 34680,	-- Alliance Nagrand Workshop (Tanks)
 			[119] = 34560,	-- Artillery Tower Alliance Fort Wrynn -- 37301 37304
@@ -11832,12 +11835,14 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[667] = 44433,	-- Druid choosing Feral artifact
 			[670] = 44444,	-- Druid choosing Balance artifact
 			[738] = { 35283, 35290, 37313, 37315 },	-- choosing (Alliance) Brewery in Spires of Arak
+			[777] = { 64277, 66808 },	-- choosing "Loyalty to Sabellian" -- TODO: Wrathion is { 64277, 66802 }
 			[783] = 48602,	-- Choosing Void Elf
 			[784] = 48603,	-- Choosing Lightforged Draenei
 --			[956] = xxxxx,	-- Choosing Duskwood from Hero's Call Board in Stormwind -- causes acceptance of 28564
 			[1195] = 51570,	-- Choosing Zuldazar from Zandalar Mission Board on ship in Boralus
 			[1196] = 51572,	-- Choosing Vol'dun from Zandalar Mission Board on ship in Boralus
 			[1197] = 51571,	-- Choosing Nazmir from Zandalar Mission Board on ship in Boralus
+--			[1705] = XXX,	-- Choosing "Daela's Bidding" in the Forbidden Reach -- does not complete a quest, but gives "Dragonscale's Favor"
 			[1210] = 51802,	-- Choosing Stormsong Valley from Kul Tiras Mission Board on ship in Zuldazar
 			[1650] = 40621,	-- Hunter choosing Beast Mastery artifact
 			[2186] = 57042,	-- Choosing Nazjatar Alliance companion Inowari
@@ -11847,7 +11852,9 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[4431] = { 62017, 62711, 62827, },	-- Choosing Necrolord covenant	[for a level 60 prebuild NE druid]
 			[4499] = { 62019, 62827, },	-- Choosing Night Fae covenant	[for a level 60 prebuild NE druid]
 			[4565] = { 62023, 62708, 62827, },	-- Choosing Kyrian covenant	[for a level 60 prebuild NE druid]
+--			[4626] = XXX,	-- Choosing "Turik's Bidding" in the Forbidden Reach -- does not complete a quest, but gives "Iskaara's Favor"
 			[8862] = { 62023, 62708, 62827, },	-- Choosing Kyrian covenant [NE demon hunter]
+--			[9667] = XXX,	-- Choosing "Ashekh's Bidding" in the Forbidden Reach -- does not complete a quest, but gives "Maruukai's Favor"
 			[15801] = {62020, 62827 }, 	-- Choosing Venthyr covenant (for NE druid played through storyline)
 --			[20920] = XXX, -- Choosing "Replay Storyline" in Choose Your Shadowlands Experience [note that there is no quest completed]
 			[20947] = {		 -- Choosing "The Threads of Fate"
