@@ -1102,7 +1102,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.environment = "_ptr_"
 					end
 
-					self.existsClassic = self.existsClassicBasic or self.existsClassicWrathOfTheLichKing
+					self.existsClassic = self.existsClassicBasic or self.existsClassicWrathOfTheLichKing or _G.WOW_PROJECT_ID == 14
 
 					if self.existsClassic then
 						self.environment = "_classic_"
@@ -1116,7 +1116,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					-- Now we set up some capabilities flags
 					self.capabilities = {}
 					self.capabilities.usesFriendshipReputation = not self.existsClassic
-					self.capabilities.usesAchievements = not self.existsClassic or self.existsClassicWrathOfTheLichKing
+					self.capabilities.usesAchievements = not self.existsClassic or self.existsClassicWrathOfTheLichKing or _G.WOW_PROJECT_ID == 14
 					self.capabilities.usesGarrisons = not self.existsClassic
 					self.capabilities.usesArtifacts = false --not self.existsClassic
 					self.capabilities.usesCampaignInfo = not self.existsClassic
@@ -1166,7 +1166,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							['U'] = { 'Scourge',  'Undead',    'Undead',    0x00400000 },
 							}
 						self.bitMaskRaceAll = 0x01e78000
-						if self.existsClassicWrathOfTheLichKing then
+						if self.existsClassicWrathOfTheLichKing or _G.WOW_PROJECT_ID == 14 then
 							self.races['B'] = { 'BloodElf', 'Blood Elf', 'Blood Elf', 0x02000000 }
 							self.races['D'] = { 'Draenei',  'Draenei',   'Draenei',   0x00080000 }
 							self.bitMaskRaceAll = 0x03ef8000
@@ -10554,7 +10554,6 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 					end
 				end
 			end
-
 			if nil ~= self.quests[questId] and nil ~= self.quests[questId]['OBC'] then
 				local questsToInvalidate = {}
 				for _,clearQuestId in pairs(self.quests[questId]['OBC']) do
@@ -10565,7 +10564,6 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			end
 
 			self:_StatusCodeInvalidate({ questId }, self.delayQuestRemoved)
-
 			self:_PostDelayedNotification("Abandon", questId, self.abandonPostNotificationDelay)
 		end,
 
