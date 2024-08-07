@@ -618,7 +618,6 @@ local GetBuildInfo						= GetBuildInfo
 local GetContainerItemID				= GetContainerItemID
 local GetCurrentMapDungeonLevel			= GetCurrentMapDungeonLevel
 local GetCVar							= GetCVar
-local GetFactionInfoByID				= GetFactionInfoByID
 local GetInstanceInfo					= GetInstanceInfo
 local GetLocale							= GetLocale
 local GetMapContinents					= GetMapContinents
@@ -632,10 +631,8 @@ local GetQuestLogRewardFactionInfo		= GetQuestLogRewardFactionInfo
 local GetQuestLogSelection				= GetQuestLogSelection
 local GetQuestResetTime					= GetQuestResetTime
 local GetQuestsCompleted				= GetQuestsCompleted					-- GetQuestsCompleted is special because in modern environments we define it ourselves
-local GetSpellBookItemInfo				= GetSpellBookItemInfo
 local GetSpellBookItemName				= GetSpellBookItemName
 local GetSpellLink						= GetSpellLink
-local GetSpellTabInfo					= GetSpellTabInfo
 local GetText							= GetText
 local GetTime							= GetTime
 local GetTitleText						= GetTitleText
@@ -645,7 +642,6 @@ local QueryQuestsCompleted				= QueryQuestsCompleted					-- QueryQuestsCompleted
 local SelectQuestLogEntry				= SelectQuestLogEntry
 -- SendQuestChoiceResponse														-- we rewrite this to our own function
 -- SetAbandonQuest																-- we rewrite this to our own function
-local UnitAura							= UnitAura
 local UnitClass							= UnitClass
 local UnitFactionGroup					= UnitFactionGroup
 local UnitGUID							= UnitGUID
@@ -663,7 +659,8 @@ local REPUTATION						= REPUTATION
 local UIParent							= UIParent
 
 local directoryName, _ = ...
-local versionFromToc = GetAddOnMetadata(directoryName, "Version")
+local GetAddOnMetadata_API = GetAddOnMetadata or C_AddOns.GetAddOnMetadata
+local versionFromToc = GetAddOnMetadata_API(directoryName, "Version")
 local _, _, versionValueFromToc = strfind(versionFromToc, "(%d+)")
 local Grail_File_Version = tonumber(versionValueFromToc)
 
@@ -1097,12 +1094,13 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.portal = GetCVar("portal")
 					self.covenant = C_Covenants and C_Covenants.GetActiveCovenantID() or 0
 					self.renownLevel = C_CovenantSanctumUI and C_CovenantSanctumUI.GetRenownLevel() or 0
+					self.activeSeason = C_Seasons and C_Seasons.GetActiveSeason() or 0	-- 0 is NoSeason
 					self.environment = "_retail_"
 					if IsTestBuild() then
 						self.environment = "_ptr_"
 					end
 
-					self.existsClassic = self.existsClassicBasic or self.existsClassicWrathOfTheLichKing
+					self.existsClassic = self.existsClassicBasic or self.existsClassicWrathOfTheLichKing or self.existsClassicCataclysm
 
 					if self.existsClassic then
 						self.environment = "_classic_"
@@ -1116,12 +1114,12 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					-- Now we set up some capabilities flags
 					self.capabilities = {}
 					self.capabilities.usesFriendshipReputation = not self.existsClassic
-					self.capabilities.usesAchievements = not self.existsClassic or self.existsClassicWrathOfTheLichKing
+					self.capabilities.usesAchievements = not self.existsClassic or self.existsClassicWrathOfTheLichKing or existsClassicCataclysm
 					self.capabilities.usesGarrisons = not self.existsClassic
 					self.capabilities.usesArtifacts = false --not self.existsClassic
 					self.capabilities.usesCampaignInfo = not self.existsClassic
 					self.capabilities.usesCalendar = not self.existsClassic
-					self.capabilities.usesAzerothAsCosmicMap = self.existsClassic and not self.existsClassicWrathOfTheLichKing
+					self.capabilities.usesAzerothAsCosmicMap = self.existsClassic and not self.existsClassicWrathOfTheLichKing or existsClassicCataclysm
 					self.capabilities.usesQuestHyperlink = not self.existsClassic
 					self.capabilities.usesFollowers = not self.existsClassic
 					self.capabilities.usesWorldEvents = not self.existsClassic
@@ -1166,7 +1164,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							['U'] = { 'Scourge',  'Undead',    'Undead',    0x00400000 },
 							}
 						self.bitMaskRaceAll = 0x01e78000
-						if self.existsClassicWrathOfTheLichKing then
+						if self.existsClassicWrathOfTheLichKing or self.existsClassicCataclysm then
 							self.races['B'] = { 'BloodElf', 'Blood Elf', 'Blood Elf', 0x02000000 }
 							self.races['D'] = { 'Draenei',  'Draenei',   'Draenei',   0x00080000 }
 							self.bitMaskRaceAll = 0x03ef8000
@@ -1606,7 +1604,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					local reputationIndex
 					for hexIndex, _ in pairs(self.reputationMapping) do
 						reputationIndex = tonumber(hexIndex, 16)
-						local name = GetFactionInfoByID(reputationIndex)
+						local name = self:GetFactionInfoByID(reputationIndex)
 						if nil == name and self.capabilities.usesFriendshipReputation then
 							local id, rep, maxRep, friendName, text, texture, reaction, threshold, nextThreshold = self:GetFriendshipReputation(reputationIndex)
 							if friendName == nil then
@@ -1629,12 +1627,12 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 					self:_LoadContinentData()
 
-					self:LoadAddOn("Grail-Quests")
+--					self:LoadAddOn("Grail-Quests")
 					local originalMem = gcinfo()
-					if self:LoadAddOn("Grail-NPCs") then
+--					if self:LoadAddOn("Grail-NPCs") then
 						self:_ProcessNPCs(originalMem)
-					end
-					self:LoadAddOn("Grail-NPCs-" .. self.playerLocale)
+--					end
+--					self:LoadAddOn("Grail-NPCs-" .. self.playerLocale)
 					self.npc.name[1] = ADVENTURE_JOURNAL
 
 					-- Now we need to update some information based on the server to which we are connected
@@ -2322,8 +2320,9 @@ end,
 					self.spellsJustHandled = {}
 					local i = 1
 					while (true) do
-						local name,_,_,_,_,_,_,_,_,boaSpellId,spellId = UnitAura(arg1, i)
-						spellId = boaSpellId
+--						local name,_,_,_,_,_,_,_,_,boaSpellId,spellId = UnitAura(arg1, i)
+--						spellId = boaSpellId
+						local name, spellId = self:UnitAura(arg1, i)
 						if name then
 							spellId = tonumber(spellId)
 							self:_MarkQuestInDatabase(spellId, GrailDatabasePlayer["buffsExperienced"])
@@ -2401,10 +2400,32 @@ end,
 --			end,
 
 			},
+		-- WOW_PROJECT_ID can have the following values:
+		--		WOW_PROJECT_MAINLINE (1)
+		--		WOW_PROJECT_CLASSIC (2)
+		--		WOW_PROJECT_BURNING_CRUSADE_CLASSIC (5)
+		--		WOW_PROJECT_WRATH_CLASSIC (11)
+		-- LE_EXPANSION_LEVEL_CURRENT can have the following values:
+		--		LE_EXPANSION_CLASSIC (0)
+		--		LE_EXPANSION_BURNING_CRUSADE (1)
+		--		LE_EXPANSION_WRATH_OF_THE_LICH_KING (2)
+		--		LE_EXPANSION_CATACLYSM (3)
+		--		LE_EXPANSION_MISTS_OF_PANDARIA (4)
+		--		LE_EXPANSION_WARLORDS_OF_DRAENOR (5)
+		--		LE_EXPANSION_LEGION (6)
+		--		LE_EXPANSION_BATTLE_FOR_AZEROTH (7)
+		--		LE_EXPANSION_SHADOWLANDS (8)
+		--		LE_EXPANSION_DRAGONFLIGHT (9)
+		--	one of the LE_EXPANSION... values is returned from GetMaximumExpansionLevel() (which is from C_Expansion)
+		--	The maximum character level in any expansion is gotten from: maxLevel = GetMaxLevelForExpansionLevel(expansionLevel)
+		--	For Classic, we should be able to use GetClassicExpansionLevel()
+		--	calling GetClassicExpansionLevel() in Mainline returns 9 (because I am in Dragonflight)
+		--
 		existsClassicBasic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC),
 		-- I don't think we need to know about Classic Burning Crusade any more so am removing this...
 --		existsClassicBurningCrusade = (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC),
 		existsClassicWrathOfTheLichKing = (WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC),
+		existsClassicCataclysm = (WOW_PROJECT_ID == WOW_PROJECT_CATACLYSM_CLASSIC),
 		factionMapping = { ['A'] = 'Alliance', ['H'] = 'Horde', },
 		followerMapping = {},
 		forceLocalizedQuestNameLoad = true,
@@ -2844,7 +2865,7 @@ end,
 			[7] = { 1815, 1828, 1833, 1859, 1860, 1862, 1883, 1888, 1894, 1899, 1900, 1919, 1947, 1948, 1975, 1984, 1989, 2018, 2045, 2097, 2098, 2099, 2100, 2101, 2102, 2135, 2165, 2170, },
 			[8] = { 2103, 2111, 2120, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2233, 2264, 2265, 2371, 2372, 2373, 2374, 2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 2392, 2395, 2396, 2397, 2398, 2400, 2401, 2415, 2417, 2427, },
 			[9] = { 2407, 2410, 2413, 2432, 2439, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2462, 2463, 2464, 2465, 2469, 2470, 2472, 2478, },
-			[10] = { 2503, 2507, 2509, 2510, 2511, 2512, 2513, 2517, 2518, 2520, 2522, 2523, 2524, 2526, 2542, 2544, 2550, 2554, 2555, 2557, }
+			[10] = { 2503, 2507, 2509, 2510, 2511, 2512, 2513, 2517, 2518, 2520, 2522, 2523, 2524, 2526, 2542, 2544, 2550, 2554, 2555, 2557, 2564, 2568, }
 			},
 
 		-- These reputations use the friendship names instead of normal reputation names
@@ -3187,6 +3208,8 @@ end,
             ["9FA"] = "Clan Toghus", -- 2554
             ["9FB"] = "Clan Kaighan", -- 2555
             ["9FD"] = "XXX", -- 2557
+            ["A04"] = "Loamm Niffen", -- 2564
+            ["A08"] = "Glimmerogg Racer", -- 2568
 			},
 
 		reputationMappingFaction = {
@@ -3473,6 +3496,8 @@ end,
             ["9FA"] = "Neutral", -- 2554    -- TODO: Determine faction
             ["9FB"] = "Neutral", -- 2555    -- TODO: Determine faction
             ["9FD"] = "Neutral", -- 2555    -- TODO: Determine faction
+            ["A04"] = "Neutral", -- 2564    -- TODO: Determine faction
+            ["A08"] = "Neutral", -- 2568    -- TODO: Determine faction
 			},
 
 		slashCommandOptions = {},
@@ -3806,7 +3831,7 @@ end,
 			self.GDE.Tracking = self.GDE.Tracking or {}
 			local weekday, month, day, year, hour, minute = self:CurrentDateTime()
 			if not self.trackingStarted then
-				tinsert(self.GDE.Tracking, strformat("%4d-%02d-%02d %02d:%02d %s/%s/%s/%s/%s/%s/%s/%s/%d/%d:%d", year, month, day, hour, minute, self.playerRealm, self.playerName, self.playerFaction, self.playerClass, self.playerRace, self.playerGender, self.playerLocale, self.portal, self.blizzardRelease, self.covenant, self.renownLevel))
+				tinsert(self.GDE.Tracking, strformat("%4d-%02d-%02d %02d:%02d %s/%s/%s/%s/%s/%s/%s/%s/%d/%d:%d/%d", year, month, day, hour, minute, self.playerRealm, self.playerName, self.playerFaction, self.playerClass, self.playerRace, self.playerGender, self.playerLocale, self.portal, self.blizzardRelease, self.covenant, self.renownLevel, self.activeSeason))
 				self.trackingStarted = true
 			end
 			msg = strformat("%02d:%02d %s", hour, minute, msg)
@@ -7477,6 +7502,54 @@ end
 			return (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bagSlot)
 		end,
 
+		-- Blizzard changed from using GetFactionInfoByID to C_Reputation.GetFactionDataByID and we will make use
+		-- of whichever is available to us, but return the data like that returned by GetFactionInfoByID.
+		GetFactionInfoByID = function(self, factionID)
+			if C_Reputation and C_Reputation.GetFactionDataByID then
+				local id, name, description, reaction, currentReactionThreshold, nextReactionThreshold, currentStanding, atWarWith, canToggleAtWar, isChild, isHeader, isHeaderWithRep, isCollapsed, isWatched, hasBonusRepGain, canSetInactive, isAccountWide = C_Reputation.GetFactionDataByID(factionID)
+				-- Note that we are not returning canSetInactive nor isAccountWide
+				return
+					name,
+					description,
+					reaction,					-- standingID?
+					currentReactionThreshold,	-- barMin?
+					nextReactionThreshold, 		-- barMax?
+					currentStanding,			-- barValue?
+					atWarWith,
+					canToggleAtWar,
+					isHeader,
+					isCollapsed,
+					isHeaderWithRep,			-- hasRep
+					isWatched,
+					isChild,
+					id,
+					hasBonusRepGain
+					-- canBeLFGBonus
+			else
+				return GetFactionInfoByID(factionID)
+			end
+		end,
+
+		-- Blizzard changed from using GetSpellTabInfo to C_SpellBook.GetSpellBookSkillLineInfo and we will make
+		-- use of whichever is available to us, but return the data like that returned by GetSpellTabInfo.
+		GetSpellTabInfo = function(self, skillLineIndex)
+			if C_SpellBook and C_SpellBook.GetSpellBookSkillLineInfo then
+				local info = C_SpellBook.GetSpellBookSkillLineInfo(skillLineIndex)
+				return
+					info.name,
+					info.iconID,
+					info.itemIndexOffset,
+					info.numSpellBookItems,
+					info,isGuild,
+					-- shouldHide
+					-- specID
+					info.offSpecID
+			else
+				-- name, texture, offset, numSlots, isGuild, offspecID
+				return GetSpellTabInfo(skillLineIndex)
+			end
+		end,
+
 		-- Blizzard changed from using GetFriendshipReputation to C_GossipInfo.GetFriendshipReputation and we will
 		-- make use of whichever is available to us.
 		GetFriendshipReputation = function(self, factionIndex)
@@ -7999,21 +8072,29 @@ end
 						end
 					end
 				else
-					local _, _, _, numberSpells1 = GetSpellTabInfo(1)
-					local _, _, _, numberSpells2 = GetSpellTabInfo(2)
-					for i = 1, numberSpells1 + numberSpells2, 1 do
-						local _, spellId = GetSpellBookItemInfo(i, BOOKTYPE_SPELL)
-						if spellId and desiredSkillId == spellId then
-							retval = true
+					if GetSpellBookItemInfo then
+						-- name, texture, offset, numSlots, isGuild, offspecID
+						local _, _, _, numberSpells1 = self:GetSpellTabInfo(1)
+						local _, _, _, numberSpells2 = self:GetSpellTabInfo(2)
+						for i = 1, numberSpells1 + numberSpells2, 1 do
+							local spellType, spellId = GetSpellBookItemInfo(i, BOOKTYPE_SPELL)
+							if spellId and desiredSkillId == spellId and spellType == "SPELL" then
+								retval = true
+							end
 						end
---					local name = GetSpellBookItemName(i, BOOKTYPE_SPELL)
---					local link = GetSpellLink(name)
---					if link then
---						local spellId = tonumber(link:match("^|c%x+|H(.+)|h%[.+%]"):match("(%d+)"))
---						if spellId and desiredSkillId == spellId then
---							retval = true
---						end
---					end
+					else
+						-- Blizzard has transitioned from GetSpellBookItemInfo to more modern API
+						for i = 1, C_SpellBook.GetNumSpellBookSkillLines() do
+							local skillLineInfo = C_SpellBook.GetSpellBookSkillLineInfo(i)
+							local offset, numSlots = skillLineInfo.itemIndexOffset, skillLineInfo.numSpellBookItems
+							for j = offset + 1, offset + numSlots do
+								local spellBookItemInfo = C_SpellBook.GetSpellBookItemInfo(j, Enum.SpellBookSpellBank.Player)
+								-- ID must match and type must not be .FutureSpell because that means you do not have it yet
+								if desiredSkillId == spellBookItemInfo.actionID and spellBookItemInfo.itemType == Enum.SpellBookItemType.Spell then
+									retval = true
+								end
+							end
+						end
 					end
 				end
 			end
@@ -8620,7 +8701,8 @@ end
 			if reportFailureInBlizzardUI then
 				success = UIParentLoadAddOn(addonName)
 			else
-				success, failureReason = LoadAddOn(addonName)
+				local LoadAddOn_API = LoadAddOn or C_AddOns.LoadAddOn
+				success, failureReason = LoadAddOn_API(addonName)
 				if not success then
 					print(format("|cFFFF0000Grail|r "..ADDON_LOAD_FAILED, addonName, _G["ADDON_"..failureReason]))
 				end
@@ -8633,7 +8715,7 @@ end
 		--  @calls Grail:LoadAddOn()
 		--  @requires Grail.playerLocale
 		LoadLocalizedQuestNames = function(self)
-			self:LoadAddOn("Grail-Quests-" .. self.playerLocale)
+--			self:LoadAddOn("Grail-Quests-" .. self.playerLocale)
 			self.quest.name[62017]=SPELL_FAILED_CUSTOM_ERROR_523	-- Necrolord
 			self.quest.name[62019]=SPELL_FAILED_CUSTOM_ERROR_521	-- Night Fae
 			self.quest.name[62020]=SPELL_FAILED_CUSTOM_ERROR_520	-- Venthyr
@@ -11542,7 +11624,7 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 			local factionId = reputationId and tonumber(reputationId, 16) or nil
 if factionId == nil then print("Rep nil issue:", reputationName, reputationId, reputationValue) end
 			if nil ~= factionId and nil ~= reputationValue then
-				local name, description, standingId, barMin, barMax, barValue = GetFactionInfoByID(factionId)
+				local name, description, standingId, barMin, barMax, barValue = self:GetFactionInfoByID(factionId)
 				if name then
 					actualEarnedValue = barValue + 42000	-- the reputationValue is stored with 42000 added to it so we do not have to deal with negative numbers, so we normalize here
                     if C_Reputation and C_Reputation.IsFactionParagon(factionId) then
@@ -11681,27 +11763,23 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			-- Need to search the spell book for the Riding skill
 			local retval = self.NO_SKILL
 			local spellIdMapping = { [33388] = 75, [33391] = 150, [34090] = 225, [34091] = 300, [90265] = 375 }
-			local _, _, _, numberSpells = GetSpellTabInfo(1)
-			for i = 1, numberSpells, 1 do
-				local spellType, spellId = GetSpellBookItemInfo(i, BOOKTYPE_SPELL)
-				if spellType == "SPELL" then	-- because FUTURESPELL means you do not have it yet
-					local newLevel = spellIdMapping[spellId]
-					if newLevel and newLevel > retval then
-						retval = newLevel
+			for spellId, ridingLevel in pairs(spellIdMapping) do
+				if self:_HasSkill(spellId) then
+					if ridingLevel > retval then
+						retval = ridingLevel
 					end
 				end
---				local name = GetSpellBookItemName(i, BOOKTYPE_SPELL)
---				local link = GetSpellLink(name)
---				if link then
---					local spellId = tonumber(link:match("^|c%x+|H(.+)|h%[.+%]"):match("(%d+)"))
---					if spellId then
---						local newLevel = spellIdMapping[spellId]
---						if newLevel and newLevel > retval then
---							retval = newLevel
---						end
+			end
+--			local _, _, _, numberSpells = self:GetSpellTabInfo(1)
+--			for i = 1, numberSpells, 1 do
+--				local spellType, spellId = self:GetSpellBookItemInfo(i, BOOKTYPE_SPELL)
+--				if spellType == "SPELL" then	-- because FUTURESPELL means you do not have it yet
+--					local newLevel = spellIdMapping[spellId]
+--					if newLevel and newLevel > retval then
+--						retval = newLevel
 --					end
 --				end
-			end
+--			end
 			return retval
 		end,
 
@@ -11839,7 +11917,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[667] = 44433,	-- Druid choosing Feral artifact
 			[670] = 44444,	-- Druid choosing Balance artifact
 			[738] = { 35283, 35290, 37313, 37315 },	-- choosing (Alliance) Brewery in Spires of Arak
-			[777] = { 64277, 66808 },	-- choosing "Loyalty to Sabellian" -- TODO: Wrathion is { 64277, 66802 }
+			[777] = { 64277, 66808 },	-- choosing "Loyalty to Sabellian"
 			[783] = 48602,	-- Choosing Void Elf
 			[784] = 48603,	-- Choosing Lightforged Draenei
 --			[956] = xxxxx,	-- Choosing Duskwood from Hero's Call Board in Stormwind -- causes acceptance of 28564
@@ -11848,6 +11926,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			[1197] = 51571,	-- Choosing Nazmir from Zandalar Mission Board on ship in Boralus
 --			[1705] = XXX,	-- Choosing "Daela's Bidding" in the Forbidden Reach -- does not complete a quest, but gives "Dragonscale's Favor"
 			[1210] = 51802,	-- Choosing Stormsong Valley from Kul Tiras Mission Board on ship in Zuldazar
+			[1594] = { 64277, 66802 }, -- choosing "Loyalty to Wrathion"
 			[1650] = 40621,	-- Hunter choosing Beast Mastery artifact
 			[2186] = 57042,	-- Choosing Nazjatar Alliance companion Inowari
 			[2214] = {55404, 57041},	-- Choosing Nazjatar Alliance companion Ori
@@ -11859,6 +11938,8 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 --			[4626] = XXX,	-- Choosing "Turik's Bidding" in the Forbidden Reach -- does not complete a quest, but gives "Iskaara's Favor"
 			[8862] = { 62023, 62708, 62827, },	-- Choosing Kyrian covenant [NE demon hunter]
 --			[9667] = XXX,	-- Choosing "Ashekh's Bidding" in the Forbidden Reach -- does not complete a quest, but gives "Maruukai's Favor"
+--			[9893] = XXX,	-- Choosing "Daela's Bidding" in the Forbidden Reach -- does not complete a quest, but gives "Dragonscale's Favor" -- how does this differ from 1705 returned before?
+--			[11197] = XXX,	-- Choosing "Daela's Bidding" in the Forbidden Reach -- does not complete a quest, but gives "Dragonscale's Favor" -- how does this differ from 1705 returned before?
 			[15801] = {62020, 62827 }, 	-- Choosing Venthyr covenant (for NE druid played through storyline)
 --			[20920] = XXX, -- Choosing "Replay Storyline" in Choose Your Shadowlands Experience [note that there is no quest completed]
 			[20947] = {		 -- Choosing "The Threads of Fate"
@@ -11946,10 +12027,11 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			local retval = false
 			local i = 1
 			while (false == retval) do
-				local name,_,_,_,_,_,_,_,_,boaSpellId,spellId = UnitAura('player', i)
-				if self.battleForAzeroth then
-					spellId = boaSpellId
-				end
+--				local name,_,_,_,_,_,_,_,_,boaSpellId,spellId = UnitAura('player', i)
+--				if self.battleForAzeroth then
+--					spellId = boaSpellId
+--				end
+				local name, spellId = self:UnitAura('player', i)
 				if name then
 					if soughtSpellId == tonumber(spellId) then
 						retval = true
@@ -12219,6 +12301,25 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 		_Tooltip_OnEvent = function(self, frame, event, ...)
 			if self.eventDispatch[event] then
 				self.eventDispatch[event](self, frame, ...)
+			end
+		end,
+
+		-- Blizzard has replaced UnitAura with C_UnitAuras.GetAuraDataByIndex so we do the right
+		-- thing here, but note that we only return the name and spellID.
+		UnitAura = function(self, unit, index)
+			if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
+				local info = C_UnitAuras.GetAuraDataByIndex(unit, index)
+				if info then
+					return info.name, info.spellId
+				else
+					return nil
+				end
+			else
+				local name,_,_,_,_,_,_,_,_,boaSpellId,spellId = UnitAura('player', i)
+				if self.battleForAzeroth then
+					spellId = boaSpellId
+				end
+				return name, spellId
 			end
 		end,
 

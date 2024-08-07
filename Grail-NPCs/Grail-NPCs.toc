@@ -1,9 +1,0 @@
-## Interface: 100007
-## Title: Grail |cff69ccf0NPCs |r|cff0000ffRetail|r
-## Author: Scott M Harrison
-## Notes: Provides NPCs to Grail for Retail
-## Version: 27178
-## Dependencies: Grail
-## LoadOnDemand: 1
-
-Grail-NPCs-_retail_.lua

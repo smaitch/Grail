@@ -1,9 +1,0 @@
-## Interface: 100007
-## Title: Grail |cff69ccf0Quests |r|cff0000ffRetail|r|cff69ccf0 itIT|r
-## Author: Scott M Harrison
-## Notes: Provides localized itIT quest names to Grail for Retail
-## Version: 47213
-## Dependencies: Grail
-## LoadOnDemand: 1
-
-Grail-Quests-_retail_-itIT.lua

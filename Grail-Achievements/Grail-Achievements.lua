@@ -67,6 +67,7 @@ local expansionMaps = {
 	[7] = { mapZandalar, mapKulTiras },
 	[8] = { mapShadowlands },
 	[9] = { mapDragonIsles },	-- Dragonflight
+	[10] = { mapDragonIsles },	-- The War Within	-- TODO: Get the right value for this
 }
 
 --	These are the achievements organized by zone for completing the "loremaster" achievements (basically completing a specific number of quests in each zone).

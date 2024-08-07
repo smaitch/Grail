@@ -1,9 +1,75 @@
-## Interface: 100007
+## Interface: 11502, 11503, 20504, 30403, 40400, 100207, 110000, 110002
 ## Title: Grail
 ## Author: Scott M Harrison
 ## Notes: Knows about quests
 ## Version: 122
 ## SavedVariables: GrailDatabase
 ## SavedVariablesPerCharacter: GrailDatabasePlayer
+## IconTexture: Interface\Icons\achievement_quests_completed_06
 
 Grail.lua
+
+NPCs\Grail-NPCs-_retail_.lua
+NPCs\Grail-NPCs-_classic_wrath_.lua
+NPCs\Grail-NPCs-_classic_.lua
+
+NPCs\Names\Grail-NPCs-_retail_-deDE.lua
+NPCs\Names\Grail-NPCs-_classic_-deDE.lua
+NPCs\Names\Grail-NPCs-_retail_-enUS.lua
+NPCs\Names\Grail-NPCs-_classic_-enUS.lua
+NPCs\Names\Grail-NPCs-_retail_-esES.lua
+NPCs\Names\Grail-NPCs-_classic_-esES.lua
+NPCs\Names\Grail-NPCs-_retail_-esMX.lua
+NPCs\Names\Grail-NPCs-_classic_-esMX.lua
+NPCs\Names\Grail-NPCs-_retail_-frFR.lua
+NPCs\Names\Grail-NPCs-_classic_-frFR.lua
+NPCs\Names\Grail-NPCs-_retail_-itIT.lua
+NPCs\Names\Grail-NPCs-_classic_-itIT.lua
+NPCs\Names\Grail-NPCs-_retail_-koKR.lua
+NPCs\Names\Grail-NPCs-_classic_-koKR.lua
+NPCs\Names\Grail-NPCs-_retail_-ptBR.lua
+NPCs\Names\Grail-NPCs-_classic_-ptBR.lua
+NPCs\Names\Grail-NPCs-_retail_-ruRU.lua
+NPCs\Names\Grail-NPCs-_classic_-ruRU.lua
+NPCs\Names\Grail-NPCs-_retail_-zhCN.lua
+NPCs\Names\Grail-NPCs-_classic_-zhCN.lua
+NPCs\Names\Grail-NPCs-_retail_-zhTW.lua
+NPCs\Names\Grail-NPCs-_classic_-zhTW.lua
+
+Quests\Grail-Quests-_retail_.lua
+Quests\Grail-Quests-_classic_wrath_.lua
+Quests\Grail-Quests-_classic_.lua
+
+Quests\Names\Grail-Quests-_retail_-deDE.lua
+Quests\Names\Grail-Quests-_classic_-deDE.lua
+Quests\Names\Grail-Quests-_classic_-description-deDE.lua
+Quests\Names\Grail-Quests-_retail_-enUS.lua
+Quests\Names\Grail-Quests-_classic_-enUS.lua
+Quests\Names\Grail-Quests-_classic_-description-enUS.lua
+Quests\Names\Grail-Quests-_retail_-esES.lua
+Quests\Names\Grail-Quests-_classic_-esES.lua
+Quests\Names\Grail-Quests-_classic_-description-esES.lua
+Quests\Names\Grail-Quests-_retail_-esMX.lua
+Quests\Names\Grail-Quests-_classic_-esMX.lua
+Quests\Names\Grail-Quests-_classic_-description-esMX.lua
+Quests\Names\Grail-Quests-_retail_-frFR.lua
+Quests\Names\Grail-Quests-_classic_-frFR.lua
+Quests\Names\Grail-Quests-_classic_-description-frFR.lua
+Quests\Names\Grail-Quests-_retail_-itIT.lua
+Quests\Names\Grail-Quests-_classic_-itIT.lua
+Quests\Names\Grail-Quests-_classic_-description-itIT.lua
+Quests\Names\Grail-Quests-_retail_-koKR.lua
+Quests\Names\Grail-Quests-_classic_-koKR.lua
+Quests\Names\Grail-Quests-_classic_-description-koKR.lua
+Quests\Names\Grail-Quests-_retail_-ptBR.lua
+Quests\Names\Grail-Quests-_classic_-ptBR.lua
+Quests\Names\Grail-Quests-_classic_-description-ptBR.lua
+Quests\Names\Grail-Quests-_retail_-ruRU.lua
+Quests\Names\Grail-Quests-_classic_-ruRU.lua
+Quests\Names\Grail-Quests-_classic_-description-ruRU.lua
+Quests\Names\Grail-Quests-_retail_-zhCN.lua
+Quests\Names\Grail-Quests-_classic_-zhCN.lua
+Quests\Names\Grail-Quests-_classic_-description-zhCN.lua
+Quests\Names\Grail-Quests-_retail_-zhTW.lua
+Quests\Names\Grail-Quests-_classic_-zhTW.lua
+Quests\Names\Grail-Quests-_classic_-description-zhTW.lua

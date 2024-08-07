@@ -23,14 +23,16 @@ local pairs, strsub, tonumber = pairs, strsub, tonumber
 local GetBuildInfo = GetBuildInfo
 local COMBAT_TEXT_SHOW_REPUTATION_TEXT = COMBAT_TEXT_SHOW_REPUTATION_TEXT
 
+local _, release, _, interface = GetBuildInfo()
+release = tonumber(release)
+interface = tonumber(interface)
+
+if interface >= 100207 then return end
+
 local Grail_Reputations_File_Version = 007
 
 if Grail.reputationsVersionNumber < Grail_Reputations_File_Version then
 	Grail.reputationsVersionNumber = Grail_Reputations_File_Version
-
-local _, release, _, interface = GetBuildInfo()
-release = tonumber(release)
-interface = tonumber(interface)
 
 local G = Grail.questReputations
 
