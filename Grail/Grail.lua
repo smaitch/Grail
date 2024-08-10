@@ -2152,6 +2152,12 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						self:_HandleEventMajorFactionRenownLevelChanged(t[2], t[3], t[4])
 					elseif 'AREA_POIS_UPDATED' == type then
 						self:_HandleEventAreaPOIsUpdated()
+					elseif 'UPDATE_EXPANSION_LEVEL' == type then
+						self:_HandleEventUpdateExpansionLevel(t[2], t[3], t[4], t[5], t[6])
+					elseif 'MAX_EXPANSION_LEVEL_UPDATED' == type then
+						self:_HandleMaxExpansionLevelUpdated()
+					elseif 'MIN_EXPANSION_LEVEL_UPDATED' == type then
+						self:_HandleMaxExpansionLevelUpdated()
 					end
 					tremove(self.delayedEvents, 1)
 					self.delayedEventsCount = self.delayedEventsCount - 1
