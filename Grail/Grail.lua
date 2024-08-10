@@ -1095,6 +1095,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.covenant = C_Covenants and C_Covenants.GetActiveCovenantID() or 0
 					self.renownLevel = C_CovenantSanctumUI and C_CovenantSanctumUI.GetRenownLevel() or 0
 					self.activeSeason = C_Seasons and C_Seasons.GetActiveSeason() or 0	-- 0 is NoSeason
+					self.timerunningSeason = PlayerGetTimerunningSeasonID and PlayerGetTimerunningSeasonID() or 0
+					self.accountExpansionLevel = GetAccountExpansionLevel() or 0
+					self.expansionLevel = GetExpansionLevel() or 0
+					self.classicExpansionLevel = GetClassicExpansionLevel() or 0
+					self.serverExpansionLevel = GetServerExpansionLevel() or 0
 					self.environment = "_retail_"
 					if IsTestBuild() then
 						self.environment = "_ptr_"
@@ -1281,6 +1286,14 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2122] = true, -- Dragon Isles: Gewölbe der Inkarnationen: Gewölbeannäherung
 							[2124] = true, -- Dragon Isles: Gewölbe der Inkarnationen: Urzeitliche Konvergenz
 							[2151] = true, -- Forbidden Reach (10.0.7)
+							-- The War Wthin
+							[2256] = true, -- Azj-Kahet - Lower
+							[2213] = true, -- City of Threads
+							[2216] = true, -- City of Threads - Lower
+							[2215] = true, -- HallowFall /Heilsturz
+							[2248] = true, -- Isle of Dorn
+							[2339] = true, -- Dornogal
+							[2214] = true, -- Ringing Deeps
 							}
 						self.quest.name = {
 							[51570]=Grail:_GetMapNameByID(862),	-- Zuldazar
@@ -3860,7 +3873,7 @@ end,
 			self.GDE.Tracking = self.GDE.Tracking or {}
 			local weekday, month, day, year, hour, minute = self:CurrentDateTime()
 			if not self.trackingStarted then
-				tinsert(self.GDE.Tracking, strformat("%4d-%02d-%02d %02d:%02d %s/%s/%s/%s/%s/%s/%s/%s/%d/%d:%d/%d", year, month, day, hour, minute, self.playerRealm, self.playerName, self.playerFaction, self.playerClass, self.playerRace, self.playerGender, self.playerLocale, self.portal, self.blizzardRelease, self.covenant, self.renownLevel, self.activeSeason))
+				tinsert(self.GDE.Tracking, strformat("%4d-%02d-%02d %02d:%02d %s/%s/%s/%s/%s/%s/%s/%s/%d/%d:%d/%d/%d/%d/%d/%d/%d", year, month, day, hour, minute, self.playerRealm, self.playerName, self.playerFaction, self.playerClass, self.playerRace, self.playerGender, self.playerLocale, self.portal, self.blizzardRelease, self.covenant, self.renownLevel, self.activeSeason, self.timerunningSeason, self.accountExpansionLevel, self.expansionLevel, self.classicExpansionLevel, self.serverExpansionLevel))
 				self.trackingStarted = true
 			end
 			msg = strformat("%02d:%02d %s", hour, minute, msg)
