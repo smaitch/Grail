@@ -7535,24 +7535,25 @@ end
 		-- of whichever is available to us, but return the data like that returned by GetFactionInfoByID.
 		GetFactionInfoByID = function(self, factionID)
 			if C_Reputation and C_Reputation.GetFactionDataByID then
-				local id, name, description, reaction, currentReactionThreshold, nextReactionThreshold, currentStanding, atWarWith, canToggleAtWar, isChild, isHeader, isHeaderWithRep, isCollapsed, isWatched, hasBonusRepGain, canSetInactive, isAccountWide = C_Reputation.GetFactionDataByID(factionID)
+				local info = C_Reputation.GetFactionDataByID(factionID)
 				-- Note that we are not returning canSetInactive nor isAccountWide
+				if info == nil then return nil end
 				return
-					name,
-					description,
-					reaction,					-- standingID?
-					currentReactionThreshold,	-- barMin?
-					nextReactionThreshold, 		-- barMax?
-					currentStanding,			-- barValue?
-					atWarWith,
-					canToggleAtWar,
-					isHeader,
-					isCollapsed,
-					isHeaderWithRep,			-- hasRep
-					isWatched,
-					isChild,
-					id,
-					hasBonusRepGain
+					info.name,
+					info.description,
+					info.reaction,					-- standingID?
+					info.currentReactionThreshold,	-- barMin?
+					info.nextReactionThreshold, 	-- barMax?
+					info.currentStanding,			-- barValue?
+					info.atWarWith,
+					info.canToggleAtWar,
+					info.isHeader,
+					info.isCollapsed,
+					info.isHeaderWithRep,			-- hasRep
+					info.isWatched,
+					info.isChild,
+					info.id,
+					info.hasBonusRepGain
 					-- canBeLFGBonus
 			else
 				return GetFactionInfoByID(factionID)
