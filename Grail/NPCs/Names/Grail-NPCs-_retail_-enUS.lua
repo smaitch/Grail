@@ -14,80 +14,7 @@ interface = tonumber(interface)
 if interface < 100207 then return end
 
 if release >= 0 then
-G[-942025]='NukeMe -942025'
-G[-932025]='NukeMe -932025'
-G[-892112]='NukeMe -892112'
-G[-882112]='NukeMe -882112'
-G[-872112]='NukeMe -872112'
-G[-862112]='NukeMe -862112'
-G[-852112]='NukeMe -852112'
-G[-842112]='NukeMe -842112'
-G[-822023]='NukeMe -822023'
-G[-812023]='NukeMe -812023'
-G[-802023]='NukeMe -802023'
-G[-722024]='NukeMe -722024'
-G[-712024]='NukeMe -712024'
-G[-702024]='NukeMe -702024'
-G[-172151]='NukeMe -172151'
-G[-162151]='NukeMe -162151'
-G[-152151]='NukeMe -152151'
 G[0]='Self'
-G[199849]='NukeMe 199849'
-G[199941]='NukeMe 199941'
-G[200055]='NukeMe 200055'
-G[200064]='NukeMe 200064'
-G[200074]='NukeMe 200074'
-G[200075]='NukeMe 200075'
-G[200238]='NukeMe 200238'
-G[200754]='NukeMe 200754'
-G[201029]='NukeMe 201029'
-G[201097]='NukeMe 201097'
-G[201098]='NukeMe 201098'
-G[201100]='NukeMe 201100'
-G[201619]='NukeMe 201619'
-G[202670]='NukeMe 202670'
-G[202857]='NukeMe 202857'
-G[203172]='NukeMe 203172'
-G[203378]='NukeMe 203378'
-G[203516]='NukeMe 203516'
-G[203520]='NukeMe 203520'
-G[203601]='NukeMe 203601'
-G[203604]='NukeMe 203604'
-G[203699]='NukeMe 203699'
-G[204040]='NukeMe 204040'
-G[204571]='NukeMe 204571'
-G[205067]='NukeMe 205067'
-G[205068]='NukeMe 205068'
-G[205134]='NukeMe 205134'
-G[205142]='NukeMe 205142'
-G[205892]='NukeMe 205892'
-G[206041]='NukeMe 206041'
-G[208035]='NukeMe 208035'
-G[210904]='NukeMe 210904'
-G[210905]='NukeMe 210905'
-G[210964]='NukeMe 210964'
-G[212187]='NukeMe 212187'
-G[212899]='NukeMe 212899'
-G[213995]='NukeMe 213995'
-G[214085]='NukeMe 214085'
-G[214111]='NukeMe 214111'
-G[214538]='NukeMe 214538'
-G[214634]='NukeMe 214634'
-G[214645]='NukeMe 214645'
-G[214657]='NukeMe 214657'
-G[214660]='NukeMe 214660'
-G[214698]='NukeMe 214698'
-G[214699]='NukeMe 214699'
-G[214701]='NukeMe 214701'
-G[214702]='NukeMe 214702'
-G[214759]='NukeMe 214759'
-G[214972]='NukeMe 214972'
-G[215013]='NukeMe 215013'
-G[215597]='NukeMe 215597'
-G[216264]='NukeMe 216264'
-G[216449]='NukeMe 216449'
-G[216618]='NukeMe 216618'
-G[221539]='NukeMe 221539'
 G[500022]='Candy Bucket'
 G[500024]="Anson's Crate"
 G[500025]="Edgar's Crate"
@@ -105,16 +32,6 @@ G[565558]='Huojin Monk'
 G[600000]='Moss-Covered Chest'
 G[600001]='Sturdy Chest'
 G[600002]='Smoldering Chest'
-G[701730]='NukeMe 701730'
-G[701731]='NukeMe 701731'
-G[701733]='NukeMe 701733'
-G[701734]='NukeMe 701734'
-G[701735]='NukeMe 701735'
-G[701737]='NukeMe 701737'
-G[701738]='NukeMe 701738'
-G[701740]='NukeMe 701740'
-G[701741]='NukeMe 701741'
-G[701742]='NukeMe 701742'
 G[1000033]='Locked Chest'
 G[1000034]='Old Jug'
 G[1000035]="Captain's Footlocker"
@@ -1851,10 +1768,6 @@ G[1385952]='Unusual Ring'
 G[1387520]='TICKET: Glimmerogg Games'
 end
 
-if release >= 47631 then
-G[197478]='NukeMe 197478'
-end
-
 if release >= 47936 then
 G[1376583]='Decay Covered Chest'
 end
@@ -1961,13 +1874,16 @@ G[1380963]='Small Pile of Ash'
 G[1381043]='Lightning Bound Chest'
 end
 
+if release >= 48999 then
+G[1377055]='Submerged Basket'
+end
+
 if release >= 49343 then
 G[1380950]='Yes Chef!'
 G[1381352]='Iristella'
 end
 
 if release >= 49570 then
-G[205127]='NukeMe 205127'
 G[1381981]='Titanslayer Lexodusl'
 end
 
@@ -1978,6 +1894,19 @@ G[1403862]='Smoldering Blossom'
 G[1403863]='Smoldering Blossom'
 G[1403864]='Smoldering Blossom'
 G[1405586]='Rumble Foil Bag'
+end
+
+if release >= 56071 then
+G[1423987]='Dropped Package'
+G[1428135]='Discarded Botanist Notes'
+G[1454463]='Wanted: The Boroughbreaker'
+G[1455690]="DELVER'S CALL: Mycomancer Cavern"
+G[1455716]="DELVER'S CALL: Fungal Folly"
+end
+
+if release >= 56110 then
+G[1455694]="DELVER'S CALL: Skittering Breach"
+G[1455704]="DELVER'S CALL: The Sinkhole"
 end
 
 --	End of localized NPC names

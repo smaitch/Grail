@@ -2865,7 +2865,8 @@ end,
 			[7] = { 1815, 1828, 1833, 1859, 1860, 1862, 1883, 1888, 1894, 1899, 1900, 1919, 1947, 1948, 1975, 1984, 1989, 2018, 2045, 2097, 2098, 2099, 2100, 2101, 2102, 2135, 2165, 2170, },
 			[8] = { 2103, 2111, 2120, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2233, 2264, 2265, 2371, 2372, 2373, 2374, 2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 2392, 2395, 2396, 2397, 2398, 2400, 2401, 2415, 2417, 2427, },
 			[9] = { 2407, 2410, 2413, 2432, 2439, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2462, 2463, 2464, 2465, 2469, 2470, 2472, 2478, },
-			[10] = { 2503, 2507, 2509, 2510, 2511, 2512, 2513, 2517, 2518, 2520, 2522, 2523, 2524, 2526, 2542, 2544, 2550, 2554, 2555, 2557, 2564, 2568, }
+			[10] = { 2503, 2507, 2509, 2510, 2511, 2512, 2513, 2517, 2518, 2520, 2522, 2523, 2524, 2526, 2542, 2544, 2550, 2553, 2554, 2555, 2557, 2564, 2568, 2574, 2593, 2615, },
+			[11] = { 2570, 2590, 2594, 2600, 2601, 2605, 2607, 2640, 2644, 2645, },
 			},
 
 		-- These reputations use the friendship names instead of normal reputation names
@@ -3205,11 +3206,25 @@ end,
             ["9EE"] = "Clan Ukhel", -- 2542
             ["9F0"] = "Artisan's Consortium - Dragon Isles Branch", -- 2544
             ["9F6"] = "Cobalt Assembly", -- 2550
+            ["9F9"] = "Soridormi", -- 2553
             ["9FA"] = "Clan Toghus", -- 2554
             ["9FB"] = "Clan Kaighan", -- 2555
             ["9FD"] = "XXX", -- 2557
             ["A04"] = "Loamm Niffen", -- 2564
             ["A08"] = "Glimmerogg Racer", -- 2568
+            ["A0A"] = "Hallowfall Arathi", -- 2570
+            ["A0E"] = "Dream Wardens", -- 2574
+            ["A1E"] = "Council of Dornogal", -- 2590
+            ["A21"] = "Keg Leg's Crew", -- 2593
+            ["A22"] = "The Assembly of the Deeps", -- 2594
+            ["A28"] = "The Severed Threads", -- 2600
+            ["A29"] = "The Weaver", -- 2601
+            ["A2D"] = "The General", -- 2605
+            ["A2F"] = "The Vizier", -- 2607
+            ["A37"] = "Azerothian Archives", -- 2615
+            ["A50"] = "Brann Bronzebeard", -- 2640
+            ["A54"] = "Delves: Season 1", -- 2644
+            ["A55"] = "Earthen", -- 2645
 			},
 
 		reputationMappingFaction = {
@@ -3493,11 +3508,25 @@ end,
             ["9EE"] = "Neutral", -- 2542    -- TODO: Determine faction
             ["9F0"] = "Neutral", -- 2544    -- TODO: Determine faction
             ["9F6"] = "Neutral", -- 2550    -- TODO: Determine faction
+            ["9F9"] = "Neutral", -- 2553    -- TODO: Determine faction
             ["9FA"] = "Neutral", -- 2554    -- TODO: Determine faction
             ["9FB"] = "Neutral", -- 2555    -- TODO: Determine faction
             ["9FD"] = "Neutral", -- 2555    -- TODO: Determine faction
             ["A04"] = "Neutral", -- 2564    -- TODO: Determine faction
             ["A08"] = "Neutral", -- 2568    -- TODO: Determine faction
+            ["A0A"] = "Neutral", -- 2570    -- TODO: Determine faction
+            ["A0E"] = "Neutral", -- 2574    -- TODO: Determine faction
+            ["A1E"] = "Neutral", -- 2590    -- TODO: Determine faction
+            ["A21"] = "Neutral", -- 2593    -- TODO: Determine faction
+            ["A22"] = "Neutral", -- 2594    -- TODO: Determine faction
+            ["A28"] = "Neutral", -- 2600    -- TODO: Determine faction
+            ["A29"] = "Neutral", -- 2601    -- TODO: Determine faction
+            ["A2D"] = "Neutral", -- 2605    -- TODO: Determine faction
+            ["A2F"] = "Neutral", -- 2607    -- TODO: Determine faction
+            ["A37"] = "Neutral", -- 2615    -- TODO: Determine faction
+            ["A50"] = "Neutral", -- 2640    -- TODO: Determine faction
+            ["A54"] = "Neutral", -- 2644    -- TODO: Determine faction
+            ["A55"] = "Neutral", -- 2645    -- TODO: Determine faction
 			},
 
 		slashCommandOptions = {},
