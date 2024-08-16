@@ -53,6 +53,7 @@ local mapZandalar = 875
 local mapKulTiras = 876
 local mapShadowlands = 1550
 local mapDragonIsles = 1978
+local mapKhazAlgar = 2274
 
 --	Each of the expansions adds maps that need to be processed.  One should be able to determine what expansions are supported, and then using
 --	this structure determine what maps need to be processed.
@@ -67,7 +68,7 @@ local expansionMaps = {
 	[7] = { mapZandalar, mapKulTiras },
 	[8] = { mapShadowlands },
 	[9] = { mapDragonIsles },	-- Dragonflight
-	[10] = { mapDragonIsles },	-- The War Within	-- TODO: Get the right value for this
+	[10] = { mapKhazAlgar },	-- The War Within
 }
 
 --	These are the achievements organized by zone for completing the "loremaster" achievements (basically completing a specific number of quests in each zone).
@@ -86,6 +87,7 @@ Grail.loremasterAchievements = {
 		[mapKulTiras] = { 512473, 512496, 512497, },
 		[mapShadowlands] = { 514281, 514206, 514164, 514334, 513878, },
 		[mapDragonIsles] = { 515394, 516334, 516336, 516363, 515325, },
+		[mapKhazAlgar] = { },
 		},
 	[factionHorde] = {
 		[mapKalimdor] = { 504976, 504927, 504930, 504978, 504931, 504979, 504933, 504934, 504981, 504980, 504935, 504938, 504939, 504940, 504870, 504872, },
@@ -101,6 +103,7 @@ Grail.loremasterAchievements = {
 		[mapKulTiras] = { },
 		[mapShadowlands] = { 514281, 514206, 514164, 514334, 513878, },
 		[mapDragonIsles] = { 515394, 516334, 516336, 516363, 515638, },
+		[mapKhazAlgar] = { },
 		},
 	}
 
@@ -162,6 +165,7 @@ Grail.extraAchievements = {
 		[mapKulTiras] = { 512510, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514279, 514961, 515515, 515259, },
 		[mapDragonIsles] = { 516401, 516398, 516428, 516409, 516405, 516406, 516808, },
+		[mapKhazAlgar] = { 520595, 540844, },
 		},
 	[factionHorde] = {
 		[mapKalimdor] = { 504961, 505859, 505866, },
@@ -177,6 +181,7 @@ Grail.extraAchievements = {
 		[mapKulTiras] = { 512509, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514961, 515515, 515259, },
 		[mapDragonIsles] = { 516401, 516398, 516428, 516409, 516405, 516406, 516808, },
+		[mapKhazAlgar] = { 520595, 540844, },
 		},
 	}
 
@@ -7380,7 +7385,17 @@ G[70879]={516398}	-- Misty Vale (Sojourner of Thaldraszus) (Dragonflight)
 G[70919]={516409}	-- Let's Get Qucking (Dragonflight)
 G[70970]={516428}	-- Lost Ruins (Sojourner of Azure Span) (Dragonflight)
 G[71135]={516428}	-- Grimtusk Hideaway (Sojourner of Azure Span) (Dragonflight)
-
+G[78695]={540844}	-- Light to Velhan's Claim (Sojourner of Hallowfall) (The War Within)
+G[79154]={540844}	-- An Orphan's Dilemma (Sojourner of Hallowfall) (The War Within)
+G[79303]={540844}	-- The Sky's the Limit (Sojourner of Hallowfall) (The War Within)
+G[79312]={540844}	-- What Grows in the Dark (Sojourner of Hallowfall) (The War Within)
+G[80179]={540844}	-- The Last Mage of Hallowfall (Sojourner of Hallowfall) (The War Within)
+G[82222]={540844}	-- Striking Steel (Sojourner of Hallowfall) (The War Within)
+G[82480]={540844}	-- Apart for Purpose (Sojourner of Hallowfall) (The War Within)
+G[82628]={540844}	-- The Priory (Sojourner of Hallowfall) (The War Within)
+G[82813]={540844}	-- Memories of the Sky (Sojourner of Hallowfall) (The War Within)
+G[82847]={540844}	-- The Mysterious Chef (Sojourner of Hallowfall) (The War Within)
+G[82895]={520595}	-- Remember Me, Earthen (Sojourner of Isle of Dorn) (The War Within)
 
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime
 debugStartTime = debugprofilestop()
