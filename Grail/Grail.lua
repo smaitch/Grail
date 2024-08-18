@@ -1215,7 +1215,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[750] = true,
 							[790] = true,
 							[830] = true,
-							[882] = true,
+							[882] = true, -- Eredath
 							[885] = true,
 							-- the following are the BfA maps (the three in Zandalar and three in Kul Tiras)
 							[862] = true, -- Zuldazar (primarily horde)
@@ -1889,6 +1889,9 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 						frame:RegisterEvent("UNIT_QUEST_LOG_CHANGED")	-- so we can know when a quest is complete or failed
 						frame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 					end
+					frame:RegisterEvent("UPDATE_EXPANSION_LEVEL")
+					frame:RegisterEvent("MAX_EXPANSION_LEVEL_UPDATED")
+					frame:RegisterEvent("MIN_EXPANSION_LEVEL_UPDATED")
 --					frame:RegisterEvent("ZONE_CHANGED_NEW_AREA")	-- only to get the first time logging in so the GetQuestResetTime() actually returns a real value
 					self:_CleanDatabase()
 					self:_CleanDatabaseLearnedQuestName()
@@ -2157,7 +2160,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					elseif 'MAX_EXPANSION_LEVEL_UPDATED' == type then
 						self:_HandleMaxExpansionLevelUpdated()
 					elseif 'MIN_EXPANSION_LEVEL_UPDATED' == type then
-						self:_HandleMaxExpansionLevelUpdated()
+						self:_HandleMinExpansionLevelUpdated()
 					end
 					tremove(self.delayedEvents, 1)
 					self.delayedEventsCount = self.delayedEventsCount - 1
@@ -3879,7 +3882,7 @@ end,
 			self.GDE.Tracking = self.GDE.Tracking or {}
 			local weekday, month, day, year, hour, minute = self:CurrentDateTime()
 			if not self.trackingStarted then
-				tinsert(self.GDE.Tracking, strformat("%4d-%02d-%02d %02d:%02d %s/%s/%s/%s/%s/%s/%s/%s/%d/%d:%d/%d/%d/%d/%d/%d/%d", year, month, day, hour, minute, self.playerRealm, self.playerName, self.playerFaction, self.playerClass, self.playerRace, self.playerGender, self.playerLocale, self.portal, self.blizzardRelease, self.covenant, self.renownLevel, self.activeSeason, self.timerunningSeason, self.accountExpansionLevel, self.expansionLevel, self.classicExpansionLevel, self.serverExpansionLevel))
+				tinsert(self.GDE.Tracking, strformat("%4d-%02d-%02d %02d:%02d %s/%s/%s/%s/%s/%s/%s/%s/%d/%d/%d/%d/%d/%d/%d/%d/%d", year, month, day, hour, minute, self.playerRealm, self.playerName, self.playerFaction, self.playerClass, self.playerRace, self.playerGender, self.playerLocale, self.portal, self.blizzardRelease, self.covenant, self.renownLevel, self.activeSeason, self.timerunningSeason, self.accountExpansionLevel, self.expansionLevel, self.classicExpansionLevel, self.serverExpansionLevel))
 				self.trackingStarted = true
 			end
 			msg = strformat("%02d:%02d %s", hour, minute, msg)
@@ -8023,6 +8026,33 @@ end
 			end
 			self:_StatusCodeInvalidate(questsToInvalidate)
 		end,
+
+		_HandleEventUpdateExpansionLevel = function(self, unk1, unk2, oldExpansion, unk3, upgFromExpTrial)
+			if self.GDE.debug then
+				local message = "UpdateExpansionLevel: unk1:" .. unk1 .. "unk2:" .. unk2 .. " from oldExpansion " .. oldExpansion .. "unk3:" .. unk3 .. "upgFromExpTrial:" .. upgFromExpTrial
+				print(message)
+				self:_AddTrackingMessage(message)
+			end
+		end,
+
+		_HandleMinExpansionLevelUpdated = function(self)
+			if self.GDE.debug then
+				local message = "MinEpansionLevel updated: ael:" .. self.accountExpansionLevel .. " el:" .. self.expansionLevel .. " cEL:" .. self.classicExpansionLevel .. " sEL:" .. serverExpansionLevel
+				print(message)
+				self:_AddTrackingMessage(message)
+			end
+		end,
+
+		_HandleMaxExpansionLevelUpdated = function(self)
+			if self.GDE.debug then
+				local message = "MaxEpansionLevel updated: ael:" .. self.accountExpansionLevel .. " el:" .. self.expansionLevel .. " cEL:" .. self.classicExpansionLevel .. " sEL:" .. serverExpansionLevel
+				print(message)
+				self:_AddTrackingMessage(message)
+			end
+		end,
+
+
+
 
 		---
 		--	Checks whether the garrison has the specific buildingId, where a negative buildingId will mean
