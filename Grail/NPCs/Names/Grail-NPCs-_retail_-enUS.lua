@@ -1905,6 +1905,27 @@ G[1455716]="DELVER'S CALL: Fungal Folly"
 end
 
 if release >= 56110 then
+G[1411622]='Machinist Plinth'
+G[1411623]='Machinist Plinth'
+G[1411624]='Machinist Plinth'
+G[1411755]='Flickerflame Candles'
+G[1411756]='Fallen Earthen'
+G[1421820]='Grub Eggs'
+G[1422559]='Grub Eggs'
+G[1423581]="Broodmother's Egg"
+G[1425875]='Priority Transport Crate'
+G[1429003]='Crate of Candles'
+G[1433333]='Fallen Earthen'
+G[1433334]='Fallen Earthen'
+G[1433335]='Fallen Earthen'
+G[1434873]='Caustic Bloom'
+G[1437628]='Nearly-empty Cask'
+G[1441257]='Crate of Alchemical Potions'
+G[1442658]="Spare Miner's Clothes"
+G[1449135]='Mislaid Tool'
+G[1449140]='Mislaid Tool'
+G[1452696]="Machine Speaker's Reliquary"
+G[1452697]="Etched Machine Speaker's Reliquary"
 G[1455694]="DELVER'S CALL: Skittering Breach"
 G[1455704]="DELVER'S CALL: The Sinkhole"
 end
