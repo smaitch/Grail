@@ -1146,11 +1146,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					-- We have loaded GrailDatabase at this point, but we need to ensure the structure is set up for first-time players as we rely on at least an empty structure existing
 					GrailDatabasePlayer = GrailDatabasePlayer or {}
 
-					self.quest.name = {
-						[600000]=Grail:_GetMapNameByID(19)..' '..REQUIREMENTS,
-						[600001]=Grail:_GetMapNameByID(19)..' '..FACTION_ALLIANCE..' '..REQUIREMENTS,
-						[600002]=Grail:_GetMapNameByID(19)..' '..FACTION_HORDE..' '..REQUIREMENTS,
-						}
+					self.quest.name[600000]=Grail:_GetMapNameByID(19)..' '..REQUIREMENTS
+					self.quest.name[600001]=Grail:_GetMapNameByID(19)..' '..FACTION_ALLIANCE..' '..REQUIREMENTS
+					self.quest.name[600002]=Grail:_GetMapNameByID(19)..' '..FACTION_HORDE..' '..REQUIREMENTS
 
 					if self.existsClassic then	-- redefine races that are available
 						self.races = {
