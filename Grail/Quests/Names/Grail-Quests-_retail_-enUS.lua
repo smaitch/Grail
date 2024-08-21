@@ -39971,6 +39971,13 @@ G[79130]='The Northrend Cup Circuit'
 G[79132]='The Northrend Cup Begins'
 end
 
+if release >= 55939 then
+G[77251]='Shaping the Dreamsurge'
+G[79321]="The Catalyst's Gift"
+G[81930]='The War Within'
+G[83492]='Warbands: Warbanding Together'
+end
+
 if release >= 55959 then
 G[75890]='The Clarion Call'
 G[75891]='Ancient Curses'
@@ -40022,7 +40029,6 @@ G[79515]='Gather Your Rosebuds'
 G[79553]='A Natural Remedy'
 G[80500]='The Bronzebeard Family'
 G[81614]='One Fin, Two Fin, Pearlfin, Dead Fin'
-G[81930]='The War Within'
 G[81966]='Slept Like a Rock'
 G[82441]='For The Love of Gems'
 G[82792]='All Ore Nothing'
@@ -40034,7 +40040,6 @@ G[82800]='A Sedimental Moment'
 G[82801]='Beetlejeweled'
 G[83081]='Not Enough Minerals'
 G[83082]='The Opalfront'
-G[83492]='Warbands: Warbanding Together'
 G[84370]='The Key to Success'
 G[84519]='Ancient Curiosity: Combat'
 end
@@ -40841,7 +40846,6 @@ G[77236]='When Time Needs Mending'
 G[77238]='Telaar Tear'
 G[77239]='Telaar Tear - Advanced'
 G[77240]='Telaar Tear - Reverse'
-G[77251]='Shaping the Dreamsurge'
 G[77254]='Aiding the Accord: Time Rift'
 G[77260]='Razorthorn Rise Rush'
 G[77261]='Razorthorn Rise Rush - Advanced'
@@ -41470,7 +41474,6 @@ G[79317]='Morkus Grimlock'
 G[79318]='Narla Thunderhoof'
 G[79319]='Frenzied Owlbeast'
 G[79320]='Gorthak Grimtusk'
-G[79321]="The Catalyst's Gift"
 G[79322]='What the Duck?'
 G[79323]='A Fowl Concoction'
 G[79324]='To the Waterworks'
@@ -42363,6 +42366,13 @@ G[84664]='Making the Underworld Go Round'
 G[84682]='Of Pacts and Patrons'
 G[84700]='Pacts Below'
 G[84914]='Valorstones'
+end
+
+if release >= 56196 then
+G[72534]='Settled with the Baron'
+G[76735]='Rise in Relic Theft'
+G[77165]='A Secretive Contact'
+G[77303]='Idol Searching'
 end
 
 --	End of localized quest names

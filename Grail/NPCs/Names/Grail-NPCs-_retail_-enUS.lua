@@ -1768,6 +1768,10 @@ G[1385952]='Unusual Ring'
 G[1387520]='TICKET: Glimmerogg Games'
 end
 
+if release >= 47631 then
+G[197478]='NukeMe 197478'
+end
+
 if release >= 47936 then
 G[1376583]='Decay Covered Chest'
 end
@@ -1810,7 +1814,7 @@ G[1380941]='Broken Arm'
 G[1381000]='Bronze Horn'
 G[1381001]='Blood Berries'
 G[1381002]='Dragon Foil'
-G[1381102]='Bear'
+G[1381102]='Serevite Deposit'
 G[1381283]='Iskhdormi Artifact'
 G[1381617]="Kolgar's Pack"
 G[1381636]="Fenistrasza's Skull"
@@ -1928,6 +1932,19 @@ G[1452696]="Machine Speaker's Reliquary"
 G[1452697]="Etched Machine Speaker's Reliquary"
 G[1455694]="DELVER'S CALL: Skittering Breach"
 G[1455704]="DELVER'S CALL: The Sinkhole"
+end
+
+if release >= 56196 then
+G[1385002]='Rebel Writings'
+G[1385562]='Hidden Tome'
+G[1385563]='Hidden Tome'
+G[1385564]='Hidden Tome'
+G[1386238]='Decorative Shrubbery'
+G[1386628]='Rebel Writings'
+G[1386629]='Rebel Writings'
+G[1386630]='Rebel Writings'
+G[1386631]='Rebel Writings'
+G[1405593]='Azerothian Archives!'
 end
 
 --	End of localized NPC names
