@@ -1100,6 +1100,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.expansionLevel = GetExpansionLevel() or 0
 					self.classicExpansionLevel = GetClassicExpansionLevel() or 0
 					self.serverExpansionLevel = GetServerExpansionLevel() or 0
+					self.isTrial = IsTrialAccount() or 0
+					self.isVeteranTrial = IsVeteranTrialAccount() or 0
 					self.environment = "_retail_"
 					if IsTestBuild() then
 						self.environment = "_ptr_"
@@ -1190,8 +1192,12 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[62]  = true,
 							[81]  = true, -- Silithus
 							[371] = true, -- Jade Forest, MoP
-							[379] = true, -- Kun-Lai Summit ,MoP
+							[376] = true, -- Valley of the Four Winds, MoP
+							[379] = true, -- Kun-Lai Summit, MoP
+							[388] = true, -- Townlong Steppes, MoP
+							[389] = true, -- Townlong Steppes Nizuao Temple, MoP
 							[429] = true, -- Temple of the Jade Serpent, MoP
+							[433] = true, -- The Veiled Stairs, MoP
 							[525] = true,
 							[534] = true,
 							[535] = true,
@@ -1199,7 +1205,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[542] = true,
 							[543] = true,
 							[550] = true,
-							[554] = true,
+							[554] = true, -- Timeless Isle, MoP
 							[625] = true,
 							[630] = true,
 							[634] = true, -- Legion: Stormheim
@@ -3880,7 +3886,7 @@ end,
 			self.GDE.Tracking = self.GDE.Tracking or {}
 			local weekday, month, day, year, hour, minute = self:CurrentDateTime()
 			if not self.trackingStarted then
-				tinsert(self.GDE.Tracking, strformat("%4d-%02d-%02d %02d:%02d %s/%s/%s/%s/%s/%s/%s/%s/%d/%d/%d/%d/%d/%d/%d/%d/%d", year, month, day, hour, minute, self.playerRealm, self.playerName, self.playerFaction, self.playerClass, self.playerRace, self.playerGender, self.playerLocale, self.portal, self.blizzardRelease, self.covenant, self.renownLevel, self.activeSeason, self.timerunningSeason, self.accountExpansionLevel, self.expansionLevel, self.classicExpansionLevel, self.serverExpansionLevel))
+				tinsert(self.GDE.Tracking, strformat("%4d-%02d-%02d %02d:%02d %s/%s/%s/%s/%s/%s/%s/%s/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d", year, month, day, hour, minute, self.playerRealm, self.playerName, self.playerFaction, self.playerClass, self.playerRace, self.playerGender, self.playerLocale, self.portal, self.blizzardRelease, self.covenant, self.renownLevel, self.activeSeason, self.timerunningSeason, self.accountExpansionLevel, self.expansionLevel, self.classicExpansionLevel, self.serverExpansionLevel, self.isTrial, self.isVeteranTrial))
 				self.trackingStarted = true
 			end
 			msg = strformat("%02d:%02d %s", hour, minute, msg)
@@ -8026,27 +8032,27 @@ end
 		end,
 
 		_HandleEventUpdateExpansionLevel = function(self, unk1, unk2, oldExpansion, unk3, upgFromExpTrial)
+			local message = "UpdateExpansionLevel: unk1:" .. unk1 .. "unk2:" .. unk2 .. " from oldExpansion " .. oldExpansion .. "unk3:" .. unk3 .. "upgFromExpTrial:" .. upgFromExpTrial
 			if self.GDE.debug then
-				local message = "UpdateExpansionLevel: unk1:" .. unk1 .. "unk2:" .. unk2 .. " from oldExpansion " .. oldExpansion .. "unk3:" .. unk3 .. "upgFromExpTrial:" .. upgFromExpTrial
 				print(message)
-				self:_AddTrackingMessage(message)
 			end
+				self:_AddTrackingMessage(message)
 		end,
 
 		_HandleMinExpansionLevelUpdated = function(self)
-			if self.GDE.debug then
-				local message = "MinEpansionLevel updated: ael:" .. self.accountExpansionLevel .. " el:" .. self.expansionLevel .. " cEL:" .. self.classicExpansionLevel .. " sEL:" .. serverExpansionLevel
-				print(message)
+			local message = "MinEpansionLevel updated: ael:" .. self.accountExpansionLevel .. " el:" .. self.expansionLevel .. " cEL:" .. self.classicExpansionLevel .. " sEL:" .. serverExpansionLevel
 				self:_AddTrackingMessage(message)
+			if self.GDE.debug then
+				print(message)
 			end
 		end,
 
 		_HandleMaxExpansionLevelUpdated = function(self)
+			local message = "MaxEpansionLevel updated: ael:" .. self.accountExpansionLevel .. " el:" .. self.expansionLevel .. " cEL:" .. self.classicExpansionLevel .. " sEL:" .. serverExpansionLevel
 			if self.GDE.debug then
-				local message = "MaxEpansionLevel updated: ael:" .. self.accountExpansionLevel .. " el:" .. self.expansionLevel .. " cEL:" .. self.classicExpansionLevel .. " sEL:" .. serverExpansionLevel
 				print(message)
-				self:_AddTrackingMessage(message)
 			end
+			self:_AddTrackingMessage(message)
 		end,
 
 
