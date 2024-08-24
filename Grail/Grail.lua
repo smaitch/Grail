@@ -3887,7 +3887,7 @@ end,
 			self.GDE.Tracking = self.GDE.Tracking or {}
 			local weekday, month, day, year, hour, minute = self:CurrentDateTime()
 			if not self.trackingStarted then
-				tinsert(self.GDE.Tracking, strformat("%4d-%02d-%02d %02d:%02d %s/%s/%s/%s/%s/%s/%s/%s/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d", year, month, day, hour, minute, self.playerRealm, self.playerName, self.playerFaction, self.playerClass, self.playerRace, self.playerGender, self.playerLocale, self.portal, self.blizzardRelease, self.covenant, self.renownLevel, self.activeSeason, self.timerunningSeason, self.accountExpansionLevel, self.expansionLevel, self.classicExpansionLevel, self.serverExpansionLevel, self.isTrial, self.isVeteranTrial))
+				tinsert(self.GDE.Tracking, strformat("%4d-%02d-%02d %02d:%02d %s/%s/%s/%s/%s/%s/%s/%s/%d/%d/%d/%d/%2d/%2d/%2d/%2d/%d/%d", year, month, day, hour, minute, self.playerRealm, self.playerName, self.playerFaction, self.playerClass, self.playerRace, self.playerGender, self.playerLocale, self.portal, self.blizzardRelease, self.covenant, self.renownLevel, self.activeSeason, self.timerunningSeason, self.accountExpansionLevel, self.expansionLevel, self.classicExpansionLevel, self.serverExpansionLevel, self.isTrial, self.isVeteranTrial))
 				self.trackingStarted = true
 			end
 			msg = strformat("%02d:%02d %s", hour, minute, msg)
