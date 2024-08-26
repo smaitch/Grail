@@ -1947,4 +1947,9 @@ G[1386631]='Rebel Writings'
 G[1405593]='Azerothian Archives!'
 end
 
+if release >= 56311 then
+G[1409077]='Singed Leaflet'
+G[1409338]='Washed-Up Pack'
+end
+
 --	End of localized NPC names

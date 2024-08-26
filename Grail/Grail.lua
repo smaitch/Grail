@@ -870,7 +870,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 			bitMaskRaceUnused5			=	0x00000100,
 			bitMaskRaceUnused6			=	0x00000200,
 			bitMaskRaceUnused7			=	0x00000400,
-			bitMaskRaceUnused8			=	0x00000800,
+		bitMaskEarthen					=	0x00000800,
 		bitMaskRaceDracthyr				=	0x00001000,
 		bitMaskRaceMechagnome			=	0x00002000,
 		bitMaskRaceVulpera				=	0x00004000,
@@ -892,7 +892,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		bitMaskRaceLightforgedDraenei	=	0x40000000,
 		bitMaskKulTiran					=	0x80000000,
 		-- Convenience values
-		bitMaskRaceAll			=	0xfffff00f,
+		bitMaskRaceAll			=	0xfffff80f,
 
 		-- Enf of bit mask values
 
@@ -2862,6 +2862,7 @@ end,
 			['U'] = { 'Scourge',  'Undead',    'Undead',    0x00400000 },
 			['V'] = { 'VoidElf',  'Void Elf',  'Void Elf',	0x20000000 },
 			['W'] = { 'Worgen',   'Worgen',    'Worgen',    0x00100000 },
+--			['X'] = { 'Earthen',  'Earthen',   'Earthen',   0x00000800 },
 			['Y'] = { 'Dracthyr', 'Dracthyr',  'Dracthyr',	0x00001000 },
 			['Z'] = { 'ZandalariTroll', 'Zandalari Troll', 'Zandalari Troll', 0x10000000 },
 			},
