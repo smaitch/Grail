@@ -1290,7 +1290,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2122] = true, -- Dragon Isles: Gewölbe der Inkarnationen: Gewölbeannäherung
 							[2124] = true, -- Dragon Isles: Gewölbe der Inkarnationen: Urzeitliche Konvergenz
 							[2151] = true, -- Forbidden Reach (10.0.7)
-							-- The War Wthin
+							[2133] = true, -- Zaralek Cavern (10.1)
+							[2200] = true, -- Emerald Dream (10.2)
+							-- The War Within
+							[2255] = true, -- Azj-Kahet
 							[2256] = true, -- Azj-Kahet - Lower
 							[2213] = true, -- City of Threads
 							[2216] = true, -- City of Threads - Lower
@@ -4027,7 +4030,7 @@ end,
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
-			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565, 1970, 2022, 2023, 2024, 2025, 2085, 2112, 2151 }
+			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565, 1970, 2022, 2023, 2024, 2025, 2085, 2112, 2133, 2151, 2200, 2214 ,2215, 2248, 2255, 2256}
 
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
