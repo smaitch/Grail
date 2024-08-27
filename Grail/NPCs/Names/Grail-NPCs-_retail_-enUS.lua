@@ -1974,4 +1974,8 @@ G[1455694]="DELVER'S CALL: Skittering Breach"
 G[1455720]="DELVER'S CALL: Tak-Rethan Abyss"
 end
 
+if release >= 56313 then
+G[1385569]="'The Resting Blade'"
+end
+
 --	End of localized NPC names
