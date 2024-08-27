@@ -2544,6 +2544,8 @@ end,
 			[-163] = { 163, 164 },
 			[-167] = { 167, 168 },
 		},
+		garrisonType6 = Enum.GarrisonType.Type_6_0 or Enum.GarrisonType.Type_6_0_Garrison or 2,
+		garrisonType9 = Enum.GarrisonType.Type_9_0 or Enum.GarrisonType.Type_9_0_Garrison or 111,
 		genderMapping = { ['M'] = 2, ['F'] = 3, },
 		gossipNPCs = {},
 		--
@@ -8068,7 +8070,7 @@ end
 		HasGarrisonBuilding = function(self, buildingId, ignoreIsBuildingRequirement)
 			local desiredBuildingTable = nil
 			local retval = false
-			local buildings = (self.blizzardRelease >= 22248) and C_Garrison.GetBuildings(Enum.GarrisonType.Type_6_0) or C_Garrison.GetBuildings()
+			local buildings = (self.blizzardRelease >= 22248) and C_Garrison.GetBuildings(self.garrisonType6) or C_Garrison.GetBuildings()
 			local building
 			local id, name, texPrefix, icon, rank, isBuilding, timeStart, buildTime, canActivate, canUpgrade, planExists
 			local foundPlot, foundBuildingId
@@ -9462,7 +9464,7 @@ end
 			talentId = tonumber(talentId)
 			if nil ~= talentId then
 				-- Note that we would normally try to use self.playerClassId as the second parameter, but that yields nil, and 0 returns them all.
-				local talentTreeIds = C_Garrison.GetTalentTreeIDsByClassID(Enum.GarrisonType.Type_9_0, 0)
+				local talentTreeIds = C_Garrison.GetTalentTreeIDsByClassID(self.garrisonType9, 0)
 				if nil ~= talentTreeIds then
 					for _, talentTreeId in pairs(talentTreeIds) do
 						local treeInfo = C_Garrison.GetTalentTreeInfo(talentTreeId)
@@ -9832,8 +9834,7 @@ end
 --			else
 --			if (not self.battleForAzeroth and (971 == phaseCode or 976 == phaseCode)) or (self.battleForAzeroth and (581 == phaseCode or 587 == phaseCode)) then
 			if 971 == phaseCode or 976 == phaseCode or 581 == phaseCode or 587 == phaseCode then
-				local type = Enum.GarrisonType.Type_6_0 or Enum.GarrisonType.Type_6_0_Garrison or 2
-				currentPhase = C_Garrison.GetGarrisonInfo(type) or 0	-- the API returns nil when there is no garrison
+				currentPhase = C_Garrison.GetGarrisonInfo(self.garrisonType6) or 0	-- the API returns nil when there is no garrison
 			end
 			--	We are using phaseCode 0 to mean the Classic Darkmoon Faire location.
 			--	We assume perfect swapping back and forth between locations with Elwynn being in odd months.

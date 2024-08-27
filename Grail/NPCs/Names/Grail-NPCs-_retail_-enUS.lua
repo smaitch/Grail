@@ -1948,6 +1948,7 @@ G[1405593]='Azerothian Archives!'
 end
 
 if release >= 56311 then
+G[1403464]='Abandoned Tuskarr Relic'
 G[1409077]='Singed Leaflet'
 G[1409338]='Washed-Up Pack'
 end

@@ -42676,6 +42676,35 @@ G[84084]='Just a Pinch'
 G[84246]='Witnessing Brilliance'
 G[84429]='Construct Containment'
 G[84908]="Stormrider's Honors"
+G[402230]="Rexxar's Ability - Rexxar's Aid"
+G[402231]="Rexxar's Ability - More Rexxar"
+G[402232]="Rexxar's Ability - I Must Axe You A Question"
+G[402233]="Rexxar's Ability - Misha Likes You"
+G[402234]='Awakening The Machine - Will of the Machine'
+G[402235]='Awakening The Machine - Skin of the Earth'
+G[402236]='Awakening The Machine - Rites of Flame'
+G[402237]='Awakening The Machine - Rites of Lightning'
+G[402238]='Awakening The Machine - Rites of Metal'
+G[402239]='Awakening The Machine - Plan Ahead [WIP]'
+G[402240]='Awakening The Machine - Wrath of the Machine [WIP]'
+G[402241]='Awakening The Machine - Fury of the Earth [WIP]'
+G[402242]='Awakening The Machine - Armageddon Crystal'
+G[402243]='Awakening The Machine - Preservation Crystal'
+G[402246]='Awakening The Machine - '
+G[402247]='Awakening The Machine - '
+G[402248]='Awakening The Machine - '
+G[402249]='The Weaver - Ability: Woven Cocoon'
+G[402250]='The Weaver - Rumors'
+G[402251]='The Weaver - Pheromones: High Hollows'
+G[402252]='The Weaver - Treasures: Weave-Rat Caches'
+G[402253]="The Weaver - The Weaver's Request"
+G[402254]="The Weaver - World Buff: Weaver's Tutelage"
+G[402255]='The Weaver - Notoriety Pays Off'
+G[402256]="The Weaver - World Buff: Weaver's Prodigy"
+G[402257]="The Weaver - The Weaver's Legacy"
+G[402258]='The Weaver - Insidious Jawcrawler'
+G[402259]='The Weaver - Title: Silksinger'
+G[402260]="The Weaver - Weaver's Hearthstone"
 end
 
 --	End of localized quest names
