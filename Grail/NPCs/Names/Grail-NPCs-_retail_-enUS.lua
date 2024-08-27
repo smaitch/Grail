@@ -1947,10 +1947,31 @@ G[1386631]='Rebel Writings'
 G[1405593]='Azerothian Archives!'
 end
 
+if release >= 56263 then
+G[1423987]='Dropped Package'
+G[1428135]='Discarded Botanist Notes'
+G[1429303]='Angrily-Scrawled Poster'
+G[1443532]='Rusted Lever'
+G[1454463]='Wanted: The Boroughbreaker'
+G[1455690]="DELVER'S CALL: Mycomancer Cavern"
+G[1455704]="DELVER'S CALL: The Sinkhole"
+G[1455716]="DELVER'S CALL: Fungal Folly"
+end
+
+if release >= 56288 then
+G[1423581]="Broodmother's Egg"
+G[1455685]="DELVER'S CALL: Dread Pit"
+end
+
 if release >= 56311 then
 G[1403464]='Abandoned Tuskarr Relic'
 G[1409077]='Singed Leaflet'
 G[1409338]='Washed-Up Pack'
+G[1430581]='Egg Basket'
+G[1433914]="Klaskin's Chest"
+G[1439890]='Grave Offering Location'
+G[1455694]="DELVER'S CALL: Skittering Breach"
+G[1455720]="DELVER'S CALL: Tak-Rethan Abyss"
 end
 
 --	End of localized NPC names
