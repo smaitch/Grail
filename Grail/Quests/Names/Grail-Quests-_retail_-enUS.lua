@@ -39922,8 +39922,13 @@ G[76086]='Aberrus, the Shadowed Crucible: Echoes of the Earth-Warder'
 G[76158]='Temporal Gossamer'
 end
 
-if release >= 54499 then
+if release >= 53007 then
 G[72664]='Eggs in Abundance'
+G[75877]='Time to Fly'
+G[76113]='Report to the Trading Post'
+end
+
+if release >= 54499 then
 G[75918]='Fire Season'
 G[75919]='Dousing the Wards'
 G[75920]='Eyes of Fire'
@@ -40517,7 +40522,6 @@ G[75834]='Delver Mardei'
 G[75867]='A Link to the Past'
 G[75868]='A Window into the Future'
 G[75874]='Time to Fly'
-G[75877]='Time to Fly'
 G[75935]='Time, Signature'
 G[75938]='Test'
 G[75949]='Downbeat Data'
@@ -40594,7 +40598,6 @@ G[76104]='Report to the Trading Post'
 G[76105]='Report to the Trading Post'
 G[76106]='Report to the Trading Post'
 G[76112]='Report to the Trading Post'
-G[76113]='Report to the Trading Post'
 G[76114]='Report to the Trading Post'
 G[76122]='Fighting is its Own Reward'
 G[76141]='Align in the Sand'

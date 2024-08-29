@@ -1891,6 +1891,11 @@ if release >= 49570 then
 G[1381981]='Titanslayer Lexodusl'
 end
 
+if release >= 53040 then
+G[1271706]="Hunters' Board"
+G[1325853]='Empty Bookcase'
+end
+
 if release >= 54499 then
 G[1386138]='Rumble Coin Bag'
 G[1403806]='Smoldering Blossom'
