@@ -1976,6 +1976,31 @@ end
 
 if release >= 56313 then
 G[1385569]="'The Resting Blade'"
+G[1410459]='Highlands Lodestone'
+G[1411571]="Freydrin's Shillelagh"
+G[1413246]='Elemental Silt Mound'
+G[1414199]='Pile of Earthen Belongings'
+G[1416950]='Unsorted Ore Pile'
+G[1420730]='Vein of Ore'
+G[1420734]='Ashenfold'
+G[1423596]='Sand Pile'
+G[1423602]='Sand Pile'
+G[1423603]='Sand Pile'
+G[1423612]='Titan Artifacts'
+G[1423688]='Titan Device'
+G[1424253]="Korgran's Lantern"
+G[1428167]='Discarded Research Notes'
+G[1428199]='Discarded Research Notes'
+G[1429301]='Shipment Crate'
+G[1432893]='Shipment Crate'
+G[1432894]='Shipment Crate'
+G[1433084]='Dead Earthen'
+G[1433090]='Infused Underclay'
+G[1433101]='Bag of Glowing Shards'
+G[1433102]='Bundle of Receipts'
+G[1433109]='Nerubian Silk Ropes'
+G[1454189]='Opal Ore'
+G[1455170]='Crumbling Ironwood Parchment'
 end
 
 --	End of localized NPC names

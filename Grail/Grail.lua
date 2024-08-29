@@ -928,7 +928,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 			bitMaskQuestUnused6 =	0x08000000,
 			bitMaskQuestUnused7 =	0x10000000,
 			bitMaskQuestUnused8 =	0x20000000,
-			bitMaskQuestUnused9 =	0x40000000,
+		bitMaskQuestWarband		=	0x40000000,
 		bitMaskQuestSpecial		=	0x80000000,		-- quest is "special" and never appears in the quest log
 		-- End of bit mask values
 

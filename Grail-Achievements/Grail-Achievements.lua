@@ -165,7 +165,7 @@ Grail.extraAchievements = {
 		[mapKulTiras] = { 512510, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514279, 514961, 515515, 515259, },
 		[mapDragonIsles] = { 516401, 516398, 516428, 516409, 516405, 516406, 516808, },
-		[mapKhazAlgar] = { 520595, 540844, },
+		[mapKhazAlgar] = { 520118, 520595, 540844, },
 		},
 	[factionHorde] = {
 		[mapKalimdor] = { 504961, 505859, 505866, },
@@ -181,7 +181,7 @@ Grail.extraAchievements = {
 		[mapKulTiras] = { 512509, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514961, 515515, 515259, },
 		[mapDragonIsles] = { 516401, 516398, 516428, 516409, 516405, 516406, 516808, },
-		[mapKhazAlgar] = { 520595, 540844, },
+		[mapKhazAlgar] = { 520118, 520595, 540844, },
 		},
 	}
 
@@ -7385,15 +7385,25 @@ G[70879]={516398}	-- Misty Vale (Sojourner of Thaldraszus) (Dragonflight)
 G[70919]={516409}	-- Let's Get Qucking (Dragonflight)
 G[70970]={516428}	-- Lost Ruins (Sojourner of Azure Span) (Dragonflight)
 G[71135]={516428}	-- Grimtusk Hideaway (Sojourner of Azure Span) (Dragonflight)
+G[78294]={520595}	-- Lost Lord of the Storm (Sojourner of Isle of Dorn) (The War Within)
+G[78471]={520118}	-- Earthen Fissures (The Isle of Dorn) (The War Within)
+G[78536]={520118}	-- Breaking Point (The Isle of Dorn) (The War Within)
+G[78546]={520118}	-- The First Blow (The Isle of Dorn) (The War Within)
+G[78574]={520595}	-- Spores of Dread (Sojourner of Isle of Dorn) (The War Within)
 G[78695]={540844}	-- Light to Velhan's Claim (Sojourner of Hallowfall) (The War Within)
+G[78759]={520595}	-- The Hermit (Sojourner of Isle of Dorn) (The War Within)
+G[78999]={520595}	-- Seven Soldiers (Sojourner of Isle of Dorn) (The War Within)
 G[79154]={540844}	-- An Orphan's Dilemma (Sojourner of Hallowfall) (The War Within)
 G[79162]={540844}	-- The Weight of Duty (Sojourner of Hallowfall) (The War Within)
 G[79303]={540844}	-- The Sky's the Limit (Sojourner of Hallowfall) (The War Within)
 G[79312]={540844}	-- What Grows in the Dark (Sojourner of Hallowfall) (The War Within)
+G[79703]={520595}	-- Hope, An Anomaly (Sojourner of Isle of Dorn) (The War Within)
+G[79728]={520595}	-- A Titanic Expedition (Sojourner of Isle of Dorn) (The War Within)
 G[80179]={540844}	-- The Last Mage of Hallowfall (Sojourner of Hallowfall) (The War Within)
 G[82222]={540844}	-- Striking Steel (Sojourner of Hallowfall) (The War Within)
 G[82480]={540844}	-- Apart for Purpose (Sojourner of Hallowfall) (The War Within)
 G[82628]={540844}	-- The Priory (Sojourner of Hallowfall) (The War Within)
+G[82801]={520595}	-- All Ore Nothing (Sojourner of Isle of Dorn) (The War Within)
 G[82813]={540844}	-- Memories of the Sky (Sojourner of Hallowfall) (The War Within)
 G[82847]={540844}	-- The Mysterious Chef (Sojourner of Hallowfall) (The War Within)
 G[82895]={520595}	-- Remember Me, Earthen (Sojourner of Isle of Dorn) (The War Within)
