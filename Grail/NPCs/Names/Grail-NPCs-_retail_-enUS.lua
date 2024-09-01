@@ -1986,6 +1986,8 @@ G[1411571]="Freydrin's Shillelagh"
 G[1413246]='Elemental Silt Mound'
 G[1414199]='Pile of Earthen Belongings'
 G[1416950]='Unsorted Ore Pile'
+G[1419696]='Waxy Lump'
+G[1420053]='Webbed Knapsack'
 G[1420730]='Vein of Ore'
 G[1420734]='Ashenfold'
 G[1423596]='Sand Pile'
@@ -2006,6 +2008,25 @@ G[1433102]='Bundle of Receipts'
 G[1433109]='Nerubian Silk Ropes'
 G[1454189]='Opal Ore'
 G[1455170]='Crumbling Ironwood Parchment'
+end
+
+if release >= 56421 then
+G[1411878]='Intriguing Scrap'
+G[1415584]='Sizzling Magma Core'
+G[1417136]='Intriguing Scrap'
+G[1417137]='Intriguing Scrap'
+G[1417138]='Intriguing Scrap'
+G[1421525]='Shinies'
+G[1421592]='Life Savings'
+G[1421594]='Gainful Employment'
+G[1421599]='Local Industry'
+G[1421735]='Prooftelling Flower'
+G[1428699]='Sizzling Barrel'
+G[1430215]='Molten Wax'
+G[1430551]='Coal Shipment'
+G[1436933]="Softsnout's Favorite Shovel"
+G[1444115]='Speaker Brinthe'
+G[1446495]='Pile of Refuse'
 end
 
 --	End of localized NPC names
