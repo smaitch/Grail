@@ -3,9 +3,7 @@
 --	UTF-8 file
 --
 
---	We are using this as the base list of quests, so we do not look at the locale
---	to determine whether we should abandon further processing.
-
+if GetLocale() ~= "enUS" then return end
 local G = Grail.quest.name
 local _, release, _, interface = GetBuildInfo()
 release = tonumber(release)
@@ -42816,6 +42814,7 @@ G[81489]='Bounty: Zorikal the Patron'
 G[81491]='Armaments: Arbalests'
 G[81501]='Testing Formulae: Roiling Elixir'
 G[81615]='Wick Points'
+G[81723]='Report to the Trading Post'
 G[81795]='Sparks of War: Hallowfall'
 G[81805]='Skyrider Racing - Thunderhead Trail'
 G[81806]="Skyrider Racing - Orecreg's Doglegs"

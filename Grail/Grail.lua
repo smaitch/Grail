@@ -1302,14 +1302,13 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2339] = true, -- Dornogal
 							[2214] = true, -- Ringing Deeps
 							}
-						self.quest.name = {
-							[51570]=Grail:_GetMapNameByID(862),	-- Zuldazar
-							[51571]=Grail:_GetMapNameByID(863),	-- Nazmir
-							[51572]=Grail:_GetMapNameByID(864),	-- Vol'dun
-							[600000]=Grail:_GetMapNameByID(17)..' '..REQUIREMENTS,
-							[600001]=Grail:_GetMapNameByID(17)..' '..FACTION_ALLIANCE..' '..REQUIREMENTS,
-							[600002]=Grail:_GetMapNameByID(17)..' '..FACTION_HORDE..' '..REQUIREMENTS,
-							}
+
+						self.quest.name[51570]=Grail:_GetMapNameByID(862)	-- Zuldazar
+						self.quest.name[51571]=Grail:_GetMapNameByID(863)	-- Nazmir
+						self.quest.name[51572]=Grail:_GetMapNameByID(864)	-- Vol'dun
+						self.quest.name[600000]=Grail:_GetMapNameByID(17)..' '..REQUIREMENTS
+						self.quest.name[600001]=Grail:_GetMapNameByID(17)..' '..FACTION_ALLIANCE..' '..REQUIREMENTS
+						self.quest.name[600002]=Grail:_GetMapNameByID(17)..' '..FACTION_HORDE..' '..REQUIREMENTS
 					end
 
 					--	For users prior to the release version 028, the GrailDatabase held personal quest information.  Now we move that information into the
@@ -12282,6 +12281,14 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 				end
 			end
 			return t1
+		end,
+
+		_TableLength = function(self, t)
+			local count = 0
+			for key in pairs(t) do
+				count = count + 1
+			end
+			return count
 		end,
 
 		_TableAppend = function(self, t1, t2)

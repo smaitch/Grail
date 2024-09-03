@@ -2012,21 +2012,38 @@ end
 
 if release >= 56421 then
 G[1411878]='Intriguing Scrap'
+G[1411930]='Blackpowder Barrel'
 G[1415584]='Sizzling Magma Core'
+G[1416310]='Kobyss Chest'
+G[1416401]='Kobyss Spear'
 G[1417136]='Intriguing Scrap'
 G[1417137]='Intriguing Scrap'
 G[1417138]='Intriguing Scrap'
+G[1419695]='Spore-Covered Coffer'
+G[1420722]='Lost Page'
 G[1421525]='Shinies'
 G[1421592]='Life Savings'
 G[1421594]='Gainful Employment'
 G[1421599]='Local Industry'
 G[1421735]='Prooftelling Flower'
+G[1421909]='Fallen Defender'
+G[1422560]="Maevest's Compass"
+G[1423958]='Arathi Chest'
+G[1423977]='Kobyss Chest'
+G[1423978]='Kobyss Chest'
+G[1423979]='Kobyss Chest'
 G[1428699]='Sizzling Barrel'
 G[1430215]='Molten Wax'
 G[1430551]='Coal Shipment'
 G[1436933]="Softsnout's Favorite Shovel"
+G[1437025]='Sludge Pile'
+G[1437211]='Illuminated Footlocker'
 G[1444115]='Speaker Brinthe'
+G[1444801]='Brimming Arathi Treasure Hoard'
+G[1446362]='Crimson Charmer'
+G[1446363]='Amber Bloom'
 G[1446495]='Pile of Refuse'
+G[1453348]='Arathi Wine'
 end
 
 --	End of localized NPC names
