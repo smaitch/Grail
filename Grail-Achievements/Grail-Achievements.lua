@@ -165,7 +165,7 @@ Grail.extraAchievements = {
 		[mapKulTiras] = { 512510, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514279, 514961, 515515, 515259, },
 		[mapDragonIsles] = { 516401, 516398, 516428, 516409, 516405, 516406, 516808, },
-		[mapKhazAlgar] = { 519559, 519560, 520118, 520595, 520598, 540618, 540636, 540799, 540844, },
+		[mapKhazAlgar] = { 519559, 519560, 520118, 520595, 520597, 520598, 540618, 540636, 540799, 540844, },
 		},
 	[factionHorde] = {
 		[mapKalimdor] = { 504961, 505859, 505866, },
@@ -181,7 +181,7 @@ Grail.extraAchievements = {
 		[mapKulTiras] = { 512509, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514961, 515515, 515259, },
 		[mapDragonIsles] = { 516401, 516398, 516428, 516409, 516405, 516406, 516808, },
-		[mapKhazAlgar] = { 519559, 519560, 520118, 520595, 520598, 540618, 540636, 540799, 540844, },
+		[mapKhazAlgar] = { 519559, 519560, 520118, 520595, 520597, 520598, 540618, 540636, 540799, 540844, },
 		},
 	}
 
@@ -7404,14 +7404,20 @@ G[78897]={540636}	-- The Wormlands (Sojourner of Azj-Kahet) (The War Within)
 G[78898]={540636}	-- The Wormlands (Sojourner of Azj-Kahet) (The War Within)
 G[78954]={520598} -- Gathering Shadows (Hallowfall) (The War Within)
 G[78999]={520595}	-- Seven Soldiers (Sojourner of Isle of Dorn) (The War Within)
+G[79030]={520597}	-- The Machines March to War (The War Within) (The War Within)
+G[79110]={540844}	-- Lost in the Darkness (Sojourner of Hallowfall) (The War Within)
 G[79123]={540636}	-- Rak-Ush Swarmery (Sojourner of Azj-Kahet) (The War Within)
 G[79154]={540844}	-- An Orphan's Dilemma (Sojourner of Hallowfall) (The War Within)
+G[79157]={520597}	-- Ties That Bind (The War Within) (The War Within)
 G[79162]={540844}	-- The Weight of Duty (Sojourner of Hallowfall) (The War Within)
 G[79168]={540844}	-- Rest at Last (Sojourner of Hallowfall) (The War Within)
+G[79197]={540307}	-- ??? (Allied Races: Earthen) (The War Within)
+G[79244]={520597}	-- News from Below (The War Within) (The War Within)
 G[79266]={540799}	-- Fearbreaker (Sojourner of the Ringing Deeps) (The War Within)
 G[79303]={540844}	-- The Sky's the Limit (Sojourner of Hallowfall) (The War Within)
 G[79313]={540844}	-- What Grows in the Dark (Sojourner of Hallowfall) (The War Within)
 G[79327]={540799}	-- Rampage at Nibelgaz Mine (Sojourner of the Ringing Deeps) (The War Within)
+G[79344]={520597}	-- Against the Current (The War Within) (The War Within)
 G[79357]={540636}	-- Pillar-Nest Vosh (Sojourner of Azj-Kahet) (The War Within)
 G[79372]={540799}	-- Envenomed Invasion (Sojourner of the Ringing Deeps) (The War Within)
 G[79510]={540799}	-- Kobold Culture and Integration (Sojourner of the Ringing Deeps) (The War Within)
@@ -7422,7 +7428,9 @@ G[79580]={540636}	-- The Second Front (Sojourner of Azj-Kahet) (The War Within)
 G[79649]={540844}	-- The Priory (Sojourner of Hallowfall) (The War Within)
 G[79682]={540799}	-- Kobold Culture and Integration (Sojourner of the Ringing Deeps) (The War Within)
 G[79703]={520595}	-- Hope, An Anomaly (Sojourner of Isle of Dorn) (The War Within)
+G[79715]={540636}	-- Gutter Work (Sojourner of Azj-Kahet) (The War Within)
 G[79728]={520595}	-- A Titanic Expedition (Sojourner of Isle of Dorn) (The War Within)
+G[79957]={540636}	-- Pillar-nest of Horrors (Sojourner of Azj-Kahet) (The War Within)
 G[80179]={540844}	-- The Last Mage of Hallowfall (Sojourner of Hallowfall) (The War Within)
 G[80205]={540636}	-- Pawns and Puppetry (Sojourner of Azj-Kahet) (The War Within)
 G[80218]={520595}	-- Brotherhood in the Skolzgal Wood (Sojourner of the Isle of Dorn) (The War Within)
@@ -7455,6 +7463,7 @@ G[83181]={520595}	-- Brotherhood in the Skolzgal Wood (Sojourner of the Isle of 
 G[83247]={540844}	-- Suspicious Minds (Sojourner of Hallowfall) (The War Within)
 G[83283]={540844}	-- Suspicious Minds (Sojourner of Hallowfall) (The War Within)
 G[83639]={540636}	-- The Wild Camp (Sojourner of Azj-Kahet) (The War Within)
+G[84022]={519559}	-- Plans within Plans (Azj-Kahet) (The War Within)
 
 Grail.timings.AchievementsInitialSetup = debugprofilestop() - debugStartTime
 debugStartTime = debugprofilestop()
