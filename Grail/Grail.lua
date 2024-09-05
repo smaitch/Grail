@@ -1191,6 +1191,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[49]  = true, -- Redrige Mountains
 							[62]  = true,
 							[81]  = true, -- Silithus
+							[114] = true, -- Borean Tundra, WotLK
 							[371] = true, -- Jade Forest, MoP
 							[376] = true, -- Valley of the Four Winds, MoP
 							[379] = true, -- Kun-Lai Summit, MoP
