@@ -1191,6 +1191,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[49]  = true, -- Redrige Mountains
 							[62]  = true,
 							[81]  = true, -- Silithus
+							[114] = true, -- Borean Tundra, WotLK
 							[371] = true, -- Jade Forest, MoP
 							[376] = true, -- Valley of the Four Winds, MoP
 							[379] = true, -- Kun-Lai Summit, MoP
@@ -1970,12 +1971,12 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 			end,
 
 			['COVENANT_CHOSEN'] = function(self, frame, ...)
+				local covenantId = ...
+				local message = strformat("Covenant chosen: %d", covenantId)
 				if self.GDE.debug or self.GDE.tracking then
-					local covenantId = ...
-					local message = strformat("Covenant chosen: %d", covenantId)
 					print(message)
-					self:_AddTrackingMessage(message)
 				end
+				self:_AddTrackingMessage(message)
 				-- If someone were to change covenants all the quests associated with covenant need to have their status refreshed.
 				self:_InvalidateStatusForQuestsWithTalentPrerequisites()
 				self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupRenownQuests])
@@ -1983,12 +1984,12 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 			end,
 
 			['COVENANT_SANCTUM_RENOWN_LEVEL_CHANGED'] = function(self, frame, ...)
+				local newLevel, oldLevel = ...
+				local message = strformat("Renown level changed from %d to %d", oldLevel, newLevel)
 				if self.GDE.debug or self.GDE.tracking then
-					local newLevel, oldLevel = ...
-					local message = strformat("Renown level changed from %d to %d", oldLevel, newLevel)
 					print(message)
-					self:_AddTrackingMessage(message)
 				end
+				self:_AddTrackingMessage(message)
 				self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupRenownQuests])
 			end,
 
@@ -2070,11 +2071,11 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local questToComplete = self._ItemTextBeginList[npcId]
 				if nil ~= questToComplete then
 					self:_MarkQuestComplete(questToComplete, true)
+					local message = strformat("ITEM_TEXT_READY completes %d", questToComplete)
 					if self.GDE.debug then
-						local message = strformat("ITEM_TEXT_READY completes %d", questToComplete)
 						print(message)
-						self:_AddTrackingMessage(message)
 					end
+						self:_AddTrackingMessage(message)
 				end
 			end,
 
@@ -2272,19 +2273,19 @@ end,
 			end,
 
 			['QUEST_AUTOCOMPLETE'] = function(self, frame, questId)
+				local message = strformat("QUEST_AUTOCOMPLETE completes %d", questId)
 				if self.GDE.debug then
-					local message = strformat("QUEST_AUTOCOMPLETE completes %d", questId)
 					print(message)
-					self:_AddTrackingMessage(message)
 				end
+				self:_AddTrackingMessage(message)
 			end,
 			
 			['WORLD_QUEST_COMPLETED_BY_SPELL'] = function(self, frame, questId)
+			local message = strformat("WORLD_QUEST_COMPLETED_BY_SPELL completes %d", questId)
 				if self.GDE.debug then
-					local message = strformat("WORLD_QUEST_COMPLETED_BY_SPELL completes %d", questId)
 					print(message)
-					self:_AddTrackingMessage(message)
 				end
+				self:_AddTrackingMessage(message)
 			end,
 
 			-- This is used solely to indicate to the system that the Blizzard quest log is available to be read properly.  Early in the startup
@@ -7886,20 +7887,20 @@ end
 		end,
 
 		_HandleEventMajorFactionUnlocked = function(self, factionId)
+			local message = "Major faction unlocked: " .. factionId
 			if self.GDE.debug then
-				local message = "Major faction unlocked: " .. factionId
 				print(message)
-				self:_AddTrackingMessage(message)
 			end
+			self:_AddTrackingMessage(message)
 			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupMajorFactionQuests])
 		end,
 
 		_HandleEventMajorFactionRenownLevelChanged = function(self, factionId, newRenownLevel, oldRenownLevel)
+			local message = "Major faction: " .. factionId .. " renown changed from " .. oldRenownLevel .. " to " .. newRenownLevel
 			if self.GDE.debug then
-				local message = "Major faction: " .. factionId .. " renown changed from " .. oldRenownLevel .. " to " .. newRenownLevel
 				print(message)
-				self:_AddTrackingMessage(message)
 			end
+			self:_AddTrackingMessage(message)
 			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupMajorFactionQuests])
 		end,
 
@@ -7971,11 +7972,11 @@ end
 						self:_LearnObjectName(guidParts[6], lootingNameToUse)
 					end
 				end
+				local message = "Looting from " .. (self.lootingGUID or "NO LOOTING GUID") .. " locale: " .. self.playerLocale .. " name: " .. lootingNameToUse
 				if self.GDE.debug then
-					local message = "Looting from " .. (self.lootingGUID or "NO LOOTING GUID") .. " locale: " .. self.playerLocale .. " name: " .. lootingNameToUse
 					print(message)
-					self:_AddTrackingMessage(message)
 				end
+				self:_AddTrackingMessage(message)
 			end
 			for _, questId in pairs(newlyCompleted) do
 				self:_MarkQuestComplete(questId, true)
@@ -12065,11 +12066,11 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 		--	system that the choice has been made without requiring the user to reload the UI.
 		_SendQuestChoiceResponse = function(self, anId)
 			local numericOption = tonumber(anId)
+			local message = strformat("_SendQuestChoiceResponse chooses: %d coords: %s", numericOption, self:Coordinates())
 			if self.GDE.debug then
-				local message = strformat("_SendQuestChoiceResponse chooses: %d coords: %s", numericOption, self:Coordinates())
 				print(message)
-				self:_AddTrackingMessage(message)
 			end
+			self:_AddTrackingMessage(message)
 			local questToComplete = self._SendQuestChoiceList[numericOption]
 			if nil ~= questToComplete then
 				if type(questToComplete) == "table" then
