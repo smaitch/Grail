@@ -2011,6 +2011,7 @@ G[1455170]='Crumbling Ironwood Parchment'
 end
 
 if release >= 56421 then
+G[1405948]='Ancient Draenic Relic'
 G[1409464]='Hillhelm Remnant Supply'
 G[1410395]='Siegehold Records'
 G[1411102]='Airship Rubble'
@@ -2076,7 +2077,7 @@ G[1445587]='Arathi Crate Stacked'
 G[1446135]='Niffen Stash'
 G[1446299]='Silk-spun Supplies'
 G[1446362]='Crimson Charmer'
-G[1446363]='Amber Bloom'
+G[1446363]='Highland Bear'
 G[1446365]='Arathi Chest'
 G[1446404]='Corrupted Memory'
 G[1446423]='Nest Egg'

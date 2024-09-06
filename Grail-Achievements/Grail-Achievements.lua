@@ -7462,6 +7462,7 @@ G[83162]={540799}	-- Abysmal Extraction (Sojourner of the Ringing Deeps) (The Wa
 G[83181]={520595}	-- Brotherhood in the Skolzgal Wood (Sojourner of the Isle of Dorn) (The War Within)
 G[83247]={540844}	-- Suspicious Minds (Sojourner of Hallowfall) (The War Within)
 G[83283]={540844}	-- Suspicious Minds (Sojourner of Hallowfall) (The War Within)
+G[83503]={520597,540307}	-- A Light in the Dark (The War Within) (The War Within), The War Within (Allied Races: Earthen) (The War Within)
 G[83639]={540636}	-- The Wild Camp (Sojourner of Azj-Kahet) (The War Within)
 G[84022]={519559}	-- Plans within Plans (Azj-Kahet) (The War Within)
 
