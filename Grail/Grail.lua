@@ -571,6 +571,9 @@
 --			Adds better support for The Ruby Feast quests.
 --			Adds better support for quest 70779.
 --			Changed retail interface to 100007.
+--		123 Adds initial support for The War Within.
+--			Switches TOC to have a single Interface that lists all supported versions.
+--			Changes the use of localized names to no longer be addons but to be included in the base Grail addon.
 --
 --	Known Issues
 --
