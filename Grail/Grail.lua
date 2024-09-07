@@ -574,6 +574,7 @@
 --		123 Adds initial support for The War Within.
 --			Switches TOC to have a single Interface that lists all supported versions.
 --			Changes the use of localized names to no longer be addons but to be included in the base Grail addon.
+--		124 Adds IsQuestFlaggedCompletedOnAccount to help indicate when a quest is completed by the warband.
 --
 --	Known Issues
 --
@@ -8541,6 +8542,73 @@ end
 		IsQuestCompleted = function(self, questId)
 			return self:_IsQuestMarkedInDatabase(questId)
 		end,
+
+		IsComplete = function(self, questId)
+			-- it has to be in the quest log and complete (meaning ready for turnin)
+			return C_QuestLog.IsComplete(questId)
+		end,
+
+		IsQuestFlaggedCompleted = function(self, questId)
+			return C_QuestLog.IsQuestFlaggedCompleted(questId)
+		end,
+		
+		IsQuestFlaggedCompletedOnAccount = function(self, questId)
+			return C_QuestLog.IsQuestFlaggedCompletedOnAccount and C_QuestLog.IsQuestFlaggedCompletedOnAccount(questId) or false
+		end,
+
+		IsImportantQuest = function(self, questId)
+			return C_QuestLog.IsImportantQuest(questId)
+		end,
+		
+		IsAccountQuest = function(self, questId)
+			return C_QuestLog.IsAccountQuest(questId)
+		end,
+		
+		IsLegendaryQuest = function(self, questId)
+			return C_QuestLog.IsLegendaryQuest(questId)
+		end,
+		
+		IsMetaQuest = function(self, questId)
+			return C_QuestLog.IsMetaQuest(questId)
+		end,
+		
+		IsOnQuest = function(self, questId)
+			return C_QuestLog.IsOnQuest(questId)
+		end,
+		
+		IsPushableQuest = function(self, questId)
+			-- can be shared with other players
+			return C_QuestLog.IsPushableQuest(questId)
+		end,
+		
+		IsQuestBounty = function(self, questId)
+			return C_QuestLog.IsQuestBounty(questId)
+		end,
+		
+		IsQuestCalling = function(self, questId)
+			return C_QuestLog.IsQuestCalling(questId)
+		end,
+		
+		IsQuestInvasion = function(self, questId)
+			return C_QuestLog.IsQuestInvasion(questId)
+		end,
+		
+		IsQuestTask = function(self, questId)
+			return C_QuestLog.IsQuestTask(questId)
+		end,
+		
+		IsQuestTrivial = function(self, questId)
+			return C_QuestLog.IsQuestTrivial(questId)
+		end,
+		
+		IsThreatQuest = function(self, questId)
+			return C_QuestLog.IsThreatQuest(questId)
+		end,
+		
+		IsWorldQuest = function(self, questId)
+			return C_QuestLog.IsWorldQuest(questId)
+		end,
+
 
 		IsQuestFlaggedCompleted = function(self, questId)
 			if C_QuestLog.IsComplete then
