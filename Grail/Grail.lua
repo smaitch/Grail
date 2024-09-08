@@ -926,16 +926,15 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		bitMaskQuestCallingQuest =	0x00200000,
 			bitMaskQuestUnused1 =	0x00400000,
 			bitMaskQuestUnused2 =	0x00800000,
-			bitMaskQuestUnused3 =	0x01000000,
-			bitMaskQuestUnused4 =	0x02000000,
-			bitMaskQuestUnused5 =	0x04000000,
-			bitMaskQuestUnused6 =	0x08000000,
-			bitMaskQuestUnused7 =	0x10000000,
-			bitMaskQuestUnused8 =	0x20000000,
+		bitMaskQuestPushable	=	0x01000000,		-- sharable
+		bitMaskQuestTask		=	0x02000000,
+		bitMaskQuestMeta		=	0x04000000,
+		bitMaskQuestInvasion	=	0x08000000,
+		bitMaskQuestBounty		=	0x10000000,
+		bitMaskQuestImportant	=	0x20000000,
 		bitMaskQuestWarband		=	0x40000000,
 		bitMaskQuestSpecial		=	0x80000000,		-- quest is "special" and never appears in the quest log
 		-- End of bit mask values
-
 
 		-- Bit mask system for information about level of quest
 		-- Eight bits are used to be able to represent a level value from 0 - 255.
@@ -3620,20 +3619,20 @@ end,
 				if nil == questId then questId = -1 end
 				if not isHeader then
 					local kCodeValue = 0
-					if isDaily then kCodeValue = kCodeValue + 2 end
-					if isWeekly then kCodeValue = kCodeValue + 4 end
+					if isDaily then kCodeValue = kCodeValue + Grail.bitMaskQuestDaily end
+					if isWeekly then kCodeValue = kCodeValue + Grail.bitMaskQuestWeekly end
 					if suggestedGroup then
 						if type(suggestedGroup) == "string" or suggestedGroup > 1 then
-							kCodeValue = kCodeValue + 512
+							kCodeValue = kCodeValue + Grail.bitMaskQuestGroup
 						end
 					end
-					if isTask and not Grail:IsWorldQuest(questId) then kCodeValue = kCodeValue + 32768 end	-- bonus objective
+					if isTask and not Grail:IsWorldQuest(questId) then kCodeValue = kCodeValue + Grail.bitMaskQuestBonus end	-- bonus objective
 					if Grail.capabilities.usesCampaignInfo then
 						local isCampaign = false
 						if C_CampaignInfo.IsCampaignQuest then
 							isCampaign = C_CampaignInfo.IsCampaignQuest(questId)
 						end
-						if isCampaign then kCodeValue = kCodeValue + 4096 end -- war campaign (recorded as legendary)
+						if isCampaign then kCodeValue = kCodeValue + Grail.bitMaskQuestLegendary end -- war campaign (recorded as legendary)
 					end
 					local kCode = (kCodeValue > 0) and strformat("K%d", kCodeValue) or nil
 					local lCode = "L" .. Grail:StringFromQuestLevels(difficultyLevel, level, 0)
@@ -4182,6 +4181,67 @@ end,
 				retval = true
 			end
 			return retval
+		end,
+
+		_LearnKCodesForQuest = function(self, questId)
+			local code = self:CodeType(questId)
+			-- Masking out things that we get from this API use so the API gives us truth.
+			code = bitband(code,
+					self.bitMaskQuestDaily +
+					self.bitMaskQuestWeekly +
+					self.bitMaskQuestMonthly +
+					self.bitMaskQuestYearly +
+					self.bitMaskQuestEscort +
+					self.bitMaskQuestDungeon +
+					self.bitMaskQuestRaid +
+					self.bitMaskQuestPVP +
+					self.bitMaskQuestGroup +
+					self.bitMaskQuestHeroic +
+					self.bitMaskQuestScenario +
+					self.bitMaskQuestPetBattle +
+					self.bitMaskQuestBonus +
+					self.bitMaskQuestRareMob +
+					self.bitMaskQuestTreasure +
+					self.bitMaskQuestBiweekly
+					)
+			
+			if self:IsRepeatableQuestBlizzardAPI(questId) then
+				code = bitbor(code, self.bitMaskQuestRepeatable)
+			end
+			if self:IsImportantQuestBlizzardAPI(questId) then
+				code = bitbor(code, self.bitMaskQuestImportant)
+			end
+			if self:IsAccountQuestBlizzardAPI(questId) then
+				code = bitbor(code, self.bitMaskQuestAccountWide)
+			end
+			if self:IsLegendaryQuestBlizzardAPI(questId) then
+				code = bitbor(code, self.bitMaskQuestLegendary)
+			end
+			if self:IsMetaQuestBlizzardAPI(questId) then
+				code = bitbor(code, self.bitMaskQuestMeta)
+			end
+--			if self:IsPushableQuestBlizzardAPI(questId) then
+--				code = bitbor(code, self.bitMaskQuestPushable)
+--			end
+			if self:IsQuestBountyBlizzardAPI(questId) then
+				code = bitbor(code, self.bitMaskQuestBounty)
+			end
+			if self:IsQuestCallingBlizzardAPI(questId) then
+				code = bitbor(code, self.bitMaskQuestCallingQuest)
+			end
+			if self:IsQuestInvasionBlizzardAPI(questId) then
+				code = bitbor(code, self.bitMaskQuestInvasion)
+			end
+--			if self:IsQuestTaskBlizzardAPI(questId) then
+--				code = bitbor(code, self.bitMaskQuestTask)
+--			end
+			if self:IsThreatQuestBlizzardAPI(questId) then
+				code = bitbor(code, self.bitMaskQuestThreatQuest)
+			end
+			if self:IsWorldQuestBlizzardAPI(questId) then
+				code = bitbor(code, self.bitMaskQuestWorldQuest)
+			end
+			self:_LearnKCode(questId, "K"..code)
 		end,
 
 		_LearnWorldQuest = function(self, questId, mapId, x, y, isDaily)
@@ -7836,9 +7896,9 @@ end
 					isCollapsed = info.isCollapsed
 					questId = info.questID
 					-- our use of isComplete is based on the old API and thus needs to be -1, 0, or 1 based on failure, not yet, and complete
-					if self:IsQuestFlaggedCompleted(questId) then
+					if self:IsCompleteBlizzardAPI(questId) then
 						isComplete = 1
-					elseif C_QuestLog.IsFailed(questId) then
+					elseif self:IsFailedBlizzardAPI(questId) then
 						isComplete = -1
 					else
 						isComplete = 0
@@ -8543,70 +8603,149 @@ end
 			return self:_IsQuestMarkedInDatabase(questId)
 		end,
 
-		IsComplete = function(self, questId)
+		IsCompleteBlizzardAPI = function(self, questId)
 			-- it has to be in the quest log and complete (meaning ready for turnin)
-			return C_QuestLog.IsComplete(questId)
+			if C_QuestLog.IsComplete then
+				return C_QuestLog.IsComplete(questId)
+			elseif IsQuestComplete then
+				return IsQuestComplete(questId)
+			else
+				return false
+			end
 		end,
 
-		IsQuestFlaggedCompleted = function(self, questId)
-			return C_QuestLog.IsQuestFlaggedCompleted(questId)
+		IsFailedBlizzardAPI = function(self, questId)
+			if C_QuestLog.IsFailed then
+				return C_QuestLog.IsFailed(questId)
+			else
+				return false
+			end
 		end,
-		
+
+		-- think about adding BlizzardAPI to the end of the function name
 		IsQuestFlaggedCompletedOnAccount = function(self, questId)
-			return C_QuestLog.IsQuestFlaggedCompletedOnAccount and C_QuestLog.IsQuestFlaggedCompletedOnAccount(questId) or false
+			if C_QuestLog.IsQuestFlaggedCompletedOnAccount then
+				return C_QuestLog.IsQuestFlaggedCompletedOnAccount(questId)
+			else
+				return false
+			end
 		end,
 
-		IsImportantQuest = function(self, questId)
-			return C_QuestLog.IsImportantQuest(questId)
+		IsRepeatableQuestBlizzardAPI = function(self, questId)
+			if C_QuestLog.IsRepeatableQuest then
+				return C_QuestLog.IsRepeatableQuest(questId)
+			else
+				return false
+			end
+		end,
+
+		IsImportantQuestBlizzardAPI = function(self, questId)
+			if C_QuestLog.IsImportantQuest then
+				return C_QuestLog.IsImportantQuest(questId)
+			else
+				return false
+			end
 		end,
 		
-		IsAccountQuest = function(self, questId)
-			return C_QuestLog.IsAccountQuest(questId)
+		IsAccountQuestBlizzardAPI = function(self, questId)
+			if C_QuestLog.IsAccountQuest then
+				return C_QuestLog.IsAccountQuest(questId)
+			else
+				return false
+			end
 		end,
 		
-		IsLegendaryQuest = function(self, questId)
-			return C_QuestLog.IsLegendaryQuest(questId)
+		IsLegendaryQuestBlizzardAPI = function(self, questId)
+			if C_QuestLog.IsLegendaryQuest then
+				return C_QuestLog.IsLegendaryQuest(questId)
+			else
+				return false
+			end
 		end,
 		
-		IsMetaQuest = function(self, questId)
-			return C_QuestLog.IsMetaQuest(questId)
+		IsMetaQuestBlizzardAPI = function(self, questId)
+			if C_QuestLog.IsMetaQuest then
+				return C_QuestLog.IsMetaQuest(questId)
+			else
+				return false
+			end
 		end,
 		
-		IsOnQuest = function(self, questId)
-			return C_QuestLog.IsOnQuest(questId)
+		IsOnQuestBlizzardAPI = function(self, questId)
+			if C_QuestLog.IsOnQuest then
+				return C_QuestLog.IsOnQuest(questId)
+			else
+				return false
+			end
 		end,
 		
-		IsPushableQuest = function(self, questId)
+		IsPushableQuestBlizzardAPI = function(self, questId)
 			-- can be shared with other players
-			return C_QuestLog.IsPushableQuest(questId)
+			if C_QuestLog.IsPushableQuest then
+				return C_QuestLog.IsPushableQuest(questId)
+			elseif GetQuestLogPushable then
+				return GetQuestLogPushable()	-- note the lack of parameter.  this means the current quest in the quest log is used.
+			else
+				return false
+			end
 		end,
 		
-		IsQuestBounty = function(self, questId)
-			return C_QuestLog.IsQuestBounty(questId)
+		IsQuestBountyBlizzardAPI = function(self, questId)
+			if C_QuestLog.IsQuestBounty then
+				return C_QuestLog.IsQuestBounty(questId)
+			else
+				return false
+			end
 		end,
 		
-		IsQuestCalling = function(self, questId)
-			return C_QuestLog.IsQuestCalling(questId)
+		IsQuestCallingBlizzardAPI = function(self, questId)
+			if C_QuestLog.IsQuestCalling then
+				return C_QuestLog.IsQuestCalling(questId)
+			else
+				return false
+			end
 		end,
 		
-		IsQuestInvasion = function(self, questId)
-			return C_QuestLog.IsQuestInvasion(questId)
+		IsQuestInvasionBlizzardAPI = function(self, questId)
+			if C_QuestLog.IsQuestInvasion then
+				return C_QuestLog.IsQuestInvasion(questId)
+			else
+				return false
+			end
 		end,
 		
-		IsQuestTask = function(self, questId)
-			return C_QuestLog.IsQuestTask(questId)
+		IsQuestTaskBlizzardAPI = function(self, questId)	-- bonus objectives
+			if C_QuestLog.IsQuestTask then
+				return C_QuestLog.IsQuestTask(questId)
+			elseif IsQuestTask then
+				return IsQuestTask(questId)
+			else
+				return false
+			end
 		end,
 		
-		IsQuestTrivial = function(self, questId)
-			return C_QuestLog.IsQuestTrivial(questId)
+		IsQuestTrivialBlizzardAPI = function(self, questId)
+			if C_QuestLog.IsQuestTrivial then
+				return C_QuestLog.IsQuestTrivial(questId)
+			else
+				return false
+			end
 		end,
 		
-		IsThreatQuest = function(self, questId)
-			return C_QuestLog.IsThreatQuest(questId)
+		IsThreatQuestBlizzardAPI = function(self, questId)
+			if C_QuestLog.IsThreatQuest then
+				return C_QuestLog.IsThreatQuest(questId)
+			else
+				return false
+			end
 		end,
 		
-		IsWorldQuest = function(self, questId)
-			return C_QuestLog.IsWorldQuest(questId)
+		IsWorldQuestBlizzardAPI = function(self, questId)
+			if C_QuestLog.IsWorldQuest then
+				return C_QuestLog.IsWorldQuest(questId)
+			else
+				return false
+			end
 		end,
 
 
@@ -8716,6 +8855,26 @@ end
 
 		IsCallingQuest = function(self, questId)
 			return (bitband(self:CodeType(questId), self.bitMaskQuestCallingQuest) > 0)
+		end,
+
+		IsImportantQuest = function(self, questId)
+			return (bitband(self:CodeType(questId), self.bitMaskQuestImportant) > 0)
+		end,
+
+		IsMetaQuest = function(self, questId)
+			return (bitband(self:CodeType(questId), self.bitMaskQuestMeta) > 0)
+		end,
+
+		IsSharableQuest = function(self, questId)
+			return (bitband(self:CodeType(questId), self.bitMaskQuestPushable) > 0)
+		end,
+
+		IsBountyQuest = function(self, questId)
+			return (bitband(self:CodeType(questId), self.bitMaskQuestBounty) > 0)
+		end,
+
+		IsInvasionQuest = function(self, questId)
+			return (bitband(self:CodeType(questId), self.bitMaskQuestInvasion) > 0)
 		end,
 
 		---
@@ -12707,6 +12866,8 @@ if locale == "deDE" then
 	G['V'][3] = 'Leerenelfe'
 		G['W'][2] = 'Worgen'
 		G['W'][3] = 'Worgen'
+	G['X'][2] = 'Irdener'
+	G['X'][3] = 'Irdene'
 		G['Y'][2] = 'Dracthyr'
 		G['Y'][3] = 'Dracthyr'
 	G['Z'][2] = 'Zandalaritroll'
@@ -12774,6 +12935,8 @@ elseif locale == "esES" then
 	G['V'][3] = 'Elfa del Vacío'
 	G['W'][2] = 'Huargen'
 	G['W'][3] = 'Huargen'
+	G['X'][2] = 'Terráneo'
+	G['X'][3] = 'Terránea'
 		G['Y'][2] = 'Dracthyr'
 		G['Y'][3] = 'Dracthyr'
 	G['Z'][2] = 'Trol Zandalari'
@@ -12841,6 +13004,8 @@ elseif locale == "esMX" then
 	G['V'][3] = 'Elfa del Vacío'
 	G['W'][2] = 'Huargen'
 	G['W'][3] = 'Huargen'
+	G['X'][2] = 'Terráneo'
+	G['X'][3] = 'Terránea'
 		G['Y'][2] = 'Dracthyr'
 		G['Y'][3] = 'Dracthyr'
 	G['Z'][2] = 'Trol zandalari'
@@ -12908,6 +13073,8 @@ elseif locale == "frFR" then
 	G['V'][3] = 'Elfe du Vide'
 		G['W'][2] = 'Worgen'
 		G['W'][3] = 'Worgen'
+	G['X'][2] = 'Terrestre'
+	G['X'][3] = 'Terrestre'
 		G['Y'][2] = 'Dracthyr'
 		G['Y'][3] = 'Dracthyr'
 	G['Z'][2] = 'Troll zandalari'
@@ -13011,6 +13178,8 @@ me.professionMapping = {
 	G['V'][3] = 'Elfa del Vuoto'
 		G['W'][2] = 'Worgen'
 		G['W'][3] = 'Worgen'
+	G['X'][2] = 'Terrigeno'
+	G['X'][3] = 'Terrigena'
 		G['Y'][2] = 'Dracthyr'
 		G['Y'][3] = 'Dracthyr'
 	G['Z'][2] = 'Troll Zandalari'
@@ -13078,6 +13247,8 @@ elseif locale == "koKR" then
 	G['V'][3] = '공허 엘프'
 	G['W'][2] = '늑대인간'
 	G['W'][3] = '늑대인간'
+	G['X'][2] = '토석인'
+	G['X'][3] = '토석인'
 	G['Y'][2] = '드랙티르'
 	G['Y'][3] = '드랙티르'
 	G['Z'][2] = '잔달라 트롤'
@@ -13162,6 +13333,8 @@ me.professionMapping = {
 	G['V'][3] = 'Elfa Caótica'
 		G['W'][2] = 'Worgen'
 	G['W'][3] = 'Worgenin'
+	G['X'][2] = 'Terrano'
+	G['X'][3] = 'Terrano'
 		G['Y'][2] = 'Dracthyr'
 		G['Y'][3] = 'Dracthyr'
 	G['Z'][2] = 'Troll Zandalari'
@@ -13229,6 +13402,8 @@ elseif locale == "ruRU" then
 	G['V'][3] = 'Эльфийка Бездны'
 	G['W'][2] = 'Ворген'
 	G['W'][3] = 'Ворген'
+	G['X'][2] = 'Земельник'
+	G['X'][3] = 'Земельник'
 	G['Y'][2] = 'Драктир'
 	G['Y'][3] = 'Драктир'
 	G['Z'][2] = 'Зандалар'
@@ -13295,6 +13470,8 @@ elseif locale == "zhCN" then
 	G['V'][3] = '虚空精灵'
 	G['W'][2] = '狼人'
 	G['W'][3] = '狼人'
+	G['X'][2] = '土灵'
+	G['X'][3] = '土灵'
 	G['Y'][2] = '龙希尔'
 	G['Y'][3] = '龙希尔'
 	G['Z'][2] = '赞达拉巨魔'
@@ -13362,6 +13539,8 @@ elseif locale == "zhTW" then
 	G['V'][3] = '虛無精靈'
 	G['W'][2] = '狼人'
 	G['W'][3] = '狼人'
+	G['X'][2] = '土靈'
+	G['X'][3] = '土靈'
 	G['Y'][2] = '半龍人'
 	G['Y'][3] = '半龍人'
 	G['Z'][2] = '贊達拉食人妖'

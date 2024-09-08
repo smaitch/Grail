@@ -2091,4 +2091,23 @@ G[1456005]='Essence of Holy Fire'
 G[1487815]="DELVER'S CALL: The Waterworks"
 end
 
+if release >= 56461 then
+G[1403740]='Cleanbrass Bolt'
+G[1411632]='Firelight Spud'
+G[1411634]='Firelight Truffle'
+G[1411644]='Firelight Spud'
+G[1411645]='Firelight Spud'
+G[1411652]='Firelight Spud'
+G[1411653]='Firelight Truffle'
+G[1414699]='Darkroot Persimmon'
+G[1414700]='Ethereal Sugar'
+G[1421070]='Remnant Sachel'
+G[1434554]='Radiant Remnant'
+G[1434566]='Radiant Remnant'
+G[1434926]='Radiant Remnant'
+G[1439789]="Dalian Ironlink's Tinderbox"
+G[1444804]='Concentrated Shadow'
+G[1451967]='Hillhelm Lunchbox'
+end
+
 --	End of localized NPC names
