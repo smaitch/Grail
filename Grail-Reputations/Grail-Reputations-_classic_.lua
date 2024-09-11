@@ -5994,6 +5994,26 @@ G[9419]={'261100'}
 G[9422]={'261100'}
 end
 
+if release >= 55917 then
+G[1479]={'1D550'}
+G[1558]={'1D550'}
+G[1687]={'1D550'}
+G[7063]={'02F200'}
+G[8368]={'379150'}
+G[8370]={'1FE150'}
+G[8372]={'37A150'}
+G[8374]={'1FD150'}
+G[8383]={'2DA100'}
+G[8393]={'1FD150'}
+G[8396]={'1FD150'}
+G[8399]={'37A150'}
+G[8400]={'37A150'}
+G[8403]={'37A150'}
+G[8408]={'37A100'}
+G[8426]={'379150'}
+G[8439]={'1FE150'}
+end
+
 --	Now the reputation data gets processed into its own table to save space
 
 for questId, reps in pairs(Grail.questReputations) do

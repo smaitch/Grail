@@ -6432,6 +6432,10 @@ G[9419]='L316 A:17080 T:17080 P:9415 E31727'
 G[9422]='L316 A:17079 T:17079 E31727'
 end
 
+if release >= 55917 then
+G[8940]='FH K64 L14908 A:16012 T:16012 P:8978'
+end
+
 -- Release information
 
 -- Classic

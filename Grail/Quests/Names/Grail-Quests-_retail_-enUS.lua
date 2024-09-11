@@ -43073,4 +43073,8 @@ G[85537]='Crystals'
 G[85718]='A Shining Stone'
 end
 
+if release >= 56513 then
+G[84490]='The Great Vault'
+end
+
 --	End of localized quest names

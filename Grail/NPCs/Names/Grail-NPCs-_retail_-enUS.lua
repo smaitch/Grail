@@ -2110,4 +2110,8 @@ G[1444804]='Concentrated Shadow'
 G[1451967]='Hillhelm Lunchbox'
 end
 
+if release >= 56513 then
+G[1444802]='Kobyss Ritual Cache'
+end
+
 --	End of localized NPC names

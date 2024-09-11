@@ -926,8 +926,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		bitMaskQuestCallingQuest =	0x00200000,
 			bitMaskQuestUnused1 =	0x00400000,
 			bitMaskQuestUnused2 =	0x00800000,
-		bitMaskQuestPushable	=	0x01000000,		-- sharable
-		bitMaskQuestTask		=	0x02000000,
+			bitMaskQuestUnused3	=	0x01000000,
+		bitMaskQuestPushable	=	0x02000000,		-- sharable
 		bitMaskQuestMeta		=	0x04000000,
 		bitMaskQuestInvasion	=	0x08000000,
 		bitMaskQuestBounty		=	0x10000000,
@@ -1139,6 +1139,13 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.capabilities.usesFlightPoints = not self.existsClassic
 					self.capabilities.usesMajorFactions = not self.existsClassic
 					self.capabilities.usesAreaPOIs = not self.existsClassic
+					self.capabilities.usesLegendaryQuests = not self.existsClassic
+					self.capabilities.usesThreatQuests = not self.existsClassic
+					self.capabilities.usesPetBattles = not self.existsClassic
+					self.capabilities.usesImportantQuests = not self.existsClassic
+					self.capabilities.usesInvasionQuests = not self.existsClassic
+					self.capabilities.usesAccountQuests = not self.existsClassic
+					self.capabilities.usesWarbandQuests = not self.existsClassic
 
                     -- These values are no longer used, but kept for posterity.
 					self.existsPandaria = (self.blizzardRelease >= 15640)
@@ -3626,7 +3633,8 @@ end,
 							kCodeValue = kCodeValue + Grail.bitMaskQuestGroup
 						end
 					end
-					if isTask and not Grail:IsWorldQuest(questId) then kCodeValue = kCodeValue + Grail.bitMaskQuestBonus end	-- bonus objective
+					-- We should be able to handle this with getting all the quest types
+--					if isTask and not Grail:IsWorldQuest(questId) then kCodeValue = kCodeValue + Grail.bitMaskQuestBonus end	-- bonus objective
 					if Grail.capabilities.usesCampaignInfo then
 						local isCampaign = false
 						if C_CampaignInfo.IsCampaignQuest then
@@ -4199,7 +4207,6 @@ end,
 					self.bitMaskQuestHeroic +
 					self.bitMaskQuestScenario +
 					self.bitMaskQuestPetBattle +
-					self.bitMaskQuestBonus +
 					self.bitMaskQuestRareMob +
 					self.bitMaskQuestTreasure +
 					self.bitMaskQuestBiweekly
@@ -4232,9 +4239,9 @@ end,
 			if self:IsQuestInvasionBlizzardAPI(questId) then
 				code = bitbor(code, self.bitMaskQuestInvasion)
 			end
---			if self:IsQuestTaskBlizzardAPI(questId) then
---				code = bitbor(code, self.bitMaskQuestTask)
---			end
+			if self:IsQuestTaskBlizzardAPI(questId) then
+				code = bitbor(code, self.bitMaskQuestBonus)
+			end
 			if self:IsThreatQuestBlizzardAPI(questId) then
 				code = bitbor(code, self.bitMaskQuestThreatQuest)
 			end

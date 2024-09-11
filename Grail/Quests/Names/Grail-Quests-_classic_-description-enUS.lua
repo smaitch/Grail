@@ -5383,4 +5383,8 @@ G[9251]='Anachronos at the Caverns of Time in Tanaris wants the Staff Head of At
 G[9270]='Anachronos at the Caverns of Time in Tanaris wants you to take Atiesh, Greatstaff of the Guardian to Stratholme and use it on Consecrated Earth. Defeat the entity that is exorcised from the staff and return to him.'
 end
 
+if release >= 55917 then
+G[9018]="Return to Mokvar in Orgimmar with a set of Magister's Boots, Magister's Leggings and Magister's Mantle."
+end
+
 --	End of localized quest descriptions
