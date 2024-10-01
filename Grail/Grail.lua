@@ -1200,6 +1200,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[37]  = true, -- Elwynn Forest
 							[49]  = true, -- Redrige Mountains
 							[62]  = true,
+							[71]  = true, -- Tanaris
 							[81]  = true, -- Silithus
 							[85]  = true, -- Ogrimmar
 							[114] = true, -- Borean Tundra, WotLK
@@ -1220,7 +1221,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[550] = true,
 							[554] = true, -- Timeless Isle, MoP
 							[625] = true,
-							[630] = true,
+							[628] = true, -- Dalaran -- Shadow Site
+							[629] = true, -- Dalaran
+							[630] = true, -- Legion: Aszuna
 							[634] = true, -- Legion: Stormheim
 							[641] = true, -- Legion: Val'shara
 							[646] = true,
@@ -1228,7 +1231,13 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[650] = true,
 							[672] = true, -- Mardum , DH Startzone
 							[677] = true,
-							[680] = true,
+							[680] = true, -- Suramar, Legion
+							[682] = true, -- Devil Soul Bastion, Suramar , Legion
+							[684] = true, -- The Epicenter - Temple of Fal'adora, Suramar, Legion
+							[685] = true, -- The Epicenter - Tunnel of Falanaar, Suramar, Legion
+							[688] = true, -- Leystation Anora, Suramar, Legion
+							[692] = true, -- Withered Army Training - Tunnel of Falanaar, Suramar, Legion
+							[693] = true, -- Withered Army Training - Falanaar, Suramar, Legion
 							[750] = true,
 							[790] = true,
 							[830] = true,
@@ -1314,6 +1323,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2248] = true, -- Isle of Dorn
 							[2339] = true, -- Dornogal
 							[2214] = true, -- Ringing Deeps
+							[2305] = true, -- Dalaran
+							[2321] = true, -- Chamber of Heart Silithus
 							}
 
 						self.quest.name[51570]=Grail:_GetMapNameByID(862)	-- Zuldazar
@@ -4045,7 +4056,7 @@ end,
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
-			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565, 1970, 2022, 2023, 2024, 2025, 2085, 2112, 2133, 2151, 2200, 2214 ,2215, 2248, 2255, 2256}
+			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565, 1970, 2022, 2023, 2024, 2025, 2085, 2112, 2133, 2151, 2200, 2213, 2214 ,2215, 2248, 2255, 2256}
 
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
