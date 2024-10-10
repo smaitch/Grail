@@ -1204,6 +1204,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[81]  = true, -- Silithus
 							[85]  = true, -- Ogrimmar
 							[114] = true, -- Borean Tundra, WotLK
+							[249] = true, -- Uldum, Cataclysm
 							[371] = true, -- Jade Forest, MoP
 							[376] = true, -- Valley of the Four Winds, MoP
 							[378] = true, -- Wandering Isle, MoP
@@ -1221,12 +1222,13 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[550] = true,
 							[554] = true, -- Timeless Isle, MoP
 							[625] = true,
+							[627] = true, -- Dalaran -- Krasus Landing
 							[628] = true, -- Dalaran -- Shadow Site
 							[629] = true, -- Dalaran
 							[630] = true, -- Legion: Aszuna
 							[634] = true, -- Legion: Stormheim
 							[641] = true, -- Legion: Val'shara
-							[646] = true,
+							[646] = true, -- Legion: Broken Shore
 							[649] = true,
 							[650] = true,
 							[672] = true, -- Mardum , DH Startzone
@@ -1235,10 +1237,15 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[682] = true, -- Devil Soul Bastion, Suramar , Legion
 							[684] = true, -- The Epicenter - Temple of Fal'adora, Suramar, Legion
 							[685] = true, -- The Epicenter - Tunnel of Falanaar, Suramar, Legion
+							[686] = true, -- Elor'shan ,Suramar, Legion
 							[688] = true, -- Leystation Anora, Suramar, Legion
 							[692] = true, -- Withered Army Training - Tunnel of Falanaar, Suramar, Legion
 							[693] = true, -- Withered Army Training - Falanaar, Suramar, Legion
+							[709] = true, -- The Wandering Isle, Monk Order Hall, Legion
+							[716] = true, -- Himmelwall, Monk Artifakt Kampagne
+							[749] = true, -- The Arcway, Suramar, Legion
 							[750] = true,
+							[798] = true, -- The Arcway, Suramar, Scenario edition 43567
 							[790] = true,
 							[830] = true,
 							[882] = true, -- Eredath
@@ -4063,8 +4070,9 @@ end,
 				local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
 				if nil ~= tasks and 0 < #tasks then
 					for k,v in ipairs(tasks) do
-						if self.GDE.debug then
-							local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = self:GetQuestTagInfo(v.questId)
+
+						if self.GDE.tracking then
+							local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = self:GetQuestTagInfo(v.questID)
 							if tagID and ((nil == self._LearnedWorldQuestProfessionMapping[tagID] and nil == self._LearnedWorldQuestTypeMapping[tagID]) or self.GDE.worldquestforcing) then
 								self.GDE.eek = self.GDE.eek or {}
 								self.GDE.eek[v.questId] = 'A:'..(tagID and tagID or 'NoTagID')..' B:'..(tagName and tagName or 'NoTagName')..' C:'..(worldQuestType and worldQuestType or 'NotWorld') ..' D:'..(rarity and rarity or 'NO')..' E:'..(isElite and 'YES' or 'NO')..' F:'..(tradeskillLineIndex or 'nil')
@@ -4144,6 +4152,7 @@ end,
 						self:_LearnWorldQuest(v.questId, v.mapID, v.x, v.y, v.isDaily)
 --						self.availableWorldQuests[v.questId] = true
 						tinsert(self.invalidateControl[self.invalidateGroupCurrentWorldQuests], v.questId)
+						print (v.questId)
 						C_TaskQuest.GetQuestTimeLeftMinutes(v.questId)	-- attempting to prime the system, because first calls do not work
 					end
 				end
@@ -7949,7 +7958,7 @@ end
 			local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex
 			local quality, tradeskillLineID, displayExpiration
 			if C_QuestLog.GetQuestTagInfo then
-				local info = C_QuestLog.GetQuestTagInfo(questId)
+					local info = C_QuestLog.GetQuestTagInfo(questId)
 				if info then
 					tagID = info.tagID
 					tagName = info.tagName
