@@ -1196,14 +1196,17 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 					if self.battleForAzeroth then
 						self.zonesForLootingTreasure = {
+							[1]   = true, -- Durotar
 							[14]  = true, -- Arathi
 							[37]  = true, -- Elwynn Forest
+							[47]  = true, -- Duskwood
 							[49]  = true, -- Redrige Mountains
 							[62]  = true,
 							[71]  = true, -- Tanaris
 							[81]  = true, -- Silithus
 							[85]  = true, -- Ogrimmar
 							[114] = true, -- Borean Tundra, WotLK
+							[210] = true, -- Stranglethorn Cape
 							[249] = true, -- Uldum, Cataclysm
 							[371] = true, -- Jade Forest, MoP
 							[376] = true, -- Valley of the Four Winds, MoP
@@ -1221,8 +1224,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[543] = true,
 							[550] = true,
 							[554] = true, -- Timeless Isle, MoP
+							[619] = true, -- Broken Isles, Legion
 							[625] = true,
-							[627] = true, -- Dalaran -- Krasus Landing
+							[626] = true, -- Dalaran:Legion: Rogue Class Hall
+							[627] = true, -- Dalaran
 							[628] = true, -- Dalaran -- Shadow Site
 							[629] = true, -- Dalaran
 							[630] = true, -- Legion: Aszuna
@@ -1242,7 +1247,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[692] = true, -- Withered Army Training - Tunnel of Falanaar, Suramar, Legion
 							[693] = true, -- Withered Army Training - Falanaar, Suramar, Legion
 							[709] = true, -- The Wandering Isle, Monk Order Hall, Legion
-							[716] = true, -- Himmelwall, Monk Artifakt Kampagne
+							[716] = true, -- Skywall, Monk artifact campaign
 							[749] = true, -- The Arcway, Suramar, Legion
 							[750] = true,
 							[798] = true, -- The Arcway, Suramar, Scenario edition 43567
@@ -1871,6 +1876,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						frame:RegisterEvent("GARRISON_BUILDING_UPDATE")
 						frame:RegisterEvent("GARRISON_TALENT_COMPLETE")
 						frame:RegisterEvent("GARRISON_TALENT_UPDATE")
+						frame:RegisterEvent("GARRISON_MISSION_STARTED")
+						frame:RegisterEvent("GARRISON_MISSION_FINISHED")
+						frame:RegisterEvent("GARRISON_MISSION_COMPLETE_RESPONSE")
 					end
 					frame:RegisterEvent("GOSSIP_CLOSED")
 					frame:RegisterEvent("GOSSIP_SHOW")		-- needed to learn about gossips to be able to know when specific events have happened so quest availability can be updated
@@ -2022,6 +2030,31 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 				self:_AddTrackingMessage(message)
 				self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupRenownQuests])
 			end,
+
+			['GARRISON_MISSION_STARTED'] = function(self, frame, garrFollowerTypeID, missionID)
+				local message = strformat("mission id: %d started with garrFollowerTypeID %d", missionID, garrFollowerTypeID)
+				if self.GDE.debug or self.GDE.tracking then
+					print(message)
+				end
+				self:_AddTrackingMessage(message)
+			end,
+
+			['GARRISON_MISSION_FINISHED'] = function(self, frame, garrFollowerTypeID, missionID)
+				local message = strformat("mission id: %d finished with garrFollowerTypeID %d", missionID, garrFollowerTypeID)
+				if self.GDE.debug or self.GDE.tracking then
+					print(message)
+				end
+				self:_AddTrackingMessage(message)
+			end,
+
+			['GARRISON_MISSION_COMPLETE_RESPONSE'] = function(self, frame, missionID, canComplete, success, overmaxSucceeded, followerDeaths, autoCombatResult)
+				local message = strformat("Garrison mission complete response: missionID: %d , canComplete %d , success: %d , overmaxSucceeded: %d , followedDeaths: %d , autoCombatResult: %d", missionID, canComplete, success, overmaxSucceeded, followerDeaths, autoCombatResult)
+				if self.GDE.debug or self.GDE.tracking then
+					print(message)
+				end
+				self:_AddTrackingMessage(message)
+			end,
+
 
 			['CHAT_MSG_COMBAT_FACTION_CHANGE'] = function(self, frame, message)
 				if not self.inCombat or not self.GDE.delayEvents then
