@@ -1229,7 +1229,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[626] = true, -- Dalaran:Legion: Rogue Class Hall
 							[627] = true, -- Dalaran
 							[628] = true, -- Dalaran -- Shadow Site
-							[629] = true, -- Dalaran
+							[629] = true, -- Dalaran --Aegwynns Gallery
 							[630] = true, -- Legion: Aszuna
 							[634] = true, -- Legion: Stormheim
 							[641] = true, -- Legion: Val'shara
@@ -1248,8 +1248,17 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[693] = true, -- Withered Army Training - Falanaar, Suramar, Legion
 							[709] = true, -- The Wandering Isle, Monk Order Hall, Legion
 							[716] = true, -- Skywall, Monk artifact campaign
+							[740] = true, -- Shadowblood Citadel - highest level (rogue artifact campaign)
 							[749] = true, -- The Arcway, Suramar, Legion
 							[750] = true,
+							[764] = true, -- The Nighthold, Suramar, Legion
+							[766] = true, -- The Nighthold-Elisandes Weiten, Suramar, Legion
+							[767] = true, -- The Nighthold-Terace of the Shaldorei, Suramar, Legion
+							[768] = true, -- The Nighthold-KingsQuarters, Suramar, Legion
+							[769] = true, -- The Nighthold-Stieg des Astromanten, Suramar, Legion
+							[770] = true, -- The Nighthold-Nachtspitze, Suramar, Legion
+							[772] = true, -- The Nighthold-Quell der Nacht, Suramar, Legion
+							[775] = true, -- Battle for Exodar, Legion
 							[798] = true, -- The Arcway, Suramar, Scenario edition 43567
 							[790] = true,
 							[830] = true,
@@ -1879,6 +1888,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						frame:RegisterEvent("GARRISON_MISSION_STARTED")
 						frame:RegisterEvent("GARRISON_MISSION_FINISHED")
 						frame:RegisterEvent("GARRISON_MISSION_COMPLETE_RESPONSE")
+						frame:RegisterEvent("GARRISON_TALENT_EVENT_UPDATE")
+						frame:RegisterEvent("GARRISON_TALENT_RESEARCH_STARTED")
+						frame:RegisterEvent("GARRISON_TALENT_UNLOCKS_RESULT")
+						frame:RegisterEvent("GARRISON_TALENT_UPDATE")
 					end
 					frame:RegisterEvent("GOSSIP_CLOSED")
 					frame:RegisterEvent("GOSSIP_SHOW")		-- needed to learn about gossips to be able to know when specific events have happened so quest availability can be updated
@@ -2032,7 +2045,11 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 			end,
 
 			['GARRISON_MISSION_STARTED'] = function(self, frame, garrFollowerTypeID, missionID)
-				local message = strformat("mission id: %d started with garrFollowerTypeID %d", missionID, garrFollowerTypeID)
+				local mission = C_Garrison.GetBasicMissionInfo(missionID)
+				if nil ~= mission then
+					retval = mission.name or "unknown"
+				end
+				local message = strformat("mission name: %s with mission id: %d started with garrFollowerTypeID %d", mission.name, missionID, garrFollowerTypeID)
 				if self.GDE.debug or self.GDE.tracking then
 					print(message)
 				end
@@ -2040,21 +2057,29 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 			end,
 
 			['GARRISON_MISSION_FINISHED'] = function(self, frame, garrFollowerTypeID, missionID)
-				local message = strformat("mission id: %d finished with garrFollowerTypeID %d", missionID, garrFollowerTypeID)
+				local mission = C_Garrison.GetBasicMissionInfo(missionID)
+				if nil ~= mission then
+					retval = mission.name or "unknown"
+				end
+				local message = strformat("mission name: %s with mission id: %d finished with garrFollowerTypeID %d", mission.name, missionID, garrFollowerTypeID)
 				if self.GDE.debug or self.GDE.tracking then
 					print(message)
 				end
 				self:_AddTrackingMessage(message)
+
 			end,
 
 			['GARRISON_MISSION_COMPLETE_RESPONSE'] = function(self, frame, missionID, canComplete, success, overmaxSucceeded, followerDeaths, autoCombatResult)
-				local message = strformat("Garrison mission complete response: missionID: %d , canComplete %d , success: %d , overmaxSucceeded: %d , followedDeaths: %d , autoCombatResult: %d", missionID, canComplete, success, overmaxSucceeded, followerDeaths, autoCombatResult)
-				if self.GDE.debug or self.GDE.tracking then
+				local mission = C_Garrison.GetBasicMissionInfo(missionID)
+				if nil ~= mission then
+					retval = mission.name or "unknown"
+				end
+				local message = string.format("Garrison mission complete response: %s, missionID: %d, canComplete: %s, success: %s, overmaxSucceeded: %s", mission.name, missionID, tostring(canComplete), tostring(success), tostring(overmaxSucceeded))
+				if self.GDE.debug then
 					print(message)
 				end
 				self:_AddTrackingMessage(message)
 			end,
-
 
 			['CHAT_MSG_COMBAT_FACTION_CHANGE'] = function(self, frame, message)
 				if not self.inCombat or not self.GDE.delayEvents then
@@ -4101,9 +4126,17 @@ end,
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
 				local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
+				if C_TaskQuest.GetQuestsOnMap then
+					local tasks = C_TaskQuest.GetQuestsOnMap(mapId)
+				else
+					local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
+				end
 				if nil ~= tasks and 0 < #tasks then
 					for k,v in ipairs(tasks) do
-
+						-- In 11.0.5 the questId is now questID so an adjustment is made here.
+						if nil == v.questId then
+							v.questId = v.questID
+						end
 						if self.GDE.tracking then
 							local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = self:GetQuestTagInfo(v.questID)
 							if tagID and ((nil == self._LearnedWorldQuestProfessionMapping[tagID] and nil == self._LearnedWorldQuestTypeMapping[tagID]) or self.GDE.worldquestforcing) then
@@ -4182,11 +4215,16 @@ end,
 						if nil ~= v.mapID and v.mapID ~= mapId then
 							self:_PrepareWorldQuestSelfNPCs(v.mapID)
 						end
-						self:_LearnWorldQuest(v.questId, v.mapID, v.x, v.y, v.isDaily)
---						self.availableWorldQuests[v.questId] = true
-						tinsert(self.invalidateControl[self.invalidateGroupCurrentWorldQuests], v.questId)
-						print (v.questId)
-						C_TaskQuest.GetQuestTimeLeftMinutes(v.questId)	-- attempting to prime the system, because first calls do not work
+						-- In 11.0.5 the questId is now questID so an adjustment is made here.
+						if nil == v.questId then
+							v.questId = v.questID
+						end
+						if nil ~= v.questId then 
+							self:_LearnWorldQuest(v.questId, v.mapID, v.x, v.y, v.isDaily)
+	--						self.availableWorldQuests[v.questId] = true
+							tinsert(self.invalidateControl[self.invalidateGroupCurrentWorldQuests], v.questId)
+							C_TaskQuest.GetQuestTimeLeftMinutes(v.questId)	-- attempting to prime the system, because first calls do not work
+						end
 					end
 				end
 			end
@@ -7991,7 +8029,9 @@ end
 			local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex
 			local quality, tradeskillLineID, displayExpiration
 			if C_QuestLog.GetQuestTagInfo then
-					local info = C_QuestLog.GetQuestTagInfo(questId)
+					if  questId ~= nil then
+						local info = C_QuestLog.GetQuestTagInfo(questId)
+					end
 				if info then
 					tagID = info.tagID
 					tagName = info.tagName
