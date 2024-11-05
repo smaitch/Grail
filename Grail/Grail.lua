@@ -1199,10 +1199,13 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[1]   = true, -- Durotar
 							[14]  = true, -- Arathi
 							[37]  = true, -- Elwynn Forest
+							[42]  = true, -- Deadwind Pass
+							[46]  = true, -- Catacomben of Karazhan (Warlock Legion Artifact)
 							[47]  = true, -- Duskwood
 							[49]  = true, -- Redrige Mountains
 							[62]  = true,
 							[71]  = true, -- Tanaris
+							[80]  = true, -- Moonglade
 							[81]  = true, -- Silithus
 							[85]  = true, -- Ogrimmar
 							[114] = true, -- Borean Tundra, WotLK
@@ -1246,9 +1249,12 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[688] = true, -- Leystation Anora, Suramar, Legion
 							[692] = true, -- Withered Army Training - Tunnel of Falanaar, Suramar, Legion
 							[693] = true, -- Withered Army Training - Falanaar, Suramar, Legion
+							[704] = true, -- Halls of Valor, Stormheim, Legion
 							[709] = true, -- The Wandering Isle, Monk Order Hall, Legion
 							[716] = true, -- Skywall, Monk artifact campaign
+							[718] = true, -- Dreadscar Rift -- Warlock Legion Campaign
 							[740] = true, -- Shadowblood Citadel - highest level (rogue artifact campaign)
+							[747] = true, -- Emerald Dreamway , Druid Order Hall, Legion
 							[749] = true, -- The Arcway, Suramar, Legion
 							[750] = true,
 							[764] = true, -- The Nighthold, Suramar, Legion
@@ -1258,6 +1264,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[769] = true, -- The Nighthold-Stieg des Astromanten, Suramar, Legion
 							[770] = true, -- The Nighthold-Nachtspitze, Suramar, Legion
 							[772] = true, -- The Nighthold-Quell der Nacht, Suramar, Legion
+							[773] = true, -- Tol'Barad (legion:warlock campaign)
 							[775] = true, -- Battle for Exodar, Legion
 							[798] = true, -- The Arcway, Suramar, Scenario edition 43567
 							[790] = true,
@@ -1346,6 +1353,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2214] = true, -- Ringing Deeps
 							[2305] = true, -- Dalaran
 							[2321] = true, -- Chamber of Heart Silithus
+							[2322] = true, -- Hall of Awakening (earthen-race)
 							}
 
 						self.quest.name[51570]=Grail:_GetMapNameByID(862)	-- Zuldazar
@@ -2135,12 +2143,18 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				end
 			end,
 
-			['GARRISON_TALENT_COMPLETE'] = function(self, frame, ...)
+			['GARRISON_TALENT_COMPLETE'] = function(self, frame, garrTypeID, doAlert)
 				self:_InvalidateStatusForQuestsWithTalentPrerequisites()
+				if self.GDE.debug then
+					print("GARRISON_TALENT_COMPLETE, garrTypeID: ", garrTypeID)
+				end
 			end,
 			
-			['GARRISON_TALENT_UPDATE'] = function(self, frame, ...)
+			['GARRISON_TALENT_UPDATE'] = function(self, frame, garrTypeID)
 				self:_InvalidateStatusForQuestsWithTalentPrerequisites()
+				if self.GDE.debug then
+					print("GARRISON_TALENT_UPDATE garrTypeID: ", garrTypeID)
+				end
 			end,
 
 			['GOSSIP_CLOSED'] = function(self, frame, ...)
@@ -2420,6 +2434,36 @@ end,
 				self.questTurningIn = questId
 				self:_QuestCompleteProcess(questId)
 				self:_UpdateQuestResetTime()
+			end,
+
+			['GARRISON TALENT COMPLETE'] = function(self, frame, garrTypeID, doAlert)
+				if self.GDE.debug then
+					print("GARRISON TALENT COMPLETE garrTypeID: %s & doAlert: %s", garrTypeID, doAlert)
+				end
+			end,
+
+			['GARRISON TALENT EVENT UPDATE'] = function(self, frame, garrTypeID)
+				if self.GDE.debug then
+					print("GARRISON_TALENT_UPDATE: garrTypeID %d ", garrTypeID)
+				end
+			end,
+
+			['GARRISON TALENT RESEARCH STARTED'] = function(self, frame, garrTypeID, garrisonTalentTreeID, garrTalentID)
+				if self.GDE.debug then
+					print("GARRISON TALENT RESEARCH STARTED: garrTypeID: %d , garrisonTalentTreeID %d, garrTalentID: %d", garrTypeID, garrisonTalentTreeID, garrTalentID )
+				end
+			end,
+
+			['GARRISON TALENT UNLOCKS RESULT'] = function(self, frame)
+				if self.GDE.debug then
+					print("GARRISON_TALENT_UNLOCKS_RESULT")
+				end
+			end,
+
+			['GARRISON TALENT UPDATE'] = function(self, frame, garrTypeID)
+				if self.GDE.debug then
+					print("GARRISON TALENT UPDATE: garrTypeID:%d", garrTypeID)
+				end
 			end,
 
 			['SKILL_LINES_CHANGED'] = function(self, frame)
