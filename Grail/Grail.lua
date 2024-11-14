@@ -1196,19 +1196,32 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 					if self.battleForAzeroth then
 						self.zonesForLootingTreasure = {
+							[1]   = true, -- Durotar
 							[14]  = true, -- Arathi
 							[37]  = true, -- Elwynn Forest
+							[42]  = true, -- Deadwind Pass
+							[46]  = true, -- Catacombs of Karazhan (Warlock Legion Artifact)
+							[47]  = true, -- Duskwood
 							[49]  = true, -- Redrige Mountains
 							[62]  = true,
+							[71]  = true, -- Tanaris
+							[80]  = true, -- Moonglade
 							[81]  = true, -- Silithus
+							[85]  = true, -- Ogrimmar
 							[114] = true, -- Borean Tundra, WotLK
+							[116] = true, -- Grizzly Hills, WotLK
+							[185] = true, -- Hyjal
+							[210] = true, -- Stranglethorn Cape
+							[249] = true, -- Uldum, Cataclysm
 							[371] = true, -- Jade Forest, MoP
 							[376] = true, -- Valley of the Four Winds, MoP
+							[378] = true, -- Wandering Isle, MoP
 							[379] = true, -- Kun-Lai Summit, MoP
 							[388] = true, -- Townlong Steppes, MoP
 							[389] = true, -- Townlong Steppes Nizuao Temple, MoP
 							[429] = true, -- Temple of the Jade Serpent, MoP
 							[433] = true, -- The Veiled Stairs, MoP
+							[439] = true, -- Trueshot Lodge, Highmountain , Hunter Order Hall, Legion
 							[525] = true,
 							[534] = true,
 							[535] = true,
@@ -1217,17 +1230,51 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[543] = true,
 							[550] = true,
 							[554] = true, -- Timeless Isle, MoP
+							[619] = true, -- Broken Isles, Legion
 							[625] = true,
-							[630] = true,
+							[626] = true, -- Dalaran:Legion: Rogue Class Hall
+							[627] = true, -- Dalaran
+							[628] = true, -- Dalaran -- Shadow Site
+							[629] = true, -- Dalaran --Aegwynns Gallery
+							[630] = true, -- Legion: Aszuna
 							[634] = true, -- Legion: Stormheim
 							[641] = true, -- Legion: Val'shara
-							[646] = true,
+							[646] = true, -- Legion: Broken Shore
+							[648] = true, -- Legion: Acherus, DK Order Hall
 							[649] = true,
-							[650] = true,
+							[650] = true, -- Highmountain
 							[672] = true, -- Mardum , DH Startzone
 							[677] = true,
-							[680] = true,
+							[680] = true, -- Suramar, Legion
+							[682] = true, -- Devil Soul Bastion, Suramar , Legion
+							[684] = true, -- The Epicenter - Temple of Fal'adora, Suramar, Legion
+							[685] = true, -- The Epicenter - Tunnel of Falanaar, Suramar, Legion
+							[686] = true, -- Elor'shan ,Suramar, Legion
+							[688] = true, -- Leystation Anora, Suramar, Legion
+							[692] = true, -- Withered Army Training - Tunnel of Falanaar, Suramar, Legion
+							[693] = true, -- Withered Army Training - Falanaar, Suramar, Legion
+							[704] = true, -- Halls of Valor, Stormheim, Legion
+							[709] = true, -- The Wandering Isle, Monk Order Hall, Legion
+							[714] = true, -- Niskara, DK Blood Artifact , Legion
+							[715] = true, -- Emerald Dreamway, Druid Artifact quest, Legion
+							[716] = true, -- Skywall, Monk artifact campaign
+							[718] = true, -- Dreadscar Rift -- Warlock Legion Campaign
+							[740] = true, -- Shadowblood Citadel - highest level (rogue artifact campaign)
+							[745] = true, -- Ulduar, Spark of Imagination (hunter artifact campaign)
+							[747] = true, -- Dreamgrove , Druid Order Hall, Legion
+							[749] = true, -- The Arcway, Suramar, Legion
 							[750] = true,
+							[757] = true, -- Ursocs Hideout , Druid guardian artifact, Legion
+							[764] = true, -- The Nighthold, Suramar, Legion
+							[766] = true, -- The Nighthold-Elisandes Weiten, Suramar, Legion
+							[767] = true, -- The Nighthold-Terace of the Shaldorei, Suramar, Legion
+							[768] = true, -- The Nighthold-KingsQuarters, Suramar, Legion
+							[769] = true, -- The Nighthold-Stieg des Astromanten, Suramar, Legion
+							[770] = true, -- The Nighthold-Nachtspitze, Suramar, Legion
+							[772] = true, -- The Nighthold-Quell der Nacht, Suramar, Legion
+							[773] = true, -- Tol'Barad (legion:warlock campaign)
+							[775] = true, -- Battle for Exodar, Legion
+							[798] = true, -- The Arcway, Suramar, Scenario edition 43567
 							[790] = true,
 							[830] = true,
 							[882] = true, -- Eredath
@@ -1312,6 +1359,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2248] = true, -- Isle of Dorn
 							[2339] = true, -- Dornogal
 							[2214] = true, -- Ringing Deeps
+							[2305] = true, -- Dalaran
+							[2321] = true, -- Chamber of Heart Silithus
+							[2322] = true, -- Hall of Awakening (earthen-race)
 							}
 
 						self.quest.name[51570]=Grail:_GetMapNameByID(862)	-- Zuldazar
@@ -1851,6 +1901,13 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						frame:RegisterEvent("GARRISON_BUILDING_UPDATE")
 						frame:RegisterEvent("GARRISON_TALENT_COMPLETE")
 						frame:RegisterEvent("GARRISON_TALENT_UPDATE")
+						frame:RegisterEvent("GARRISON_MISSION_STARTED")
+						frame:RegisterEvent("GARRISON_MISSION_FINISHED")
+						frame:RegisterEvent("GARRISON_MISSION_COMPLETE_RESPONSE")
+						frame:RegisterEvent("GARRISON_TALENT_EVENT_UPDATE")
+						frame:RegisterEvent("GARRISON_TALENT_RESEARCH_STARTED")
+						frame:RegisterEvent("GARRISON_TALENT_UNLOCKS_RESULT")
+						frame:RegisterEvent("GARRISON_TALENT_UPDATE")
 					end
 					frame:RegisterEvent("GOSSIP_CLOSED")
 					frame:RegisterEvent("GOSSIP_SHOW")		-- needed to learn about gossips to be able to know when specific events have happened so quest availability can be updated
@@ -2003,6 +2060,43 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 				self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupRenownQuests])
 			end,
 
+			['GARRISON_MISSION_STARTED'] = function(self, frame, garrFollowerTypeID, missionID)
+				local mission = C_Garrison.GetBasicMissionInfo(missionID)
+				if nil ~= mission then
+					retval = mission.name or "unknown"
+				end
+				local message = strformat("mission name: %s with mission id: %d started with garrFollowerTypeID %d", mission.name, missionID, garrFollowerTypeID)
+				if self.GDE.debug or self.GDE.tracking then
+					print(message)
+				end
+				self:_AddTrackingMessage(message)
+			end,
+
+			['GARRISON_MISSION_FINISHED'] = function(self, frame, garrFollowerTypeID, missionID)
+				local mission = C_Garrison.GetBasicMissionInfo(missionID)
+				if nil ~= mission then
+					retval = mission.name or "unknown"
+				end
+				local message = strformat("mission name: %s with mission id: %d finished with garrFollowerTypeID %d", mission.name, missionID, garrFollowerTypeID)
+				if self.GDE.debug or self.GDE.tracking then
+					print(message)
+				end
+				self:_AddTrackingMessage(message)
+
+			end,
+
+			['GARRISON_MISSION_COMPLETE_RESPONSE'] = function(self, frame, missionID, canComplete, success, overmaxSucceeded, followerDeaths, autoCombatResult)
+				local mission = C_Garrison.GetBasicMissionInfo(missionID)
+				if nil ~= mission then
+					retval = mission.name or "unknown"
+				end
+				local message = string.format("Garrison mission complete response: %s, missionID: %d, canComplete: %s, success: %s, overmaxSucceeded: %s", mission.name, missionID, tostring(canComplete), tostring(success), tostring(overmaxSucceeded))
+				if self.GDE.debug then
+					print(message)
+				end
+				self:_AddTrackingMessage(message)
+			end,
+
 			['CHAT_MSG_COMBAT_FACTION_CHANGE'] = function(self, frame, message)
 				if not self.inCombat or not self.GDE.delayEvents then
 					self:_HandleEventChatMsgCombatFactionChange(message)
@@ -2057,12 +2151,18 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				end
 			end,
 
-			['GARRISON_TALENT_COMPLETE'] = function(self, frame, ...)
+			['GARRISON_TALENT_COMPLETE'] = function(self, frame, garrTypeID, doAlert)
 				self:_InvalidateStatusForQuestsWithTalentPrerequisites()
+				if self.GDE.debug then
+					print("GARRISON_TALENT_COMPLETE, garrTypeID: ", garrTypeID)
+				end
 			end,
 			
-			['GARRISON_TALENT_UPDATE'] = function(self, frame, ...)
+			['GARRISON_TALENT_UPDATE'] = function(self, frame, garrTypeID)
 				self:_InvalidateStatusForQuestsWithTalentPrerequisites()
+				if self.GDE.debug then
+					print("GARRISON_TALENT_UPDATE garrTypeID: ", garrTypeID)
+				end
 			end,
 
 			['GOSSIP_CLOSED'] = function(self, frame, ...)
@@ -2342,6 +2442,36 @@ end,
 				self.questTurningIn = questId
 				self:_QuestCompleteProcess(questId)
 				self:_UpdateQuestResetTime()
+			end,
+
+			['GARRISON TALENT COMPLETE'] = function(self, frame, garrTypeID, doAlert)
+				if self.GDE.debug then
+					print("GARRISON TALENT COMPLETE garrTypeID: %s & doAlert: %s", garrTypeID, doAlert)
+				end
+			end,
+
+			['GARRISON TALENT EVENT UPDATE'] = function(self, frame, garrTypeID)
+				if self.GDE.debug then
+					print("GARRISON_TALENT_UPDATE: garrTypeID %d ", garrTypeID)
+				end
+			end,
+
+			['GARRISON TALENT RESEARCH STARTED'] = function(self, frame, garrTypeID, garrisonTalentTreeID, garrTalentID)
+				if self.GDE.debug then
+					print("GARRISON TALENT RESEARCH STARTED: garrTypeID: %d , garrisonTalentTreeID %d, garrTalentID: %d", garrTypeID, garrisonTalentTreeID, garrTalentID )
+				end
+			end,
+
+			['GARRISON TALENT UNLOCKS RESULT'] = function(self, frame)
+				if self.GDE.debug then
+					print("GARRISON_TALENT_UNLOCKS_RESULT")
+				end
+			end,
+
+			['GARRISON TALENT UPDATE'] = function(self, frame, garrTypeID)
+				if self.GDE.debug then
+					print("GARRISON TALENT UPDATE: garrTypeID:%d", garrTypeID)
+				end
 			end,
 
 			['SKILL_LINES_CHANGED'] = function(self, frame)
@@ -4043,18 +4173,23 @@ end,
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
-			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565, 1970, 2022, 2023, 2024, 2025, 2085, 2112, 2133, 2151, 2200, 2214 ,2215, 2248, 2255, 2256}
+			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565, 1970, 2022, 2023, 2024, 2025, 2085, 2112, 2133, 2151, 2200, 2213, 2214 ,2215, 2248, 2255, 2256}
 
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
 				local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
+				if C_TaskQuest.GetQuestsOnMap then
+					local tasks = C_TaskQuest.GetQuestsOnMap(mapId)
+				else
+					local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
+				end
 				if nil ~= tasks and 0 < #tasks then
 					for k,v in ipairs(tasks) do
 						-- In 11.0.5 the questId is now questID so an adjustment is made here.
 						if nil == v.questId then
 							v.questId = v.questID
 						end
-						if self.GDE.debug then
+						if self.GDE.tracking then
 							local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = self:GetQuestTagInfo(v.questId)
 							if tagID and ((nil == self._LearnedWorldQuestProfessionMapping[tagID] and nil == self._LearnedWorldQuestTypeMapping[tagID]) or self.GDE.worldquestforcing) then
 								self.GDE.eek = self.GDE.eek or {}
@@ -4132,10 +4267,16 @@ end,
 						if nil ~= v.mapID and v.mapID ~= mapId then
 							self:_PrepareWorldQuestSelfNPCs(v.mapID)
 						end
-						self:_LearnWorldQuest(v.questId, v.mapID, v.x, v.y, v.isDaily)
---						self.availableWorldQuests[v.questId] = true
-						tinsert(self.invalidateControl[self.invalidateGroupCurrentWorldQuests], v.questId)
-						C_TaskQuest.GetQuestTimeLeftMinutes(v.questId)	-- attempting to prime the system, because first calls do not work
+						-- In 11.0.5 the questId is now questID so an adjustment is made here.
+						if nil == v.questId then
+							v.questId = v.questID
+						end
+						if nil ~= v.questId then 
+							self:_LearnWorldQuest(v.questId, v.mapID, v.x, v.y, v.isDaily)
+	--						self.availableWorldQuests[v.questId] = true
+							tinsert(self.invalidateControl[self.invalidateGroupCurrentWorldQuests], v.questId)
+							C_TaskQuest.GetQuestTimeLeftMinutes(v.questId)	-- attempting to prime the system, because first calls do not work
+						end
 					end
 				end
 			end
@@ -7940,7 +8081,9 @@ end
 			local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex
 			local quality, tradeskillLineID, displayExpiration
 			if C_QuestLog.GetQuestTagInfo then
-				local info = C_QuestLog.GetQuestTagInfo(questId)
+					if  questId ~= nil then
+						local info = C_QuestLog.GetQuestTagInfo(questId)
+					end
 				if info then
 					tagID = info.tagID
 					tagName = info.tagName
