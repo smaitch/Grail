@@ -6286,4 +6286,9 @@ G[9337]='Major Mana Potion'
 G[9341]='Tabard of the Argent Dawn'
 end
 
+if release >= 56489 then
+G[28552]="Hero's Call: Dustwallow Marsh!"
+G[28576]="Hero's Call: Western Plaguelands!"
+end
+
 --	End of localized quest names

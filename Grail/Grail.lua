@@ -4050,6 +4050,10 @@ end,
 				local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
 				if nil ~= tasks and 0 < #tasks then
 					for k,v in ipairs(tasks) do
+						-- In 11.0.5 the questId is now questID so an adjustment is made here.
+						if nil == v.questId then
+							v.questId = v.questID
+						end
 						if self.GDE.debug then
 							local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = self:GetQuestTagInfo(v.questId)
 							if tagID and ((nil == self._LearnedWorldQuestProfessionMapping[tagID] and nil == self._LearnedWorldQuestTypeMapping[tagID]) or self.GDE.worldquestforcing) then

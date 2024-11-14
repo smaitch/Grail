@@ -1,4 +1,4 @@
-## Interface: 11503, 11504, 40400, 110000, 110002
+## Interface: 11503, 11504, 40400, 110000, 110002, 110005
 ## Title: Grail |r|cff69ccf0Rewards|r
 ## Author: Scott M Harrison
 ## Notes: Provides (non-reputation) reward award information to Grail

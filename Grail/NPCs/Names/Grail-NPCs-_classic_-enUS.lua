@@ -228,4 +228,8 @@ G[1181153]="Wanted Poster: Kel'gash the Wicked"
 G[1181698]='Voidstone'
 end
 
+if release >= 56420 then
+G[1206111]="Hero's Call Board"
+end
+
 --	End of localized NPC names
