@@ -1105,49 +1105,64 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.serverExpansionLevel = GetServerExpansionLevel() or 0
 					self.isTrial = IsTrialAccount() or 0
 					self.isVeteranTrial = IsVeteranTrialAccount() or 0
-					self.environment = "_retail_"
-					if IsTestBuild() then
-						self.environment = "_ptr_"
+					-- IsBetaBuild() does not exist in _classic_era_ nor in _classic_
+					if IsBetaBuild and IsBetaBuild() then
+						self.environment = "_beta_"
+					else
+						local baseEnvironment = "_unknown_"
+						if self.existsMainline then
+							baseEnvironment = "_retail_"                    -- "World of Warcraft"
+						elseif self.existsClassic then
+							baseEnvironment = "_classic_"                   -- "Cataclysm Classic"
+						elseif self.existsClassicEra then
+							baseEnvironment = "_classic_era_"               -- "World of Warcraft Classic"
+						end
+						-- There is no reason to need to make use of IsPublicBuild() because what we need to know is done with IsTestBuild().
+						if IsTestBuild() then
+							if self.existsMainline then
+								self.environment = "_ptr_"              -- note that 11.0.2 PTR is _ptr_ but 11.0.5 PTR is _xptr_
+							else
+								self.environment = baseEnvironment .. "ptr_"
+							end
+						else
+							self.environment = baseEnvironment
+						end
 					end
 
 					self.existsClassic = self.existsClassicBasic or self.existsClassicWrathOfTheLichKing or self.existsClassicCataclysm
 
-					if self.existsClassic then
-						self.environment = "_classic_"
-					end
-					if self.existsClassicWrathOfTheLichKing then
-						self.environment = "_classic_wotlk_"
-					end
 					GrailDatabase[self.environment] = GrailDatabase[self.environment] or {}
 					self.GDE = GrailDatabase[self.environment]
 
 					-- Now we set up some capabilities flags
 					self.capabilities = {}
-					self.capabilities.usesFriendshipReputation = not self.existsClassic
+					self.capabilities.usesFriendshipReputation = self.existsMainline
+-- TODO: Deal with the following...
 					self.capabilities.usesAchievements = not self.existsClassic or self.existsClassicWrathOfTheLichKing or existsClassicCataclysm
-					self.capabilities.usesGarrisons = not self.existsClassic
-					self.capabilities.usesArtifacts = false --not self.existsClassic
-					self.capabilities.usesCampaignInfo = not self.existsClassic
-					self.capabilities.usesCalendar = not self.existsClassic
-					self.capabilities.usesAzerothAsCosmicMap = self.existsClassic and not self.existsClassicWrathOfTheLichKing or existsClassicCataclysm
-					self.capabilities.usesQuestHyperlink = not self.existsClassic
-					self.capabilities.usesFollowers = not self.existsClassic
-					self.capabilities.usesWorldEvents = not self.existsClassic
-					self.capabilities.usesWorldQuests = not self.existsClassic
-					self.capabilities.usesCallingQuests = not self.existsClassic
-					self.capabilities.usesCampaignQuests = not self.existsClassic
-					self.capabilities.usesFlightPoints = not self.existsClassic
-					self.capabilities.usesMajorFactions = not self.existsClassic
-					self.capabilities.usesAreaPOIs = not self.existsClassic
-					self.capabilities.usesLegendaryQuests = not self.existsClassic
-					self.capabilities.usesThreatQuests = not self.existsClassic
-					self.capabilities.usesPetBattles = not self.existsClassic
-					self.capabilities.usesImportantQuests = not self.existsClassic
-					self.capabilities.usesInvasionQuests = not self.existsClassic
-					self.capabilities.usesAccountQuests = not self.existsClassic
-					self.capabilities.usesWarbandQuests = not self.existsClassic
+					self.capabilities.usesGarrisons = self.existsMainline
+					self.capabilities.usesArtifacts = false --self.existsMainline
+					self.capabilities.usesCampaignInfo = self.existsMainline
+					self.capabilities.usesCalendar = self.existsMainline
+					self.capabilities.usesAzerothAsCosmicMap = self.existsClassicEra
+					self.capabilities.usesQuestHyperlink = self.existsMainline
+					self.capabilities.usesFollowers = self.existsMainline
+					self.capabilities.usesWorldEvents = self.existsMainline
+					self.capabilities.usesWorldQuests = self.existsMainline
+					self.capabilities.usesCallingQuests = self.existsMainline
+					self.capabilities.usesCampaignQuests = self.existsMainline
+					self.capabilities.usesFlightPoints = self.existsMainline
+					self.capabilities.usesMajorFactions = self.existsMainline
+					self.capabilities.usesAreaPOIs = self.existsMainline
+					self.capabilities.usesLegendaryQuests = self.existsMainline
+					self.capabilities.usesThreatQuests = self.existsMainline
+					self.capabilities.usesPetBattles = self.existsMainline
+					self.capabilities.usesImportantQuests = self.existsMainline
+					self.capabilities.usesInvasionQuests = self.existsMainline
+					self.capabilities.usesAccountQuests = self.existsMainline
+					self.capabilities.usesWarbandQuests = self.existsMainline
 
                     -- These values are no longer used, but kept for posterity.
+-- TODO: Deal with the following by eliminating them...
 					self.existsPandaria = (self.blizzardRelease >= 15640)
 					self.existsWoD = (self.blizzardRelease >= 18505)
 					self.existsLegion = (self.blizzardRelease >= 21531 and self.blizzardVersionAsNumber >= 7000000)
@@ -2574,6 +2589,7 @@ end,
 		--		WOW_PROJECT_CLASSIC (2)
 		--		WOW_PROJECT_BURNING_CRUSADE_CLASSIC (5)
 		--		WOW_PROJECT_WRATH_CLASSIC (11)
+		--		WOW_PROJECT_CATACLYSM_CLASSIC (14)
 		-- LE_EXPANSION_LEVEL_CURRENT can have the following values:
 		--		LE_EXPANSION_CLASSIC (0)
 		--		LE_EXPANSION_BURNING_CRUSADE (1)
@@ -2595,6 +2611,9 @@ end,
 --		existsClassicBurningCrusade = (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC),
 		existsClassicWrathOfTheLichKing = (WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC),
 		existsClassicCataclysm = (WOW_PROJECT_ID == WOW_PROJECT_CATACLYSM_CLASSIC),
+		existsClassicEra = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC),	-- _classic_era_	"World of Warcraft Classic"
+		existsClassic = (WOW_PROJECT_ID ~= WOW_PROJECT_MAINLINE and WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC),	-- _classic_	"Cataclysm Classic"
+		existsMainline = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE),	-- _retail_	"World of Warcraft"
 		factionMapping = { ['A'] = 'Alliance', ['H'] = 'Horde', },
 		followerMapping = {},
 		forceLocalizedQuestNameLoad = true,
@@ -8081,9 +8100,7 @@ end
 			local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex
 			local quality, tradeskillLineID, displayExpiration
 			if C_QuestLog.GetQuestTagInfo then
-					if  questId ~= nil then
-						local info = C_QuestLog.GetQuestTagInfo(questId)
-					end
+				local info = questId and C_QuestLog.GetQuestTagInfo(questId) or nil
 				if info then
 					tagID = info.tagID
 					tagName = info.tagName
@@ -12100,7 +12117,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 				local name, description, standingId, barMin, barMax, barValue = self:GetFactionInfoByID(factionId)
 				if name then
 					actualEarnedValue = barValue + 42000	-- the reputationValue is stored with 42000 added to it so we do not have to deal with negative numbers, so we normalize here
-                    if C_Reputation and C_Reputation.IsFactionParagon(factionId) then
+                    if C_Reputation and C_Reputation.IsFactionParagon and C_Reputation.IsFactionParagon(factionId) then
 						local paraValue, paraThreshold, paraQuestId, paraRewardPending = C_Reputation.GetFactionParagonInfo(factionId)
 						if paraValue and paraThreshold then
 							actualEarnedValue = actualEarnedValue + (paraValue % paraThreshold)
