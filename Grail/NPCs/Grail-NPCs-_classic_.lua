@@ -120,7 +120,7 @@ local _, release, _, interface = GetBuildInfo()
 release = tonumber(release)
 interface = tonumber(interface)
 
-if interface > 11503 then return end
+if not Grail.existsClassicEra then return end
 
 Grail_NPCs_File_Version = 015
 

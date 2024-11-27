@@ -11,7 +11,7 @@ local _, release, _, interface = GetBuildInfo()
 release = tonumber(release)
 interface = tonumber(interface)
 
-if interface < 20504 or interface > 40400 then return end
+if not Grail.existsClassic then return end
 
 Grail_Quests_File_Version = 001
 
