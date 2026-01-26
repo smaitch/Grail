@@ -1065,16 +1065,55 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 			['ACHIEVEMENT_EARNED'] = function(self, frame, arg1, arg2)
 				local achievementNumber = tonumber(arg1)
+				local _, name, points, completed, month, day, year, description, flags, icon, rewardText, isGuild, wasEarnedByMe, earnedBy = GetAchievementInfo(achievementNumber)
+
+				if nil ~= achievementNumber then
+					if self.GDE.debug then
+						print(
+							"Achievement earned:",
+							"ID:", tostring(achievementNumber),
+							"Name:", tostring(name),
+							"Points:", tostring(points),
+							"Completed:", tostring(completed),
+							"Month:", tostring(month),
+							"Day:", tostring(day),
+							"Year:", tostring(year),
+							"Description:", tostring(description),
+							"Flags:", tostring(flags),
+							"Icon:", tostring(icon),
+							"RewardText:", tostring(rewardText),
+							"isGuild:", tostring(isGuild),
+							"wasEarnedByMe:", tostring(wasEarnedByMe),
+							"earnedBy:", tostring(earnedBy)
+						)
+					end
+						--print("Achievement earned: ", achievementNumber)
+							
+					local msg = string.format(
+						"Achievement earned: ID: %s, Name: %s/ Points: %s/ Completed: %s/ Month: %s/ Day: %s/ Year: %s/ Description: %s/ Flags: %s/ Icon: %s/ RewardText: %s/ isGuild: %s/ wasEarnedByMe: %s/ earnedBy: %s",
+						tostring(achievementNumber),
+						tostring(name),
+						tostring(points),
+						tostring(completed),
+						tostring(month),
+						tostring(day),
+						tostring(year),
+						tostring(description),
+						tostring(flags),
+						tostring(icon),
+						tostring(rewardText),
+						tostring(isGuild),
+						tostring(wasEarnedByMe),
+						tostring(earnedBy)
+					)
+					self:_AddTrackingMessage(msg)
+
+				end
 				if nil ~= achievementNumber and nil ~= self.questStatusCache['A'][achievementNumber] then
 					if not self.inCombat or not self.GDE.delayEvents then
-						print("Grail AchievementEarned with number:" , achievementNumber)
 						self:_HandleEventAchievementEarned(achievementNumber)
-						self:_AddTrackingMessage("Achievement earned: ", achievementNumber)
-						
 					else
-						print("Grail AchievementEarned with number:" , achievementNumber)
 						self:_RegisterDelayedEvent(frame, { 'ACHIEVEMENT_EARNED', achievementNumber } )
-						self:_AddTrackingMessage("Achievement earned: ", achievementNumber)
 					end
 				end
 			end,
@@ -1311,6 +1350,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[702] = true, -- Netherlight Temple, Priest Order Hall, Legion
 							[704] = true, -- Halls of Valor, Stormheim, Legion
 							[709] = true, -- The Wandering Isle, Monk Order Hall, Legion
+							[711] = true, -- Vault of the Wardens Dungeon, Legion
+							[713] = true, -- Eye of Azshara Dungeon , Legion
 							[714] = true, -- Niskara, DK Blood Artifact , Legion
 							[715] = true, -- Emerald Dreamway, Druid Artifact quest, Legion
 							[716] = true, -- Skywall, Monk artifact campaign
@@ -1326,6 +1367,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[740] = true, -- Shadowblood Citadel - highest level (rogue artifact campaign)
 							[745] = true, -- Ulduar, Spark of Imagination (hunter artifact campaign)
 							[747] = true, -- Dreamgrove , Druid Order Hall, Legion
+							[748] = true, -- Niskara , Priest Order Hall Quests, Legion
 							[749] = true, -- The Arcway, Suramar, Legion
 							[750] = true,
 							[757] = true, -- Ursocs Hideout , Druid guardian artifact, Legion
@@ -4049,6 +4091,9 @@ end,
 					if nil == self:_ExpansionName(expansionIndex) then
 						break
 					end
+					if self.GDE and self.GDE.debug then
+						print("ExpansionIndex:", expansionIndex, "ExpansionName: ", self:_ExpansionName(expansionIndex))
+					end
 					retval = expansionIndex
 				end
 			end
@@ -4337,12 +4382,16 @@ end,
 
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
-				local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
-				if C_TaskQuest.GetQuestsOnMap then
-					local tasks = C_TaskQuest.GetQuestsOnMap(mapId)
+				-- Retail 12.x: GetQuestsForPlayerByMapID may be nil; prefer GetQuestsOnMap when available. Was deprecated in 11.0.5 and removed with 12.0
+				local tasks
+				if C_TaskQuest and C_TaskQuest.GetQuestsOnMap then
+					tasks = C_TaskQuest.GetQuestsOnMap(mapId)
+				elseif C_TaskQuest and C_TaskQuest.GetQuestsForPlayerByMapID then
+					tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
 				else
-					local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
+					tasks = nil
 				end
+				tasks = tasks or {}
 				if nil ~= tasks and 0 < #tasks then
 					for k,v in ipairs(tasks) do
 						-- In 11.0.5 the questId is now questID so an adjustment is made here.
