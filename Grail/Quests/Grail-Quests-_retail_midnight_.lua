@@ -237,7 +237,7 @@ local _, release, _, interface = GetBuildInfo()
 release = tonumber(release)
 interface = tonumber(interface)
 
-if not Grail.existsMainline then return end
+if not Grail.existsMidnight then return end
 
 Grail_Quests_File_Version = 016
 
@@ -43841,6 +43841,7 @@ G[89323]='A:236907 P:86786 E62417'
 G[90972]='P:94933 E62417'
 end
 
+
 if release >= 63560 then --TODO: Yoshimo: fix to get proper Legion:Remix Build
 G[89404]='P:0 A:241140 T:241740 E63660'
 G[89405]='P:89404 E63660'
@@ -43951,6 +43952,11 @@ end
 if release >= 64772 then
 G[91757]='P:0 T:243853 E64772'
 G[91821]='P:0 T:243853 E64772'
+end
+
+if release >= 65560 then
+G[87308]='P:0 A:237504 E65560'
+G[91795]='P:0 A:237504 E65560'
 end
 
 
