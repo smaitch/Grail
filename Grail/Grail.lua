@@ -608,6 +608,30 @@ local bitband, bitbnot, bitrshift, bitbxor, bitbor = bit.band, bit.bnot, bit.rsh
 local assert, wipe = assert, wipe
 local floor, mod = math.floor, mod
 
+
+-- BEGIN Grail_SafeGetAuraDataByIndex wrapper
+-- Safe wrapper that skips secret aura indices and logs (only when Grail debug is ON)
+local function Grail_SafeGetAuraDataByIndex(unit, index, filter)
+    -- Check for secret aura indices using Blizzard's secrecy API (Retail/TWW)
+    if C_Secrets and C_Secrets.ShouldUnitAuraIndexBeSecret then
+        local ok, secret = pcall(C_Secrets.ShouldUnitAuraIndexBeSecret, unit, index, filter)
+        if ok and secret then
+            -- Log skip only if Grail debug is enabled
+                local u = tostring(unit)
+                local f = filter and tostring(filter) or 'nil'
+            --    print(string.format('|cffff8800Grail|r: Secret Aura index (skipped) -> unit=%s, index=%s, filter=%s', u, tostring(index), f))
+            return nil
+        end
+    end
+    -- Fallback to Blizzard API when available
+    if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
+        local info = Grail_SafeGetAuraDataByIndex(unit, index, filter)
+        return info
+    end
+    return nil
+end
+-- END Grail_SafeGetAuraDataByIndex wrapper
+
 --	The Blizzard API is separated out so it is easier to see what API is being used
 
 -- AbandonQuest																	-- we rewrite this to our own function
@@ -1278,6 +1302,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[80]  = true, -- Moonglade
 							[81]  = true, -- Silithus
 							[85]  = true, -- Ogrimmar
+							[86]  = true, -- Ogrimmar - Cleft of Shadow
 							[107] = true, -- Nagrand
 							[109] = true, -- Netherstorm
 							[114] = true, -- Borean Tundra, WotLK
@@ -1293,6 +1318,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[205] = true, -- Vashj'ir: Shimmering Flats
 							[210] = true, -- Stranglethorn Cape
 							[217] = true, -- Ruins of Gilneas
+							[241] = true, -- Twilight Highlands
 							[249] = true, -- Uldum, Cataclysm
 							[310] = true, -- Silverpine Forest - Shadowfang Keep (Dungeon)
 							[327] = true, -- Ahn'Qiraj: The Fallen Kingdom
@@ -1506,6 +1532,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2362] = true, -- Blackrock Depths (Raid)
 							[2363] = true, -- Blackrock Depths - Gefängnisblock(Raid)
 							[2346] = true, -- Undermine
+							-- 11.2
+							[2371] = true, -- K'aresh
 
 							-- TWW Dungeons (S2)
 							[2315] = true, -- Isle of Dorn >Die Brutstätte: Der Brustättenlandeplatz (lvl1)
@@ -2486,12 +2514,12 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --				end
 			end,
 
-['GOSSIP_CONFIRM'] = function(self, frame, ...)
-if self.GDE.debug then print("*** GOSSIP_CONFIRM", ...) end
-end,
-['GOSSIP_ENTER_CODE'] = function(self, frame, ...)
-if self.GDE.debug then print("*** GOSSIP_ENTER_CODE", ...) end
-end,
+			['GOSSIP_CONFIRM'] = function(self, frame, ...)
+			if self.GDE.debug then print("*** GOSSIP_CONFIRM", ...) end
+			end,
+			['GOSSIP_ENTER_CODE'] = function(self, frame, ...)
+			if self.GDE.debug then print("*** GOSSIP_ENTER_CODE", ...) end
+			end,
 
 			['PLAYER_ENTERING_WORLD'] = function(self, frame)
 			print("|cFF00FF00Grail|r: needs your help! Consider running /grail tracking & /Grail treasures ON and submit your data regularly")
@@ -2797,6 +2825,7 @@ end,
 		existsClassicPandaria = (WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC),-- "Mist of Pandaria Classic"
 		existsClassic = (WOW_PROJECT_ID ~= WOW_PROJECT_MAINLINE and WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC),	-- _classic_	"Cataclysm Classic"
 		existsMainline = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE),	-- _retail_	"World of Warcraft"
+		existsMidnight = (LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_MIDNIGHT),
 		factionMapping = { ['A'] = 'Alliance', ['H'] = 'Horde', },
 		followerMapping = {},
 		forceLocalizedQuestNameLoad = true,
@@ -4378,7 +4407,7 @@ end,
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
-			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565, 1970, 2022, 2023, 2024, 2025, 2085, 2112, 2133, 2151, 2200, 2213, 2214 ,2215, 2248, 2255, 2256, 2346, 2369, 2371, 2472}
+			local mapIdsForWorldQuests = { 14, 62, 241, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565, 1970, 2022, 2023, 2024, 2025, 2085, 2112, 2133, 2151, 2200, 2213, 2214 ,2215, 2248, 2255, 2256, 2346, 2369, 2371, 2472}
 
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
@@ -12995,7 +13024,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 		-- thing here, but note that we only return the name and spellID.
 		UnitAura = function(self, unit, index)
 			if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
-				local info = C_UnitAuras.GetAuraDataByIndex(unit, index)
+				local info = Grail_SafeGetAuraDataByIndex(unit, index)
 				if info then
 					return info.name, info.spellId
 				else
