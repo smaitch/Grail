@@ -1,4 +1,4 @@
-## Interface: 11505, 40401, 50500, 110002, 110005, 110007, 110100, 110105, 110107, 120000, 120001
+## Interface: 11505, 20505, 40401, 50500, 110002, 110005, 110007, 110100, 110105, 110107, 120000, 120001
 ## Title: Grail
 ## Author: Scott M Harrison
 ## Notes: Knows about quests
@@ -10,9 +10,10 @@
 Grail.lua
 
 NPCs\Grail-NPCs-_retail_.lua
+NPCs\Grail-NPCs-_classic_.lua
+NPCs\Grail-NPCs-_classic_bc_.lua
 NPCs\Grail-NPCs-_classic_wrath_.lua
 NPCs\Grail-NPCs-_classic_pandaria_.lua
-NPCs\Grail-NPCs-_classic_.lua
 
 NPCs\Names\Grail-NPCs-_retail_-deDE.lua
 NPCs\Names\Grail-NPCs-_classic_-deDE.lua

@@ -1,4 +1,4 @@
-## Interface: 11505, 40401, 50500, 110002, 110005, 110007, 110100, 110105, 110107, 120000, 120001
+## Interface: 11505, 20505, 40401, 50500, 110002, 110005, 110007, 110100, 110105, 110107, 120000, 120001
 ## Title: Grail |cff69ccf0Reputations|r
 ## Author: Scott M Harrison
 ## Notes: Provides reputation award information to Grail
