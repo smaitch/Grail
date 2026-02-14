@@ -237,10 +237,9 @@ local _, release, _, interface = GetBuildInfo()
 release = tonumber(release)
 interface = tonumber(interface)
 
-if not Grail.existsMainline and Grail.ExistsMidnight then return end
+if not Grail.existsMainline or Grail.existsMidnight then return end
 
 Grail_Quests_File_Version = 016
-
 if Grail.questsVersionNumber < Grail_Quests_File_Version then
 Grail.questsVersionNumber = Grail_Quests_File_Version
 
