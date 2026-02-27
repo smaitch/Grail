@@ -43841,6 +43841,134 @@ G[89323]='A:236907 P:86786 E62417'
 G[90972]='P:94933 E62417'
 end
 
+if release >= 63534 then
+G[86621]='A:236716 P:86745+0 E63534'	-- TODO: Yoshimo: verify 86745
+G[86622]='A:245004 P:90907+0 E63534'	-- TODO: Yoshimo: verify 90907
+G[86623]='A:236087 P:86621+0 E63534'	-- TODO: Yoshimo: verify 86621
+G[86624]='A:236100 P:86621+0 E63534'	-- TODO: Yoshimo: verify 86621
+G[86626]='A:242143 P:86622+0 E63534'	-- TODO: Yoshimo: verify 86622
+G[86632]='A:236687 P:86626+0 E63534'	-- TODO: Yoshimo: verify 86626
+G[86633]='A:236363 P:86634+0 E63534'	-- TODO: Yoshimo: verify 86634
+G[86634]='A:236391 P:86781+0 E63534'	-- TODO: Yoshimo: verify 86781
+G[86635]='A:236730 P:86633+0 E63534'	-- TODO: Yoshimo: verify 86633
+G[86636]='A:237240 P:86635+0 E63534'	-- TODO: Yoshimo: verify 86635
+G[86733]='A:236779 P:86852+0 E63534'	-- TODO: Yoshimo: verify 86852
+G[86734]='A:235787 P:86733+93817+0 E63534'	-- TODO: Yoshimo: verify 86733 93817
+G[86735]='FA A:235787 P:86734+0 E63534'	-- TODO: Yoshimo: verify 86734
+G[86736]='FH A:235787 P:86734+0 E63534'	-- TODO: Yoshimo: verify 86734
+G[86737]='A:235787 P:86735+92714+0,86736+92714+0 E63534'	-- TODO: Yoshimo: verify 92714 86735
+G[86738]='A:236739 P:86737+0 E63534'	-- TODO: Yoshimo: verify 86737
+G[86739]='A:236739 P:86737+0 E63534'	-- TODO: Yoshimo: verify 86737
+G[86740]='A:236743 P:86737+0 E63534'	-- TODO: Yoshimo: verify 86737
+G[86741]='A:236743 P:86740+0 E63534'	-- TODO: Yoshimo: verify 86740
+G[86742]='A:236903 P:86741+0 E63534'	-- TODO: Yoshimo: verify 86741
+G[86743]='A:236903 P:86741+0 E63534'	-- TODO: Yoshimo: verify 86741
+G[86744]='A:236903 P:86742+86743+0 E63534'	-- TODO: Yoshimo: verify 86743
+G[86745]='A:236716 P:86744+0 E63534'	-- TODO: Yoshimo: verify 86744
+G[86769]='A:236692 P:88719+0 E63534'	-- TODO: Yoshimo: verify 88719
+G[86770]='A:236693 P:86769+0 E63534'	-- TODO: Yoshimo: verify 86769
+G[86780]='A:236906 P:86769+0 E63534'	-- TODO: Yoshimo: verify 86769
+G[86781]='A:242143 P:90494+0 E63534'	-- TODO: Yoshimo: verify 90494
+G[86805]='A:236896 P:86770+86780+89271+0 E63534'	-- TODO: Yoshimo: verify 86780 89271
+G[86806]='A:236961 P:89012+86805+0 E63534'	-- TODO: Yoshimo: verify 86805
+G[86807]='A:243091 P:86806+0 E63534'	-- TODO: Yoshimo: verify 86806
+G[86811]='A:236978 P:91274+0 E63534'	-- TODO: Yoshimo: verify 91274
+G[86834]='A:236964 P:86807+0 E63534'	-- TODO: Yoshimo: verify 86807
+G[86848]='A:237253 P:91274+0 E63534'	-- TODO: Yoshimo: verify 91274
+G[86849]='A:236978 P:86811+86848+0 E63534'	-- TODO: Yoshimo: verify 86848
+G[86850]='A:237277 P:86849+0 E63534'	-- TODO: Yoshimo: verify 86849
+G[86997]='A:237873 P:94396+0 E63534'	-- TODO: Yoshimo: verify 94396
+G[86998]='A:237904 P:86997+0 E63534'	-- TODO: Yoshimo: verify 86997
+G[87002]='A:237904 P:86997+0 E63534'	-- TODO: Yoshimo: verify 86997
+G[87392]='A:238490 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+G[87393]='A:238490 P:87392+0 E63534'	-- TODO: Yoshimo: verify 87392
+G[87394]='A:238490 P:87392+0 E63534'	-- TODO: Yoshimo: verify 87392
+G[87395]='A:238505 P:87394+0 E63534'	-- TODO: Yoshimo: verify 87394
+G[87396]='A:239368 P:87395+0 E63534'	-- TODO: Yoshimo: verify 87395
+G[87397]='A:239368 P:87395+87396+0 E63534'	-- TODO: Yoshimo: verify 87395 87396
+G[87398]='A:239368 P:87397+0 E63534'	-- TODO: Yoshimo: verify 87397
+G[87399]='A:283083 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+G[87400]='A:283083 P:87399 E63534'	-- TODO: Yoshimo: verify 87399
+G[87401]='A:283084 P:87399 E63534'	-- TODO: Yoshimo: verify 87399
+G[87402]='A:283084 P:87401+87400+0 E63534'	-- TODO: Yoshimo: verify 87400
+G[87455]='A:238730 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+G[87456]='A:238748 P:87455+0 E63534'	-- TODO: Yoshimo: verify 87455
+G[87457]='A:238748 P:87455+0 E63534'	-- TODO: Yoshimo: verify 87455
+G[87458]='A:238748 P:87456+87457+0 E63534'	-- TODO: Yoshimo: verify 87457
+G[88719]='A:241677 P:91281+0 E63534'	-- TODO: Yoshimo: verify 91281
+G[88977]='A:240403 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+G[88978]='A:240408 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+G[89012]='A:237222 P:C86805 E63534'
+G[89199]='A:241393 P:90669+0 E63534'	-- TODO: Yoshimo: verify 90669
+G[89200]='A:241405 P:89199+0 E63534'	-- TODO: Yoshimo: verify 89199
+G[89201]='A:241400 P:89200+85049+0 E63534'	-- TODO: Yoshimo: verify 89200 85049
+G[89202]='A:241398 P:89201+0 E63534'	-- TODO: Yoshimo: verify 89201
+G[89203]='A:241399 P:89202+0 E63534'	-- TODO: Yoshimo: verify 89202
+G[89204]='A:241399 P:89203+0 E63534'	-- TODO: Yoshimo: verify 89203
+G[89205]='A:241401 P:89204+0 E63534'	-- TODO: Yoshimo: verify 89204
+G[89206]='A:241402 P:89205+0 E63534'	-- TODO: Yoshimo: verify 89205
+G[89207]='A:241403 P:89206+0 E63534'	-- TODO: Yoshimo: verify 89206
+G[89208]='A:241404 P:89207+0 E63534'	-- TODO: Yoshimo: verify 89207
+G[89271]='A:236906 P:86769+0 E63534'	-- TODO: Yoshimo: verify 86769
+G[90493]='A:236686 P:86626+0 E63534'	-- TODO: Yoshimo: verify 86626
+G[90494]='A:243984 P:86632+0 E63534'	-- TODO: Yoshimo: verify 86632
+G[90509]='A:236686 P:86626+0 E63534'	-- TODO: Yoshimo: verify 86626
+G[90669]='A:243290 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+G[90818]='A:245418 P:90835+0 E63534'	-- TODO: Yoshimo: verify 90835
+G[90819]='A:244443 P:90837+90818+0 E63534'	-- TODO: Yoshimo: verify 90818
+G[90821]='A:244454 P:90819+0 E63534'	-- TODO: Yoshimo: verify 90819
+G[90822]='A:245297 P:90821+0 E63534'	-- TODO: Yoshimo: verify 90821
+G[90835]='T:245418 E63534'
+G[90837]='A:245418 P:90835+0 E63534'	-- TODO: Yoshimo: verify 90835
+G[90907]='A:236087 P:86624+86623+0'	-- TODO: Yoshimo: verify 86623
+G[91090]='A:245748 P:91271+PF001+0 E63534'	-- TODO: Yoshimo: verify 91271, likely fishing profession needed
+G[91137]='A:245748 P:91090+91328+0 E63534'	-- TODO: Yoshimo: verify 91328
+G[91271]='A:245745 P:PF001+0 E63534'	-- TODO: Yoshimo: find P: if one exists, likely fishing profession needed
+G[91274]='A:236964 P:86807+0 E63534'	-- TODO: Yoshimo: verify 86807
+G[91281]='T:241677 P:0 E63534'	-- TODO: Yoshimo: verify : P: Midnight Purchased and Unlocked (early access too)
+G[91284]='A:245192 P:94393+0 E63534'	-- TODO: Yoshimo: verify 94393
+G[91288]='A:245202 P:B91284 E63534'
+G[91291]='A:245200 P:B91284 E63534'
+G[91292]='A:245201 P:B91284 E63534'
+G[91301]='A:246557 P:91284+0 E63534'	-- TODO: Yoshimo: verify 91284
+G[91328]='A:245745 P:91271+PF001+0 E63534'	-- TODO: Yoshimo: verify 91271, likely fishing profession needed
+G[91342]='A:246806 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+G[91345]='A:246866 P:91342+91452+0 E63534'	-- TODO: Yoshimo: verify 91452
+G[91347]='A:247394 P:91345+0 E63534'	-- TODO: Yoshimo: verify 91345
+G[91348]='A:247395 P:91462+0 E63534'	-- TODO: Yoshimo: verify 91462
+G[91349]='A:247500 P:91463+0 E63534'	-- TODO: Yoshimo: verify 91463
+G[91350]='A:247500 P:91349+0 E63534'	-- TODO: Yoshimo: verify 91349
+G[91383]='A:247496 P:91350+0 E63534'	-- TODO: Yoshimo: verify 91350, maybe second quest chain required as well
+G[91384]='A:247593 P:91350+0 E63534'	-- TODO: Yoshimo: verify 91350, maybe second quest chain required as well
+G[91385]='A:247593 P:91384+91383+0 E63534'	-- TODO: Yoshimo: verify 91383
+G[91386]='A:247645 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+G[91388]='A:250888 P:92408+0 E63534'	-- TODO: Yoshimo: verify 92408
+G[91389]='A:250888 P:91388+0 E63534'	-- TODO: Yoshimo: verify 91388
+G[91462]='A:246866 P:91342+91452+0 E63534'	-- TODO: Yoshimo: verify 91452
+G[91463]='A: P:91348+91347+0 E63534'	-- TODO: Yoshimo: verify 91347
+G[91452]='A:246806 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+G[91504]='A:247503 P:91495+91494+91505+0 E63534'	-- TODO: Yoshimo: verify 91494 91505
+G[91505]='A:247503 P:91493+0 E63534'	-- TODO: Yoshimo: verify 91493
+G[91495]='A:250291 P:91493+0 E63534'	-- TODO: Yoshimo: verify 91493
+G[91494]='A:250298 P:91493+0 E63534'	-- TODO: Yoshimo: verify 91493
+G[91493]='A:247503 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+G[92021]='A:249337 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+G[92022]='A:249337 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+G[92023]='A:249337 P:92021+92022+0 E63534'	-- TODO: Yoshimo: verify 92022
+G[92024]='A:249337 P:92023+0 E63534'	-- TODO: Yoshimo: verify 92023
+G[92025]='A:253058 P:92024+0 E63534'	-- TODO: Yoshimo: verify 92024
+
+G[92164]='A:250196 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+G[92165]='A:250196 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+G[92166]='A:250196 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+
+G[92167]='A:250196 P:92164+92165+92166+0 E63534'	-- TODO: Yoshimo: verify 92164 92165 92166
+
+G[92408]='A:247645 P:91386+0 E63534'	-- TODO: Yoshimo: verify 91386
+G[93178]='A:254716 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+G[93817]='E63534'	-- Yoshimo: triggers when 86733 is turned in, unlocking silvermoon court as main faction probably tracked here
+G[93850]='A:256875 P:0 E63534'	-- TODO: Yoshimo: find P: if one exists
+end
 
 if release >= 63560 then --TODO: Yoshimo: fix to get proper Legion:Remix Build
 G[89404]='P:0 A:241140 T:241740 E63660'
@@ -43941,8 +44069,34 @@ G[91730]='P:47654 A:24853 E63704'	-- TODO: Yoshimo: verify 47654
 G[91845]='P:0 T:241748 E63704'
 end
 
+if release >= 63854 then
+G[93784]='P:0 T:242398 E63854'
+end
+
+if release >= 63967 then
+G[93723]='A:243283 P:0 E63967'	-- TODO: Yoshimo: look for P:, if one exists
+G[94371]='A:257384 P:0 E63967'	-- TODO: Yoshimo: look for P:, if one exists
+G[94393]='A:245285 P:0 E63967'	-- TODO: Yoshimo: look for P:, if one exists
+G[94396]='A:245285 P:0 E63967'	-- TODO: Yoshimo: look for P:, if one exists
+end
+
+if release >= 64124 then
+G[92729]='A:252500 P:0 E64124'	-- TODO: Yoshimo: look for P:, if one exists
+end
+
+if release >= 64228 then
+G[92728]='A:253015 P:92729+0 E64228'	-- TODO: Yoshimo: verify 92729
+G[92868]='A:253015 P:92728+0 E64228'	-- TODO: Yoshimo: verify 92728
+G[92869]='A:253015 P:92868+0 E64228'	-- TODO: Yoshimo: verify 92868
+G[92870]='A:253015 P:92869+0 E64228'	-- TODO: Yoshimo: verify 92869
+end
+
 if release >= 64270 then
 G[94847]='CP A:90250 T:90250 P:46069+0 E64270'	-- legion:remix
+end
+
+if release >= 64507 then
+G[93200]='T:240838 P:0 E64507'	-- TODO: Yoshimo: look for P:, if one exists
 end
 
 if release >= 64704 then
@@ -43954,9 +44108,15 @@ G[91757]='P:0 T:243853 E64772'
 G[91821]='P:0 T:243853 E64772'
 end
 
+if release >= 65535 then
+G[93965]='A:257039 P:94012+0 E65560'	-- TODO: Yoshimo: verify 94012
+end
+
 if release >= 65560 then
+G[86852]='A:237278 P:86850+0 E65560'	-- TODO: Yoshimo: verify 86850
 G[87308]='P:0 A:237504 E65560'
 G[91795]='P:0 A:237504 E65560'
+G[94012]='A:257039 P:0 E65560'	-- TODO: Yoshimo: likely no prequest needed
 end
 
 
