@@ -609,28 +609,6 @@ local assert, wipe = assert, wipe
 local floor, mod = math.floor, mod
 
 
--- BEGIN Grail_SafeGetAuraDataByIndex wrapper
--- Safe wrapper that skips secret aura indices and logs (only when Grail debug is ON)
-local function Grail_SafeGetAuraDataByIndex(unit, index, filter)
-    -- Check for secret aura indices using Blizzard's secrecy API (Retail/TWW)
-    if C_Secrets and C_Secrets.ShouldUnitAuraIndexBeSecret then
-        local ok, secret = pcall(C_Secrets.ShouldUnitAuraIndexBeSecret, unit, index, filter)
-        if ok and secret then
-            -- Log skip only if Grail debug is enabled
-                local u = tostring(unit)
-                local f = filter and tostring(filter) or 'nil'
-            --    print(string.format('|cffff8800Grail|r: Secret Aura index (skipped) -> unit=%s, index=%s, filter=%s', u, tostring(index), f))
-            return nil
-        end
-    end
-    -- Fallback to Blizzard API when available
-    if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
-        local info = Grail_SafeGetAuraDataByIndex(unit, index, filter)
-        return info
-    end
-    return nil
-end
--- END Grail_SafeGetAuraDataByIndex wrapper
 
 --	The Blizzard API is separated out so it is easier to see what API is being used
 
@@ -678,6 +656,8 @@ local UnitName							= UnitName
 local UnitRace							= UnitRace
 local UnitSex							= UnitSex
 
+
+local BLIZZ_UnitAura = _G.UnitAura
 local BOOKTYPE_SPELL					= BOOKTYPE_SPELL
 local DAILY								= DAILY
 local LOCALIZED_CLASS_NAMES_FEMALE		= LOCALIZED_CLASS_NAMES_FEMALE
@@ -1197,7 +1177,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						end
 					end
 
-					self.existsClassic = self.existsClassicBasic or self.existsClassicWrathOfTheLichKing or self.existsClassicCataclysm or self.existsClassicPandaria
+					self.existsClassic = self.existsClassicBasic or self.existsClassicBurningCrusade or self.existsClassicWrathOfTheLichKing or self.existsClassicCataclysm or self.existsClassicPandaria
 
 					GrailDatabase[self.environment] = GrailDatabase[self.environment] or {}
 					self.GDE = GrailDatabase[self.environment]
@@ -1262,7 +1242,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							['U'] = { 'Scourge',  'Undead',    'Undead',    0x00400000 },
 							}
 						self.bitMaskRaceAll = 0x01e78000
-						if self.existsClassicWrathOfTheLichKing or self.existsClassicCataclysm or self.existsClassicPandaria then
+						if self.existsClassicWrathOfTheLichKing or self.existsClassicCataclysm or self.existsClassicPandaria or self.existsClassicBurningCrusade then
 							self.races['B'] = { 'BloodElf', 'Blood Elf', 'Blood Elf', 0x02000000 }
 							self.races['D'] = { 'Draenei',  'Draenei',   'Draenei',   0x00080000 }
 							self.bitMaskRaceAll = 0x03ef8000
@@ -1585,7 +1565,33 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2408] = true, --Schallende Tiefen> Befreiung von Lorenhall (11.1):Das Glückliche Herz (lvl4)
 							[2411] = true, --Schallende Tiefen> Befreiung von Lorenhall (11.1):Der Pikturm (lvl5)
 							[2409] = true, --Schallende Tiefen> Befreiung von Lorenhall (11.1):Das Haus des Chroms (lvl6)
-
+							-- Midnight
+							[947]  = true, -- Housing Area
+							[2351] = true, -- Klingenschluchtküste
+							[2393] = true, -- Silvermoon (Midnight)
+							[2395] = true, -- Quel'thalas: Eversong Woods (Midnight)
+							[2405] = true, -- Quel'thalas: Leerensturm
+							[2413] = true, -- Quel'thalas: Harandar
+							[2424] = true, -- Isle of Quel'danas- Isle of Quel'danas
+							[2537] = true, -- Isle of Quel'danas? - TODO: Yoshimo: check (internally named "unknown")
+							[2565] = true, -- Isle of Quel'danas- Isle of Quel'danas , during the MN intro questchain from Liadrin id:236693
+							[2437] = true, -- Quel'thalas: Zul'Aman (Midnight)
+							[2536] = true, -- Quel'thalas: Zul'Aman (Midnight): Atal'Aman
+							[2432] = true, -- Isle of Quel'danas- Isle of Quel'danas ( while on quest 88719)
+							[2565] = true, -- Isle of Quel'danas- Isle of Quel'danas ( while on quest 86834)
+							-- Midnight dungeons
+							[2433] = true, -- Silvermoon: Mördergasse: Mördergasse(Level 1)
+							[2435] = true, -- Silvermoon: Mördergasse: Schwarzschauer (Level 2)
+							[2434] = true, -- Silvermoon: Mördergasse: Terrasse der Auguren (Level 3)
+							[2492] = true, -- Eversong Woods: Windrunnter Tower: Die Promenaade (Level 1)
+							[2493] = true, -- Eversong Woods: Windrunnter Tower: Vereesas Rast: Oberer Bereich(Level 2)
+							[2494] = true, -- Eversong Woods: Windrunnter Tower: Vereesas Rast: Unterer Bereich(Level 3)
+							[2496] = true, -- Eversong Woods: Windrunnter Tower: Sylvanas' Gemächer: Oberer Bereich(Level 4)
+							[2497] = true, -- Eversong Woods: Windrunnter Tower: Sylvanas' Gemächer: Unterer Bereich(Level 5)
+							[2498] = true, -- Eversong Woods: Windrunnter Tower: Windläufergewölbe (Level 6)
+							[2499] = true, -- Eversong Woods: Windrunnter Tower: Die Spitze (Level 7)
+							-- Midnight Delves
+							[2502]  = true, -- Eversong Woods: Schattenenklave
 						}
 
 						self.quest.name[51570]=Grail:_GetMapNameByID(862)	-- Zuldazar
@@ -2117,6 +2123,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						frame:RegisterEvent("ACHIEVEMENT_EARNED")		-- e.g., quest 29452 can be gotten if certain achievements are complete
 						frame:RegisterEvent("CRITERIA_EARNED")		-- for debugging to see when criteria are earned in MoP
 					end
+
+					if self.existsClassicPandaria or self.existsMainline then
+						frame:RegisterEvent("CRITERIA_COMPLETE")
+					end
+
 					frame:RegisterEvent("CHAT_MSG_COMBAT_FACTION_CHANGE")	-- needed for quest status caching
 					frame:RegisterEvent("CHAT_MSG_SKILL")	-- needed for quest status caching
 					if self.capabilities.usesGarrisons then
@@ -2502,6 +2513,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						self:_HandleMaxExpansionLevelUpdated()
 					elseif 'MIN_EXPANSION_LEVEL_UPDATED' == type then
 						self:_HandleMinExpansionLevelUpdated()
+					elseif 'CRITERIA_COMPLETE' == type then
+						self:_HandleCriteriaComple()
 					end
 					tremove(self.delayedEvents, 1)
 					self.delayedEventsCount = self.delayedEventsCount - 1
@@ -2523,6 +2536,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 			['PLAYER_ENTERING_WORLD'] = function(self, frame)
 			print("|cFF00FF00Grail|r: needs your help! Consider running /grail tracking & /Grail treasures ON and submit your data regularly")
+
 				if self.capabilities.usesArtifacts then
 					frame:RegisterEvent("ARTIFACT_XP_UPDATE")
 				end
@@ -2818,7 +2832,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		--
 		existsClassicBasic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC),
 		-- I don't think we need to know about Classic Burning Crusade any more so am removing this...
---		existsClassicBurningCrusade = (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC),
+		existsClassicBurningCrusade = (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC),
 		existsClassicWrathOfTheLichKing = (WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC),
 		existsClassicCataclysm = (WOW_PROJECT_ID == WOW_PROJECT_CATACLYSM_CLASSIC),
 		existsClassicEra = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC),	-- _classic_era_	"World of Warcraft Classic"
@@ -6691,7 +6705,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 							elseif 'S' == code then
 								if 'P' ~= codeValue then
 									--	The inherent nature of an S code makes is such that only one has meaning, and R codes should not be combined
-									bitValue = self.races[codeValue][4]
+								bitValue = self.races[codeValue][4]
 									if nil ~= bitValue then
 										obtainersRaceValue = bitband(obtainersRaceValue, bitbnot(self.bitMaskRaceAll))
 										obtainersRaceValue = obtainersRaceValue + self.bitMaskRaceAll - bitValue
@@ -7378,7 +7392,7 @@ end
 
 		CurrentDateTime = function(self)
 			local date
-			if self.existsClassic then
+			if self.existsClassic and not self.existsClassicBurningCrusade then
 				date = C_DateAndTime.GetTodaysDate()
 				date.monthDay = date.day
 				date.weekday = date.weekDay	-- don't you just hate it when Blizzard API uses different capitalization!
@@ -8338,8 +8352,18 @@ end
 		_HandleEventAchievementEarned = function(self, achievementId)
 			self:_StatusCodeInvalidate(self.questStatusCache['A'][achievementId])
 			self:_NPCLocationInvalidate(self.npcStatusCache['A'][achievementId])
-			print("Grail Achievment handled with number: ", achievementId)
+			if self.GDE.debug then
+				print("Grail Achievment handled with number: ", achievementId)
+			end
 			self:_AddTrackingMessage("Achievement earned: ", achievementId)
+		end,
+
+		_HandleCriteriaComple = function(self, criteriaID)
+			if self.GDE.debug then
+				print("Grail: Criteria earned with number: ", criteriaID)
+			end
+			self:_AddTrackingMessage("Criteria earned: ", criteriaID)
+			self:_AddTrackingMessage("Coordinates earned: ", Coordinates())
 		end,
 
 		_HandleEventMajorFactionUnlocked = function(self, factionId)
@@ -14020,3 +14044,27 @@ end
 		they have all been dailies.
 
 ]]--
+
+-- Final Classic/Retail-safe UnitAura --
+function Grail:UnitAura(unit, index, filter)
+    -- Retail path: use modern Aura API and skip secret aura indices (with debug print)
+    if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
+        if C_Secrets and C_Secrets.ShouldUnitAuraIndexBeSecret then
+            local ok, secret = pcall(C_Secrets.ShouldUnitAuraIndexBeSecret, unit, index, filter)
+            if ok and secret then
+               -- print("Grail Secret aura skipped ->", unit, index, filter)
+                return nil
+            end
+        end
+        local info = C_UnitAuras.GetAuraDataByIndex(unit, index, filter)
+        if info then return info.name, info.spellId end
+        return nil
+    end
+    -- Classic path: always call original Blizzard API (never self again)
+    if BLIZZ_UnitAura then
+        local name, _, _, _, _, _, _, _, _, boaSpellId, classicSpellId = BLIZZ_UnitAura(unit, index, filter)
+        local spellId = tonumber(classicSpellId or boaSpellId)
+        return name, spellId
+    end
+    return nil
+end
