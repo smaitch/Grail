@@ -120,7 +120,7 @@ local _, release, _, interface = GetBuildInfo()
 release = tonumber(release)
 interface = tonumber(interface)
 
-if not Grail.existsClassicWrathOfTheLichKing then return end
+if not Grail.existsClassicPandaria then return end
 
 Grail_NPCs_File_Version = 015
 

@@ -54,6 +54,7 @@ local mapKulTiras = 876
 local mapShadowlands = 1550
 local mapDragonIsles = 1978
 local mapKhazAlgar = 2274
+local mapQuelThalas = 2537
 
 --	Each of the expansions adds maps that need to be processed.  One should be able to determine what expansions are supported, and then using
 --	this structure determine what maps need to be processed.
@@ -69,6 +70,7 @@ local expansionMaps = {
 	[8] = { mapShadowlands },
 	[9] = { mapDragonIsles },	-- Dragonflight
 	[10] = { mapKhazAlgar },	-- The War Within
+	[11] = { mapQuelThalas  },	-- Midnight
 }
 
 --	These are the achievements organized by zone for completing the "loremaster" achievements (basically completing a specific number of quests in each zone).
@@ -88,6 +90,7 @@ Grail.loremasterAchievements = {
 		[mapShadowlands] = { 514281, 514206, 514164, 514334, 513878, },
 		[mapDragonIsles] = { 515394, 516334, 516336, 516363, 515325, },
 		[mapKhazAlgar] = { },
+		[mapQuelThalas] = { },
 		},
 	[factionHorde] = {
 		[mapKalimdor] = { 504976, 504927, 504930, 504978, 504931, 504979, 504933, 504934, 504981, 504980, 504935, 504938, 504939, 504940, 504870, 504872, },
@@ -104,6 +107,7 @@ Grail.loremasterAchievements = {
 		[mapShadowlands] = { 514281, 514206, 514164, 514334, 513878, },
 		[mapDragonIsles] = { 515394, 516334, 516336, 516363, 515638, },
 		[mapKhazAlgar] = { },
+		[mapQuelThalas] = { },
 		},
 	}
 
@@ -166,6 +170,7 @@ Grail.extraAchievements = {
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514279, 514961, 515515, 515259, },
 		[mapDragonIsles] = { 516401, 516398, 516428, 516409, 516405, 516406, 516808, },
 		[mapKhazAlgar] = { 519559, 519560, 520118, 520595, 520597, 520598, 540618, 540636, 540799, 540844, },
+		[mapQuelThalas] = { },
 		},
 	[factionHorde] = {
 		[mapKalimdor] = { 504961, 505859, 505866, },
@@ -182,6 +187,7 @@ Grail.extraAchievements = {
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514961, 515515, 515259, },
 		[mapDragonIsles] = { 516401, 516398, 516428, 516409, 516405, 516406, 516808, },
 		[mapKhazAlgar] = { 519559, 519560, 520118, 520595, 520597, 520598, 540618, 540636, 540799, 540844, },
+		[mapQuelThalas] = { },
 		},
 	}
 
@@ -7520,29 +7526,38 @@ local highestSupportedExpansion = Grail:_HighestSupportedExpansion()
 -- At the moment our data only supports us starting with Pandaria (4).  At some point we will be able to do all of them.
 for expansionIndex = 4, highestSupportedExpansion do
 	local expansions = expansionMaps[expansionIndex]
-	for _, faction in pairs(supportedFactions) do
-		for _, expansion in pairs(expansions) do
-			for _, achievement in pairs(Grail.achievements[faction][expansion]) do
-				if not tContains(achievementsDone, achievement) then
-					local newTable = {}
-					for _, questId in pairs(Grail.indexedQuests[achievement]) do
-						--	This check is made because processing of something earlier in the "master" list could result in a prerequisite being
-						--	evaluated that occurs later in the "master" list and we do not want to add it and do more work than we need.
-						if not tContains(newTable, questId) then
-							tinsert(newTable, questId)
-							local controlTable = { ["result"] = {}, ["preq"] = newTable, ["lastIndexUsed"] = 0, ["doMath"] = true }
-							-- Get the entire list of prerequisites for questId and add them to newTable
-							Grail._PreparePrerequisiteInfo(Grail:QuestPrerequisites(questId, true), controlTable)
+	if expansions then
+		for _, faction in pairs(supportedFactions) do
+			for _, expansion in pairs(expansions) do
+				local achievementsForMap = Grail.achievements and Grail.achievements[faction] and Grail.achievements[faction][expansion]
+				if achievementsForMap then
+					for _, achievement in pairs(achievementsForMap) do
+					if not tContains(achievementsDone, achievement) then
+						local newTable = {}
+						for _, questId in pairs(Grail.indexedQuests[achievement]) do
+							--	This check is made because processing of something earlier in the "master" list could result in a prerequisite being
+							--	evaluated that occurs later in the "master" list and we do not want to add it and do more work than we need.
+							if not tContains(newTable, questId) then
+								tinsert(newTable, questId)
+								local controlTable = { ["result"] = {}, ["preq"] = newTable, ["lastIndexUsed"] = 0, ["doMath"] = true }
+								-- Get the entire list of prerequisites for questId and add them to newTable
+								Grail._PreparePrerequisiteInfo(Grail:QuestPrerequisites(questId, true), controlTable)
+							end
 						end
+						Grail.indexedQuests[achievement] = newTable
+						local mappedZone = achievementsToZoneMapping[achievement]
+						if nil ~= mappedZone then
+							Grail.loremasterQuests[mappedZone] = Grail:_SetAppend(newTable, Grail.loremasterQuests[mappedZone])
+						end
+						tinsert(achievementsDone, achievement)
 					end
-					Grail.indexedQuests[achievement] = newTable
-					local mappedZone = achievementsToZoneMapping[achievement]
-					if nil ~= mappedZone then
-						Grail.loremasterQuests[mappedZone] = Grail:_SetAppend(newTable, Grail.loremasterQuests[mappedZone])
 					end
-					tinsert(achievementsDone, achievement)
 				end
 			end
+		end
+	else
+		if Grail.GDE and Grail.GDE.debug then
+			print("Grail-Achievements: skipping unsupported expansionIndex", expansionIndex)
 		end
 	end
 end

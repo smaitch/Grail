@@ -608,6 +608,30 @@ local bitband, bitbnot, bitrshift, bitbxor, bitbor = bit.band, bit.bnot, bit.rsh
 local assert, wipe = assert, wipe
 local floor, mod = math.floor, mod
 
+
+-- BEGIN Grail_SafeGetAuraDataByIndex wrapper
+-- Safe wrapper that skips secret aura indices and logs (only when Grail debug is ON)
+local function Grail_SafeGetAuraDataByIndex(unit, index, filter)
+    -- Check for secret aura indices using Blizzard's secrecy API (Retail/TWW)
+    if C_Secrets and C_Secrets.ShouldUnitAuraIndexBeSecret then
+        local ok, secret = pcall(C_Secrets.ShouldUnitAuraIndexBeSecret, unit, index, filter)
+        if ok and secret then
+            -- Log skip only if Grail debug is enabled
+                local u = tostring(unit)
+                local f = filter and tostring(filter) or 'nil'
+            --    print(string.format('|cffff8800Grail|r: Secret Aura index (skipped) -> unit=%s, index=%s, filter=%s', u, tostring(index), f))
+            return nil
+        end
+    end
+    -- Fallback to Blizzard API when available
+    if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
+        local info = Grail_SafeGetAuraDataByIndex(unit, index, filter)
+        return info
+    end
+    return nil
+end
+-- END Grail_SafeGetAuraDataByIndex wrapper
+
 --	The Blizzard API is separated out so it is easier to see what API is being used
 
 -- AbandonQuest																	-- we rewrite this to our own function
@@ -1063,8 +1087,52 @@ experimental = false,	-- currently this implementation does not reduce memory si
 				end
 			end,
 
-			['ACHIEVEMENT_EARNED'] = function(self, frame, arg1)
+			['ACHIEVEMENT_EARNED'] = function(self, frame, arg1, arg2)
 				local achievementNumber = tonumber(arg1)
+				local _, name, points, completed, month, day, year, description, flags, icon, rewardText, isGuild, wasEarnedByMe, earnedBy = GetAchievementInfo(achievementNumber)
+
+				if nil ~= achievementNumber then
+					if self.GDE.debug then
+						print(
+							"Achievement earned:",
+							"ID:", tostring(achievementNumber),
+							"Name:", tostring(name),
+							"Points:", tostring(points),
+							"Completed:", tostring(completed),
+							"Month:", tostring(month),
+							"Day:", tostring(day),
+							"Year:", tostring(year),
+							"Description:", tostring(description),
+							"Flags:", tostring(flags),
+							"Icon:", tostring(icon),
+							"RewardText:", tostring(rewardText),
+							"isGuild:", tostring(isGuild),
+							"wasEarnedByMe:", tostring(wasEarnedByMe),
+							"earnedBy:", tostring(earnedBy)
+						)
+					end
+						--print("Achievement earned: ", achievementNumber)
+							
+					local msg = string.format(
+						"Achievement earned: ID: %s, Name: %s/ Points: %s/ Completed: %s/ Month: %s/ Day: %s/ Year: %s/ Description: %s/ Flags: %s/ Icon: %s/ RewardText: %s/ isGuild: %s/ wasEarnedByMe: %s/ earnedBy: %s",
+						tostring(achievementNumber),
+						tostring(name),
+						tostring(points),
+						tostring(completed),
+						tostring(month),
+						tostring(day),
+						tostring(year),
+						tostring(description),
+						tostring(flags),
+						tostring(icon),
+						tostring(rewardText),
+						tostring(isGuild),
+						tostring(wasEarnedByMe),
+						tostring(earnedBy)
+					)
+					self:_AddTrackingMessage(msg)
+
+				end
 				if nil ~= achievementNumber and nil ~= self.questStatusCache['A'][achievementNumber] then
 					if not self.inCombat or not self.GDE.delayEvents then
 						self:_HandleEventAchievementEarned(achievementNumber)
@@ -1144,7 +1212,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.capabilities.usesCampaignInfo = self.existsMainline
 					self.capabilities.usesCalendar = self.existsMainline
 					self.capabilities.usesAzerothAsCosmicMap = self.existsClassicEra
-					self.capabilities.usesQuestHyperlink = self.existsMainline
+					self.capabilities.usesQuestHyperlink = self.existsMainline or self.existsClassicWrathOfTheLichKing or existsClassicCataclysm or self.existsClassicPandaria
 					self.capabilities.usesFollowers = self.existsMainline
 					self.capabilities.usesWorldEvents = self.existsMainline
 					self.capabilities.usesWorldQuests = self.existsMainline
@@ -1155,7 +1223,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.capabilities.usesAreaPOIs = self.existsMainline
 					self.capabilities.usesLegendaryQuests = self.existsMainline
 					self.capabilities.usesThreatQuests = self.existsMainline
-					self.capabilities.usesPetBattles = self.existsMainline
+					self.capabilities.usesPetBattles = self.existsMainline or self.existsClassicPandaria
 					self.capabilities.usesImportantQuests = self.existsMainline
 					self.capabilities.usesInvasionQuests = self.existsMainline
 					self.capabilities.usesAccountQuests = self.existsMainline
@@ -1199,7 +1267,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							self.races['D'] = { 'Draenei',  'Draenei',   'Draenei',   0x00080000 }
 							self.bitMaskRaceAll = 0x03ef8000
 						end
-						
+						if self.existsClassicPandaria then
+							self.races['A'] = { 'Pandaren', 'Pandaren',  'Pandaren',  0x08000000 }
+							self.bitMaskRaceAll = 0x0BEF8000
+						end
 						--	To make things a little prettier, because we are using phase 0000 to represent the location of the Darkmoon Faire we
 						--	define the map area for 0000 to be that.
 						self.mapAreaMapping[0] = self.holidayMapping['F']
@@ -1214,6 +1285,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[1]   = true, -- Durotar
 							[14]  = true, -- Arathi
 							[17]  = true, -- Blasted Lands
+							[23]  = true, -- Western Plaguelands
+							[24]  = true, -- Lights Hope Chapel, Western Plaguelands, Paladin Order Hall, Legion
 							[25]  = true, -- Hillsbrad Foothils
 							[26]  = true, -- The Hinterlands
 							[37]  = true, -- Elwynn Forest
@@ -1229,18 +1302,23 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[80]  = true, -- Moonglade
 							[81]  = true, -- Silithus
 							[85]  = true, -- Ogrimmar
+							[86]  = true, -- Ogrimmar - Cleft of Shadow
 							[107] = true, -- Nagrand
 							[109] = true, -- Netherstorm
 							[114] = true, -- Borean Tundra, WotLK
 							[115] = true, -- Dragonblight, WotLK
 							[116] = true, -- Grizzly Hills, WotLK
+							[117] = true, -- Howling Fjord, WotLK
 							[119] = true, -- Sholazar Basin, WotLK
 							[121] = true, -- Zul'Drak, WotLK
 							[170] = true, -- Hrothgar's Landing, WotLK
 							[185] = true, -- Hyjal
 							[198] = true, -- Hyjal
+							[204] = true, -- Vashj'ir: Abyssal Depths
+							[205] = true, -- Vashj'ir: Shimmering Flats
 							[210] = true, -- Stranglethorn Cape
 							[217] = true, -- Ruins of Gilneas
+							[241] = true, -- Twilight Highlands
 							[249] = true, -- Uldum, Cataclysm
 							[310] = true, -- Silverpine Forest - Shadowfang Keep (Dungeon)
 							[327] = true, -- Ahn'Qiraj: The Fallen Kingdom
@@ -1254,7 +1332,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[433] = true, -- The Veiled Stairs, MoP
 							[439] = true, -- Trueshot Lodge, Highmountain , Hunter Order Hall, Legion
 							[525] = true, -- Frostfire Ridge, WoD
-							[534] = true,
+							[534] = true, -- Tanaan Jungle, WoD
 							[535] = true, -- Talador, WoD
 							[539] = true,
 							[542] = true, -- Spires of Arrak, WoD
@@ -1268,16 +1346,19 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[628] = true, -- Dalaran -- Shadow Site
 							[629] = true, -- Dalaran --Aegwynns Gallery
 							[630] = true, -- Legion: Aszuna
+							[631] = true, -- Legion: Aszuna, Academy of Nar'thalas
 							[634] = true, -- Legion: Stormheim
 							[641] = true, -- Legion: Val'shara
 							[646] = true, -- Legion: Broken Shore
 							[648] = true, -- Legion: Acherus, DK Order Hall
-							[649] = true,
-							[650] = true, -- Highmountain
+							[649] = true, -- Legion: Stormheim-Helheim
+							[650] = true, -- Legion: Highmountain
+							[657] = true, -- Legion: Highmountain - Neltharions Vault
 							[672] = true, -- Mardum , DH Startzone
 							[673] = true, -- Cryptic Hollow - Mardum , DH Startzone
 							[674] = true, -- The Soul Engine (lower Floor) - Mardum , DH Startzone
 							[675] = true, -- The Soul Engine (upper Floor) - Mardum , DH Startzone
+							[676] = true, -- Legion: Broken Shore (Warrior Campaign)
 							[677] = true, -- Illidari Ward, Vault of the Wardens, DH Startzone
 							[678] = true, -- Vault of the Wardens, DH Startzone
 							[679] = true, -- Warden's Court, Vault of the Wardens, DH Startzone
@@ -1291,20 +1372,32 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[690] = true, -- Leystation Aethenar, Suramar, Legion
 							[692] = true, -- Withered Army Training - Tunnel of Falanaar, Suramar, Legion
 							[693] = true, -- Withered Army Training - Falanaar, Suramar, Legion
+							[695] = true, -- Skyhold, Warrior Order Hall, Legion
+							[702] = true, -- Netherlight Temple, Priest Order Hall, Legion
 							[704] = true, -- Halls of Valor, Stormheim, Legion
 							[709] = true, -- The Wandering Isle, Monk Order Hall, Legion
+							[711] = true, -- Vault of the Wardens Dungeon, Legion
+							[713] = true, -- Eye of Azshara Dungeon , Legion
 							[714] = true, -- Niskara, DK Blood Artifact , Legion
 							[715] = true, -- Emerald Dreamway, Druid Artifact quest, Legion
 							[716] = true, -- Skywall, Monk artifact campaign
 							[714] = true, -- Dreadscar Rift, Summoning Area -- Warlock Legion Campaign
 							[718] = true, -- Dreadscar Rift -- Warlock Legion Campaign
+							[720] = true, -- Mardum , DH Order Hall, Legion
+							[724] = true, -- Maelstrom, Abyssal Halls, Shaman Restoration Artifact questchain, Legion
+							[725] = true, -- Maelstrom, Legion
+							[726] = true, -- Maelstrom, Shaman Order Hall, Legion
+							[729] = true, -- Maelstrom, Shaman Doomhammer Quest line (Maelstrom/Bruchtiefen), Legion
 							[735] = true, -- Hall of the Guardians, Mage Order Hall, Legion
+							[737] = true, -- Vortex Pinnacle, Shaman Order Hall quest line , Legion
 							[740] = true, -- Shadowblood Citadel - highest level (rogue artifact campaign)
 							[745] = true, -- Ulduar, Spark of Imagination (hunter artifact campaign)
 							[747] = true, -- Dreamgrove , Druid Order Hall, Legion
+							[748] = true, -- Niskara , Priest Order Hall Quests, Legion
 							[749] = true, -- The Arcway, Suramar, Legion
 							[750] = true,
 							[757] = true, -- Ursocs Hideout , Druid guardian artifact, Legion
+							[760] = true, -- Malornes Nightmare, Druid order hall campaign, Legion
 							[764] = true, -- The Nighthold, Suramar, Legion
 							[766] = true, -- The Nighthold-Elisandes Weiten, Suramar, Legion
 							[767] = true, -- The Nighthold-Terace of the Shaldorei, Suramar, Legion
@@ -1318,7 +1411,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[790] = true,
 							[804] = true, -- Scarlet Monastery (Dungeon)
 							[826] = true, -- Mage Tower Legion (windwalker) - Höhle der Bluttotems
-							[830] = true, -- Vindicaar: UpperDeck
+							[830] = true, -- Legion: Krokuun
+							[831] = true, -- Vindicaar: UpperDeck		(Yoshimo: maybe beginning of the quests compared to 830?)					
 							[850] = true, -- Tomb Of Sargeras, Legion
 							[851] = true, -- Tomb Of Sargeras, Legion
 							[852] = true, -- Tomb Of Sargeras, Legion
@@ -1326,9 +1420,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[854] = true, -- Tomb Of Sargeras - Chamber of the Avatar , Legion
 							[855] = true, -- Tomb Of Sargeras - Felstorm Rift, Legion
 							[856] = true, -- Tomb Of Sargeras - Whirling Nether, Legion
-							[882] = true, -- Eredath
+							[882] = true, -- Legion: Eredath
+							--- 8.x BFA ---
+
 							[885] = true,
-							-- the following are the BfA maps (the three in Zandalar and three in Kul Tiras)
 							[862] = true, -- Zuldazar (primarily horde)
 							[863] = true, -- Nazmir (primarily horde)
 							[864] = true, -- Vol'dun (primarily horde)
@@ -1437,6 +1532,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2362] = true, -- Blackrock Depths (Raid)
 							[2363] = true, -- Blackrock Depths - Gefängnisblock(Raid)
 							[2346] = true, -- Undermine
+							-- 11.2
+							[2371] = true, -- K'aresh
 
 							-- TWW Dungeons (S2)
 							[2315] = true, -- Isle of Dorn >Die Brutstätte: Der Brustättenlandeplatz (lvl1)
@@ -2417,14 +2514,15 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --				end
 			end,
 
-['GOSSIP_CONFIRM'] = function(self, frame, ...)
-if self.GDE.debug then print("*** GOSSIP_CONFIRM", ...) end
-end,
-['GOSSIP_ENTER_CODE'] = function(self, frame, ...)
-if self.GDE.debug then print("*** GOSSIP_ENTER_CODE", ...) end
-end,
+			['GOSSIP_CONFIRM'] = function(self, frame, ...)
+			if self.GDE.debug then print("*** GOSSIP_CONFIRM", ...) end
+			end,
+			['GOSSIP_ENTER_CODE'] = function(self, frame, ...)
+			if self.GDE.debug then print("*** GOSSIP_ENTER_CODE", ...) end
+			end,
 
 			['PLAYER_ENTERING_WORLD'] = function(self, frame)
+			print("|cFF00FF00Grail|r: needs your help! Consider running /grail tracking & /Grail treasures ON and submit your data regularly")
 				if self.capabilities.usesArtifacts then
 					frame:RegisterEvent("ARTIFACT_XP_UPDATE")
 				end
@@ -2727,6 +2825,7 @@ end,
 		existsClassicPandaria = (WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC),-- "Mist of Pandaria Classic"
 		existsClassic = (WOW_PROJECT_ID ~= WOW_PROJECT_MAINLINE and WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC),	-- _classic_	"Cataclysm Classic"
 		existsMainline = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE),	-- _retail_	"World of Warcraft"
+		existsMidnight = (LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_MIDNIGHT),
 		factionMapping = { ['A'] = 'Alliance', ['H'] = 'Horde', },
 		followerMapping = {},
 		forceLocalizedQuestNameLoad = true,
@@ -4021,6 +4120,9 @@ end,
 					if nil == self:_ExpansionName(expansionIndex) then
 						break
 					end
+					if self.GDE and self.GDE.debug then
+						print("ExpansionIndex:", expansionIndex, "ExpansionName: ", self:_ExpansionName(expansionIndex))
+					end
 					retval = expansionIndex
 				end
 			end
@@ -4305,16 +4407,20 @@ end,
 			self.invalidateControl[self.invalidateGroupCurrentWorldQuests] = {}
 --			self.availableWorldQuests = {}
 
-			local mapIdsForWorldQuests = { 14, 62, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565, 1970, 2022, 2023, 2024, 2025, 2085, 2112, 2133, 2151, 2200, 2213, 2214 ,2215, 2248, 2255, 2256, 2346}
+			local mapIdsForWorldQuests = { 14, 62, 241, 625, 627, 630, 634, 641, 646, 650, 680, 790, 830, 882, 885, 862, 863, 864, 895, 896, 942, 1161, 1355, 1462, 1525, 1527, 1530, 1533, 1536, 1543, 1565, 1970, 2022, 2023, 2024, 2025, 2085, 2112, 2133, 2151, 2200, 2213, 2214 ,2215, 2248, 2255, 2256, 2346, 2369, 2371, 2472}
 
 			for _, mapId in pairs(mapIdsForWorldQuests) do
 				self:_PrepareWorldQuestSelfNPCs(mapId)
-				local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
-				if C_TaskQuest.GetQuestsOnMap then
-					local tasks = C_TaskQuest.GetQuestsOnMap(mapId)
+				-- Retail 12.x: GetQuestsForPlayerByMapID may be nil; prefer GetQuestsOnMap when available. Was deprecated in 11.0.5 and removed with 12.0
+				local tasks
+				if C_TaskQuest and C_TaskQuest.GetQuestsOnMap then
+					tasks = C_TaskQuest.GetQuestsOnMap(mapId)
+				elseif C_TaskQuest and C_TaskQuest.GetQuestsForPlayerByMapID then
+					tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
 				else
-					local tasks = C_TaskQuest.GetQuestsForPlayerByMapID(mapId)
+					tasks = nil
 				end
+				tasks = tasks or {}
 				if nil ~= tasks and 0 < #tasks then
 					for k,v in ipairs(tasks) do
 						-- In 11.0.5 the questId is now questID so an adjustment is made here.
@@ -8232,6 +8338,8 @@ end
 		_HandleEventAchievementEarned = function(self, achievementId)
 			self:_StatusCodeInvalidate(self.questStatusCache['A'][achievementId])
 			self:_NPCLocationInvalidate(self.npcStatusCache['A'][achievementId])
+			print("Grail Achievment handled with number: ", achievementId)
+			self:_AddTrackingMessage("Achievement earned: ", achievementId)
 		end,
 
 		_HandleEventMajorFactionUnlocked = function(self, factionId)
@@ -12916,7 +13024,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 		-- thing here, but note that we only return the name and spellID.
 		UnitAura = function(self, unit, index)
 			if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
-				local info = C_UnitAuras.GetAuraDataByIndex(unit, index)
+				local info = Grail_SafeGetAuraDataByIndex(unit, index)
 				if info then
 					return info.name, info.spellId
 				else
