@@ -31,8 +31,9 @@ if interface < 100207 then return end
 
 local Grail_Reputations_File_Version = 007
 
-if Grail.reputationsVersionNumber < Grail_Reputations_File_Version then
-	Grail.reputationsVersionNumber = Grail_Reputations_File_Version
+if Grail.reputationsVersionNumber >= Grail_Reputations_File_Version then return end
+
+Grail.reputationsVersionNumber = Grail_Reputations_File_Version
 
 local G = Grail.questReputations
 
@@ -16955,6 +16956,3 @@ if (Grail.reputationMapping[index] == nil) then print("no reputation mapping for
 end
 Grail:_CleanDatabase()	-- this is called because Grail will do it before this loadable addon is loaded, which means its reputation data will be dirty
 Grail.memoryUsage.Reputations = gcinfo() - originalMem
-
-
-end

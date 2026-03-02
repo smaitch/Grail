@@ -37,8 +37,7 @@ NPCs\Names\Grail-NPCs-_classic_-zhCN.lua
 NPCs\Names\Grail-NPCs-_retail_-zhTW.lua
 NPCs\Names\Grail-NPCs-_classic_-zhTW.lua
 
-Quests\Grail-Quests-_retail_midnight_.lua
-Quests\Grail-Quests-_retail_warwithin_.lua
+Quests\Grail-Quests-_retail_.lua
 Quests\Grail-Quests-_classic_wrath_.lua
 Quests\Grail-Quests-_classic_pandaria_.lua
 Quests\Grail-Quests-_classic_.lua

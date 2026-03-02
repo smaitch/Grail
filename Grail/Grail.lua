@@ -3269,7 +3269,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			[8] = { 2103, 2111, 2120, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2233, 2264, 2265, 2371, 2372, 2373, 2374, 2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 2392, 2395, 2396, 2397, 2398, 2400, 2401, 2415, 2417, 2427, },
 			[9] = { 2407, 2410, 2413, 2432, 2439, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2462, 2463, 2464, 2465, 2469, 2470, 2472, 2478, },
 			[10] = { 2503, 2507, 2509, 2510, 2511, 2512, 2513, 2517, 2518, 2520, 2522, 2523, 2524, 2526, 2542, 2544, 2550, 2553, 2554, 2555, 2557, 2564, 2568, 2574, 2593, 2615, },
-			[11] = { 2570, 2590, 2594, 2600, 2601, 2605, 2607, 2640, 2644, 2645, },
+			[11] = { 2569, 2570, 2590, 2594, 2600, 2601, 2605, 2607, 2640, 2644, 2645, 2653, 2658, 2663, 2664, 2665, 2666, 2669, 2671, 2673, 2675, 2677, 2683, 2685, 2688, 2693, 2722, 2736, 2739, 2766, 2767, }, -- TWW
+			[12] = { 2696, 2698, 2699, 2704, 2710, 2711, 2712, 2713, 2714, 2742, 2744, 2764, 2770, },	-- Midnight
 			},
 
 		-- These reputations use the friendship names instead of normal reputation names
@@ -3615,6 +3616,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
             ["9FD"] = "XXX", -- 2557
             ["A04"] = "Loamm Niffen", -- 2564
             ["A08"] = "Glimmerogg Racer", -- 2568
+            ["A09"] = "The War Within", -- 2569
             ["A0A"] = "Hallowfall Arathi", -- 2570
             ["A0E"] = "Dream Wardens", -- 2574
             ["A1E"] = "Council of Dornogal", -- 2590
@@ -3628,6 +3630,39 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
             ["A50"] = "Brann Bronzebeard", -- 2640
             ["A54"] = "Delves: Season 1", -- 2644
             ["A55"] = "Earthen", -- 2645
+            ["A5D"] = "The Cartels of Undermine", -- 2653
+            ["A62"] = "The K'aresh Trust", -- 2658
+            ["A67"] = "Meerah", -- 2663
+            ["A68"] = "Flynn Fairwind", -- 2664
+            ["A69"] = "Lillistrasza", -- 2665
+            ["A6A"] = "Roasts and Boasts", -- 2666
+            ["A6D"] = "Darkfuse Solutions", -- 2669
+            ["A6F"] = "Venture Company", -- 2671
+            ["A71"] = "Bilgewater Cartel", -- 2673
+            ["A73"] = "Blackwater Cartel", -- 2675
+            ["A75"] = "Steamwheedle Cartel", -- 2677
+            ["A7B"] = "Delves: Season 2", -- 2683
+            ["A7D"] = "Gallagio Loyalty Rewards Club", -- 2685
+            ["A80"] = "Flame's Radiance", -- 2688
+            ["A85"] = "Delver's Journey (Season 1)", -- 2693
+            ["A88"] = "Amani Tribe", -- 2696
+            ["A8A"] = "Midnight", -- 2698
+            ["A8B"] = "The Singularity", -- 2699
+            ["A90"] = "Hara'ti", -- 2704
+            ["A96"] = "Silvermoon Court", -- 2710
+            ["A97"] = "Magisters", -- 2711
+            ["A98"] = "Blood Knights", -- 2712
+            ["A99"] = "Farstriders", -- 2713
+            ["A9A"] = "Shades of the Row", -- 2714
+            ["AA2"] = "Delves: Season 3", -- 2722
+            ["AB0"] = "Manaforge Vandals", -- 2736
+            ["AB3"] = "Delves: Coffer Key Shards Conversion", -- 2739
+            ["AB6"] = "Delves: Season 1", -- 2742
+            ["AB8"] = "Valeera Sanguinar", -- 2744
+            ["ACC"] = "Prey: Season 1", -- 2764
+            ["ACE"] = "Brawl'gar Arena", -- 2766
+            ["ACF"] = "Bizmo's Brawlpub", -- 2767
+            ["AD2"] = "Slayer's Duellum", -- 2770
 			},
 
 		reputationMappingFaction = {
@@ -3917,6 +3952,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
             ["9FD"] = "Neutral", -- 2555    -- TODO: Determine faction
             ["A04"] = "Neutral", -- 2564    -- TODO: Determine faction
             ["A08"] = "Neutral", -- 2568    -- TODO: Determine faction
+            ["A09"] = "Neutral", -- 2569    -- TODO: Determine faction
             ["A0A"] = "Neutral", -- 2570    -- TODO: Determine faction
             ["A0E"] = "Neutral", -- 2574    -- TODO: Determine faction
             ["A1E"] = "Neutral", -- 2590    -- TODO: Determine faction
@@ -3930,6 +3966,38 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
             ["A50"] = "Neutral", -- 2640    -- TODO: Determine faction
             ["A54"] = "Neutral", -- 2644    -- TODO: Determine faction
             ["A55"] = "Neutral", -- 2645    -- TODO: Determine faction
+            ["A5D"] = "Neutral", -- 2653    -- TODO: Determine faction
+            ["A62"] = "Neutral", -- 2658    -- TODO: Determine faction
+            ["A67"] = "Neutral", -- 2663    -- TODO: Determine faction
+            ["A68"] = "Neutral", -- 2664    -- TODO: Determine faction
+            ["A69"] = "Neutral", -- 2665    -- TODO: Determine faction
+            ["A6A"] = "Neutral", -- 2666    -- TODO: Determine faction
+            ["A6D"] = "Neutral", -- 2669    -- TODO: Determine faction
+            ["A6F"] = "Neutral", -- 2671    -- TODO: Determine faction
+            ["A71"] = "Neutral", -- 2673    -- TODO: Determine faction
+            ["A73"] = "Neutral", -- 2675    -- TODO: Determine faction
+            ["A75"] = "Neutral", -- 2677    -- TODO: Determine faction
+            ["A7B"] = "Neutral", -- 2683    -- TODO: Determine faction
+            ["A80"] = "Neutral", -- 2688    -- TODO: Determine faction
+            ["A85"] = "Neutral", -- 2693    -- TODO: Determine faction
+            ["A88"] = "Neutral", -- 2696    -- TODO: Determine faction
+            ["A8A"] = "Neutral", -- 2698    -- TODO: Determine faction
+            ["A8B"] = "Neutral", -- 2699    -- TODO: Determine faction
+            ["A90"] = "Neutral", -- 2704    -- TODO: Determine faction
+            ["A96"] = "Neutral", -- 2710    -- TODO: Determine faction
+            ["A97"] = "Neutral", -- 2711    -- TODO: Determine faction
+            ["A98"] = "Neutral", -- 2712    -- TODO: Determine faction
+            ["A99"] = "Neutral", -- 2713    -- TODO: Determine faction
+            ["A9A"] = "Neutral", -- 2714    -- TODO: Determine faction
+            ["AA2"] = "Neutral", -- 2722    -- TODO: Determine faction
+            ["AB0"] = "Neutral", -- 2736    -- TODO: Determine faction
+            ["AB3"] = "Neutral", -- 2739    -- TODO: Determine faction
+            ["AB6"] = "Neutral", -- 2742    -- TODO: Determine faction
+            ["AB8"] = "Neutral", -- 2744    -- TODO: Determine faction
+            ["ACC"] = "Neutral", -- 2764    -- TODO: Determine faction
+            ["ACE"] = "Neutral", -- 2766    -- TODO: Determine faction
+            ["ACF"] = "Neutral", -- 2767    -- TODO: Determine faction
+            ["AD2"] = "Neutral", -- 2770    -- TODO: Determine faction
 			},
 
 		slashCommandOptions = {},
@@ -4116,7 +4184,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			-- It would be great if we could support what is defined in the system, but it seems we cannot
 			-- and therefore if in Classic we limit ourselves to EXPANSION_NAME0 only.
 			if not self.existsClassic then
-				for expansionIndex = 1, 100 do
+				for expansionIndex = 0, 100 do
 					if nil == self:_ExpansionName(expansionIndex) then
 						break
 					end

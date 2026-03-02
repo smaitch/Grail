@@ -2106,12 +2106,20 @@ G[1434554]='Radiant Remnant'
 G[1434566]='Radiant Remnant'
 G[1434926]='Radiant Remnant'
 G[1439789]="Dalian Ironlink's Tinderbox"
-G[1444804]='Concentrated Shadow'
+G[1444804]='Gnimo'
 G[1451967]='Hillhelm Lunchbox'
 end
 
 if release >= 56513 then
+G[1437195]='Titan Artifacts'
+G[1439338]='Arathi Supplies'
+G[1441606]='Jewel of the Cliffs'
 G[1444802]='Kobyss Ritual Cache'
+G[1455716]="DELVER'S CALL"
+end
+
+if release >= 62438 then
+G[1307066]='Ocean Chest'
 end
 
 --	End of localized NPC names
