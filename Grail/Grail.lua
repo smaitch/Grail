@@ -1514,6 +1514,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2346] = true, -- Undermine
 							-- 11.2
 							[2371] = true, -- K'aresh
+							[2451] = true, -- Arathi Highlands (Catchup Experience Version)
 
 							-- TWW Dungeons (S2)
 							[2315] = true, -- Isle of Dorn >Die Brutstätte: Der Brustättenlandeplatz (lvl1)
@@ -1570,15 +1571,17 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2351] = true, -- Klingenschluchtküste
 							[2393] = true, -- Silvermoon (Midnight)
 							[2395] = true, -- Quel'thalas: Eversong Woods (Midnight)
-							[2405] = true, -- Quel'thalas: Leerensturm
+							[2405] = true, -- Quel'thalas: Voidstorm
 							[2413] = true, -- Quel'thalas: Harandar
-							[2424] = true, -- Isle of Quel'danas- Isle of Quel'danas
+							[2424] = true, -- Isle of Quel'danas - Isle of Quel'danas
+							[2444] = true, -- Isle of Quel'danas - Slayer's Rise
 							[2537] = true, -- Isle of Quel'danas? - TODO: Yoshimo: check (internally named "unknown")
-							[2565] = true, -- Isle of Quel'danas- Isle of Quel'danas , during the MN intro questchain from Liadrin id:236693
+							[2565] = true, -- Isle of Quel'danas - Isle of Quel'danas , during the MN intro questchain from Liadrin id:236693
 							[2437] = true, -- Quel'thalas: Zul'Aman (Midnight)
 							[2536] = true, -- Quel'thalas: Zul'Aman (Midnight): Atal'Aman
-							[2432] = true, -- Isle of Quel'danas- Isle of Quel'danas ( while on quest 88719)
-							[2565] = true, -- Isle of Quel'danas- Isle of Quel'danas ( while on quest 86834)
+							[2432] = true, -- Isle of Quel'danas - Isle of Quel'danas ( while on quest 88719)
+							[2565] = true, -- Isle of Quel'danas - Isle of Quel'danas ( while on quest 86834)
+							[2579] = true, -- Isle of Quel'danas - Eversong Woods - Gruft von Wartha'nan
 							-- Midnight dungeons
 							[2433] = true, -- Silvermoon: Mördergasse: Mördergasse(Level 1)
 							[2435] = true, -- Silvermoon: Mördergasse: Schwarzschauer (Level 2)
@@ -1592,7 +1595,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2499] = true, -- Eversong Woods: Windrunnter Tower: Die Spitze (Level 7)
 							-- Midnight Delves
 							[2502]  = true, -- Eversong Woods: Schattenenklave
+							[2575]  = true, -- Harandar: Kluft der Erinnerung- Unterer Wurzelpfad
 						}
+						
 
 						self.quest.name[51570]=Grail:_GetMapNameByID(862)	-- Zuldazar
 						self.quest.name[51571]=Grail:_GetMapNameByID(863)	-- Nazmir
@@ -2025,7 +2030,28 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							GrailDatabase[databaseKeys[i]] = nil
 						end
 					end
+--[[
+					
+				-- ===== Grail: Defaults for the first start without saved variables =====
+				-- Only set if the key does not exist yet(== nil),
+				-- to avoid overwriting user settings
+				if self.GDE.treasures == nil then
+					self.GDE.treasures = true
+				end
+				if self.GDE.tracking == nil then
+					self.GDE.tracking = true
+				end
+				--if self.GDE.debug == nil then
+				--	self.GDE.debug = true
+				--end
 
+				-- immediately set Observer and Hooks consistently
+				Grail:_QuestCompleteCheckObserve(self.GDE.debug)
+				Grail:_QuestAcceptCheckObserve(self.GDE.debug)
+				Grail:_LevelGainedQuestCheckObserve(self.GDE.debug)
+				Grail:_UpdateTrackingObserver()
+				-- ===== End Defaults =====
+--]]
 					-- We are defaulting to making events in combat delayed, and only doing it once in case the user decides to override.
 					if nil == self.GDE.delayEventsHandled then
 						self.GDE.delayEvents = true
@@ -2151,6 +2177,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						frame:RegisterEvent("LOOT_CLOSED")		-- Timeless Isle chests
 					end
 					frame:RegisterEvent("LOOT_OPENED")		-- support for Timeless Isle chests
+					frame:RegisterEvent("ITEM_TEXT_BEGIN")		-- support for tracking book reads in Eversong Woods (Midnight)
 					frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("GOSSIP_CONFIRM")	-- gossipIndex, text, cost
 frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
@@ -2416,7 +2443,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local questToComplete = self._ItemTextBeginList[npcId]
 				if nil ~= questToComplete then
 					self:_MarkQuestComplete(questToComplete, true)
-					local message = strformat("ITEM_TEXT_READY completes %d", questToComplete)
+					local message = strformat("ITEM_TEXT_READY completes %d", questToComplete, "Coordinates: ",  Grail:Coordinates())
 					if self.GDE.debug then
 						print(message)
 					end
@@ -2437,6 +2464,19 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						self:_ProcessServerBackup(true)
 						self.doneProcessingBackup = true
 --						frame:UnregisterEvent("LOOT_OPENED")
+					end
+				end
+			end,
+
+			['ITEM_TEXT_BEGIN'] = function(self, frame, ...)
+				local currentMapAreaId = Grail.GetCurrentMapAreaID()
+				if self.zonesForLootingTreasure[currentMapAreaId] then
+					self.lootingGUID = GetLootSourceInfo(1)
+					local text = GameTooltipTextLeft1
+					self.lootingName = text and text:GetText() or self.defaultUnfoundLootingName
+					if not self.doneProcessingBackup then
+						self:_ProcessServerBackup(true)
+						self.doneProcessingBackup = true
 					end
 				end
 			end,
@@ -2514,7 +2554,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					elseif 'MIN_EXPANSION_LEVEL_UPDATED' == type then
 						self:_HandleMinExpansionLevelUpdated()
 					elseif 'CRITERIA_COMPLETE' == type then
-						self:_HandleCriteriaComple()
+						self:_HandleCriteriaComplete()
 					end
 					tremove(self.delayedEvents, 1)
 					self.delayedEventsCount = self.delayedEventsCount - 1
@@ -2536,7 +2576,18 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 			['PLAYER_ENTERING_WORLD'] = function(self, frame)
 			print("|cFF00FF00Grail|r: needs your help! Consider running /grail tracking & /Grail treasures ON and submit your data regularly")
-
+			--[[
+				-- Warn,if a recommended option is OFF
+				local offList = {}
+				if not self.GDE.tracking then table.insert(offList, "tracking") end
+				if not self.GDE.treasures then table.insert(offList, "treasures") end
+				if not self.GDE.debug then table.insert(offList, "debug") end
+				if #offList > 0 then
+					print(string.format("|cFFFF8800Grail|r: Hint – following options are OFF: %s. Recommended: /grail %s ON.",
+						 table.concat(offList, ", "),
+						 table.concat(offList, " & /grail ")))
+				end
+			--]]
 				if self.capabilities.usesArtifacts then
 					frame:RegisterEvent("ARTIFACT_XP_UPDATE")
 				end
@@ -8356,14 +8407,15 @@ end
 				print("Grail Achievment handled with number: ", achievementId)
 			end
 			self:_AddTrackingMessage("Achievement earned: ", achievementId)
+			self:_AddTrackingMessage("Coordinates earned: ", Grail:Coordinates())
 		end,
 
-		_HandleCriteriaComple = function(self, criteriaID)
+		_HandleCriteriaComplete = function(self, criteriaID)
 			if self.GDE.debug then
 				print("Grail: Criteria earned with number: ", criteriaID)
 			end
 			self:_AddTrackingMessage("Criteria earned: ", criteriaID)
-			self:_AddTrackingMessage("Coordinates earned: ", Coordinates())
+			self:_AddTrackingMessage("Coordinates earned: ", Grail:Coordinates())
 		end,
 
 		_HandleEventMajorFactionUnlocked = function(self, factionId)
@@ -8452,7 +8504,7 @@ end
 						self:_LearnObjectName(guidParts[6], lootingNameToUse)
 					end
 				end
-				local message = "Looting from " .. (self.lootingGUID or "NO LOOTING GUID") .. " locale: " .. self.playerLocale .. " name: " .. lootingNameToUse
+				local message = "Looting from " .. (self.lootingGUID or "NO LOOTING GUID") .. " locale: " .. self.playerLocale .. " name: " .. lootingNameToUse .. " Coords: " .. Grail:Coordinates()
 				if self.GDE.debug then
 					print(message)
 				end
