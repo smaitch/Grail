@@ -43944,7 +43944,9 @@ G[94847]='CP A:90250 T:90250 P:46069+0 E64270'	-- legion:remix
 end
 
 if release >= 64704 then
+G[90882]='A:244642 E64704'
 G[91042]='E64704'
+G[93929]='E64704'
 end
 
 if release >= 64772 then
