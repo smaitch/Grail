@@ -764,4 +764,21 @@ G[1376034]='Schlag des Windlords'
 G[1381672]='Anfrage des Archivars'
 end
 
+if release >= 65893 then
+G[1564925]='Shokku die Träumerin'
+end
+
+if release >= 66044 then
+G[1176793]='Kleinholzbündel'
+G[1307277]='Alter Henkelkrug'
+G[1307307]='Zerbrochenes Fass'
+G[1307325]='Steckbrief'
+G[1307330]='Schließkiste des Kapitäns'
+G[1307340]='Verschlossene Truhe'
+end
+
+if release >= 66102 then
+G[1210005]='Waffenständer'
+end
+
 --	End of localized NPC names

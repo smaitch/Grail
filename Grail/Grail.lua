@@ -575,6 +575,8 @@
 --			Switches TOC to have a single Interface that lists all supported versions.
 --			Changes the use of localized names to no longer be addons but to be included in the base Grail addon.
 --		124 Adds IsQuestFlaggedCompletedOnAccount to help indicate when a quest is completed by the warband.
+--		125 Corrects some issues that would cause taint.
+--			Changes the way zones are intialized to allow continents that have continents within them to work properly.
 --
 --	Known Issues
 --
@@ -2398,6 +2400,16 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local targetName, npcId, coordinates = self:TargetInformation()
 				self.currentGossipNPCId = npcId
 --				print("GOSSIP_SHOW:",targetName, npcId, coordinates,GetNumGossipAvailableQuests(),GetNumGossipActiveQuests(),GetNumGossipOptions(),GetGossipOptions())
+				-- Check available gossip quests for unverified prerequisite observations.
+				-- This covers multi-quest NPCs where QUEST_DETAIL only fires after the player selects a quest.
+				if C_GossipInfo and C_GossipInfo.GetAvailableQuests then
+					local gossipQuests = C_GossipInfo.GetAvailableQuests()
+					if gossipQuests then
+						for _, questInfo in ipairs(gossipQuests) do
+							self:_CheckAndLearnPrereqVerification(questInfo.questID)
+						end
+					end
+				end
 			end,
 
 			['ITEM_TEXT_READY'] = function(self, frame, ...)
@@ -2549,13 +2561,15 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local npcId, npcName = self:GetNPCInformation("questnpc")
 				local coordinates = self:Coordinates()
 				local databaseNPCId = self:_UpdateTargetDatabase(npcName, npcId, coordinates)
+				local offeredQuestId = GetQuestID()
 				self.questDetailInformation = {
 					blizzardNPCId = npcId,
 					coordinates = coordinates,
 					npcId = databaseNPCId,
 					npcName = npcName,
-					questId = GetQuestID()	-- technically we do not currently use this, but it might be useful
+					questId = offeredQuestId
 				}
+				self:_CheckAndLearnPrereqVerification(offeredQuestId)
 			end,
 
 			-- Prior to Shadowlands, the signature is (self, frame, questIndex, questId)
@@ -2667,6 +2681,22 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				self.questTurningIn = questId
 				self:_QuestCompleteProcess(questId)
 				self:_UpdateQuestResetTime()
+				-- If this is a ?-marked prereq for any target quest, record it as the most
+				-- recent turn-in so _LearnPrereqVerification can identify the trigger prereq.
+				local targets = self.verifyWatchedBy[questId]
+				if targets then
+					for _, targetQuestId in ipairs(targets) do
+						local unverified = self.questUnverifiedPrereqs[targetQuestId]
+						if unverified then
+							for _, uid in ipairs(unverified) do
+								if uid == questId then
+									self.recentPrereqTurnIn[targetQuestId] = questId
+									break
+								end
+							end
+						end
+					end
+				end
 			end,
 
 			['GARRISON TALENT COMPLETE'] = function(self, frame, garrTypeID, doAlert)
@@ -3203,6 +3233,10 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --		questNames = {},
 --		questNPCId = nil,
 		questPrerequisites = {},
+		questUnverifiedPrereqs = {},		-- key is questId, value is ordered table of prereq questIds marked with ? in the P: code
+		questVerifyAllPrereqs = {},			-- key is questId, value is table of ALL bare integer prereq questIds when any are unverified; used to build verifyWatchedBy
+		verifyWatchedBy = {},				-- key is a prereq questId, value is table of target questIds that have unverified prereqs and include this prereq; built lazily in _CodeAllFixed
+		recentPrereqTurnIn = {},			-- key is targetQuestId, value is the most recent ?-marked prereq questId turned in before targetQuestId appeared at an NPC
 		questReputationRequirements = {},	-- key is questId, value is a string of 4-character codes appended to each other, ignoring specific aspects of the P: code positions
 		questReputations = {},			-- the table after the initial load is processed
 		questResetTime = 0,
@@ -4222,17 +4256,19 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			self.mapToContinentMapping = {}		-- key is mapId, value is continent mapId
 			for i, continentInfo in ipairs(continents) do
 				local L = { name = continentInfo.name, zones = {}, mapID = continentInfo.mapID, dungeons = {} }
-				local zones = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Zone, ALL_DESCENDANTS)
+				-- Use false (not ALL_DESCENDANTS) so sub-continents (e.g. Quel'Thalas, Argus) keep their
+				-- own zones instead of having them stolen by the parent continent's recursive descent.
+				local zones = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Zone, false)
 				for j, zoneInfo in ipairs(zones) do
 					self:_AddMapId(L.zones, zoneInfo.name, zoneInfo.mapID, L.mapID)
 				end
-				local dungeons = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Dungeon, ALL_DESCENDANTS)
+				local dungeons = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Dungeon, false)
 				for j, dungeonInfo in ipairs(dungeons) do
 					self:_AddMapId(L.dungeons, dungeonInfo.name, dungeonInfo.mapID, L.mapID)
 				end
 -- TODO: Do we need to handle Micro map types?
 				-- Stormsong Valley is an Orphan and not a Zone in beta at least
-				local orphans = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Orphan, ALL_DESCENDANTS)
+				local orphans = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Orphan, false)
 				for j, orphanInfo in ipairs(orphans) do
 					self:_AddMapId(L.zones, orphanInfo.name, orphanInfo.mapID, L.mapID)
 				end
@@ -5825,6 +5861,76 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			tinsert(self.GDE.learned.QUEST_NAME, self.playerLocale .. '|' .. self.blizzardRelease .. '|' .. questId .. '|' .. questName)
 		end,
 
+		---
+		--	Records a prerequisite verification observation for the given target quest.
+		--	Called when a quest with unverified prerequisites is seen as available at an NPC.
+		--	Format: grailVersion|release|locale|targetQuestId|allPrereqIds|completedPrereqIds|lastTurnedIn
+		--	  allPrereqIds    : all P: prereq IDs (both confirmed and ? ones)
+		--	  completedPrereqIds : which of those were already done when the quest appeared
+		--	  lastTurnedIn    : most recently turned-in ?-prereq before this quest appeared (0 if unknown)
+		--
+		--	Observations are useful when:
+		--	  (a) at least one ?-prereq was NOT yet done (lets us eliminate absent ones), OR
+		--	  (b) lastTurnedIn is known (identifies the trigger prereq even if all were done)
+		_LearnPrereqVerification = function(self, targetQuestId)
+			local allPrereqs = self.questVerifyAllPrereqs[targetQuestId]
+			local unverified = self.questUnverifiedPrereqs[targetQuestId]
+			if nil == allPrereqs or nil == unverified then return end
+
+			-- Determine which prereqs are currently complete
+			local completed = {}
+			for _, prereqId in ipairs(allPrereqs) do
+				if self:IsQuestFlaggedCompleted(prereqId) then
+					tinsert(completed, prereqId)
+				end
+			end
+
+			-- Check whether any ?-prereq was absent (useful for elimination)
+			local hasUsefulData = false
+			for _, uid in ipairs(unverified) do
+				local found = false
+				for _, cid in ipairs(completed) do
+					if cid == uid then found = true; break end
+				end
+				if not found then hasUsefulData = true; break end
+			end
+
+			-- Also useful if we know which prereq was the trigger (lastTurnedIn)
+			local lastTurnedIn = self.recentPrereqTurnIn[targetQuestId] or 0
+			if not hasUsefulData and lastTurnedIn == 0 then return end
+
+			-- Build comma-separated id lists for the record
+			local allStr = ''
+			for i = 1, #allPrereqs do
+				if i > 1 then allStr = allStr .. ',' end
+				allStr = allStr .. allPrereqs[i]
+			end
+			local completedStr = ''
+			for i = 1, #completed do
+				if i > 1 then completedStr = completedStr .. ',' end
+				completedStr = completedStr .. completed[i]
+			end
+
+			self.GDE.learned = self.GDE.learned or {}
+			self.GDE.learned.PREREQ_VERIFY = self.GDE.learned.PREREQ_VERIFY or {}
+			tinsert(self.GDE.learned.PREREQ_VERIFY,
+				self.versionNumber .. '|' .. self.blizzardRelease .. '|' ..
+				self.playerLocale .. '|' .. targetQuestId .. '|' ..
+				allStr .. '|' .. completedStr .. '|' .. lastTurnedIn)
+
+			-- Clear the trigger record; it has been captured in the observation
+			self.recentPrereqTurnIn[targetQuestId] = nil
+		end,
+
+		--	Convenience: ensures the quest is parsed then records a verification observation if applicable.
+		_CheckAndLearnPrereqVerification = function(self, questId)
+			if nil == questId then return end
+			self:_CodeAllFixed(questId)
+			if nil ~= self.questUnverifiedPrereqs[questId] then
+				self:_LearnPrereqVerification(questId)
+			end
+		end,
+
 		--	This should only be run after _CleanLearnedDatabase() because it is assumed anything
 		--	present at this point in the learned database will be integrated into the master.
 		_UpdateDatabaseFromLearnedDatabase = function(self)
@@ -6902,10 +7008,34 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 							elseif 'P' == code then
 								if ':' == codeValue then
+									local rawPrereqString = strsub(c, 3)
+									-- Strip ? from unverified prereq quest IDs and record them separately.
+									-- ? is only valid on bare numeric quest IDs (e.g. ?10995), not coded ones (e.g. A10995).
+									local unverified = {}
+									local cleanedString = gsub(rawPrereqString, '%?(%d+)', function(id)
+										tinsert(unverified, tonumber(id))
+										return id		-- return without ?, so downstream parsing sees a clean integer
+									end)
+									if #unverified > 0 then
+										self.questUnverifiedPrereqs[questId] = unverified
+										-- Also record ALL bare integer prereq questIds (confirmed + unverified) so the
+										-- verifyWatchedBy reverse index can trigger on any of them, not just the ? ones.
+										local allBarePrereqs = {}
+										for token in gmatch(cleanedString, '[^+,|]+') do
+											local id = tonumber(token)
+											if id then tinsert(allBarePrereqs, id) end
+										end
+										self.questVerifyAllPrereqs[questId] = allBarePrereqs
+										-- Build reverse index: any of these prereqs being turned in should trigger the warning.
+										for _, prereqId in ipairs(allBarePrereqs) do
+											self.verifyWatchedBy[prereqId] = self.verifyWatchedBy[prereqId] or {}
+											tinsert(self.verifyWatchedBy[prereqId], questId)
+										end
+									end
 									if self.nonPatternExperiment then
-										self.questPrerequisites[questId] = strsub(c, 3)
+										self.questPrerequisites[questId] = cleanedString
 									else
-										self.questPrerequisites[questId] = self:_FromPattern(strsub(c, 3))
+										self.questPrerequisites[questId] = self:_FromPattern(cleanedString)
 									end
 									self:_ProcessQuestsForHandlers(questId, self.questPrerequisites[questId])
 								else
@@ -8235,7 +8365,9 @@ end
 				if nil ~= targetName then break end
 			end
 			if nil ~= targetName then
-				local gid = UnitGUID(used)
+				-- UnitGUID returns a secret string on dead bodies; pcall guards against taint errors
+				local ok, gid = pcall(UnitGUID, used)
+				if not ok then gid = nil end
 				if nil ~= gid then
 					local targetType = nil
 					--	Blizzard has changed the separator from : to - but we will try both if needed
@@ -8260,7 +8392,9 @@ end
 		GetNPCInformation = function(self, npcType)
 			local npcId = nil
 			local name = UnitName(npcType)
-			local gid = UnitGUID(npcType)
+			-- UnitGUID returns a secret string on dead bodies; pcall guards against taint errors
+			local ok, gid = pcall(UnitGUID, npcType)
+			if not ok then gid = nil end
 			if nil ~= gid then
 				local targetType = nil
 				--	Blizzard has changed the separator from : to - but we will try both if needed
@@ -11974,6 +12108,16 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 				retval = self:_FromPattern(retval)
 			end
 			return retval
+		end,
+
+		---
+		--	Returns the ordered table of prerequisite quest IDs that are marked with ? in the P: code,
+		--	indicating they are present in the database but not yet confirmed as actually required.
+		--	Returns nil if the quest has no unverified prerequisites.
+		--	@param questId The numeric questId to check.
+		--	@return A table of numeric questIds, or nil.
+		QuestUnverifiedPrerequisites = function(self, questId)
+			return self.questUnverifiedPrereqs[tonumber(questId)]
 		end,
 
 		--	Returns a table whose key is the questId and whose value is a table made of the quest title and the completedness

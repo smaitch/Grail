@@ -2122,4 +2122,8 @@ if release >= 62438 then
 G[1307066]='Ocean Chest'
 end
 
+if release >= 66263 then
+G[1612259]='The Gulf of Memory'
+end
+
 --	End of localized NPC names
