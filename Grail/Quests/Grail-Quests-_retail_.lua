@@ -423,7 +423,7 @@ Grail.weeklyMaximums = {
 
 local G = Grail.questCodes
 
-if releaes < 0 or interface < 80000 then return end
+if release < 0 or interface < 80000 then return end
 --if release >= 0 and interface >= 80000 then
 G[2]='FH L3936000 A:100016305 T:12696'
 G[5]='L4372 E29297'
