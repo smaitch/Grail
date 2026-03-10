@@ -1582,6 +1582,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2432] = true, -- Isle of Quel'danas - Isle of Quel'danas ( while on quest 88719)
 							[2565] = true, -- Isle of Quel'danas - Isle of Quel'danas ( while on quest 86834)
 							[2579] = true, -- Isle of Quel'danas - Eversong Woods - Gruft von Wartha'nan
+							[2438] = true, -- Tirisfal: Scarlet Halls (during 86842)
+							[2541] = true, -- The Arcantina
 							-- Midnight dungeons
 							[2433] = true, -- Silvermoon: Mördergasse: Mördergasse(Level 1)
 							[2435] = true, -- Silvermoon: Mördergasse: Schwarzschauer (Level 2)
@@ -1594,8 +1596,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2498] = true, -- Eversong Woods: Windrunnter Tower: Windläufergewölbe (Level 6)
 							[2499] = true, -- Eversong Woods: Windrunnter Tower: Die Spitze (Level 7)
 							-- Midnight Delves
-							[2502]  = true, -- Eversong Woods: Schattenenklave
-							[2575]  = true, -- Harandar: Kluft der Erinnerung- Unterer Wurzelpfad
+							[2502] = true, -- Eversong Woods: Schattenenklave
+							[2575] = true, -- Harandar: Kluft der Erinnerung- Unterer Wurzelpfad
 						}
 						
 
@@ -2443,7 +2445,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local questToComplete = self._ItemTextBeginList[npcId]
 				if nil ~= questToComplete then
 					self:_MarkQuestComplete(questToComplete, true)
-					local message = strformat("ITEM_TEXT_READY completes %d", questToComplete, "Coordinates: ",  Grail:Coordinates())
+					local message = strformat("ITEM_TEXT_READY completes %d | Target: %s (%d) | Coords: %s", questToComplete, tostring(targetName), tonumber(npcId) or -1, tostring(coordinates))
 					if self.GDE.debug then
 						print(message)
 					end
