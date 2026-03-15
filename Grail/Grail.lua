@@ -611,28 +611,6 @@ local assert, wipe = assert, wipe
 local floor, mod = math.floor, mod
 
 
--- BEGIN Grail_SafeGetAuraDataByIndex wrapper
--- Safe wrapper that skips secret aura indices and logs (only when Grail debug is ON)
-local function Grail_SafeGetAuraDataByIndex(unit, index, filter)
-    -- Check for secret aura indices using Blizzard's secrecy API (Retail/TWW)
-    if C_Secrets and C_Secrets.ShouldUnitAuraIndexBeSecret then
-        local ok, secret = pcall(C_Secrets.ShouldUnitAuraIndexBeSecret, unit, index, filter)
-        if ok and secret then
-            -- Log skip only if Grail debug is enabled
-                local u = tostring(unit)
-                local f = filter and tostring(filter) or 'nil'
-            --    print(string.format('|cffff8800Grail|r: Secret Aura index (skipped) -> unit=%s, index=%s, filter=%s', u, tostring(index), f))
-            return nil
-        end
-    end
-    -- Fallback to Blizzard API when available
-    if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
-        local info = Grail_SafeGetAuraDataByIndex(unit, index, filter)
-        return info
-    end
-    return nil
-end
--- END Grail_SafeGetAuraDataByIndex wrapper
 
 --	The Blizzard API is separated out so it is easier to see what API is being used
 
@@ -680,6 +658,8 @@ local UnitName							= UnitName
 local UnitRace							= UnitRace
 local UnitSex							= UnitSex
 
+
+local BLIZZ_UnitAura = _G.UnitAura
 local BOOKTYPE_SPELL					= BOOKTYPE_SPELL
 local DAILY								= DAILY
 local LOCALIZED_CLASS_NAMES_FEMALE		= LOCALIZED_CLASS_NAMES_FEMALE
@@ -1536,6 +1516,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2346] = true, -- Undermine
 							-- 11.2
 							[2371] = true, -- K'aresh
+							[2451] = true, -- Arathi Highlands (Catchup Experience Version)
 
 							-- TWW Dungeons (S2)
 							[2315] = true, -- Isle of Dorn >Die Brutstätte: Der Brustättenlandeplatz (lvl1)
@@ -1587,7 +1568,38 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2408] = true, --Schallende Tiefen> Befreiung von Lorenhall (11.1):Das Glückliche Herz (lvl4)
 							[2411] = true, --Schallende Tiefen> Befreiung von Lorenhall (11.1):Der Pikturm (lvl5)
 							[2409] = true, --Schallende Tiefen> Befreiung von Lorenhall (11.1):Das Haus des Chroms (lvl6)
-
+							-- Midnight
+							[947]  = true, -- Housing Area
+							[2351] = true, -- Klingenschluchtküste
+							[2393] = true, -- Silvermoon (Midnight)
+							[2395] = true, -- Quel'thalas: Eversong Woods (Midnight)
+							[2405] = true, -- Quel'thalas: Voidstorm
+							[2413] = true, -- Quel'thalas: Harandar
+							[2424] = true, -- Isle of Quel'danas - Isle of Quel'danas
+							[2444] = true, -- Isle of Quel'danas - Slayer's Rise
+							[2537] = true, -- Isle of Quel'danas? - TODO: Yoshimo: check (internally named "unknown")
+							[2565] = true, -- Isle of Quel'danas - Isle of Quel'danas , during the MN intro questchain from Liadrin id:236693
+							[2437] = true, -- Quel'thalas: Zul'Aman (Midnight)
+							[2536] = true, -- Quel'thalas: Zul'Aman (Midnight): Atal'Aman
+							[2432] = true, -- Isle of Quel'danas - Isle of Quel'danas ( while on quest 88719)
+							[2565] = true, -- Isle of Quel'danas - Isle of Quel'danas ( while on quest 86834)
+							[2579] = true, -- Isle of Quel'danas - Eversong Woods - Gruft von Wartha'nan
+							[2438] = true, -- Tirisfal: Scarlet Halls (during 86842)
+							[2541] = true, -- The Arcantina
+							-- Midnight dungeons
+							[2433] = true, -- Silvermoon: Mördergasse: Mördergasse(Level 1)
+							[2435] = true, -- Silvermoon: Mördergasse: Schwarzschauer (Level 2)
+							[2434] = true, -- Silvermoon: Mördergasse: Terrasse der Auguren (Level 3)
+							[2492] = true, -- Eversong Woods: Windrunnter Tower: Die Promenaade (Level 1)
+							[2493] = true, -- Eversong Woods: Windrunnter Tower: Vereesas Rast: Oberer Bereich(Level 2)
+							[2494] = true, -- Eversong Woods: Windrunnter Tower: Vereesas Rast: Unterer Bereich(Level 3)
+							[2496] = true, -- Eversong Woods: Windrunnter Tower: Sylvanas' Gemächer: Oberer Bereich(Level 4)
+							[2497] = true, -- Eversong Woods: Windrunnter Tower: Sylvanas' Gemächer: Unterer Bereich(Level 5)
+							[2498] = true, -- Eversong Woods: Windrunnter Tower: Windläufergewölbe (Level 6)
+							[2499] = true, -- Eversong Woods: Windrunnter Tower: Die Spitze (Level 7)
+							-- Midnight Delves
+							[2502] = true, -- Eversong Woods: Schattenenklave
+							[2575] = true, -- Harandar: Kluft der Erinnerung- Unterer Wurzelpfad
 						}
 
 						self.quest.name[51570]=Grail:_GetMapNameByID(862)	-- Zuldazar
@@ -2021,7 +2033,28 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							GrailDatabase[databaseKeys[i]] = nil
 						end
 					end
+--[[
+					
+				-- Grail: Defaults for the first start without saved variables --
+				-- Only set if the key does not exist yet(== nil),
+				-- to avoid overwriting user settings
+				if self.GDE.treasures == nil then
+					self.GDE.treasures = true
+				end
+				if self.GDE.tracking == nil then
+					self.GDE.tracking = true
+				end
+				if self.GDE.debug == nil then
+					self.GDE.debug = true
+				end
 
+				-- immediately set Observer and Hooks consistently
+				Grail:_QuestCompleteCheckObserve(self.GDE.debug)
+				Grail:_QuestAcceptCheckObserve(self.GDE.debug)
+				Grail:_LevelGainedQuestCheckObserve(self.GDE.debug)
+				Grail:_UpdateTrackingObserver()
+				-- End Defaults --
+]]--
 					-- We are defaulting to making events in combat delayed, and only doing it once in case the user decides to override.
 					if nil == self.GDE.delayEventsHandled then
 						self.GDE.delayEvents = true
@@ -2119,6 +2152,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						frame:RegisterEvent("ACHIEVEMENT_EARNED")		-- e.g., quest 29452 can be gotten if certain achievements are complete
 						frame:RegisterEvent("CRITERIA_EARNED")		-- for debugging to see when criteria are earned in MoP
 					end
+
+					if self.existsClassicPandaria or self.existsMainline then
+						frame:RegisterEvent("CRITERIA_COMPLETE")
+					end
+
 					frame:RegisterEvent("CHAT_MSG_COMBAT_FACTION_CHANGE")	-- needed for quest status caching
 					frame:RegisterEvent("CHAT_MSG_SKILL")	-- needed for quest status caching
 					if self.capabilities.usesGarrisons then
@@ -2142,6 +2180,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						frame:RegisterEvent("LOOT_CLOSED")		-- Timeless Isle chests
 					end
 					frame:RegisterEvent("LOOT_OPENED")		-- support for Timeless Isle chests
+					frame:RegisterEvent("ITEM_TEXT_BEGIN")		-- support for tracking book reads in Eversong Woods (Midnight)
 					frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("GOSSIP_CONFIRM")	-- gossipIndex, text, cost
 frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
@@ -2417,7 +2456,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local questToComplete = self._ItemTextBeginList[npcId]
 				if nil ~= questToComplete then
 					self:_MarkQuestComplete(questToComplete, true)
-					local message = strformat("ITEM_TEXT_READY completes %d", questToComplete)
+					local message = strformat("ITEM_TEXT_READY completes %d | Target: %s (%d) | Coords: %s", questToComplete, tostring(targetName), tonumber(npcId) or -1, tostring(coordinates))
 					if self.GDE.debug then
 						print(message)
 					end
@@ -2438,6 +2477,19 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						self:_ProcessServerBackup(true)
 						self.doneProcessingBackup = true
 --						frame:UnregisterEvent("LOOT_OPENED")
+					end
+				end
+			end,
+
+			['ITEM_TEXT_BEGIN'] = function(self, frame, ...)
+				local currentMapAreaId = Grail.GetCurrentMapAreaID()
+				if self.zonesForLootingTreasure[currentMapAreaId] then
+					self.lootingGUID = GetLootSourceInfo(1)
+					local text = GameTooltipTextLeft1
+					self.lootingName = text and text:GetText() or self.defaultUnfoundLootingName
+					if not self.doneProcessingBackup then
+						self:_ProcessServerBackup(true)
+						self.doneProcessingBackup = true
 					end
 				end
 			end,
@@ -2514,6 +2566,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						self:_HandleMaxExpansionLevelUpdated()
 					elseif 'MIN_EXPANSION_LEVEL_UPDATED' == type then
 						self:_HandleMinExpansionLevelUpdated()
+					elseif 'CRITERIA_COMPLETE' == type then
+						self:_HandleCriteriaComplete()
 					end
 					tremove(self.delayedEvents, 1)
 					self.delayedEventsCount = self.delayedEventsCount - 1
@@ -2535,6 +2589,18 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 			['PLAYER_ENTERING_WORLD'] = function(self, frame)
 			print("|cFF00FF00Grail|r: needs your help! Consider running /grail tracking & /Grail treasures ON and submit your data regularly")
+--[[
+				-- Warn,if a recommended option is OFF
+				local offList = {}
+				if not self.GDE.tracking then table.insert(offList, "tracking") end
+				if not self.GDE.treasures then table.insert(offList, "treasures") end
+				if not self.GDE.debug then table.insert(offList, "debug") end
+				if #offList > 0 then
+					print(string.format("|cFFFF8800Grail|r: Hint – following options are OFF: %s. Recommended: /grail %s ON.",
+						 table.concat(offList, ", "),
+						 table.concat(offList, " & /grail ")))
+				end
+--]]
 				if self.capabilities.usesArtifacts then
 					frame:RegisterEvent("ARTIFACT_XP_UPDATE")
 				end
@@ -8540,8 +8606,19 @@ end
 		_HandleEventAchievementEarned = function(self, achievementId)
 			self:_StatusCodeInvalidate(self.questStatusCache['A'][achievementId])
 			self:_NPCLocationInvalidate(self.npcStatusCache['A'][achievementId])
-			print("Grail Achievment handled with number: ", achievementId)
+			if self.GDE.debug then
+				print("Grail Achievment handled with number: ", achievementId)
+			end
 			self:_AddTrackingMessage("Achievement earned: ", achievementId)
+			self:_AddTrackingMessage("Coordinates earned: ", Grail:Coordinates())
+		end,
+
+		_HandleCriteriaComplete = function(self, criteriaID)
+			if self.GDE.debug then
+				print("Grail: Criteria earned with number: ", criteriaID)
+			end
+			self:_AddTrackingMessage("Criteria earned: ", criteriaID)
+			self:_AddTrackingMessage("Coordinates earned: ", Grail:Coordinates())
 		end,
 
 		_HandleEventMajorFactionUnlocked = function(self, factionId)
@@ -8630,7 +8707,7 @@ end
 						self:_LearnObjectName(guidParts[6], lootingNameToUse)
 					end
 				end
-				local message = "Looting from " .. (self.lootingGUID or "NO LOOTING GUID") .. " locale: " .. self.playerLocale .. " name: " .. lootingNameToUse
+				local message = "Looting from " .. (self.lootingGUID or "NO LOOTING GUID") .. " locale: " .. self.playerLocale .. " name: " .. lootingNameToUse .. " Coords: " .. Grail:Coordinates()
 				if self.GDE.debug then
 					print(message)
 				end
@@ -14232,3 +14309,27 @@ end
 		they have all been dailies.
 
 ]]--
+
+-- Final Classic/Retail-safe UnitAura --
+function Grail:UnitAura(unit, index, filter)
+    -- Retail path: use modern Aura API and skip secret aura indices (with debug print)
+    if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
+        if C_Secrets and C_Secrets.ShouldUnitAuraIndexBeSecret then
+            local ok, secret = pcall(C_Secrets.ShouldUnitAuraIndexBeSecret, unit, index, filter)
+            if ok and secret then
+               -- print("Grail Secret aura skipped ->", unit, index, filter)
+                return nil
+            end
+        end
+        local info = C_UnitAuras.GetAuraDataByIndex(unit, index, filter)
+        if info then return info.name, info.spellId end
+        return nil
+    end
+    -- Classic path: always call original Blizzard API (never self again)
+    if BLIZZ_UnitAura then
+        local name, _, _, _, _, _, _, _, _, boaSpellId, classicSpellId = BLIZZ_UnitAura(unit, index, filter)
+        local spellId = tonumber(classicSpellId or boaSpellId)
+        return name, spellId
+    end
+    return nil
+end
