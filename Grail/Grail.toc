@@ -10,9 +10,9 @@
 Grail.lua
 
 NPCs\Grail-NPCs-_retail_.lua
+NPCs\Grail-NPCs-_classic_.lua
 NPCs\Grail-NPCs-_classic_wrath_.lua
 NPCs\Grail-NPCs-_classic_pandaria_.lua
-NPCs\Grail-NPCs-_classic_.lua
 
 NPCs\Names\Grail-NPCs-_retail_-deDE.lua
 NPCs\Names\Grail-NPCs-_classic_-deDE.lua
