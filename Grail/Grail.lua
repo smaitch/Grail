@@ -575,8 +575,21 @@
 --			Switches TOC to have a single Interface that lists all supported versions.
 --			Changes the use of localized names to no longer be addons but to be included in the base Grail addon.
 --		124 Adds IsQuestFlaggedCompletedOnAccount to help indicate when a quest is completed by the warband.
---		125 Corrects some issues that would cause taint.
---			Changes the way zones are intialized to allow continents that have continents within them to work properly.
+--		125	Adds faction data for The War Within and Midnight.
+--			Adds additional zones to the treasure looting detection system for Wrath of the Lich King, Legion, and The War Within content.
+--			Changes the way zones are initialized to allow continents that contain other continents to work properly.
+--			Corrects UnitAura to use the modern Blizzard API correctly in retail and the original API properly in Classic.
+--			Makes UNIT_AURA processing skip redundant work when no auras have actually changed since the last update.
+--			Adds recording of quest faction reputation changes from faction change chat messages for modern expansions.
+--			Automatically removes already-integrated reputation data from the saved variables file on load.
+--			Adds handling of the CRITERIA_COMPLETE event to track criterion completions.
+--			Adds handling of the ITEM_TEXT_BEGIN event to track book reads in zones such as Eversong Woods.
+--			Improves ITEM_TEXT_READY tracking to record target name, NPC ID, and coordinates.
+--			Improves looting tracking to record coordinates in the looting message.
+--			Adds support for a ? prefix on integer quest IDs in P: prerequisite codes to indicate an unverified prerequisite.
+--			Adds a verifyWatchedBy reverse-lookup so any quest can find the quests that list it as a prerequisite.
+--			Corrects some issues that would cause taint.
+--			Adds a startup message encouraging players to enable tracking and submit data.
 --
 --	Known Issues
 --
@@ -611,6 +624,28 @@ local assert, wipe = assert, wipe
 local floor, mod = math.floor, mod
 
 
+-- BEGIN Grail_SafeGetAuraDataByIndex wrapper
+-- Safe wrapper that skips secret aura indices and logs (only when Grail debug is ON)
+local function Grail_SafeGetAuraDataByIndex(unit, index, filter)
+    -- Check for secret aura indices using Blizzard's secrecy API (Retail/TWW)
+    if C_Secrets and C_Secrets.ShouldUnitAuraIndexBeSecret then
+        local ok, secret = pcall(C_Secrets.ShouldUnitAuraIndexBeSecret, unit, index, filter)
+        if ok and secret then
+            -- Log skip only if Grail debug is enabled
+                local u = tostring(unit)
+                local f = filter and tostring(filter) or 'nil'
+            --    print(string.format('|cffff8800Grail|r: Secret Aura index (skipped) -> unit=%s, index=%s, filter=%s', u, tostring(index), f))
+            return nil
+        end
+    end
+    -- Fallback to Blizzard API when available
+    if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
+        local info = C_UnitAuras.GetAuraDataByIndex(unit, index, filter)
+        return info
+    end
+    return nil
+end
+-- END Grail_SafeGetAuraDataByIndex wrapper
 
 --	The Blizzard API is separated out so it is easier to see what API is being used
 
@@ -658,8 +693,7 @@ local UnitName							= UnitName
 local UnitRace							= UnitRace
 local UnitSex							= UnitSex
 
-
-local BLIZZ_UnitAura = _G.UnitAura
+local BLIZZ_UnitAura					= _G.UnitAura
 local BOOKTYPE_SPELL					= BOOKTYPE_SPELL
 local DAILY								= DAILY
 local LOCALIZED_CLASS_NAMES_FEMALE		= LOCALIZED_CLASS_NAMES_FEMALE
@@ -1124,6 +1158,15 @@ experimental = false,	-- currently this implementation does not reduce memory si
 				end
 			end,
 
+			['CRITERIA_COMPLETE'] = function(self, frame, arg1)
+				local criteriaID = tonumber(arg1)
+				if not self.inCombat or not self.GDE.delayEvents then
+					self:_HandleCriteriaComplete(criteriaID)
+				else
+					self:_RegisterDelayedEvent(frame, { 'CRITERIA_COMPLETE', criteriaID } )
+				end
+			end,
+
 			['PLAYER_LOGIN'] = function(self, frame, arg1)
 --				if "Grail" == arg1 then
 
@@ -1138,7 +1181,6 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					_, self.playerRace = UnitRace('player')
 					self.playerFaction = UnitFactionGroup('player')		-- for Pandaren who has not chosen results is "Neutral"
 					self.playerGender = UnitSex('player')
-					self.playerLocale = GetLocale()
 					self.levelingLevel = UnitLevel('player')
 					local version, release, date, tocVersion = GetBuildInfo()
 					self.blizzardRelease = tonumber(release)
@@ -1600,6 +1642,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							-- Midnight Delves
 							[2502] = true, -- Eversong Woods: Schattenenklave
 							[2575] = true, -- Harandar: Kluft der Erinnerung- Unterer Wurzelpfad
+
 						}
 
 						self.quest.name[51570]=Grail:_GetMapNameByID(862)	-- Zuldazar
@@ -2033,28 +2076,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							GrailDatabase[databaseKeys[i]] = nil
 						end
 					end
---[[
-					
-				-- Grail: Defaults for the first start without saved variables --
-				-- Only set if the key does not exist yet(== nil),
-				-- to avoid overwriting user settings
-				if self.GDE.treasures == nil then
-					self.GDE.treasures = true
-				end
-				if self.GDE.tracking == nil then
-					self.GDE.tracking = true
-				end
-				if self.GDE.debug == nil then
-					self.GDE.debug = true
-				end
 
-				-- immediately set Observer and Hooks consistently
-				Grail:_QuestCompleteCheckObserve(self.GDE.debug)
-				Grail:_QuestAcceptCheckObserve(self.GDE.debug)
-				Grail:_LevelGainedQuestCheckObserve(self.GDE.debug)
-				Grail:_UpdateTrackingObserver()
-				-- End Defaults --
-]]--
 					-- We are defaulting to making events in combat delayed, and only doing it once in case the user decides to override.
 					if nil == self.GDE.delayEventsHandled then
 						self.GDE.delayEvents = true
@@ -2152,12 +2174,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						frame:RegisterEvent("ACHIEVEMENT_EARNED")		-- e.g., quest 29452 can be gotten if certain achievements are complete
 						frame:RegisterEvent("CRITERIA_EARNED")		-- for debugging to see when criteria are earned in MoP
 					end
-
 					if self.existsClassicPandaria or self.existsMainline then
 						frame:RegisterEvent("CRITERIA_COMPLETE")
 					end
-
 					frame:RegisterEvent("CHAT_MSG_COMBAT_FACTION_CHANGE")	-- needed for quest status caching
+					frame:RegisterEvent("COMBAT_TEXT_UPDATE")				-- used to capture structured faction rep changes
 					frame:RegisterEvent("CHAT_MSG_SKILL")	-- needed for quest status caching
 					if self.capabilities.usesGarrisons then
 						frame:RegisterEvent("GARRISON_BUILDING_ACTIVATED")
@@ -2176,11 +2197,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					frame:RegisterEvent("GOSSIP_CLOSED")
 					frame:RegisterEvent("GOSSIP_SHOW")		-- needed to learn about gossips to be able to know when specific events have happened so quest availability can be updated
 					frame:RegisterEvent("ITEM_TEXT_READY")	-- probably not need ITEM_TEXT_BEGIN
+					frame:RegisterEvent("ITEM_TEXT_BEGIN")		-- support for tracking book reads in Eversong Woods (Midnight)
 					if not self.GDE.notLoot then
 						frame:RegisterEvent("LOOT_CLOSED")		-- Timeless Isle chests
 					end
 					frame:RegisterEvent("LOOT_OPENED")		-- support for Timeless Isle chests
-					frame:RegisterEvent("ITEM_TEXT_BEGIN")		-- support for tracking book reads in Eversong Woods (Midnight)
 					frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("GOSSIP_CONFIRM")	-- gossipIndex, text, cost
 frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
@@ -2370,6 +2391,10 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 				end
 			end,
 
+			['COMBAT_TEXT_UPDATE'] = function(self, frame, type, arg1, arg2)
+				self:_HandleEventCombatTextUpdate(type, arg1, arg2)
+			end,
+
 			['CHAT_MSG_SKILL'] = function(self, frame)
 				if not self.inCombat or not self.GDE.delayEvents then
 					self:_HandleEventChatMsgSkill()
@@ -2451,6 +2476,19 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				end
 			end,
 
+			['ITEM_TEXT_BEGIN'] = function(self, frame, ...)
+				local currentMapAreaId = Grail.GetCurrentMapAreaID()
+				if self.zonesForLootingTreasure[currentMapAreaId] then
+					self.lootingGUID = GetLootSourceInfo(1)
+					local text = GameTooltipTextLeft1
+					self.lootingName = text and text:GetText() or self.defaultUnfoundLootingName
+					if not self.doneProcessingBackup then
+						self:_ProcessServerBackup(true)
+						self.doneProcessingBackup = true
+					end
+				end
+			end,
+
 			['ITEM_TEXT_READY'] = function(self, frame, ...)
 				local targetName, npcId, coordinates = self:TargetInformation()
 				local questToComplete = self._ItemTextBeginList[npcId]
@@ -2477,19 +2515,6 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						self:_ProcessServerBackup(true)
 						self.doneProcessingBackup = true
 --						frame:UnregisterEvent("LOOT_OPENED")
-					end
-				end
-			end,
-
-			['ITEM_TEXT_BEGIN'] = function(self, frame, ...)
-				local currentMapAreaId = Grail.GetCurrentMapAreaID()
-				if self.zonesForLootingTreasure[currentMapAreaId] then
-					self.lootingGUID = GetLootSourceInfo(1)
-					local text = GameTooltipTextLeft1
-					self.lootingName = text and text:GetText() or self.defaultUnfoundLootingName
-					if not self.doneProcessingBackup then
-						self:_ProcessServerBackup(true)
-						self.doneProcessingBackup = true
 					end
 				end
 			end,
@@ -2567,7 +2592,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					elseif 'MIN_EXPANSION_LEVEL_UPDATED' == type then
 						self:_HandleMinExpansionLevelUpdated()
 					elseif 'CRITERIA_COMPLETE' == type then
-						self:_HandleCriteriaComplete()
+						self:_HandleCriteriaComplete(t[2])
 					end
 					tremove(self.delayedEvents, 1)
 					self.delayedEventsCount = self.delayedEventsCount - 1
@@ -2589,18 +2614,6 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 			['PLAYER_ENTERING_WORLD'] = function(self, frame)
 			print("|cFF00FF00Grail|r: needs your help! Consider running /grail tracking & /Grail treasures ON and submit your data regularly")
---[[
-				-- Warn,if a recommended option is OFF
-				local offList = {}
-				if not self.GDE.tracking then table.insert(offList, "tracking") end
-				if not self.GDE.treasures then table.insert(offList, "treasures") end
-				if not self.GDE.debug then table.insert(offList, "debug") end
-				if #offList > 0 then
-					print(string.format("|cFFFF8800Grail|r: Hint – following options are OFF: %s. Recommended: /grail %s ON.",
-						 table.concat(offList, ", "),
-						 table.concat(offList, " & /grail ")))
-				end
---]]
 				if self.capabilities.usesArtifacts then
 					frame:RegisterEvent("ARTIFACT_XP_UPDATE")
 				end
@@ -2741,10 +2754,22 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					self:_QuestAbandon(questId)
 				end
 				self.questTurningIn = nil
+				self.pendingRepChanges = nil
 			end,
 
 			['QUEST_TURNED_IN'] = function(self, frame, questId, xp, money)
 				self.questTurningIn = questId
+				-- Consume any rep changes buffered from CHAT_MSG_COMBAT_FACTION_CHANGE
+				-- (which fires before this event).
+				if nil ~= self.pendingRepChanges then
+					local now = GetTime()
+					for _, entry in ipairs(self.pendingRepChanges) do
+						if now - entry.time <= 2 then
+							self:_LearnQuestReputation(questId, self:_ResolveFactionId(entry.factionName), entry.amount)
+						end
+					end
+					self.pendingRepChanges = nil
+				end
 				self:_QuestCompleteProcess(questId)
 				self:_UpdateQuestResetTime()
 				-- If this is a ?-marked prereq for any target quest, record it as the most
@@ -2805,25 +2830,33 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 			['UNIT_AURA'] = function(self, frame, arg1)
 				if arg1 == "player" then
+					-- Collect all current aura spell IDs in one pass.
+					local currentSpellIds = {}
+					local i = 1
+					while true do
+						local name, spellId = self:UnitAura(arg1, i)
+						if not name then break end
+						local sid = tonumber(spellId)
+						if sid then tinsert(currentSpellIds, sid) end
+						i = i + 1
+					end
+
+					-- Build a cheap sorted fingerprint and skip all work if auras are unchanged.
+					table.sort(currentSpellIds)
+					local currentKey = table.concat(currentSpellIds, ",")
+					if currentKey == self._lastPlayerAuraKey then return end
+					self._lastPlayerAuraKey = currentKey
+
+					-- Auras changed: update tracking and invalidate affected caches.
 					local spellsToNuke = {}
 					if nil == self.spellsToHandle then self.spellsToHandle = {} end
 					self.spellsJustHandled = {}
-					local i = 1
-					while (true) do
---						local name,_,_,_,_,_,_,_,_,boaSpellId,spellId = UnitAura(arg1, i)
---						spellId = boaSpellId
-						local name, spellId = self:UnitAura(arg1, i)
-						if name then
-							spellId = tonumber(spellId)
-							self:_MarkQuestInDatabase(spellId, GrailDatabasePlayer["buffsExperienced"])
-							if nil ~= spellId and (nil ~= self.questStatusCache['B'][spellId] or nil ~= self.questStatusCache['Y'][spellId]) then
-								if not tContains(spellsToNuke, spellId) then tinsert(spellsToNuke, spellId) end
-								self.spellsToHandle[spellId] = true
-								self.spellsJustHandled[spellId] = true
-							end
-							i = i + 1
-						else
-							break
+					for _, spellId in ipairs(currentSpellIds) do
+						self:_MarkQuestInDatabase(spellId, GrailDatabasePlayer["buffsExperienced"])
+						if nil ~= self.questStatusCache['B'][spellId] or nil ~= self.questStatusCache['Y'][spellId] then
+							if not tContains(spellsToNuke, spellId) then tinsert(spellsToNuke, spellId) end
+							self.spellsToHandle[spellId] = true
+							self.spellsJustHandled[spellId] = true
 						end
 					end
 					for spellId, _ in pairs(self.spellsToHandle) do
@@ -2912,6 +2945,17 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		--	For Classic, we should be able to use GetClassicExpansionLevel()
 		--	calling GetClassicExpansionLevel() in Mainline returns 9 (because I am in Dragonflight)
 		--
+		--	There are currently (2026-03-08), four different LIVE games
+		--		World of Warcraft					WOW_PROJECT_ID = 1  (WOW_PROJECT_MAINLINE)
+		--		World of Warcraft Classic			WOW_PROJECT_ID = 2	(WOW_PROJECT_CLASSIC)
+		--		Burning Crusade Anniversary			WOW_PROJECT_ID = 5	(WOW_PROJECT_BURNING_CRUSADE_CLASSIC)
+		--		Mists of Pandaria Classic			WOW_PROJECT_ID = 19	(WOW_PROJECT_MISTS_CLASSIC)
+		--	It appears we have the normal World of Warcraft, Wolrd of Warcraft Classic, the latest "Classic" version which marches through games, and then possible "Anniversary" editions.
+		--	Therefore, we should have
+		--		_retail_							WOW_PROJECT_ID = 1
+		--		_classic_era_						WOW_PROJECT_ID = 2
+		--		_classic_							WOW_PROJECT_ID = the latest one being used (basically not 1, 2 or any anniversary)
+		--		_anniversary_						WOW_PROJECT_ID = 5
 		existsClassicBasic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC),
 		-- I don't think we need to know about Classic Burning Crusade any more so am removing this...
 --		existsClassicBurningCrusade = (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC),
@@ -3271,7 +3315,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		playerClass = nil,
 		playerFaction = nil,
 		playerGender = nil,
-		playerLocale = nil,
+		playerLocale = GetLocale(),
 		playerName = nil,
 		playerRace = nil,
 		playerRealm = nil,
@@ -5897,6 +5941,38 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			end
 		end,
 
+		_CleanDatabaseLearnedQuestReputation = function(self)
+			self.GDE.learned = self.GDE.learned or {}
+			if nil ~= self.GDE.learned.QUEST_REPUTATION then
+				local newQuestReputations = {}
+				for _, line in pairs(self.GDE.learned.QUEST_REPUTATION) do
+					local shouldAdd = true
+					local c = { strsplit('|', line) }
+					-- Format: grailVersion|release|locale|questId|factionCode|amount
+					if #c == 6 then
+						local questId     = tonumber(c[4])
+						local factionCode = c[5]
+						local amount      = c[6]
+						if nil ~= questId and #factionCode == 3 and not factionCode:find('^N:') then
+							local questRep = self.questReputations[questId]
+							-- questReputations values are binary strings after Grail-Reputations
+							-- loads and its trailer runs (_ReputationCode encoding, 4 bytes per entry).
+							-- If the value is still a table the trailer has not run yet -- skip.
+							if nil ~= questRep and type(questRep) == 'string' then
+								if nil ~= strfind(questRep, self:_ReputationCode(factionCode .. amount), 1, true) then
+									shouldAdd = false
+								end
+							end
+						end
+					end
+					if shouldAdd then
+						tinsert(newQuestReputations, line)
+					end
+				end
+				self.GDE.learned.QUEST_REPUTATION = newQuestReputations
+			end
+		end,
+
 		_LearnNPCLocation = function(self, npcId, npcLocation, aliasNPCId)
 			self.GDE.learned = self.GDE.learned or {}
 			self.GDE.learned.NPC_LOCATION = self.GDE.learned.NPC_LOCATION or {}
@@ -5925,6 +6001,23 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			-- Note that the order of locale and release is reversed here, but we need to keep it that way for data that was
 			-- written historically.
 			tinsert(self.GDE.learned.QUEST_NAME, self.playerLocale .. '|' .. self.blizzardRelease .. '|' .. questId .. '|' .. questName)
+		end,
+
+		---
+		--	Records a faction reputation reward observed when turning in a quest.
+		--	Called from the QUEST_TURNED_IN handler after consuming pendingRepChanges.
+		--	Format: grailVersion|release|locale|questId|factionId|amount
+		--	  factionId : 3-digit uppercase hex faction ID (e.g. "A90" for faction 2704)
+		--	             OR the raw localized faction name prefixed with "N:" if the hex ID
+		--	             could not be resolved via reverseReputationMapping
+		--	  amount    : signed integer rep change (positive = gain, negative = loss)
+		--
+		_LearnQuestReputation = function(self, questId, factionId, amount)
+			self.GDE.learned = self.GDE.learned or {}
+			self.GDE.learned.QUEST_REPUTATION = self.GDE.learned.QUEST_REPUTATION or {}
+			tinsert(self.GDE.learned.QUEST_REPUTATION,
+				self.versionNumber .. '|' .. self.blizzardRelease .. '|' ..
+				self.playerLocale .. '|' .. questId .. '|' .. factionId .. '|' .. amount)
 		end,
 
 		---
@@ -8655,12 +8748,103 @@ end
 			end
 		end,
 
+		_HandleEventCombatTextUpdate = function(self, type, arg1, arg2)
+			-- COMBAT_TEXT_UPDATE type=FACTION fires with nil args for Warband rep — not useful.
+			-- All rep capture is handled via CHAT_MSG_COMBAT_FACTION_CHANGE instead.
+		end,
+
 		_HandleEventChatMsgCombatFactionChange = function(self, message)
 			if nil ~= self.questStatusCache then
 				self:_StatusCodeInvalidate(self.questStatusCache["R"])
 				self.questStatusCache["R"] = {}
 				self:_NPCLocationInvalidate(self.npcStatusCache["R"])
 			end
+			-- Capture rep changes for quest-turn-in learning.  Event ordering varies:
+			--   Traditional rep:    fires before QUEST_TURNED_IN → buffer in pendingRepChanges
+			--   Warband/Midnight:   fires after  QUEST_TURNED_IN → questTurningIn is already set
+			local factionName, amount = self:_ParseFactionChangeMessage(message)
+			if nil ~= factionName and nil ~= amount then
+				if nil ~= self.questTurningIn then
+					self:_LearnQuestReputation(self.questTurningIn, self:_ResolveFactionId(factionName), amount)
+				else
+					self.pendingRepChanges = self.pendingRepChanges or {}
+					tinsert(self.pendingRepChanges, { factionName = factionName, amount = amount, time = GetTime() })
+				end
+			end
+		end,
+
+		---
+		--	Warband/account-wide reputation message patterns, keyed by WoW locale string.
+		--	WoW provides no global format string for these messages, so patterns are stored
+		--	here per locale.  To add a new locale, add one entry:
+		--	  deDE = { gain = "...", loss = "..." },
+		--	where capture 1 = faction name and capture 2 = amount (always a positive integer).
+		--	Unknown locales fall back to enUS.
+		--
+		---
+		--	Resolves a localized faction name to a 3-digit uppercase hex faction ID string,
+		--	matching the format used throughout Grail's reputation data (e.g. "A90" for 2704).
+		--	Resolution order:
+		--	  1. reverseReputationMapping  — pre-built from Grail's existing reputation data
+		--	  2. GetFactionInfo scan        — live WoW panel, covers factions not yet in Grail data
+		--	  3. "N:<name>" fallback        — preserves the name for later manual resolution
+		--
+		_ResolveFactionId = function(self, factionName)
+			local hexId = self.reverseReputationMapping[factionName]
+			if nil ~= hexId then return hexId end
+
+			for i = 1, GetNumFactions() do
+				local name, _, _, _, _, _, _, _, _, _, _, _, _, factionID = GetFactionInfo(i)
+				if name == factionName and factionID and factionID > 0 then
+					return self:_HexValue(factionID, 3)
+				end
+			end
+
+			return 'N:' .. factionName
+		end,
+
+		warbandRepPatterns = {
+			enUS = {
+				gain = "Your Warband's reputation with (.+) increased by (%d+)%.",
+				loss = "Your Warband's reputation with (.+) decreased by (%d+)%.",
+			},
+		},
+
+		---
+		--	Parses a CHAT_MSG_COMBAT_FACTION_CHANGE message and returns the faction name
+		--	and the signed rep change amount (positive = gain, negative = loss).
+		--	Uses WoW global format strings for standard rep and the warbandRepPatterns
+		--	table for Warband/account-wide rep.  Returns nil, nil on no match.
+		--
+		_ParseFactionChangeMessage = function(self, message)
+			local function fmtToPattern(fmt)
+				local p = fmt:gsub("%(", "%%("):gsub("%)", "%%)")
+				p = p:gsub("%%s", "(.+)")
+				p = p:gsub("%%d", "(%%d+)")
+				return p
+			end
+
+			-- Standard rep gain/loss — WoW global strings (locale-independent).
+			if FACTION_STANDING_INCREASED then
+				local name, amtStr = strmatch(message, fmtToPattern(FACTION_STANDING_INCREASED))
+				if nil ~= name then return name, tonumber(amtStr) end
+			end
+			if FACTION_STANDING_DECREASED then
+				local name, amtStr = strmatch(message, fmtToPattern(FACTION_STANDING_DECREASED))
+				if nil ~= name then return name, -tonumber(amtStr) end
+			end
+
+			-- Warband/account-wide rep — no WoW global exists; use per-locale pattern table.
+			local locale = GetLocale()
+			local wp = self.warbandRepPatterns[locale] or self.warbandRepPatterns["enUS"]
+			if wp then
+				local name, amtStr = strmatch(message, wp.gain)
+				if nil ~= name then return name, tonumber(amtStr) end
+				local name2, amtStr2 = strmatch(message, wp.loss)
+				if nil ~= name2 then return name2, -tonumber(amtStr2) end
+			end
+
+			return nil, nil
 		end,
 
 		_HandleEventChatMsgSkill = function(self)
@@ -9732,6 +9916,7 @@ end
 		--  @calls Grail:LoadAddOn()
 		LoadReputations = function(self)
 			self:LoadAddOn("Grail-Reputations")
+			self:_CleanDatabaseLearnedQuestReputation()
 		end,
 
 		--	Check the internal npc.locations structure for a location close to
@@ -13311,21 +13496,22 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 
 		-- Blizzard has replaced UnitAura with C_UnitAuras.GetAuraDataByIndex so we do the right
 		-- thing here, but note that we only return the name and spellID.
-		UnitAura = function(self, unit, index)
+		UnitAura = function(self, unit, index, filter)
 			if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
-				local info = Grail_SafeGetAuraDataByIndex(unit, index)
+				local info = Grail_SafeGetAuraDataByIndex(unit, index, filter)
 				if info then
 					return info.name, info.spellId
 				else
 					return nil
 				end
 			else
-				local name,_,_,_,_,_,_,_,_,boaSpellId,spellId = UnitAura('player', i)
-				if self.battleForAzeroth then
-					spellId = boaSpellId
+				if BLIZZ_UnitAura then
+					local name,_,_,_,_,_,_,_,_,boaSpellId,classicSpellId = BLIZZ_UnitAura(unit, index, filter)
+					local spellId = tonumber(classicSpellId or boaSpellId)
+					return name, spellId
 				end
-				return name, spellId
 			end
+			return nil
 		end,
 
 		---
@@ -14309,27 +14495,3 @@ end
 		they have all been dailies.
 
 ]]--
-
--- Final Classic/Retail-safe UnitAura --
-function Grail:UnitAura(unit, index, filter)
-    -- Retail path: use modern Aura API and skip secret aura indices (with debug print)
-    if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
-        if C_Secrets and C_Secrets.ShouldUnitAuraIndexBeSecret then
-            local ok, secret = pcall(C_Secrets.ShouldUnitAuraIndexBeSecret, unit, index, filter)
-            if ok and secret then
-               -- print("Grail Secret aura skipped ->", unit, index, filter)
-                return nil
-            end
-        end
-        local info = C_UnitAuras.GetAuraDataByIndex(unit, index, filter)
-        if info then return info.name, info.spellId end
-        return nil
-    end
-    -- Classic path: always call original Blizzard API (never self again)
-    if BLIZZ_UnitAura then
-        local name, _, _, _, _, _, _, _, _, boaSpellId, classicSpellId = BLIZZ_UnitAura(unit, index, filter)
-        local spellId = tonumber(classicSpellId or boaSpellId)
-        return name, spellId
-    end
-    return nil
-end

@@ -45889,4 +45889,40 @@ G[89402]='Harandar'
 G[92319]='A Favor to Axe'
 end
 
+if release >= 66527 then
+G[39]="Deliver Thomas' Report"
+G[285]='Search More Hovels'
+G[979]='Find Ranshalla'
+G[1000]='The New Frontier'
+G[1127]="Fool's Stout"
+G[1148]='Parts of the Swarm'
+G[1479]='The Bough of the Eternals'
+G[1526]='Call of Fire'
+G[1680]='Tormus Deepforge'
+G[2339]='Find the Gems and Power Source'
+G[2440]='The Platinum Discs'
+G[3124]='Hippogryph Muisek'
+G[3372]='Release Them'
+G[5087]='[DEPRECATED]Winterfall Runners'
+G[5159]='[DEPRECATED]Cleansed Water Returns to Felwood'
+G[5241]='Uncle Carlin'
+G[6402]='Stormwind Rendezvous'
+G[8395]='Claiming Arathi Basin'
+G[8439]='Conquering Arathi Basin'
+G[9503]='Call of Water'
+G[11145]='[DEPRECATED]Prisoners of the Grimtotems'
+G[11147]='[DEPRECATED]Unleash the Raptors'
+G[61433]='Giant Lungcap'
+G[76284]='Work It'
+G[76288]='Work It'
+G[81630]='Activation Protocol'
+G[94622]='Work It'
+G[94630]='Work It'
+G[94635]='Work It'
+G[94636]='Work It'
+G[94637]='Work It'
+G[94735]='Work It'
+G[95324]='The War Beyond the Roots'
+end
+
 --	End of localized quest names
