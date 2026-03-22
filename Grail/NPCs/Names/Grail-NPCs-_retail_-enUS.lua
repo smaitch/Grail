@@ -2126,4 +2126,8 @@ if release >= 66263 then
 G[1612259]='The Gulf of Memory'
 end
 
+if release >= 66527 then
+G[1539207]='Hastily Packed Belongings'
+end
+
 --	End of localized NPC names

@@ -590,6 +590,7 @@
 --			Adds a verifyWatchedBy reverse-lookup so any quest can find the quests that list it as a prerequisite.
 --			Corrects some issues that would cause taint.
 --			Adds a startup message encouraging players to enable tracking and submit data.
+--			Updates some Quest/NPC information.
 --
 --	Known Issues
 --
@@ -630,11 +631,8 @@ local function Grail_SafeGetAuraDataByIndex(unit, index, filter)
     -- Check for secret aura indices using Blizzard's secrecy API (Retail/TWW)
     if C_Secrets and C_Secrets.ShouldUnitAuraIndexBeSecret then
         local ok, secret = pcall(C_Secrets.ShouldUnitAuraIndexBeSecret, unit, index, filter)
-        if ok and secret then
-            -- Log skip only if Grail debug is enabled
-                local u = tostring(unit)
-                local f = filter and tostring(filter) or 'nil'
-            --    print(string.format('|cffff8800Grail|r: Secret Aura index (skipped) -> unit=%s, index=%s, filter=%s', u, tostring(index), f))
+        if not ok or secret then
+            -- Skip if secret confirmed OR if the secrecy check itself threw (can't safely read this index)
             return nil
         end
     end
@@ -646,6 +644,30 @@ local function Grail_SafeGetAuraDataByIndex(unit, index, filter)
     return nil
 end
 -- END Grail_SafeGetAuraDataByIndex wrapper
+
+-- Returns the first left-text line for a hyperlink, or nil.
+-- On retail/TWW uses C_TooltipInfo.GetHyperlink to avoid rendering a tooltip frame
+-- and tainting the UIWidgetManager pool.  On Classic falls back to rendering into a
+-- hidden private tooltip frame.
+local function _GetHyperlinkName(hyperlink, frame, globalTextName)
+    if C_TooltipInfo and C_TooltipInfo.GetHyperlink then
+        local data = C_TooltipInfo.GetHyperlink(hyperlink)
+        if data and data.lines and data.lines[1] then
+            return data.lines[1].leftText
+        end
+        -- C_TooltipInfo returned no data (e.g. unit:Creature hyperlinks for NPCs not
+        -- in the local cache are not supported).  Fall through to the tooltip frame path.
+    end
+    if not frame:IsOwned(UIParent) then frame:SetOwner(UIParent, "ANCHOR_NONE") end
+    frame:ClearLines()
+    frame:SetHyperlink(hyperlink)
+    if (frame:NumLines() or 0) ~= 0 then
+        local text = _G[globalTextName]
+        if text then return text:GetText() end
+    end
+    return nil
+end
+
 
 --	The Blizzard API is separated out so it is easier to see what API is being used
 
@@ -10720,22 +10742,10 @@ end
 					else
 						hyperlinkFormat = 'unit:Creature-0-0-0-0-' .. indexToUse .. '-0'
 					end
-					local frame = self.tooltipNPC
-					if not frame:IsOwned(UIParent) then frame:SetOwner(UIParent, "ANCHOR_NONE") end
-					frame:ClearLines()
-					frame:SetHyperlink(hyperlinkFormat)
-					local numLines = frame:NumLines()
-					if nil ~= numLines and 0 ~= numLines then
--- TODO: Instead of creating the tooltip with the name com_mithrandir_grailTooltipNPC and then looking in the global
---		space for the name of the tooltip with TextLeft1 appended, is there any other way to read the contents of the
---		tooltip such that I do not need to pullute the global namespace with a tooltip?
-						local text = _G["com_mithrandir_grailTooltipNPCTextLeft1"]
-						if text then
-							retval = text:GetText()
-							if retval ~= self.retrievingString then
-								self.npc.name[indexToUse] = retval
-							end
-						end
+					local name = _GetHyperlinkName(hyperlinkFormat, self.tooltipNPC, "com_mithrandir_grailTooltipNPCTextLeft1")
+					if name and name ~= self.retrievingString then
+						retval = name
+						self.npc.name[indexToUse] = name
 					end
 				end
 			end
@@ -12270,21 +12280,12 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 						end
 					end
 					if nil == retval and self.capabilities.usesQuestHyperlink then
-						local frame = self.tooltip
-						if not frame:IsOwned(UIParent) then frame:SetOwner(UIParent, "ANCHOR_NONE") end
-						frame:ClearLines()
-						frame:SetHyperlink(strformat("quest:%d", questId))
-						local numLines = frame:NumLines()
-						if nil ~= numLines or 0 ~= numLines then
-							local text = _G["com_mithrandir_grailTooltipTextLeft1"]
-							if text then
-								retval = text:GetText()
-								if nil ~= retval and retval ~= self.retrievingString then
-									self.quest.name[questId] = retval
-									if self.forceLocalizedQuestNameLoad then
-										self:_LearnQuestName(questId, retval)
-									end
-								end
+						local name = _GetHyperlinkName(strformat("quest:%d", questId), self.tooltip, "com_mithrandir_grailTooltipTextLeft1")
+						if name and name ~= self.retrievingString then
+							retval = name
+							self.quest.name[questId] = name
+							if self.forceLocalizedQuestNameLoad then
+								self:_LearnQuestName(questId, name)
 							end
 						end
 					end
