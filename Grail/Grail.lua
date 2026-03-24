@@ -8847,6 +8847,7 @@ end
 		--	table for Warband/account-wide rep.  Returns nil, nil on no match.
 		--
 		_ParseFactionChangeMessage = function(self, message)
+			if nil == message then return nil, nil end
 			local function fmtToPattern(fmt)
 				local p = fmt:gsub("%(", "%%("):gsub("%)", "%%)")
 				p = p:gsub("%%s", "(.+)")
