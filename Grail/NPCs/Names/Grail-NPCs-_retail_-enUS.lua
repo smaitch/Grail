@@ -2128,6 +2128,7 @@ end
 
 if release >= 66527 then
 G[1539207]='Hastily Packed Belongings'
+G[1612242]='Twilight Crypts'
 end
 
 --	End of localized NPC names

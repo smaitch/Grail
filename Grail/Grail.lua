@@ -8830,6 +8830,14 @@ end
 				gain = "Your Warband's reputation with (.+) increased by (%d+)%.",
 				loss = "Your Warband's reputation with (.+) decreased by (%d+)%.",
 			},
+			deDE = {
+				gain = "Der Ruf der Kriegsmeute bei der Fraktion '(.+)' hat sich um (%d+) verbessert%.",
+				loss = "Der Ruf der Kriegsmeute bei der Fraktion '(.+)' hat sich um (%d+) verschlechtert%.",
+			},
+			frFR = {
+				gain = "Réputation de votre bataillon auprès de la faction (.+) augmentée de (%d+)%.",
+				loss = "Réputation de votre bataillon auprès de la faction (.+) diminuée de (%d+)%.",
+			},
 		},
 
 		---
