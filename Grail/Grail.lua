@@ -13487,7 +13487,8 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 		--	@usage targetName, npcId, coordinates = Grail:TargetInformation()
 		TargetInformation = function(self)
 			local coordinates = nil
-			local npcId, targetName = self:GetNPCId(true)
+			local ok, npcId, targetName = pcall(self.GetNPCId, self, true)
+			if not ok then npcId = nil; targetName = nil end
 			if nil ~= npcId then
 				coordinates = self:Coordinates()
 			end
