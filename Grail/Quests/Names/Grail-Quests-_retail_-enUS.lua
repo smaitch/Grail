@@ -45930,4 +45930,8 @@ G[94735]='Work It'
 G[95324]='The War Beyond the Roots'
 end
 
+if release >= 66562 then
+G[89338]='Gathering Plowshares'
+end
+
 --	End of localized quest names

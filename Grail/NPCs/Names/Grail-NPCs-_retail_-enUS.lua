@@ -2131,4 +2131,12 @@ G[1539207]='Hastily Packed Belongings'
 G[1612242]='Twilight Crypts'
 end
 
+if release >= 66562 then
+G[1508705]="Lena's Stein"
+G[1523388]="Maraad's Meditation Crystal"
+G[1523389]="Krohm's Smithing Hammer"
+G[1523390]="Mara's Prayer Book"
+G[1523391]="Uther's Healing Kit"
+end
+
 --	End of localized NPC names
