@@ -45934,4 +45934,13 @@ if release >= 66562 then
 G[89338]='Gathering Plowshares'
 end
 
+if release >= 66666 then
+G[88755]='Scholarly Pursuits'
+end
+
+if release >= 66709 then
+G[88768]='Agents of Darkness'
+G[89249]='Overwhelmed'
+end
+
 --	End of localized quest names

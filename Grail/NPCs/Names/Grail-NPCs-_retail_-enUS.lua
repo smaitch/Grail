@@ -2139,4 +2139,9 @@ G[1523390]="Mara's Prayer Book"
 G[1523391]="Uther's Healing Kit"
 end
 
+if release >= 66709 then
+G[1526844]='Arcane Remnant'
+G[1542839]="K'areshi Keepsake"
+end
+
 --	End of localized NPC names

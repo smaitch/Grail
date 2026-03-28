@@ -1248,6 +1248,15 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					GrailDatabase[self.environment] = GrailDatabase[self.environment] or {}
 					self.GDE = GrailDatabase[self.environment]
 
+					-- Snapshot the quest pins already known from prior sessions so that
+					-- /grail pins can report only the ones discovered this session.
+					self.sessionStartQuestPins = {}
+					if self.GDE.observedQuestLocations then
+						for questID in pairs(self.GDE.observedQuestLocations) do
+							self.sessionStartQuestPins[questID] = true
+						end
+					end
+
 					-- Now we set up some capabilities flags
 					self.capabilities = {}
 					self.capabilities.usesFriendshipReputation = self.existsMainline
@@ -2153,6 +2162,31 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							Grail.notificationFrame:RegisterEvent("LOOT_CLOSED")
 						end
 					end)
+					self:RegisterSlashOption("pins", "|cFF00FF00pins|r => lists quest pins discovered this session that were not previously recorded", function()
+						local locs = self.GDE.observedQuestLocations
+						if not locs then
+							print("Grail: no quest pins recorded yet — open the world map and browse some zones")
+							return
+						end
+						local count = 0
+						for questID, loc in pairs(locs) do
+							if not self.sessionStartQuestPins[questID] then
+								count = count + 1
+								local name = self.quest.name[questID]
+								if not name then
+									local title = C_QuestLog.GetQuestInfo(questID)
+									name = title or "?"
+								end
+								local mapName = self:_GetMapNameByID(loc.mapID)
+								print(strformat("|cFFFF8C00Q%d|r %s  |cFF808080[%s]|r x=%.4f y=%.4f", questID, name, mapName, loc.x, loc.y))
+							end
+						end
+						if 0 == count then
+							print("Grail: no new quest pins this session")
+						else
+							print(strformat("Grail: |cFF00FF00%d|r new quest pin(s) this session", count))
+						end
+					end)
 					self:RegisterSlashOption("help", "|cFF00FF00help|r => print out this list of commands", function()
 						print("|cFFFF0000Grail|r slash commands:")
 						for option, value in pairs(self.slashCommandOptions) do
@@ -2287,6 +2321,25 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 					self:RegisterObserver("Bags", self._BagUpdates)
 					self:RegisterObserver("QuestLogChange", self._QuestLogUpdate)
 					self:_UpdateTrackingObserver()
+
+					-- Hook the world map to passively collect quest-pin locations as the
+					-- player browses.  C_QuestLog.GetQuestsOnMap is retail/BFA+ only.
+					-- We defer the scan by 0.5s because Blizzard populates quest-pin data
+					-- asynchronously; calling GetQuestsOnMap immediately on SetMapID returns
+					-- stale or empty results.
+					if C_QuestLog.GetQuestsOnMap then
+						WorldMapFrame:HookScript("OnShow", function()
+							local mapID = WorldMapFrame:GetMapID()
+							C_Timer.After(0.5, function()
+								self:_ScanMapQuestPins(mapID)
+							end)
+						end)
+						hooksecurefunc(WorldMapFrame, "SetMapID", function(_, mapID)
+							C_Timer.After(0.5, function()
+								self:_ScanMapQuestPins(mapID)
+							end)
+						end)
+					end
 
 					self.timings.AddonLoaded = 	debugprofilestop() - debugStartTime
 --				end
@@ -8756,6 +8809,28 @@ end
 
 		_HandleEventAreaPOIsUpdated = function(self)
 			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupAreaPOIQuests])
+		end,
+
+		---
+		--	Scans C_QuestLog.GetQuestsOnMap() for the given map and records each quest pin
+		--	position into GDE.observedQuestLocations[questID] = {mapID, x, y}.
+		--	This builds a passive dataset of "where each quest giver stands" that can be
+		--	used to verify or fill Grail NPC location data.  Only the most-recent
+		--	observation per quest is kept; later sightings overwrite earlier ones.
+		_ScanMapQuestPins = function(self, uiMapID)
+			if not uiMapID then return end
+			local pins = C_QuestLog.GetQuestsOnMap(uiMapID)
+			if not pins or #pins == 0 then return end
+			if nil == self.GDE.observedQuestLocations then
+				self.GDE.observedQuestLocations = {}
+			end
+			local locs = self.GDE.observedQuestLocations
+			for _, pin in ipairs(pins) do
+				local questID = tonumber(pin.questID)
+				if questID then
+					locs[questID] = {mapID = uiMapID, x = pin.x, y = pin.y}
+				end
+			end
 		end,
 
 		_HandleEventGarrisonBuildingActivated = function(self, buildingId)
