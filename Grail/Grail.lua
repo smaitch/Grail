@@ -1260,14 +1260,13 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					-- Now we set up some capabilities flags
 					self.capabilities = {}
 					self.capabilities.usesFriendshipReputation = self.existsMainline
--- TODO: Deal with the following...
-					self.capabilities.usesAchievements = not self.existsClassic or self.existsClassicWrathOfTheLichKing or existsClassicCataclysm or self.existsClassicPandaria
+					self.capabilities.usesAchievements = not self.existsClassic or self.existsClassicWrathOfTheLichKing or self.existsClassicCataclysm or self.existsClassicPandaria
 					self.capabilities.usesGarrisons = self.existsMainline
 					self.capabilities.usesArtifacts = false --self.existsMainline
 					self.capabilities.usesCampaignInfo = self.existsMainline
 					self.capabilities.usesCalendar = self.existsMainline
 					self.capabilities.usesAzerothAsCosmicMap = self.existsClassicEra
-					self.capabilities.usesQuestHyperlink = self.existsMainline or self.existsClassicWrathOfTheLichKing or existsClassicCataclysm or self.existsClassicPandaria
+					self.capabilities.usesQuestHyperlink = self.existsMainline or self.existsClassicWrathOfTheLichKing or self.existsClassicCataclysm or self.existsClassicPandaria
 					self.capabilities.usesFollowers = self.existsMainline
 					self.capabilities.usesWorldEvents = self.existsMainline
 					self.capabilities.usesWorldQuests = self.existsMainline
@@ -8883,17 +8882,26 @@ end
 		--	matching the format used throughout Grail's reputation data (e.g. "A90" for 2704).
 		--	Resolution order:
 		--	  1. reverseReputationMapping  — pre-built from Grail's existing reputation data
-		--	  2. GetFactionInfo scan        — live WoW panel, covers factions not yet in Grail data
+		--	  2. C_Reputation / GetFactionInfo scan — live WoW panel, covers factions not yet in Grail data
 		--	  3. "N:<name>" fallback        — preserves the name for later manual resolution
 		--
 		_ResolveFactionId = function(self, factionName)
 			local hexId = self.reverseReputationMapping[factionName]
 			if nil ~= hexId then return hexId end
 
-			for i = 1, GetNumFactions() do
-				local name, _, _, _, _, _, _, _, _, _, _, _, _, factionID = GetFactionInfo(i)
-				if name == factionName and factionID and factionID > 0 then
-					return self:_HexValue(factionID, 3)
+			if C_Reputation and C_Reputation.GetNumFactions and C_Reputation.GetFactionDataByIndex then
+				for i = 1, C_Reputation.GetNumFactions() do
+					local info = C_Reputation.GetFactionDataByIndex(i)
+					if info and info.name == factionName and info.factionID and info.factionID > 0 then
+						return self:_HexValue(info.factionID, 3)
+					end
+				end
+			elseif GetNumFactions and GetFactionInfo then
+				for i = 1, GetNumFactions() do
+					local name, _, _, _, _, _, _, _, _, _, _, _, _, factionID = GetFactionInfo(i)
+					if name == factionName and factionID and factionID > 0 then
+						return self:_HexValue(factionID, 3)
+					end
 				end
 			end
 
@@ -8912,6 +8920,38 @@ end
 			frFR = {
 				gain = "Réputation de votre bataillon auprès de la faction (.+) augmentée de (%d+)%.",
 				loss = "Réputation de votre bataillon auprès de la faction (.+) diminuée de (%d+)%.",
+			},
+			esMX = {
+				gain = "La reputación de tu tropa con (.+) ha aumentado (%d+) p%.",
+				loss = "La reputación de tu tropa con (.+) ha disminuido (%d+) p%.",	-- loss inferred
+			},
+			ptBR = {
+				gain = "A Reputação do seu Bando de Guerra com (.+) aumentou em (%d+)%.",
+				loss = "A Reputação do seu Bando de Guerra com (.+) diminuiu em (%d+)%.",	-- loss inferred
+			},
+			koKR = {
+				gain = "(.+)에 대한 전투부대의 평판이 (%d+)만큼 상승했습니다%.",
+				loss = "(.+)에 대한 전투부대의 평판이 (%d+)만큼 감소했습니다%.",	-- loss inferred
+			},
+			zhTW = {
+				gain = "戰隊的(.+)聲望提高(%d+)點。",
+				loss = "戰隊的(.+)聲望降低(%d+)點。",	-- loss inferred
+			},
+			zhCN = {
+				gain = "你的战团在(.+)中的声望值提高了(%d+)点。",
+				loss = "你的战团在(.+)中的声望值降低了(%d+)点。",	-- loss inferred
+			},
+			esES = {
+				gain = "La reputación de tu banda guerrera con la facción (.+) ha aumentado (%d+) p%.",
+				loss = "La reputación de tu banda guerrera con la facción (.+) ha disminuido (%d+) p%.",	-- loss inferred
+			},
+			itIT = {
+				gain = "La reputazione della Brigata con \"(.+)\" è aumentata di (%d+)%.",
+				loss = "La reputazione della Brigata con \"(.+)\" è diminuita di (%d+)%.",	-- loss inferred
+			},
+			ruRU = {
+				gain = "Отношение (.+) к вашему отряду улучшилось на (%d+)%.",
+				loss = "Отношение (.+) к вашему отряду ухудшилось на (%d+)%.",	-- loss inferred
 			},
 		},
 

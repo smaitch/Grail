@@ -45941,6 +45941,8 @@ end
 if release >= 66709 then
 G[88768]='Agents of Darkness'
 G[89249]='Overwhelmed'
+G[91627]="Saltheril's Haven"
+G[91628]='Honored Guests'
 end
 
 --	End of localized quest names

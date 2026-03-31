@@ -673,4 +673,11 @@ G[100129928]='Prisma Transtemporal Frígido'
 G[100133377]='Brasa Fumegante Distorcida pelo Tempo'
 end
 
+if release >= 66709 then
+G[1523589]='Fera Abatida'
+G[1529725]='Diário de Hieron'
+G[1531495]='Fera Abatida'
+G[1612891]='Saco Sangrento'
+end
+
 --	End of localized NPC names

@@ -679,4 +679,9 @@ G[100129928]='Prisma cronodistorsionado gélido'
 G[100133377]='Ascua cronodistorsionada humeante'
 end
 
+if release >= 66709 then
+G[1035591]='Vórtice oceánico'
+G[1526075]='Torentia'
+end
+
 --	End of localized NPC names
