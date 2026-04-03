@@ -2140,8 +2140,17 @@ G[1523391]="Uther's Healing Kit"
 end
 
 if release >= 66709 then
+G[1517146]='Dropped Note'
+G[1520354]='Submerged Cargo'
+G[1526810]='Missing Journal'
 G[1526844]='Arcane Remnant'
+G[1531479]="Ranger's Cache"
 G[1542839]="K'areshi Keepsake"
+G[1556758]='Intercepted Shipment'
+G[1556759]='Intercepted Shipment'
+G[1556760]='Intercepted Shipment'
+G[1556761]='Intercepted Shipment'
+G[1556762]='Intercepted Shipment'
 end
 
 --	End of localized NPC names

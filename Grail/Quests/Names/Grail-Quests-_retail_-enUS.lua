@@ -45940,9 +45940,14 @@ end
 
 if release >= 66709 then
 G[88768]='Agents of Darkness'
+G[88979]='Caught Red-Handed'
 G[89249]='Overwhelmed'
+G[90575]='Fortify the Runestones: Farstriders'
 G[91627]="Saltheril's Haven"
 G[91628]='Honored Guests'
+G[91629]='High Esteem'
+G[91693]='The Subtle Game'
+G[91966]="Saltheril's Soiree"
 end
 
 --	End of localized quest names
