@@ -685,8 +685,6 @@ local GetCurrentMapDungeonLevel			= GetCurrentMapDungeonLevel
 local GetCVar							= GetCVar
 local GetInstanceInfo					= GetInstanceInfo
 local GetLocale							= GetLocale
-local GetMapContinents					= GetMapContinents
-local GetMapZones						= GetMapZones
 local GetNumQuestLogEntries				= GetNumQuestLogEntries
 local GetProfessionInfo					= GetProfessionInfo
 local GetProfessions					= GetProfessions
@@ -696,7 +694,6 @@ local GetQuestLogRewardFactionInfo		= GetQuestLogRewardFactionInfo
 local GetQuestLogSelection				= GetQuestLogSelection
 local GetQuestResetTime					= GetQuestResetTime
 local GetQuestsCompleted				= GetQuestsCompleted					-- GetQuestsCompleted is special because in modern environments we define it ourselves
-local GetSpellBookItemName				= GetSpellBookItemName
 local GetSpellLink						= GetSpellLink
 local GetText							= GetText
 local GetTime							= GetTime
@@ -929,7 +926,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		bitMaskRaceNightborne			=	0x00000002,
 		bitMaskRaceDarkIronDwarf		=	0x00000004,
 		bitMaskRaceMagharOrc			=	0x00000008,
-			bitMaskRaceUnused1			=	0x00000010,
+		bitMaskRaceHarronir				=	0x00000010,
 			bitMaskRaceUnused2			=	0x00000020,
 			bitMaskRaceUnused3			=	0x00000040,
 			bitMaskRaceUnused4			=	0x00000080,
@@ -958,7 +955,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		bitMaskRaceLightforgedDraenei	=	0x40000000,
 		bitMaskKulTiran					=	0x80000000,
 		-- Convenience values
-		bitMaskRaceAll			=	0xfffff80f,
+		bitMaskRaceAll			=	0xfffff81f,
 
 		-- Enf of bit mask values
 
@@ -2423,38 +2420,34 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 			['GARRISON_MISSION_STARTED'] = function(self, frame, garrFollowerTypeID, missionID)
 				local mission = C_Garrison.GetBasicMissionInfo(missionID)
 				if nil ~= mission then
-					retval = mission.name or "unknown"
+					local message = strformat("mission name: %s with mission id: %d started with garrFollowerTypeID %d", mission.name, missionID, garrFollowerTypeID)
+					if self.GDE.debug or self.GDE.tracking then
+						print(message)
+					end
+					self:_AddTrackingMessage(message)
 				end
-				local message = strformat("mission name: %s with mission id: %d started with garrFollowerTypeID %d", mission.name, missionID, garrFollowerTypeID)
-				if self.GDE.debug or self.GDE.tracking then
-					print(message)
-				end
-				self:_AddTrackingMessage(message)
 			end,
 
 			['GARRISON_MISSION_FINISHED'] = function(self, frame, garrFollowerTypeID, missionID)
 				local mission = C_Garrison.GetBasicMissionInfo(missionID)
 				if nil ~= mission then
-					retval = mission.name or "unknown"
+					local message = strformat("mission name: %s with mission id: %d finished with garrFollowerTypeID %d", mission.name, missionID, garrFollowerTypeID)
+					if self.GDE.debug or self.GDE.tracking then
+						print(message)
+					end
+					self:_AddTrackingMessage(message)
 				end
-				local message = strformat("mission name: %s with mission id: %d finished with garrFollowerTypeID %d", mission.name, missionID, garrFollowerTypeID)
-				if self.GDE.debug or self.GDE.tracking then
-					print(message)
-				end
-				self:_AddTrackingMessage(message)
-
 			end,
 
 			['GARRISON_MISSION_COMPLETE_RESPONSE'] = function(self, frame, missionID, canComplete, success, overmaxSucceeded, followerDeaths, autoCombatResult)
 				local mission = C_Garrison.GetBasicMissionInfo(missionID)
 				if nil ~= mission then
-					retval = mission.name or "unknown"
+					local message = string.format("Garrison mission complete response: %s, missionID: %d, canComplete: %s, success: %s, overmaxSucceeded: %s", mission.name, missionID, tostring(canComplete), tostring(success), tostring(overmaxSucceeded))
+					if self.GDE.debug then
+						print(message)
+					end
+					self:_AddTrackingMessage(message)
 				end
-				local message = string.format("Garrison mission complete response: %s, missionID: %d, canComplete: %s, success: %s, overmaxSucceeded: %s", mission.name, missionID, tostring(canComplete), tostring(success), tostring(overmaxSucceeded))
-				if self.GDE.debug then
-					print(message)
-				end
-				self:_AddTrackingMessage(message)
 			end,
 
 			['CHAT_MSG_COMBAT_FACTION_CHANGE'] = function(self, frame, message)
@@ -3459,6 +3452,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			['X'] = { 'EarthenDwarf',  'Earthen',   'Earthen',   0x00000800 },
 			['Y'] = { 'Dracthyr', 'Dracthyr',  'Dracthyr',	0x00001000 },
 			['Z'] = { 'ZandalariTroll', 'Zandalari Troll', 'Zandalari Troll', 0x10000000 },
+			['h'] = { 'Harronir', 'Haranir', 'Haranir', 0x00000010 }
 			},
 		receivedCalendarUpdateEventList = false,
 		receivedQuestLogUpdate = false,
@@ -13862,6 +13856,8 @@ if locale == "deDE" then
 		G['Y'][3] = 'Dracthyr'
 	G['Z'][2] = 'Zandalaritroll'
 	G['Z'][3] = 'Zandalaritroll'
+		G['h'][2] = 'Haranir'
+		G['h'][3] = 'Haranir'
 
 elseif locale == "esES" then
 	me.accountUnlock = "Desbloqueo ligado a la cuenta"
@@ -13931,7 +13927,9 @@ elseif locale == "esES" then
 		G['Y'][3] = 'Dracthyr'
 	G['Z'][2] = 'Trol Zandalari'
 	G['Z'][3] = 'Trol Zandalari'
-	
+		G['h'][2] = 'Haranir'
+		G['h'][3] = 'Haranir'
+
 elseif locale == "esMX" then
 	me.accountUnlock = "Para toda la cuenta"
 	me.bodyGuardLevel = { 'Guardaespaldas', 'De confianza', 'Copiloto personal' }
@@ -14000,6 +13998,8 @@ elseif locale == "esMX" then
 		G['Y'][3] = 'Dracthyr'
 	G['Z'][2] = 'Trol zandalari'
 	G['Z'][3] = 'Trol zandalari'
+		G['h'][2] = 'Haranir'
+		G['h'][3] = 'Haranir'
 
 elseif locale == "frFR" then
 	me.accountUnlock = "Accès accordé au compte"
@@ -14069,6 +14069,8 @@ elseif locale == "frFR" then
 		G['Y'][3] = 'Dracthyr'
 	G['Z'][2] = 'Troll zandalari'
 	G['Z'][3] = 'Trolle zandalari'
+		G['h'][2] = 'Haranir'
+		G['h'][3] = 'Haranir'
 
 elseif locale == "itIT" then
 	me.accountUnlock = "Sblocco a livello di account"
@@ -14174,6 +14176,8 @@ me.professionMapping = {
 		G['Y'][3] = 'Dracthyr'
 	G['Z'][2] = 'Troll Zandalari'
 	G['Z'][3] = 'Troll Zandalari'
+		G['h'][2] = 'Haranir'
+		G['h'][3] = 'Haranir'
 
 elseif locale == "koKR" then
 	me.accountUnlock = "계정 공유 해제"
@@ -14243,6 +14247,8 @@ elseif locale == "koKR" then
 	G['Y'][3] = '드랙티르'
 	G['Z'][2] = '잔달라 트롤'
 	G['Z'][3] = '잔달라 트롤'
+	G['h'][2] = '하라니르'
+	G['h'][3] = '하라니르'
 
 elseif locale == "ptBR" then
 	me.accountUnlock = "Desbloqueio de Conta"
@@ -14329,6 +14335,8 @@ me.professionMapping = {
 		G['Y'][3] = 'Dracthyr'
 	G['Z'][2] = 'Troll Zandalari'
 	G['Z'][3] = 'Trolesa Zandalari'
+		G['h'][2] = 'Haranir'
+		G['h'][3] = 'Haranir'
 
 elseif locale == "ruRU" then
 	me.accountUnlock = "Доступ для всей учетной записи"
@@ -14398,6 +14406,8 @@ elseif locale == "ruRU" then
 	G['Y'][3] = 'Драктир'
 	G['Z'][2] = 'Зандалар'
 	G['Z'][3] = 'Зандаларка'
+	G['h'][2] = 'Харанир'
+	G['h'][3] = 'Харанир'
 
 elseif locale == "zhCN" then
 	me.accountUnlock = "账号解锁"
@@ -14466,6 +14476,8 @@ elseif locale == "zhCN" then
 	G['Y'][3] = '龙希尔'
 	G['Z'][2] = '赞达拉巨魔'
 	G['Z'][3] = '赞达拉巨魔'
+	G['h'][2] = '哈籁尼尔'
+	G['h'][3] = '哈籁尼尔'
 
 elseif locale == "zhTW" then
 	me.accountUnlock = "帳號解鎖"
@@ -14535,6 +14547,8 @@ elseif locale == "zhTW" then
 	G['Y'][3] = '半龍人'
 	G['Z'][2] = '贊達拉食人妖'
 	G['Z'][3] = '贊達拉食人妖'
+	G['h'][2] = '哈拉尼爾'
+	G['h'][3] = '哈拉尼爾'
 
 elseif locale == "enUS" or locale == "enGB" then
 	-- do nothing as the default values are already in English

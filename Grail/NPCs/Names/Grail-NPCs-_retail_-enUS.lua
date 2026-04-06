@@ -2122,13 +2122,68 @@ if release >= 62438 then
 G[1307066]='Ocean Chest'
 end
 
+if release >= 66192 then
+G[1518640]='Lightspire Spear'
+end
+
+if release >= 66198 then
+G[1508411]='Haranir Heirloom'
+G[1516934]='Sanguithorn'
+G[1516963]='Lightfused Mana Lily'
+G[1516966]='Lightfused Sanguithorn'
+G[1516973]='Primal Tranquility Bloom'
+end
+
 if release >= 66263 then
+G[1516932]='Tranquility Bloom'
+G[1516965]='Lightfused Azeroot'
+G[1516967]='Lightfused Tranquility Bloom'
+G[1516974]='Primal Sanguithorn'
+G[1516979]='Voidbound Tranquility Bloom'
+G[1516980]='Voidbound Sanguithorn'
+G[1516981]='Voidbound Azeroot'
+G[1523589]='Slain Beast'
+G[1525946]="Sin'dorei Enchanting Rod"
+G[1525947]='Loa-Blessed Dust'
+G[1525949]='Entropic Shard'
+G[1525951]='Pure Void Crystal'
+G[1525966]="Vial of Zul'Aman Oddities"
+G[1525967]='Vial of Rootlands Oddities'
+G[1539050]='Burrow Bounty'
+G[1539052]='Secret Formula'
+G[1539053]='Abandoned Nest'
+G[1555462]='Umbral Tin'
+G[1572258]='Buried Treasure'
+G[1574126]='Leaf-wrapped Package'
+G[1582179]='Twilight Ordinance'
+G[1583965]='Maisara Vilevessel'
+G[1611933]='The Shadow Enclave'
+G[1612038]='Agitated Tome'
 G[1612259]='The Gulf of Memory'
+G[1612264]='The Grudge Pit'
+G[1613242]="Antique Nobleman's Signet Ring"
+G[1617432]='Forgotten Ink and Quill'
+G[1617534]='Gilded Armillary Sphere'
+end
+
+if release >= 66337 then
+G[1582157]='Spiritpaw Satchel'
+end
+
+if release >= 66384 then
+G[1567709]="Hieron's Belongings"
+G[1573714]="Ani's Trinket Bag"
+G[1583971]='Stonewash Supplies'
+G[1612354]='Sunkiller Sanctum'
+G[1612364]='Shadowguard Point'
+G[1613438]='Shade Lily Cluster'
 end
 
 if release >= 66527 then
 G[1539207]='Hastily Packed Belongings'
+G[1555462]='Forgotten Amani Cache'
 G[1612242]='Twilight Crypts'
+G[1618495]='Nullaeus Cache'
 end
 
 if release >= 66562 then
@@ -2140,17 +2195,51 @@ G[1523391]="Uther's Healing Kit"
 end
 
 if release >= 66709 then
+G[1035591]='Sungrub'
+G[1516363]='Sedated Spellbook'
 G[1517146]='Dropped Note'
+G[1519235]='Art and Architecture of Silvermoon: Vol. 3'
+G[1519237]='Satchel of Herbs'
+G[1519240]='Nondescript Bottle of Water'
 G[1520354]='Submerged Cargo'
 G[1526810]='Missing Journal'
 G[1526844]='Arcane Remnant'
+G[1527218]='Depleted Wardbreaker'
+G[1527240]="Magister's Chest"
+G[1527363]='Basket of Spell Reagents'
+G[1527364]='Thrumming Amulet'
+G[1527365]='Arcane Sword'
 G[1531479]="Ranger's Cache"
+G[1531508]='Recharged Wardbreaker'
+G[1539728]='Crate of Fel Artifacts'
+G[1539770]='Strewn Rags'
+G[1539772]='"Empty" Wine Bottle'
+G[1539773]='Concealed Crate'
+G[1539774]='Inconspicuous Ledger'
+G[1539775]='Mislaid Bag'
 G[1542839]="K'areshi Keepsake"
+G[1553793]='Shield'
+G[1553844]='Axe'
+G[1555351]='Burbling Paint Pot'
+G[1555381]='Sinara Vine'
+G[1555383]='Belanise Cluster'
+G[1555631]='Remnant of Anguish'
+G[1555829]="Herbalist's Handbook: Eversong Medicinals"
+G[1555830]='Index of Ranger Corps Recipes Vol. VII'
+G[1555832]='Songs for the Silver Streams'
 G[1556758]='Intercepted Shipment'
 G[1556759]='Intercepted Shipment'
 G[1556760]='Intercepted Shipment'
 G[1556761]='Intercepted Shipment'
 G[1556762]='Intercepted Shipment'
+G[1566101]='Unlocked Strongbox'
+G[1568254]='Scattered Supplies'
+G[1568332]='Blooming Graveblossom'
+G[1568439]='Mysterious Bloom'
+G[1568505]='Mysterious Bloom'
+G[1568515]='Mysterious Bloom'
+G[1612039]='The Darkway'
+G[1612894]='Parhelion Plaza'
 end
 
 --	End of localized NPC names
