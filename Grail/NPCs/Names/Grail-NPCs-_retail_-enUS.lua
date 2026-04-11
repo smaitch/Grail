@@ -6,12 +6,12 @@
 --	We are using this as the base list of NPC names, so we do not look at the locale
 --	to determine whether we should abandon further processing.
 
+if not Grail.usesModernQuests then return end
+
 local G = Grail.npc.name
 local _, release, _, interface = GetBuildInfo()
 release = tonumber(release)
 interface = tonumber(interface)
-
-if interface < 100207 then return end
 
 if release >= 0 then
 G[0]='Self'
@@ -2240,6 +2240,10 @@ G[1568505]='Mysterious Bloom'
 G[1568515]='Mysterious Bloom'
 G[1612039]='The Darkway'
 G[1612894]='Parhelion Plaza'
+end
+
+if release >= 66838 then
+G[1531891]='Vanguard Scout'
 end
 
 --	End of localized NPC names

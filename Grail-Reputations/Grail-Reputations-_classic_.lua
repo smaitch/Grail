@@ -19,6 +19,8 @@
 --	UTF-8 file
 --
 
+if not Grail.usesClassicQuests then return end
+
 local pairs, strsub, tonumber = pairs, strsub, tonumber
 local GetBuildInfo = GetBuildInfo
 local COMBAT_TEXT_SHOW_REPUTATION_TEXT = COMBAT_TEXT_SHOW_REPUTATION_TEXT
@@ -26,8 +28,6 @@ local COMBAT_TEXT_SHOW_REPUTATION_TEXT = COMBAT_TEXT_SHOW_REPUTATION_TEXT
 local _, release, _, interface = GetBuildInfo()
 release = tonumber(release)
 interface = tonumber(interface)
-
-if interface >= 100207 then return end
 
 local Grail_Reputations_File_Version = 007
 
@@ -6012,6 +6012,54 @@ G[8403]={'37A150'}
 G[8408]={'37A100'}
 G[8426]={'379150'}
 G[8439]={'1FE150'}
+end
+
+if release >= 66765 then
+G[5502]={'043200'}
+G[8484]={'1D5200'}
+G[9168]={'39A150'}
+G[9308]={'3A2100'}
+G[9408]={'3B210'}
+G[9434]={'38F100'}
+G[9447]={'3AD100'}
+G[9612]={'3A2150'}
+G[9721]={'38F10'}
+G[9722]={'38F10'}
+G[9723]={'38F50'}
+G[9725]={'38F100'}
+G[9733]={'3AE50'}
+G[9734]={'3AE50'}
+G[9735]={'38F100'}
+G[9736]={'38F75'}
+G[9737]={'38F200'}
+G[9767]={'3AE100'}
+G[9772]={'212100'}
+G[9811]={'38F50'}
+G[9812]={'04450'}
+G[9866]={'3AD50'}
+G[10029]={'3A450'}
+G[10046]={'04C10'}
+G[10061]={'3B3100'}
+G[10081]={'3AD10'}
+G[10082]={'3AD100'}
+G[10125]={'3B3100'}
+G[10150]={'3B3100'}
+G[10152]={'3B3100'}
+G[10214]={'3B3100'}
+G[10362]={'38F150'}
+G[10386]={'3B3-25'}
+G[10387]={'3B3-25'}
+G[10560]={'3A7100'}
+G[10693]={'38F5'}
+G[10695]={'3A25'}
+G[10697]={'38F5'}
+G[10699]={'3A25'}
+G[10943]={'3F310'}
+G[10944]={'3F4150'}
+G[11007]={'3A7500'}
+G[11216]={'3C75'}
+G[11454]={'03B25'}
+G[11524]={'43575'}
 end
 
 --	Now the reputation data gets processed into its own table to save space

@@ -3,13 +3,13 @@
 --	UTF-8 file
 --
 
+if not Grail.usesModernQuests then return end
+
 if GetLocale() ~= "ruRU" then return end
 local G = Grail.npc.name
 local _, release, _, interface = GetBuildInfo()
 release = tonumber(release)
 interface = tonumber(interface)
-
-if interface < 100207 then return end
 
 if release >= 0 then
 G[0]='Само'

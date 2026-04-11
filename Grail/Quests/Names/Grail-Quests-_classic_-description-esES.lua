@@ -3,13 +3,13 @@
 --	UTF-8 file
 --
 
+if not Grail.usesClassicQuests then return end
+
 if GetLocale() ~= "esES" then return end
 local G = Grail.quest.description
 local _, release, _, interface = GetBuildInfo()
 release = tonumber(release)
 interface = tonumber(interface)
-
-if interface >= 100207 then return end
 
 if release >= 0 then
 G[1]='Kill Kobold Vermin, 2 of em.'

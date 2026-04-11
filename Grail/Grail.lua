@@ -1057,6 +1057,24 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		--	log would be made at least once for each quest, so caching makes things a little quicker.
 		cachedQuestsInLog = nil,
 		checksReputationRewardsOnAcceptance = true,
+		-- [1] Blizzard internal non-localized name
+		-- [2] bit map value
+		-- [3] area map
+		classes = {
+			D = { 'DRUID', 0x00000008, 200004, },
+			E = { 'DEMONHUNTER', 0x10000000, 200005, },
+			H = { 'HUNTER', 0x00000010, 200008, },
+			K = { 'DEATHKNIGHT', 0x00000004, 200011, },
+			L = { 'WARLOCK', 0x00000800, 200012, },
+			M = { 'MAGE', 0x00000020, 200013, },
+			O = { 'MONK', 0x00000040, 200015, },
+			P = { 'PALADIN', 0x00000080, 200016, },
+			R = { 'ROGUE', 0x00000020, 200018, },
+			S = { 'SHAMAN', 0x00000400, 200019, },
+			T = { 'PRIEST', 0x00000100, 200020, },
+			V = { 'EVOKER', 0x08000000, 200022, },
+			W = { 'WARRIOR', 0x00001000, 200023, },
+		},
 		classMapping = {
 			['D'] = 'DRUID',
 			['E'] = 'DEMONHUNTER',
@@ -1240,7 +1258,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						end
 					end
 
-					self.existsClassic = self.existsClassicBasic or self.existsClassicWrathOfTheLichKing or self.existsClassicCataclysm or self.existsClassicPandaria
+					self.existsClassic = self.existsClassicBasic or self.existsClassicBurningCrusade or self.existsClassicWrathOfTheLichKing or self.existsClassicCataclysm or self.existsClassicPandaria
 
 					GrailDatabase[self.environment] = GrailDatabase[self.environment] or {}
 					self.GDE = GrailDatabase[self.environment]
@@ -1296,39 +1314,81 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.quest.name[600001]=Grail:_GetMapNameByID(19)..' '..FACTION_ALLIANCE..' '..REQUIREMENTS
 					self.quest.name[600002]=Grail:_GetMapNameByID(19)..' '..FACTION_HORDE..' '..REQUIREMENTS
 
-					if self.existsClassic then	-- redefine races that are available
-						self.races = {
-							-- [1] is Blizzard API return (non-localized)
-							-- [2] is localized male
-							-- [3] is localized female
-							-- [4] is bitmap value
-							['E'] = { 'NightElf', 'Night Elf', 'Night Elf', 0x00020000 },
-							['F'] = { 'Dwarf',    'Dwarf',     'Dwarf',     0x00010000 },
-							['H'] = { 'Human',    'Human',     'Human',     0x00008000 },
-							['L'] = { 'Troll',    'Troll',     'Troll',     0x01000000 },
-							['N'] = { 'Gnome',    'Gnome',     'Gnome',     0x00040000 },
-							['O'] = { 'Orc',      'Orc',       'Orc',       0x00200000 },
--- Do not ever use P because it will interfere with SP quest code
-							['T'] = { 'Tauren',   'Tauren',    'Tauren',    0x00800000 },
-							['U'] = { 'Scourge',  'Undead',    'Undead',    0x00400000 },
-							}
-						self.bitMaskRaceAll = 0x01e78000
-						if self.existsClassicWrathOfTheLichKing or self.existsClassicCataclysm or self.existsClassicPandaria then
-							self.races['B'] = { 'BloodElf', 'Blood Elf', 'Blood Elf', 0x02000000 }
-							self.races['D'] = { 'Draenei',  'Draenei',   'Draenei',   0x00080000 }
-							self.bitMaskRaceAll = 0x03ef8000
-						end
-						if self.existsClassicPandaria then
-							self.races['A'] = { 'Pandaren', 'Pandaren',  'Pandaren',  0x08000000 }
-							self.bitMaskRaceAll = 0x0BEF8000
-						end
+					-- Remove races that are introduced in expansions past the one the is currently being used.
+					if self.expansion < 11 then
+						-- Mignight
+						self.races['h'] = nil	-- Haranir
+					end
+					if self.expansion < 10 then
+						-- The War Within
+						self.races['X'] = nil	-- Earthen
+					end
+					if self.expansion < 9 then
+						-- Dragonflight
+						self.races['Y'] = nil	-- Dracthyr
+					end
+					if self.expansion < 7 then
+						-- Battle for Azeroth
+						self.races['C'] = nil	-- Dark Iron Dwarf
+						self.races['J'] = nil	-- Mag'har Orc
+						self.races['K'] = nil	-- Kul'Tiran
+						self.races['Q'] = nil	-- Mechagnome
+						self.races['S'] = nil	-- Vulpera
+						self.races['Z'] = nil	-- Zandalari Troll
+					end
+					if self.expansion < 6 then
+						-- Legion
+						self.races['I'] = nil	-- Lightforged Draenei
+						self.races['M'] = nil	-- Highmountain Tauren
+						self.races['R'] = nil	-- Nightborne
+						self.races['V'] = nil	-- Void Elf
+					end
+					if self.expansion < 4 then
+						-- Mists of Pandaria
+						self.races['A'] = nil	-- Pandaren
+					end
+					if self.expansion < 3 then
+						-- Cataclysm
+						self.races['G'] = nil	-- Goblin
+						self.races['W'] = nil	-- Worgen
+					end
+					if self.expansion < 1 then
+						-- Burning Crusade
+						self.races['B'] = nil	-- Blood Elf
+						self.races['D'] = nil	-- Draenei
+					end
+					
+					-- Now recompute self.bitMaskRaceAll based on what races remain in the table.
+					self.bitMaskRaceAll = 0
+					for code, raceTable in pairs(self.races) do
+						self.bitMaskRaceAll = self.bitMaskRaceAll + raceTable[4]
+					end
+
+					-- Remove classes that are introduced in expansions past the one the is currently being used.
+					if self.expansion < 9 then
+						-- Dragonflight
+						self.classes['V'] = nil	-- Evoker
+					end
+					if self.expansion < 6 then
+						-- Legion
+						self.classes['E'] = nil	-- Demon Hunter
+					end
+					if self.expansion < 4 then
+						-- Mists of Pandaria
+						self.classes['O'] = nil	-- Monk
+					end
+					if self.expansion < 2 then
+						-- Wrath of the Lich King
+						self.classes['K'] = nil	-- Death Knight
+					end
+
+					if self.existsClassic then
 						--	To make things a little prettier, because we are using phase 0000 to represent the location of the Darkmoon Faire we
 						--	define the map area for 0000 to be that.
 						self.mapAreaMapping[0] = self.holidayMapping['F']
 						
 						--	For the Classic setup for Darkmoon Faire we have a special holiday which will use the same name
 						self.holidayMapping['G'] = self.holidayMapping['F']
-
 					end
 
 					if self.battleForAzeroth then
@@ -3024,8 +3084,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		--		_classic_							WOW_PROJECT_ID = the latest one being used (basically not 1, 2 or any anniversary)
 		--		_anniversary_						WOW_PROJECT_ID = 5
 		existsClassicBasic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC),
-		-- I don't think we need to know about Classic Burning Crusade any more so am removing this...
---		existsClassicBurningCrusade = (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC),
+		existsClassicBurningCrusade = (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC),	-- _anniversary_	"Burning Crusade Anniversary"
 		existsClassicWrathOfTheLichKing = (WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC),
 		existsClassicCataclysm = (WOW_PROJECT_ID == WOW_PROJECT_CATACLYSM_CLASSIC),
 		existsClassicEra = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC),	-- _classic_era_	"World of Warcraft Classic"
@@ -3033,6 +3092,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		existsClassic = (WOW_PROJECT_ID ~= WOW_PROJECT_MAINLINE and WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC),	-- _classic_	"Cataclysm Classic"
 		existsMainline = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE),	-- _retail_	"World of Warcraft"
 		existsMidnight = (LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_MIDNIGHT),
+		expansion = GetExpansionLevel(),
 		factionMapping = { ['A'] = 'Alliance', ['H'] = 'Horde', },
 		followerMapping = {},
 		forceLocalizedQuestNameLoad = true,
@@ -4223,6 +4283,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		trackingStarted = false,
 		unnamedZones = {},
 		useAncestor = true,
+		usesClassicQuests = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC) or (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC),
+		usesModernQuests = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE) or (WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC),
 		verifyTable = {},
 		verifyTableCount = 0,
 --		warnedClientQuestLocationsAccept = nil,
@@ -4439,6 +4501,13 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local zones = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Zone, false)
 				for j, zoneInfo in ipairs(zones) do
 					self:_AddMapId(L.zones, zoneInfo.name, zoneInfo.mapID, L.mapID)
+					-- Also pick up zones nested within zones (e.g. Shadowglen inside Teldrassil).
+					-- We stay one level deep here (not ALL_DESCENDANTS) to avoid pulling sub-continent
+					-- zones (Quel'Thalas, Argus) into the wrong parent continent.
+					local subZones = C_Map.GetMapChildrenInfo(zoneInfo.mapID, Enum.UIMapType.Zone, false)
+					for k, subZoneInfo in ipairs(subZones) do
+						self:_AddMapId(L.zones, subZoneInfo.name, subZoneInfo.mapID, L.mapID)
+					end
 				end
 				local dungeons = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Dungeon, false)
 				for j, dungeonInfo in ipairs(dungeons) do
@@ -6983,6 +7052,14 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 									hasError = true
 								end
 
+							elseif 'e' == code then
+								local expansionNumber = tonumber(strsub(c, 2))
+								if nil ~= expansionNumber then
+									self.quests[questId]['e'] = expansionNumber
+								else
+									hasError = true
+								end
+
 							elseif 'D' == code then
 								local group = tonumber(strsub(c, 2))
 								if nil ~= group then
@@ -7803,7 +7880,7 @@ end
 
 		CurrentDateTime = function(self)
 			local date
-			if self.existsClassic then
+			if self.existsClassic and C_DateAndTime.GetTodaysDate then
 				date = C_DateAndTime.GetTodaysDate()
 				date.monthDay = date.day
 				date.weekday = date.weekDay	-- don't you just hate it when Blizzard API uses different capitalization!
@@ -9025,9 +9102,13 @@ end
 			if #newlyCompleted > 0 or Grail.GDE.debug then
 				local lootingNameToUse = self.lootingName or "NO LOOTING OBJECT"
 				local guidParts = { strsplit('-', self.lootingGUID or "") }
-				if nil ~= guidParts and guidParts[1] == "GameObject" and self.lootingName ~= self.defaultUnfoundLootingName then
+				local okIsGameObj, isGameObj = pcall(function()
+					return nil ~= guidParts and guidParts[1] == "GameObject" and self.lootingName ~= self.defaultUnfoundLootingName
+				end)
+				if okIsGameObj and isGameObj then
 					local internalName = self:ObjectName(guidParts[6])
-					if self.lootingName ~= internalName then
+					local okDiffers, namesDiffer = pcall(function() return self.lootingName ~= internalName end)
+					if okDiffers and namesDiffer then
 						self:_LearnObjectName(guidParts[6], lootingNameToUse)
 					end
 				end
@@ -9744,8 +9825,8 @@ end
 		IsQuestFlaggedCompleted = function(self, questId)
 			if C_QuestLog.IsComplete then
 				return C_QuestLog.IsComplete(questId)
---			if C_QuestLog.IsQuestFlaggedCompleted then
---				return C_QuestLog.IsQuestFlaggedCompleted(questId)
+			elseif C_QuestLog.IsQuestFlaggedCompleted then
+				return C_QuestLog.IsQuestFlaggedCompleted(questId)
 			else
 				return IsQuestFlaggedCompleted(questId)
 			end
@@ -12175,6 +12256,13 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 			return retval
 		end,
 
+		-- Returns the expansion index recorded in the Grail database for the given questId,
+		-- or nil if no expansion data is present in the database for that quest.
+		ExpansionForQuest = function(self, questId)
+			self:_CodeAllFixed(questId)
+			return self.quests[questId] and self.quests[questId]['e'] or nil
+		end,
+
 		QuestLevelVariableMax = function(self, questId)
 			return bitband(self:CodeLevel(questId), self.bitMaskQuestVariableLevel) / self.bitMaskQuestVariableLevelOffset
 		end,
@@ -13788,6 +13876,15 @@ end
 local locale = GetLocale()
 local me = Grail
 
+-- We remove some races from the table depending on expansion, so
+-- we do not want to attempt to update if the race is removed.
+local function UpdateLocalizedRaceNamesSafely(code, male, female)
+	if nil ~= Grail.races[code] then
+		Grail.races[code][2] = male
+		Grail.races[code][3] = female
+	end
+end
+
 if locale == "deDE" then
 	me.accountUnlock = "Accountfreischaltung"
 	me.bodyGuardLevel = { 'Leibwächter', 'Treuer Leibwächter', 'Persönlicher Flügelmann' }
@@ -13805,59 +13902,32 @@ if locale == "deDE" then
 
 	me.professionMapping = { ['A'] = 'Alchemie', ['B'] = 'Schmiedekunst', ['C'] = 'Kochkunst', ['E'] = 'Verzauberkunst', ['F'] = 'Angeln', ['H'] = 'Kräuterkunde', ['I'] = 'Inschriftenkunde', ['J'] = 'Juwelenschleifen', ['L'] = 'Lederverarbeitung', ['M'] = 'Bergbau', ['N'] = 'Ingenieurskunst', ['R'] = 'Reiten', ['S'] = 'Kürschnerei', ['T'] = 'Schneiderei', ['X'] = 'Archäologie', ['Z'] = 'Erste Hilfe', }
 
-	local G = me.races
-		G['A'][2] = 'Pandaren'
-		G['A'][3] = 'Pandaren'
-	G['B'][2] = 'Blutelf'
-	G['B'][3] = 'Blutelfe'
-	G['C'][2] = 'Dunkeleisenzwerg'
-	G['C'][3] = 'Dunkeleisenzwergin'
-		G['D'][2] = 'Draenei'
-		G['D'][3] = 'Draenei'
-	G['E'][2] = 'Nachtelf'
-	G['E'][3] = 'Nachtelfe'
-	G['F'][2] = 'Zwerg'
-	G['F'][3] = 'Zwerg'
-		G['G'][2] = 'Goblin'
-		G['G'][3] = 'Goblin'
-	G['H'][2] = 'Mensch'
-	G['H'][3] = 'Mensch'
-	G['I'][2] = 'Lichtgeschmiedeter Draenei'
-	G['I'][3] = 'Lichtgeschmiedete Draenei'
-	G['J'][2] = "Mag'har"
-	G['J'][3] = "Mag'har"
-	G['K'][2] = 'Kul Tiraner'
-	G['K'][3] = 'Kul Tiranerin'
-		G['L'][2] = 'Troll'
-		G['L'][3] = 'Troll'
-	G['M'][2] = 'Hochbergtauren'
-	G['M'][3] = 'Hochbergtauren'
-	G['N'][2] = 'Gnom'
-	G['N'][3] = 'Gnom'
-		G['O'][2] = 'Orc'
-		G['O'][3] = 'Orc'
-	G['Q'][2] = 'Mechagnom'
-	G['Q'][3] = 'Mechagnom'
-	G['R'][2] = 'Nachtgeborener'
-	G['R'][3] = 'Nachtgeborene'
-		G['S'][2] = 'Vulpera'
-		G['S'][3] = 'Vulpera'
-		G['T'][2] = 'Tauren'
-		G['T'][3] = 'Tauren'
-	G['U'][2] = 'Untoter'
-	G['U'][3] = 'Untote'
-	G['V'][2] = 'Leerenelf'
-	G['V'][3] = 'Leerenelfe'
-		G['W'][2] = 'Worgen'
-		G['W'][3] = 'Worgen'
-	G['X'][2] = 'Irdener'
-	G['X'][3] = 'Irdene'
-		G['Y'][2] = 'Dracthyr'
-		G['Y'][3] = 'Dracthyr'
-	G['Z'][2] = 'Zandalaritroll'
-	G['Z'][3] = 'Zandalaritroll'
-		G['h'][2] = 'Haranir'
-		G['h'][3] = 'Haranir'
+	UpdateLocalizedRaceNamesSafely('A', 'Pandaren', 'Pandaren')
+	UpdateLocalizedRaceNamesSafely('B', 'Blutelf', 'Blutelfe')
+	UpdateLocalizedRaceNamesSafely('C', 'Dunkeleisenzwerg', 'Dunkeleisenzwergin')
+	UpdateLocalizedRaceNamesSafely('D', 'Draenei', 'Draenei')
+	UpdateLocalizedRaceNamesSafely('E', 'Nachtelf', 'Nachtelfe')
+	UpdateLocalizedRaceNamesSafely('F', 'Zwerg', 'Zwerg')
+	UpdateLocalizedRaceNamesSafely('G', 'Goblin', 'Goblin')
+	UpdateLocalizedRaceNamesSafely('H', 'Mensch', 'Mensch')
+	UpdateLocalizedRaceNamesSafely('I', 'Lichtgeschmiedeter Draenei', 'Lichtgeschmiedete Draenei')
+	UpdateLocalizedRaceNamesSafely('J', "Mag'har", "Mag'har")
+	UpdateLocalizedRaceNamesSafely('K', 'Kul Tiraner', 'Kul Tiranerin')
+	UpdateLocalizedRaceNamesSafely('L', 'Troll', 'Troll')
+	UpdateLocalizedRaceNamesSafely('M', 'Hochbergtauren', 'Hochbergtauren')
+	UpdateLocalizedRaceNamesSafely('N', 'Gnom', 'Gnom')
+	UpdateLocalizedRaceNamesSafely('O', 'Orc', 'Orc')
+	UpdateLocalizedRaceNamesSafely('Q', 'Mechagnom', 'Mechagnom')
+	UpdateLocalizedRaceNamesSafely('R', 'Nachtgeborener', 'Nachtgeborene')
+	UpdateLocalizedRaceNamesSafely('S', 'Vulpera', 'Vulpera')
+	UpdateLocalizedRaceNamesSafely('T', 'Tauren', 'Tauren')
+	UpdateLocalizedRaceNamesSafely('U', 'Untoter', 'Untote')
+	UpdateLocalizedRaceNamesSafely('V', 'Leerenelf', 'Leerenelfe')
+	UpdateLocalizedRaceNamesSafely('W', 'Worgen', 'Worgen')
+	UpdateLocalizedRaceNamesSafely('X', 'Irdener', 'Irdene')
+	UpdateLocalizedRaceNamesSafely('Y', 'Dracthyr', 'Dracthyr')
+	UpdateLocalizedRaceNamesSafely('Z', 'Zandalaritroll', 'Zandalaritroll')
+	UpdateLocalizedRaceNamesSafely('h', 'Haranir', 'Haranir')
 
 elseif locale == "esES" then
 	me.accountUnlock = "Desbloqueo ligado a la cuenta"
@@ -13876,59 +13946,32 @@ elseif locale == "esES" then
 
 	me.professionMapping = { ['A'] = 'Alquimia', ['B'] = 'Herrería', ['C'] = 'Cocina', ['E'] = 'Encantamiento', ['F'] = 'Pesca', ['H'] = 'Hebalismo', ['I'] = 'Inscripción', ['J'] = 'Joyería', ['L'] = 'Peletería', ['M'] = 'Minería', ['N'] = 'Ingeniería', ['R'] = 'Equitación', ['S'] = 'Desuello', ['T'] = 'Sastrería', ['X'] = 'Arqueología', ['Z'] = 'Primeros auxilios', }
 
-	local G = me.races
-		G['A'][2] = 'Pandaren'
-		G['A'][3] = 'Pandaren'
-	G['B'][2] = 'Elfo de sangre'
-	G['B'][3] = 'Elfa de sangre'
-	G['C'][2] = 'Enano Hierro Negro'
-	G['C'][3] = 'Enana Hierro Negro'
-		G['D'][2] = 'Draenei'
-		G['D'][3] = 'Draenei'
-	G['E'][2] = 'Elfo de la noche'
-	G['E'][3] = 'Elfa de la noche'
-	G['F'][2] = 'Enano'
-	G['F'][3] = 'Enana'
-		G['G'][2] = 'Goblin'
-		G['G'][3] = 'Goblin'
-	G['H'][2] = 'Humano'
-	G['H'][3] = 'Humana'
-	G['I'][2] = 'Draenei forjado por la Luz'
-	G['I'][3] = 'Draenei forjada por la Luz'
-	G['J'][2] = "Orco Mag'har"
-	G['J'][3] = "Orco Mag'har"
-	G['K'][2] = 'Ciudadano de Kul Tiras'
-	G['K'][3] = 'Ciudadana de Kul Tiras'
-	G['L'][2] = 'Trol'
-	G['L'][3] = 'Trol'
-	G['M'][2] = 'Tauren Monte Alto'
-	G['M'][3] = 'Tauren Monte Alto'
-	G['N'][2] = 'Gnomo'
-	G['N'][3] = 'Gnoma'
-	G['O'][2] = 'Orco'
-	G['O'][3] = 'Orco'
-	G['Q'][2] = 'Mecagnomo'
-	G['Q'][3] = 'Mecagnoma'
-	G['R'][2] = 'Nocheterna'
-	G['R'][3] = 'Nocheterna'
-		G['S'][2] = 'Vulpera'
-		G['S'][3] = 'Vulpera'
-		G['T'][2] = 'Tauren'
-		G['T'][3] = 'Tauren'
-	G['U'][2] = 'No-muerto'
-	G['U'][3] = 'No-muerta'
-	G['V'][2] = 'Elfo del Vacío'
-	G['V'][3] = 'Elfa del Vacío'
-	G['W'][2] = 'Huargen'
-	G['W'][3] = 'Huargen'
-	G['X'][2] = 'Terráneo'
-	G['X'][3] = 'Terránea'
-		G['Y'][2] = 'Dracthyr'
-		G['Y'][3] = 'Dracthyr'
-	G['Z'][2] = 'Trol Zandalari'
-	G['Z'][3] = 'Trol Zandalari'
-		G['h'][2] = 'Haranir'
-		G['h'][3] = 'Haranir'
+	UpdateLocalizedRaceNamesSafely('A', 'Pandaren', 'Pandaren')
+	UpdateLocalizedRaceNamesSafely('B', 'Elfo de sangre', 'Elfa de sangre')
+	UpdateLocalizedRaceNamesSafely('C', 'Enano Hierro Negro', 'Enana Hierro Negro')
+	UpdateLocalizedRaceNamesSafely('D', 'Draenei', 'Draenei')
+	UpdateLocalizedRaceNamesSafely('E', 'Elfo de la noche', 'Elfa de la noche')
+	UpdateLocalizedRaceNamesSafely('F', 'Enano', 'Enana')
+	UpdateLocalizedRaceNamesSafely('G', 'Goblin', 'Goblin')
+	UpdateLocalizedRaceNamesSafely('H', 'Humano', 'Humana')
+	UpdateLocalizedRaceNamesSafely('I', 'Draenei forjado por la Luz', 'Draenei forjada por la Luz')
+	UpdateLocalizedRaceNamesSafely('J', "Orco Mag'har", "Orco Mag'har")
+	UpdateLocalizedRaceNamesSafely('K', 'Ciudadano de Kul Tiras', 'Ciudadana de Kul Tiras')
+	UpdateLocalizedRaceNamesSafely('L', 'Trol', 'Trol')
+	UpdateLocalizedRaceNamesSafely('M', 'Tauren Monte Alto', 'Tauren Monte Alto')
+	UpdateLocalizedRaceNamesSafely('N', 'Gnomo', 'Gnoma')
+	UpdateLocalizedRaceNamesSafely('O', 'Orco', 'Orco')
+	UpdateLocalizedRaceNamesSafely('Q', 'Mecagnomo', 'Mecagnoma')
+	UpdateLocalizedRaceNamesSafely('R', 'Nocheterna', 'Nocheterna')
+	UpdateLocalizedRaceNamesSafely('S', 'Vulpera', 'Vulpera')
+	UpdateLocalizedRaceNamesSafely('T', 'Tauren', 'Tauren')
+	UpdateLocalizedRaceNamesSafely('U', 'No-muerto', 'No-muerta')
+	UpdateLocalizedRaceNamesSafely('V', 'Elfo del Vacío', 'Elfa del Vacío')
+	UpdateLocalizedRaceNamesSafely('W', 'Huargen', 'Huargen')
+	UpdateLocalizedRaceNamesSafely('X', 'Terráneo', 'Terránea')
+	UpdateLocalizedRaceNamesSafely('Y', 'Dracthyr', 'Dracthyr')
+	UpdateLocalizedRaceNamesSafely('Z', 'Trol Zandalari', 'Trol Zandalari')
+	UpdateLocalizedRaceNamesSafely('h', 'Haranir', 'Haranir')
 
 elseif locale == "esMX" then
 	me.accountUnlock = "Para toda la cuenta"
@@ -13947,59 +13990,32 @@ elseif locale == "esMX" then
 
 	me.professionMapping = { ['A'] = 'Alquimia', ['B'] = 'Herrería', ['C'] = 'Cocina', ['E'] = 'Encantamiento', ['F'] = 'Pesca', ['H'] = 'Hebalismo', ['I'] = 'Inscripción', ['J'] = 'Joyería', ['L'] = 'Peletería', ['M'] = 'Minería', ['N'] = 'Ingeniería', ['R'] = 'Equitación', ['S'] = 'Desuello', ['T'] = 'Sastrería', ['X'] = 'Arqueología', ['Z'] = 'Primeros auxilios', }
 
-	local G = me.races
-		G['A'][2] = 'Pandaren'
-		G['A'][3] = 'Pandaren'
-	G['B'][2] = 'Elfo de sangre'
-	G['B'][3] = 'Elfa de sangre'
-	G['C'][2] = 'Enano Hierro Negro'
-	G['C'][3] = 'Enana Hierro Negro'
-		G['D'][2] = 'Draenei'
-		G['D'][3] = 'Draenei'
-	G['E'][2] = 'Elfo de la noche'
-	G['E'][3] = 'Elfa de la noche'
-	G['F'][2] = 'Enano'
-	G['F'][3] = 'Enana'
-		G['G'][2] = 'Goblin'
-		G['G'][3] = 'Goblin'
-	G['H'][2] = 'Humano'
-	G['H'][3] = 'Humana'
-	G['I'][2] = 'Draenei templeluz'
-	G['I'][3] = 'Draenei templeluz'
-	G['J'][2] = "Orco mag'har"
-	G['J'][3] = "Orco mag'har"
-	G['K'][2] = 'Kultirano'
-	G['K'][3] = 'Kultirana'
-	G['L'][2] = 'Trol'
-	G['L'][3] = 'Trol'
-	G['M'][2] = 'Tauren de Altamontaña'
-	G['M'][3] = 'Tauren de Altamontaña'
-	G['N'][2] = 'Gnomo'
-	G['N'][3] = 'Gnoma'
-	G['O'][2] = 'Orco'
-	G['O'][3] = 'Orco'
-	G['Q'][2] = 'Mecagnomo'
-	G['Q'][3] = 'Mecagnoma'
-	G['R'][2] = 'Natonocturno'
-	G['R'][3] = 'Natonocturna'
-		G['S'][2] = 'Vulpera'
-		G['S'][3] = 'Vulpera'
-		G['T'][2] = 'Tauren'
-		G['T'][3] = 'Tauren'
-	G['U'][2] = 'No-muerto'
-	G['U'][3] = 'No-muerta'
-	G['V'][2] = 'Elfo del Vacío'
-	G['V'][3] = 'Elfa del Vacío'
-	G['W'][2] = 'Huargen'
-	G['W'][3] = 'Huargen'
-	G['X'][2] = 'Terráneo'
-	G['X'][3] = 'Terránea'
-		G['Y'][2] = 'Dracthyr'
-		G['Y'][3] = 'Dracthyr'
-	G['Z'][2] = 'Trol zandalari'
-	G['Z'][3] = 'Trol zandalari'
-		G['h'][2] = 'Haranir'
-		G['h'][3] = 'Haranir'
+	UpdateLocalizedRaceNamesSafely('A', 'Pandaren', 'Pandaren')
+	UpdateLocalizedRaceNamesSafely('B', 'Elfo de sangre', 'Elfa de sangre')
+	UpdateLocalizedRaceNamesSafely('C', 'Enano Hierro Negro', 'Enana Hierro Negro')
+	UpdateLocalizedRaceNamesSafely('D', 'Draenei', 'Draenei')
+	UpdateLocalizedRaceNamesSafely('E', 'Elfo de la noche', 'Elfa de la noche')
+	UpdateLocalizedRaceNamesSafely('F', 'Enano', 'Enana')
+	UpdateLocalizedRaceNamesSafely('G', 'Goblin', 'Goblin')
+	UpdateLocalizedRaceNamesSafely('H', 'Humano', 'Humana')
+	UpdateLocalizedRaceNamesSafely('I', 'Draenei templeluz', 'Draenei templeluz')
+	UpdateLocalizedRaceNamesSafely('J', "Orco mag'har", "Orco mag'har")
+	UpdateLocalizedRaceNamesSafely('K', 'Kultirano', 'Kultirana')
+	UpdateLocalizedRaceNamesSafely('L', 'Trol', 'Trol')
+	UpdateLocalizedRaceNamesSafely('M', 'Tauren de Altamontaña', 'Tauren de Altamontaña')
+	UpdateLocalizedRaceNamesSafely('N', 'Gnomo', 'Gnoma')
+	UpdateLocalizedRaceNamesSafely('O', 'Orco', 'Orco')
+	UpdateLocalizedRaceNamesSafely('Q', 'Mecagnomo', 'Mecagnoma')
+	UpdateLocalizedRaceNamesSafely('R', 'Natonocturno', 'Natonocturna')
+	UpdateLocalizedRaceNamesSafely('S', 'Vulpera', 'Vulpera')
+	UpdateLocalizedRaceNamesSafely('T', 'Tauren', 'Tauren')
+	UpdateLocalizedRaceNamesSafely('U', 'No-muerto', 'No-muerta')
+	UpdateLocalizedRaceNamesSafely('V', 'Elfo del Vacío', 'Elfa del Vacío')
+	UpdateLocalizedRaceNamesSafely('W', 'Huargen', 'Huargen')
+	UpdateLocalizedRaceNamesSafely('X', 'Terráneo', 'Terránea')
+	UpdateLocalizedRaceNamesSafely('Y', 'Dracthyr', 'Dracthyr')
+	UpdateLocalizedRaceNamesSafely('Z', 'Trol zandalari', 'Trol zandalari')
+	UpdateLocalizedRaceNamesSafely('h', 'Haranir', 'Haranir')
 
 elseif locale == "frFR" then
 	me.accountUnlock = "Accès accordé au compte"
@@ -14018,59 +14034,32 @@ elseif locale == "frFR" then
 
 	me.professionMapping = { ['A'] = 'Alchimie', ['B'] = 'Forge', ['C'] = 'Cuisine', ['E'] = 'Enchantement', ['F'] = 'Pêche', ['H'] = 'Herboristerie', ['I'] = 'Calligraphie', ['J'] = 'Joaillerie', ['L'] = 'Travail du cuir', ['M'] = 'Minage', ['N'] = 'Ingénierie', ['R'] = 'Monte', ['S'] = 'Dépeçage', ['T'] = 'Couture', ['X'] = 'Archéologie', ['Z'] = 'Secourisme', }
 
-	local G = me.races
-		G['A'][2] = 'Pandaren'
-	G['A'][3] = 'Pandarène'
-	G['B'][2] = 'Elfe de sang'
-	G['B'][3] = 'Elfe de sang'
-	G['C'][2] = 'Nain sombrefer'
-	G['C'][3] = 'Naine sombrefer'
-	G['D'][2] = 'Draeneï'
-	G['D'][3] = 'Draeneï'
-	G['E'][2] = 'Elfe de la nuit'
-	G['E'][3] = 'Elfe de la nuit'
-	G['F'][2] = 'Nain'
-	G['F'][3] = 'Naine'
-	G['G'][2] = 'Gobelin'
-	G['G'][3] = 'Gobeline'
-	G['H'][2] = 'Humain'
-	G['H'][3] = 'Humaine'
-	G['I'][2] = 'Draeneï sancteforge'
-	G['I'][3] = 'Draeneï sancteforge'
-	G['J'][2] = "Orc mag’har"
-	G['J'][3] = "Orque mag’har"
-	G['K'][2] = 'Kultirassien'
-	G['K'][3] = 'Kultirassienne'
-		G['L'][2] = 'Troll'
-	G['L'][3] = 'Trollesse'
-	G['M'][2] = 'Tauren de Haut-Roc'
-	G['M'][3] = 'Taurène de Haut-Roc'
-		G['N'][2] = 'Gnome'
-		G['N'][3] = 'Gnome'
-		G['O'][2] = 'Orc'
-	G['O'][3] = 'Orque'
-	G['Q'][2] = 'Mécagnome'
-	G['Q'][3] = 'Mécagnome'
-	G['R'][2] = 'Sacrenuit'
-	G['R'][3] = 'Sacrenuit'
-	G['S'][2] = 'Vulpérin'
-	G['S'][3] = 'Vulpérine'
-		G['T'][2] = 'Tauren'
-	G['T'][3] = 'Taurène'
-	G['U'][2] = 'Mort-vivant'
-	G['U'][3] = 'Morte-vivante'
-	G['V'][2] = 'Elfe du Vide'
-	G['V'][3] = 'Elfe du Vide'
-		G['W'][2] = 'Worgen'
-		G['W'][3] = 'Worgen'
-	G['X'][2] = 'Terrestre'
-	G['X'][3] = 'Terrestre'
-		G['Y'][2] = 'Dracthyr'
-		G['Y'][3] = 'Dracthyr'
-	G['Z'][2] = 'Troll zandalari'
-	G['Z'][3] = 'Trolle zandalari'
-		G['h'][2] = 'Haranir'
-		G['h'][3] = 'Haranir'
+	UpdateLocalizedRaceNamesSafely('A', 'Pandaren', 'Pandarène')
+	UpdateLocalizedRaceNamesSafely('B', 'Elfe de sang', 'Elfe de sang')
+	UpdateLocalizedRaceNamesSafely('C', 'Nain sombrefer', 'Naine sombrefer')
+	UpdateLocalizedRaceNamesSafely('D', 'Draeneï', 'Draeneï')
+	UpdateLocalizedRaceNamesSafely('E', 'Elfe de la nuit', 'Elfe de la nuit')
+	UpdateLocalizedRaceNamesSafely('F', 'Nain', 'Naine')
+	UpdateLocalizedRaceNamesSafely('G', 'Gobelin', 'Gobeline')
+	UpdateLocalizedRaceNamesSafely('H', 'Humain', 'Humaine')
+	UpdateLocalizedRaceNamesSafely('I', 'Draeneï sancteforge', 'Draeneï sancteforge')
+	UpdateLocalizedRaceNamesSafely('J', "Orc mag’har", "Orque mag’har")
+	UpdateLocalizedRaceNamesSafely('K', 'Kultirassien', 'Kultirassienne')
+	UpdateLocalizedRaceNamesSafely('L', 'Troll', 'Trollesse')
+	UpdateLocalizedRaceNamesSafely('M', 'Tauren de Haut-Roc', 'Taurène de Haut-Roc')
+	UpdateLocalizedRaceNamesSafely('N', 'Gnome', 'Gnome')
+	UpdateLocalizedRaceNamesSafely('O', 'Orc', 'Orque')
+	UpdateLocalizedRaceNamesSafely('Q', 'Mécagnome', 'Mécagnome')
+	UpdateLocalizedRaceNamesSafely('R', 'Sacrenuit', 'Sacrenuit')
+	UpdateLocalizedRaceNamesSafely('S', 'Vulpérin', 'Vulpérine')
+	UpdateLocalizedRaceNamesSafely('T', 'Tauren', 'Taurène')
+	UpdateLocalizedRaceNamesSafely('U', 'Mort-vivant', 'Morte-vivante')
+	UpdateLocalizedRaceNamesSafely('V', 'Elfe du Vide', 'Elfe du Vide')
+	UpdateLocalizedRaceNamesSafely('W', 'Worgen', 'Worgen')
+	UpdateLocalizedRaceNamesSafely('X', 'Terrestre', 'Terrestre')
+	UpdateLocalizedRaceNamesSafely('Y', 'Dracthyr', 'Dracthyr')
+	UpdateLocalizedRaceNamesSafely('Z', 'Troll zandalari', 'Trolle zandalari')
+	UpdateLocalizedRaceNamesSafely('h', 'Haranir', 'Haranir')
 
 elseif locale == "itIT" then
 	me.accountUnlock = "Sblocco a livello di account"
@@ -14125,59 +14114,32 @@ me.professionMapping = {
     ['Z'] = 'Primo Soccorso',
     }
 
-	local G = me.races
-		G['A'][2] = 'Pandaren'
-		G['A'][3] = 'Pandaren'
-	G['B'][2] = 'Elfo del Sangue'
-	G['B'][3] = 'Elfa del Sangue'
-	G['C'][2] = 'Nano Ferroscuro'
-	G['C'][3] = 'Nana Ferroscuro'
-		G['D'][2] = 'Draenei'
-		G['D'][3] = 'Draenei'
-	G['E'][2] = 'Elfo della Notte'
-	G['E'][3] = 'Elfa della Notte'
-	G['F'][2] = 'Nano'
-	G['F'][3] = 'Nana'
-		G['G'][2] = 'Goblin'
-		G['G'][3] = 'Goblin'
-	G['H'][2] = 'Umano'
-	G['H'][3] = 'Umana'
-	G['I'][2] = 'Draenei Forgialuce'
-	G['I'][3] = 'Draenei Forgialuce'
-	G['J'][2] = "Orco mag'har"
-	G['J'][3] = "Orchessa Mag'har"
-	G['K'][2] = 'Kul Tirano'
-	G['K'][3] = 'Kul Tirana'
-		G['L'][2] = 'Troll'
-		G['L'][3] = 'Troll'
-	G['M'][2] = 'Tauren di Alto Monte'
-	G['M'][3] = 'Tauren di Alto Monte'
-	G['N'][2] = 'Gnomo'
-	G['N'][3] = 'Gnoma'
-	G['O'][2] = 'Orco'
-	G['O'][3] = 'Orchessa'
-	G['Q'][2] = 'Meccagnomo'
-	G['Q'][3] = 'Meccagnoma'
-	G['R'][2] = 'Nobile Oscuro'
-	G['R'][3] = 'Nobile Oscura'
-		G['S'][2] = 'Vulpera'
-		G['S'][3] = 'Vulpera'
-		G['T'][2] = 'Tauren'
-		G['T'][3] = 'Tauren'
-	G['U'][2] = 'Non Morto'
-	G['U'][3] = 'Non Morta'
-	G['V'][2] = 'Elfo del Vuoto'
-	G['V'][3] = 'Elfa del Vuoto'
-		G['W'][2] = 'Worgen'
-		G['W'][3] = 'Worgen'
-	G['X'][2] = 'Terrigeno'
-	G['X'][3] = 'Terrigena'
-		G['Y'][2] = 'Dracthyr'
-		G['Y'][3] = 'Dracthyr'
-	G['Z'][2] = 'Troll Zandalari'
-	G['Z'][3] = 'Troll Zandalari'
-		G['h'][2] = 'Haranir'
-		G['h'][3] = 'Haranir'
+	UpdateLocalizedRaceNamesSafely('A', 'Pandaren', 'Pandaren')
+	UpdateLocalizedRaceNamesSafely('B', 'Elfo del Sangue', 'Elfa del Sangue')
+	UpdateLocalizedRaceNamesSafely('C', 'Nano Ferroscuro', 'Nana Ferroscuro')
+	UpdateLocalizedRaceNamesSafely('D', 'Draenei', 'Draenei')
+	UpdateLocalizedRaceNamesSafely('E', 'Elfo della Notte', 'Elfa della Notte')
+	UpdateLocalizedRaceNamesSafely('F', 'Nano', 'Nana')
+	UpdateLocalizedRaceNamesSafely('G', 'Goblin', 'Goblin')
+	UpdateLocalizedRaceNamesSafely('H', 'Umano', 'Umana')
+	UpdateLocalizedRaceNamesSafely('I', 'Draenei Forgialuce', 'Draenei Forgialuce')
+	UpdateLocalizedRaceNamesSafely('J', "Orco mag'har", "Orchessa Mag'har")
+	UpdateLocalizedRaceNamesSafely('K', 'Kul Tirano', 'Kul Tirana')
+	UpdateLocalizedRaceNamesSafely('L', 'Troll', 'Troll')
+	UpdateLocalizedRaceNamesSafely('M', 'Tauren di Alto Monte', 'Tauren di Alto Monte')
+	UpdateLocalizedRaceNamesSafely('N', 'Gnomo', 'Gnoma')
+	UpdateLocalizedRaceNamesSafely('O', 'Orco', 'Orchessa')
+	UpdateLocalizedRaceNamesSafely('Q', 'Meccagnomo', 'Meccagnoma')
+	UpdateLocalizedRaceNamesSafely('R', 'Nobile Oscuro', 'Nobile Oscura')
+	UpdateLocalizedRaceNamesSafely('S', 'Vulpera', 'Vulpera')
+	UpdateLocalizedRaceNamesSafely('T', 'Tauren', 'Tauren')
+	UpdateLocalizedRaceNamesSafely('U', 'Non Morto', 'Non Morta')
+	UpdateLocalizedRaceNamesSafely('V', 'Elfo del Vuoto', 'Elfa del Vuoto')
+	UpdateLocalizedRaceNamesSafely('W', 'Worgen', 'Worgen')
+	UpdateLocalizedRaceNamesSafely('X', 'Terrigeno', 'Terrigena')
+	UpdateLocalizedRaceNamesSafely('Y', 'Dracthyr', 'Dracthyr')
+	UpdateLocalizedRaceNamesSafely('Z', 'Troll Zandalari', 'Troll Zandalari')
+	UpdateLocalizedRaceNamesSafely('h', 'Haranir', 'Haranir')
 
 elseif locale == "koKR" then
 	me.accountUnlock = "계정 공유 해제"
@@ -14196,59 +14158,32 @@ elseif locale == "koKR" then
 
 	me.professionMapping = { ['A'] = '연금술', ['B'] = '대장기술', ['C'] = '요리', ['E'] = '마법부여', ['F'] = '낚시', ['H'] = '약초채집', ['I'] = '주문각인', ['J'] = '보석세공', ['L'] = '가죽세공', ['M'] = '채광', ['N'] = '기계공학', ['R'] = '탈것 숙련', ['S'] = '무두질', ['T'] = '재봉술', ['X'] = '고고학', ['Z'] = '응급치료', }
 
-	local G = me.races
-	G['A'][2] = '판다렌'
-	G['A'][3] = '판다렌'
-	G['B'][2] = '블러드 엘프'
-	G['B'][3] = '블러드 엘프'
-	G['C'][2] = '검은무쇠 드워프'
-	G['C'][3] = '검은무쇠 드워프'
-	G['D'][2] = '드레나이'
-	G['D'][3] = '드레나이'
-	G['E'][2] = '나이트 엘프'
-	G['E'][3] = '나이트 엘프'
-	G['F'][2] = '드워프'
-	G['F'][3] = '드워프'
-	G['G'][2] = '고블린'
-	G['G'][3] = '고블린'
-	G['H'][2] = '인간'
-	G['H'][3] = '인간'
-	G['I'][2] = '빛벼림 드레나이'
-	G['I'][3] = '빛벼림 드레나이'
-	G['J'][2] = "마그하르 오크"
-	G['J'][3] = "마그하르 오크"
-	G['K'][2] = '쿨 티란'
-	G['K'][3] = '쿨 티란'
-	G['L'][2] = '트롤'
-	G['L'][3] = '트롤'
-	G['M'][2] = '높은산 타우렌'
-	G['M'][3] = '높은산 타우렌'
-	G['N'][2] = '노움'
-	G['N'][3] = '노움'
-	G['O'][2] = '오크'
-	G['O'][3] = '오크'
-	G['Q'][2] = '기계노움'
-	G['Q'][3] = '기계노움'
-	G['R'][2] = '나이트본'
-	G['R'][3] = '나이트본'
-	G['S'][2] = '불페라'
-	G['S'][3] = '불페라'
-	G['T'][2] = '타우렌'
-	G['T'][3] = '타우렌'
-	G['U'][2] = '언데드'
-	G['U'][3] = '언데드'
-	G['V'][2] = '공허 엘프'
-	G['V'][3] = '공허 엘프'
-	G['W'][2] = '늑대인간'
-	G['W'][3] = '늑대인간'
-	G['X'][2] = '토석인'
-	G['X'][3] = '토석인'
-	G['Y'][2] = '드랙티르'
-	G['Y'][3] = '드랙티르'
-	G['Z'][2] = '잔달라 트롤'
-	G['Z'][3] = '잔달라 트롤'
-	G['h'][2] = '하라니르'
-	G['h'][3] = '하라니르'
+	UpdateLocalizedRaceNamesSafely('A', '판다렌', '판다렌')
+	UpdateLocalizedRaceNamesSafely('B', '블러드 엘프', '블러드 엘프')
+	UpdateLocalizedRaceNamesSafely('C', '검은무쇠 드워프', '검은무쇠 드워프')
+	UpdateLocalizedRaceNamesSafely('D', '드레나이', '드레나이')
+	UpdateLocalizedRaceNamesSafely('E', '나이트 엘프', '나이트 엘프')
+	UpdateLocalizedRaceNamesSafely('F', '드워프', '드워프')
+	UpdateLocalizedRaceNamesSafely('G', '고블린', '고블린')
+	UpdateLocalizedRaceNamesSafely('H', '인간', '인간')
+	UpdateLocalizedRaceNamesSafely('I', '빛벼림 드레나이', '빛벼림 드레나이')
+	UpdateLocalizedRaceNamesSafely('J', "마그하르 오크", "마그하르 오크")
+	UpdateLocalizedRaceNamesSafely('K', '쿨 티란', '쿨 티란')
+	UpdateLocalizedRaceNamesSafely('L', '트롤', '트롤')
+	UpdateLocalizedRaceNamesSafely('M', '높은산 타우렌', '높은산 타우렌')
+	UpdateLocalizedRaceNamesSafely('N', '노움', '노움')
+	UpdateLocalizedRaceNamesSafely('O', '오크', '오크')
+	UpdateLocalizedRaceNamesSafely('Q', '기계노움', '기계노움')
+	UpdateLocalizedRaceNamesSafely('R', '나이트본', '나이트본')
+	UpdateLocalizedRaceNamesSafely('S', '불페라', '불페라')
+	UpdateLocalizedRaceNamesSafely('T', '타우렌', '타우렌')
+	UpdateLocalizedRaceNamesSafely('U', '언데드', '언데드')
+	UpdateLocalizedRaceNamesSafely('V', '공허 엘프', '공허 엘프')
+	UpdateLocalizedRaceNamesSafely('W', '늑대인간', '늑대인간')
+	UpdateLocalizedRaceNamesSafely('X', '토석인', '토석인')
+	UpdateLocalizedRaceNamesSafely('Y', '드랙티르', '드랙티르')
+	UpdateLocalizedRaceNamesSafely('Z', '잔달라 트롤', '잔달라 트롤')
+	UpdateLocalizedRaceNamesSafely('h', '하라니르', '하라니르')
 
 elseif locale == "ptBR" then
 	me.accountUnlock = "Desbloqueio de Conta"
@@ -14284,59 +14219,32 @@ me.professionMapping = {
 	['Z'] = 'Primeiros Socorros',
 	}
 
-	local G = me.races
-		G['A'][2] = 'Pandaren'
-	G['A'][3] = 'Pandarena'
-	G['B'][2] = 'Elfo Sangrento'
-	G['B'][3] = 'Elfa Sangrenta'
-	G['C'][2] = 'Anão Ferro Negro'
-	G['C'][3] = 'Anã Ferro Negro'
-		G['D'][2] = 'Draenei'
-	G['D'][3] = 'Draenaia'
-	G['E'][2] = 'Elfo Noturno'
-	G['E'][3] = 'Elfa Noturna'
-	G['F'][2] = 'Anão'
-	G['F'][3] = 'Anã'
-		G['G'][2] = 'Goblin'
-	G['G'][3] = 'Goblina'
-	G['H'][2] = 'Humano'
-	G['H'][3] = 'Humana'
-	G['I'][2] = 'Draenei Forjado a Luz'
-	G['I'][3] = 'Draeneia Forjada a Luz'
-	G['J'][2] = "Orc Mag'har"
-	G['J'][3] = "Orc Mag'har"
-	G['K'][2] = 'Kultireno'
-	G['K'][3] = 'Kultirena'
-		G['L'][2] = 'Troll'
-	G['L'][3] = 'Trolesa'
-	G['M'][2] = 'Tauren Altamontês'
-	G['M'][3] = 'Taurena Altamontesa'
-	G['N'][2] = 'Gnomo'
-	G['N'][3] = 'Gnomida'
-		G['O'][2] = 'Orc'
-	G['O'][3] = 'Orquisa'
-	G['Q'][2] = 'Gnomecânico'
-	G['Q'][3] = 'Gnomecânica'
-	G['R'][2] = 'Filho do Noite'
-	G['R'][3] = 'Filha da Noite'
-		G['S'][2] = 'Vulpera'
-		G['S'][3] = 'Vulpera'
-		G['T'][2] = 'Tauren'
-	G['T'][3] = 'Taurena'
-	G['U'][2] = 'Morto-vivo'
-	G['U'][3] = 'Morta-viva'
-	G['V'][2] = 'Elfo Caótico'
-	G['V'][3] = 'Elfa Caótica'
-		G['W'][2] = 'Worgen'
-	G['W'][3] = 'Worgenin'
-	G['X'][2] = 'Terrano'
-	G['X'][3] = 'Terrano'
-		G['Y'][2] = 'Dracthyr'
-		G['Y'][3] = 'Dracthyr'
-	G['Z'][2] = 'Troll Zandalari'
-	G['Z'][3] = 'Trolesa Zandalari'
-		G['h'][2] = 'Haranir'
-		G['h'][3] = 'Haranir'
+	UpdateLocalizedRaceNamesSafely('A', 'Pandaren', 'Pandarena')
+	UpdateLocalizedRaceNamesSafely('B', 'Elfo Sangrento', 'Elfa Sangrenta')
+	UpdateLocalizedRaceNamesSafely('C', 'Anão Ferro Negro', 'Anã Ferro Negro')
+	UpdateLocalizedRaceNamesSafely('D', 'Draenei', 'Draenaia')
+	UpdateLocalizedRaceNamesSafely('E', 'Elfo Noturno', 'Elfa Noturna')
+	UpdateLocalizedRaceNamesSafely('F', 'Anão', 'Anã')
+	UpdateLocalizedRaceNamesSafely('G', 'Goblin', 'Goblina')
+	UpdateLocalizedRaceNamesSafely('H', 'Humano', 'Humana')
+	UpdateLocalizedRaceNamesSafely('I', 'Draenei Forjado a Luz', 'Draeneia Forjada a Luz')
+	UpdateLocalizedRaceNamesSafely('J', "Orc Mag'har", "Orc Mag'har")
+	UpdateLocalizedRaceNamesSafely('K', 'Kultireno', 'Kultirena')
+	UpdateLocalizedRaceNamesSafely('L', 'Troll', 'Trolesa')
+	UpdateLocalizedRaceNamesSafely('M', 'Tauren Altamontês', 'Taurena Altamontesa')
+	UpdateLocalizedRaceNamesSafely('N', 'Gnomo', 'Gnomida')
+	UpdateLocalizedRaceNamesSafely('O', 'Orc', 'Orquisa')
+	UpdateLocalizedRaceNamesSafely('Q', 'Gnomecânico', 'Gnomecânica')
+	UpdateLocalizedRaceNamesSafely('R', 'Filho do Noite', 'Filha da Noite')
+	UpdateLocalizedRaceNamesSafely('S', 'Vulpera', 'Vulpera')
+	UpdateLocalizedRaceNamesSafely('T', 'Tauren', 'Taurena')
+	UpdateLocalizedRaceNamesSafely('U', 'Morto-vivo', 'Morta-viva')
+	UpdateLocalizedRaceNamesSafely('V', 'Elfo Caótico', 'Elfa Caótica')
+	UpdateLocalizedRaceNamesSafely('W', 'Worgen', 'Worgenin')
+	UpdateLocalizedRaceNamesSafely('X', 'Terrano', 'Terrano')
+	UpdateLocalizedRaceNamesSafely('Y', 'Dracthyr', 'Dracthyr')
+	UpdateLocalizedRaceNamesSafely('Z', 'Troll Zandalari', 'Trolesa Zandalari')
+	UpdateLocalizedRaceNamesSafely('h', 'Haranir', 'Haranir')
 
 elseif locale == "ruRU" then
 	me.accountUnlock = "Доступ для всей учетной записи"
@@ -14355,59 +14263,32 @@ elseif locale == "ruRU" then
 
 	me.professionMapping = { ['A'] = 'Алхимия', ['B'] = 'Кузнечное дело', ['C'] = 'Кулинария', ['E'] = 'Наложение чар', ['F'] = 'Рыбная ловля', ['H'] = 'Травничество', ['I'] = 'Начертание', ['J'] = 'Ювелирное дело', ['L'] = 'Кожевничество', ['M'] = 'Горное дело', ['N'] = 'Механика', ['R'] = 'Верховая езда', ['S'] = 'Снятие шкур', ['T'] = 'Портняжное дело', ['X'] = 'Археология', ['Z'] = 'Первая помощь', }
 
-	local G = me.races
-	G['A'][2] = 'Пандарен'
-	G['A'][3] = 'Пандаренка'
-	G['B'][2] = 'Эльф крови'
-	G['B'][3] = 'Эльфийка крови'
-	G['C'][2] = 'Дворф из клана Черного Железа'
-	G['C'][3] = 'Дворфийка из клана Черного Железа'
-	G['D'][2] = 'Дреней'
-	G['D'][3] = 'Дреней'
-	G['E'][2] = 'Ночной эльф'
-	G['E'][3] = 'Ночная эльфийка'
-	G['F'][2] = 'Дворф'
-	G['F'][3] = 'Дворф'
-	G['G'][2] = 'Гоблин'
-	G['G'][3] = 'Гоблин'
-	G['H'][2] = 'Человек'
-	G['H'][3] = 'Человек'
-	G['I'][2] = 'Озаренный дреней'
-	G['I'][3] = 'Озаренная дренейка'
-	G['J'][2] = "Маг'хар"
-	G['J'][3] = "Маг'харка"
-	G['K'][2] = 'Култирасец'
-	G['K'][3] = 'Култираска'
-	G['L'][2] = 'Тролль'
-	G['L'][3] = 'Тролль'
-	G['M'][2] = 'Таурен Крутогорья'
-	G['M'][3] = 'Тауренка Крутогорья'
-	G['N'][2] = 'Гном'
-	G['N'][3] = 'Гном'
-	G['O'][2] = 'Орк'
-	G['O'][3] = 'Орк'
-	G['Q'][2] = 'Механогном'
-	G['Q'][3] = 'Механогномка'
-	G['R'][2] = 'Ночнорожденный'
-	G['R'][3] = 'Ночнорожденная'
-	G['S'][2] = 'Вульпера'
-	G['S'][3] = 'Вульпера'
-	G['T'][2] = 'Таурен'
-	G['T'][3] = 'Таурен'
-	G['U'][2] = 'Нежить'
-	G['U'][3] = 'Нежить'
-	G['V'][2] = 'Эльф Бездны'
-	G['V'][3] = 'Эльфийка Бездны'
-	G['W'][2] = 'Ворген'
-	G['W'][3] = 'Ворген'
-	G['X'][2] = 'Земельник'
-	G['X'][3] = 'Земельник'
-	G['Y'][2] = 'Драктир'
-	G['Y'][3] = 'Драктир'
-	G['Z'][2] = 'Зандалар'
-	G['Z'][3] = 'Зандаларка'
-	G['h'][2] = 'Харанир'
-	G['h'][3] = 'Харанир'
+	UpdateLocalizedRaceNamesSafely('A', 'Пандарен', 'Пандаренка')
+	UpdateLocalizedRaceNamesSafely('B', 'Эльф крови', 'Эльфийка крови')
+	UpdateLocalizedRaceNamesSafely('C', 'Дворф из клана Черного Железа', 'Дворфийка из клана Черного Железа')
+	UpdateLocalizedRaceNamesSafely('D', 'Дреней', 'Дреней')
+	UpdateLocalizedRaceNamesSafely('E', 'Ночной эльф', 'Ночная эльфийка')
+	UpdateLocalizedRaceNamesSafely('F', 'Дворф', 'Дворф')
+	UpdateLocalizedRaceNamesSafely('G', 'Гоблин', 'Гоблин')
+	UpdateLocalizedRaceNamesSafely('H', 'Человек', 'Человек')
+	UpdateLocalizedRaceNamesSafely('I', 'Озаренный дреней', 'Озаренная дренейка')
+	UpdateLocalizedRaceNamesSafely('J', "Маг'хар", "Маг'харка")
+	UpdateLocalizedRaceNamesSafely('K', 'Култирасец', 'Култираска')
+	UpdateLocalizedRaceNamesSafely('L', 'Тролль', 'Тролль')
+	UpdateLocalizedRaceNamesSafely('M', 'Таурен Крутогорья', 'Тауренка Крутогорья')
+	UpdateLocalizedRaceNamesSafely('N', 'Гном', 'Гном')
+	UpdateLocalizedRaceNamesSafely('O', 'Орк', 'Орк')
+	UpdateLocalizedRaceNamesSafely('Q', 'Механогном', 'Механогномка')
+	UpdateLocalizedRaceNamesSafely('R', 'Ночнорожденный', 'Ночнорожденная')
+	UpdateLocalizedRaceNamesSafely('S', 'Вульпера', 'Вульпера')
+	UpdateLocalizedRaceNamesSafely('T', 'Таурен', 'Таурен')
+	UpdateLocalizedRaceNamesSafely('U', 'Нежить', 'Нежить')
+	UpdateLocalizedRaceNamesSafely('V', 'Эльф Бездны', 'Эльфийка Бездны')
+	UpdateLocalizedRaceNamesSafely('W', 'Ворген', 'Ворген')
+	UpdateLocalizedRaceNamesSafely('X', 'Земельник', 'Земельник')
+	UpdateLocalizedRaceNamesSafely('Y', 'Драктир', 'Драктир')
+	UpdateLocalizedRaceNamesSafely('Z', 'Зандалар', 'Зандаларка')
+	UpdateLocalizedRaceNamesSafely('h', 'Харанир', 'Харанир')
 
 elseif locale == "zhCN" then
 	me.accountUnlock = "账号解锁"
@@ -14425,59 +14306,32 @@ elseif locale == "zhCN" then
 
 	me.professionMapping = { ['A'] = '炼金术', ['B'] = '锻造', ['C'] = '烹饪', ['E'] = '附魔', ['F'] = '钓鱼', ['H'] = '草药学', ['I'] = '铭文', ['J'] = '珠宝加工', ['L'] = '制皮', ['M'] = '采矿', ['N'] = '工程学', ['R'] = '骑术', ['S'] = '剥皮', ['T'] = '裁缝', ['X'] = '考古学', ['Z'] = '急救', }
 
-	local G = me.races
-	G['A'][2] = '熊猫人'
-	G['A'][3] = '熊猫人'
-	G['B'][2] = '血精灵'
-	G['B'][3] = '血精灵'
-	G['C'][2] = '黑铁矮人'
-	G['C'][3] = '黑铁矮人'
-	G['D'][2] = '德莱尼'
-	G['D'][3] = '德莱尼'
-	G['E'][2] = '暗夜精灵'
-	G['E'][3] = '暗夜精灵'
-	G['F'][2] = '矮人'
-	G['F'][3] = '矮人'
-	G['G'][2] = '地精'
-	G['G'][3] = '地精'
-	G['H'][2] = '人类'
-	G['H'][3] = '人类'
-	G['I'][2] = '光铸德莱尼'
-	G['I'][3] = '光铸德莱尼'
-	G['J'][2] = "玛格汉兽人"
-	G['J'][3] = "玛格汉兽人"
-	G['K'][2] = '库尔提拉斯人'
-	G['K'][3] = '库尔提拉斯人'
-	G['L'][2] = '巨魔'
-	G['L'][3] = '巨魔'
-	G['M'][2] = '至高岭牛头人'
-	G['M'][3] = '至高岭牛头人'
-	G['N'][2] = '侏儒'
-	G['N'][3] = '侏儒'
-	G['O'][2] = '兽人'
-	G['O'][3] = '兽人'
-	G['Q'][2] = '机械侏儒'
-	G['Q'][3] = '机械侏儒'
-	G['R'][2] = '夜之子'
-	G['R'][3] = '夜之子'
-	G['S'][2] = '狐人'
-	G['S'][3] = '狐人'
-	G['T'][2] = '牛头人'
-	G['T'][3] = '牛头人'
-	G['U'][2] = '亡灵'
-	G['U'][3] = '亡灵'
-	G['V'][2] = '虚空精灵'
-	G['V'][3] = '虚空精灵'
-	G['W'][2] = '狼人'
-	G['W'][3] = '狼人'
-	G['X'][2] = '土灵'
-	G['X'][3] = '土灵'
-	G['Y'][2] = '龙希尔'
-	G['Y'][3] = '龙希尔'
-	G['Z'][2] = '赞达拉巨魔'
-	G['Z'][3] = '赞达拉巨魔'
-	G['h'][2] = '哈籁尼尔'
-	G['h'][3] = '哈籁尼尔'
+	UpdateLocalizedRaceNamesSafely('A', '熊猫人', '熊猫人')
+	UpdateLocalizedRaceNamesSafely('B', '血精灵', '血精灵')
+	UpdateLocalizedRaceNamesSafely('C', '黑铁矮人', '黑铁矮人')
+	UpdateLocalizedRaceNamesSafely('D', '德莱尼', '德莱尼')
+	UpdateLocalizedRaceNamesSafely('E', '暗夜精灵', '暗夜精灵')
+	UpdateLocalizedRaceNamesSafely('F', '矮人', '矮人')
+	UpdateLocalizedRaceNamesSafely('G', '地精', '地精')
+	UpdateLocalizedRaceNamesSafely('H', '人类', '人类')
+	UpdateLocalizedRaceNamesSafely('I', '光铸德莱尼', '光铸德莱尼')
+	UpdateLocalizedRaceNamesSafely('J', "玛格汉兽人", "玛格汉兽人")
+	UpdateLocalizedRaceNamesSafely('K', '库尔提拉斯人', '库尔提拉斯人')
+	UpdateLocalizedRaceNamesSafely('L', '巨魔', '巨魔')
+	UpdateLocalizedRaceNamesSafely('M', '至高岭牛头人', '至高岭牛头人')
+	UpdateLocalizedRaceNamesSafely('N', '侏儒', '侏儒')
+	UpdateLocalizedRaceNamesSafely('O', '兽人', '兽人')
+	UpdateLocalizedRaceNamesSafely('Q', '机械侏儒', '机械侏儒')
+	UpdateLocalizedRaceNamesSafely('R', '夜之子', '夜之子')
+	UpdateLocalizedRaceNamesSafely('S', '狐人', '狐人')
+	UpdateLocalizedRaceNamesSafely('T', '牛头人', '牛头人')
+	UpdateLocalizedRaceNamesSafely('U', '亡灵', '亡灵')
+	UpdateLocalizedRaceNamesSafely('V', '虚空精灵', '虚空精灵')
+	UpdateLocalizedRaceNamesSafely('W', '狼人', '狼人')
+	UpdateLocalizedRaceNamesSafely('X', '土灵', '土灵')
+	UpdateLocalizedRaceNamesSafely('Y', '龙希尔', '龙希尔')
+	UpdateLocalizedRaceNamesSafely('Z', '赞达拉巨魔', '赞达拉巨魔')
+	UpdateLocalizedRaceNamesSafely('h', '哈籁尼尔', '哈籁尼尔')
 
 elseif locale == "zhTW" then
 	me.accountUnlock = "帳號解鎖"
@@ -14496,59 +14350,32 @@ elseif locale == "zhTW" then
 
 	me.professionMapping = { ['A'] = '鍊金術', ['B'] = '鍛造', ['C'] = '烹飪', ['E'] = '附魔', ['F'] = '釣魚', ['H'] = '草藥學', ['I'] = '銘文學', ['J'] = '珠寶設計', ['L'] = '製皮', ['M'] = '採礦', ['N'] = '工程學', ['R'] = '騎術', ['S'] = '剝皮', ['T'] = '裁縫', ['X'] = '考古學', ['Z'] = '急救', }
 
-	local G = me.races
-	G['A'][2] = '熊貓人'
-	G['A'][3] = '熊貓人'
-	G['B'][2] = '血精靈'
-	G['B'][3] = '血精靈'
-	G['C'][2] = '黑鐵矮人'
-	G['C'][3] = '黑鐵矮人'
-	G['D'][2] = '德萊尼'
-	G['D'][3] = '德萊尼'
-	G['E'][2] = '夜精靈'
-	G['E'][3] = '夜精靈'
-	G['F'][2] = '矮人'
-	G['F'][3] = '矮人'
-	G['G'][2] = '哥布林'
-	G['G'][3] = '哥布林'
-	G['H'][2] = '人類'
-	G['H'][3] = '人類'
-	G['I'][2] = '光鑄德萊尼'
-	G['I'][3] = '光鑄德萊尼'
-	G['J'][2] = "瑪格哈獸人"
-	G['J'][3] = "瑪格哈獸人"
-	G['K'][2] = '庫爾提拉斯人'
-	G['K'][3] = '庫爾提拉斯人'
-	G['L'][2] = '食人妖'
-	G['L'][3] = '食人妖'
-	G['M'][2] = '高嶺牛頭人'
-	G['M'][3] = '高嶺牛頭人'
-	G['N'][2] = '地精'
-	G['N'][3] = '地精'
-	G['O'][2] = '獸人'
-	G['O'][3] = '獸人'
-	G['Q'][2] = '機械地精'
-	G['Q'][3] = '機械地精'
-	G['R'][2] = '夜裔精靈'
-	G['R'][3] = '夜裔精靈'
-	G['S'][2] = '狐狸人'
-	G['S'][3] = '狐狸人'
-	G['T'][2] = '牛頭人'
-	G['T'][3] = '牛頭人'
-	G['U'][2] = '不死族'
-	G['U'][3] = '不死族'
-	G['V'][2] = '虛無精靈'
-	G['V'][3] = '虛無精靈'
-	G['W'][2] = '狼人'
-	G['W'][3] = '狼人'
-	G['X'][2] = '土靈'
-	G['X'][3] = '土靈'
-	G['Y'][2] = '半龍人'
-	G['Y'][3] = '半龍人'
-	G['Z'][2] = '贊達拉食人妖'
-	G['Z'][3] = '贊達拉食人妖'
-	G['h'][2] = '哈拉尼爾'
-	G['h'][3] = '哈拉尼爾'
+	UpdateLocalizedRaceNamesSafely('A', '熊貓人', '熊貓人')
+	UpdateLocalizedRaceNamesSafely('B', '血精靈', '血精靈')
+	UpdateLocalizedRaceNamesSafely('C', '黑鐵矮人', '黑鐵矮人')
+	UpdateLocalizedRaceNamesSafely('D', '德萊尼', '德萊尼')
+	UpdateLocalizedRaceNamesSafely('E', '夜精靈', '夜精靈')
+	UpdateLocalizedRaceNamesSafely('F', '矮人', '矮人')
+	UpdateLocalizedRaceNamesSafely('G', '哥布林', '哥布林')
+	UpdateLocalizedRaceNamesSafely('H', '人類', '人類')
+	UpdateLocalizedRaceNamesSafely('I', '光鑄德萊尼', '光鑄德萊尼')
+	UpdateLocalizedRaceNamesSafely('J', "瑪格哈獸人", "瑪格哈獸人")
+	UpdateLocalizedRaceNamesSafely('K', '庫爾提拉斯人', '庫爾提拉斯人')
+	UpdateLocalizedRaceNamesSafely('L', '食人妖', '食人妖')
+	UpdateLocalizedRaceNamesSafely('M', '高嶺牛頭人', '高嶺牛頭人')
+	UpdateLocalizedRaceNamesSafely('N', '地精', '地精')
+	UpdateLocalizedRaceNamesSafely('O', '獸人', '獸人')
+	UpdateLocalizedRaceNamesSafely('Q', '機械地精', '機械地精')
+	UpdateLocalizedRaceNamesSafely('R', '夜裔精靈', '夜裔精靈')
+	UpdateLocalizedRaceNamesSafely('S', '狐狸人', '狐狸人')
+	UpdateLocalizedRaceNamesSafely('T', '牛頭人', '牛頭人')
+	UpdateLocalizedRaceNamesSafely('U', '不死族', '不死族')
+	UpdateLocalizedRaceNamesSafely('V', '虛無精靈', '虛無精靈')
+	UpdateLocalizedRaceNamesSafely('W', '狼人', '狼人')
+	UpdateLocalizedRaceNamesSafely('X', '土靈', '土靈')
+	UpdateLocalizedRaceNamesSafely('Y', '半龍人', '半龍人')
+	UpdateLocalizedRaceNamesSafely('Z', '贊達拉食人妖', '贊達拉食人妖')
+	UpdateLocalizedRaceNamesSafely('h', '哈拉尼爾', '哈拉尼爾')
 
 elseif locale == "enUS" or locale == "enGB" then
 	-- do nothing as the default values are already in English

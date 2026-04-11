@@ -116,13 +116,13 @@
 --
 --	UTF-8 file
 --
+if not Grail.usesClassicQuests then return end
+
 local _, release, _, interface = GetBuildInfo()
 release = tonumber(release)
 interface = tonumber(interface)
 
-if not Grail.existsClassicEra then return end
-
-Grail_NPCs_File_Version = 015
+Grail_NPCs_File_Version = 017
 
 if Grail.npcsVersionNumber >= Grail_NPCs_File_Version then return end
 Grail.npcsVersionNumber = Grail_NPCs_File_Version
@@ -817,7 +817,7 @@ G[4943]={'FH 1456:54.00,80.80'}	-- Mosarn
 G[4944]={'FA 1445:68.19,48.54'}
 G[4947]={'FA 1445:65.05,47.07'}
 G[4948]={'FA 1445:68.03,48.21'}
-G[4949]={'FH 1454:31.75,37.80'}	-- Thrall
+G[4949]={'FH 1454:31.75,37.80 85:32.3,37.8 85:32.5,38.7 85:32.8,37.8'} -- Thrall
 G[4959]={'FA 1453:73.16,78.42'}	-- Jorgen
 G[4960]={'FA 1453:78.27,25.58'}	-- Bishop DeLavey
 G[4961]={'FA 1453:70.53,44.86'}	-- Dashel Stonefist
@@ -1752,16 +1752,41 @@ G[19256]={'1944:57.96,41.26'}
 G[19273]={'FH 1944:65.9,43.6'}
 G[19308]={'FA 1944:54.57,62.79'}  -- Marshal Isildor
 G[19456]={'FH 1941:37.59,86.23'}
+
 G[45165]={'1422:42.70,84.11'}
 G[54334]={'1453:62.26,72.97'}
 G[1206111]={'1453:62.93,71.51'}
-
 if release >= 38835 and interface >= 20501 and release <= 38892 then
 G[19942]={'1419:58.25,55.06'} --  Agent Proudwell only present buring prepatch event
-end
+end  
 G[19945]={'FH 1941:37.59,86.23'}
 G[20233]={'1943:79.07,46.62'}
 G[23128]={'FH 1454:32.23,35.82'}	-- Master Pyreanor
+G[25462]={'124:51.34,35.19'} -- The Lich King
+G[28357]={'124:47.6,28.9 124:47.7,29.5 124:48.2,28.4 124:48.9,27.4 124:48.9,27.5 124:49.5,28.1'} -- Instructor Razuvious
+G[28444]={'124:48.88,29.75'} -- Highlord Darion Mograine
+G[28472]={'124:47.48,26.55'} -- Lord Thorval
+G[28510]={'124:50.70,35.09 124:50.99,34.33 124:51.72,34.89'} -- Scourge Commander Thalanor
+G[28377]={'124:52.28,33.97'} -- Prince Valanar
+G[28647]={'124:52.4,37.8 124:52.6,37.6 124:53.1,36.4 124:53.1,36.9 124:53.5,36.5 124:53.6,36.4'} -- Orithos the Sky Darkener
+G[28653]={'124:51.8,35.6 124:52.3,34.8 124:52.4,34.3 124:52.5,34.5 124:53.1,33.6 124:53.3,33.4'} -- Salanar the Horseman
+G[1190917]={'124:55.28,46.17'} -- Abandoned Mail
+G[28658]={'124:54.11,35.07'} -- Gothik the Harvester
+G[28911]={'124:54.30,57.31'} -- Prince Keleseth
+G[28907]={'124:53.48,36.55'} -- Prince Valanar
+G[28919]={'124:55.92,52.43'} -- Noth the Plaguebringer
+G[28910]={'124:54.67,57.44'} -- Baron Rivendare
+G[1190936]={'124:56.16,52.02'} -- Plague Cauldron
+G[28914]={'124:56.26,79.85'} -- Orbaz Bloodbane
+G[28913]={'124:56.27,80.16'} -- Thassarian
+G[28912]={'124:62.95,67.87'} -- Koltira Deathweaver
+G[29047]={'124:54.48,34.23'}
+G[29053]={'124:52.63,80.99 124:52.97,82.06 124:52.73,82.53'} -- Knight Commander Plaguefist
+G[29077]={'124:65.67,83.82'} -- High General Abbendis
+G[29110]={'124:53.58,36.87 N:25462'} -- The Lich King
+G[31082]={'124:33.99,30.46 N:28510'} -- Scourge Commander Thalanor
+G[29173]={'124:34.43,31.11 N:28444'} -- Highlord Darion Mograine
+G[29611]={'FA 1453:79.99,38.46'} -- King Varian Wrynn
 G[44036]={'FH 1941:43.96,69.97'}
 G[500001]={'FH 1412:53.85,80.49 A:5891'}	-- to handle the Minor Manifestation of Earth's in Durotar and Mulgore
 G[500002]={'1457:41.61,43.19 A:14305'}	-- Human Orphan in Darnassus
@@ -1810,7 +1835,7 @@ G[1000033]={'1436:25.97,16.91'}
 G[1000034]={'1436:40.63,17.03'}
 G[1000035]={'1436:25.91,47.76'}
 G[1000036]={'1436:40.51,47.80'}
-G[1000047]={'1433:26.74,46.45'}	-- Wanted: Lieutenant Fangore (1000047)
+G[1000047]={'1433:26.74,46.45'}	-- Wanted: Lieutenant Fangore (1000047) 
 G[1000055]={'1429:72.66,60.33'}	-- A half-eaten body
 G[1000056]={'1429:79.80,55.50'}	-- Rolf's corpse
 G[1000059]={'1431:49.87,77.71'}
