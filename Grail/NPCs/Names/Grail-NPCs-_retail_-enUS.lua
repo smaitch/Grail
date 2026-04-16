@@ -2243,7 +2243,24 @@ G[1612894]='Parhelion Plaza'
 end
 
 if release >= 66838 then
+G[1466810]='Void Cleft'
+G[1466978]="Om'Bera's Clipboard"
+G[1466983]='Curved Dagger'
+G[1467435]='Zaranit Bud'
+G[1475872]='Rippling Wellspring'
+G[1499949]='Stolen Research Crate'
+G[1500591]='Firebud'
+G[1500597]='Firebud'
+G[1500599]='Firebud'
+G[1500813]='Rod of Analysis'
+G[1502375]='Sand Pile'
+G[1502376]='Sand Pile'
+G[1502377]='Sand Pile'
+G[1502907]='Rod of Activation'
+G[1516700]='Oasis Animal Leavings'
+G[1516792]='Watering Jug'
 G[1531891]='Vanguard Scout'
+G[1573743]='Crown of the High King'
 end
 
 --	End of localized NPC names

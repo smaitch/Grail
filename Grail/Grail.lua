@@ -2243,6 +2243,130 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							print(strformat("Grail: |cFF00FF00%d|r new quest pin(s) this session", count))
 						end
 					end)
+					self:RegisterSlashOption("savepins", "|cFF00FF00savepins|r => saves current Blizzard map quest pins and hub POIs to tracking data", function()
+						local uiMapID = WorldMapFrame and WorldMapFrame:GetMapID()
+						if not uiMapID then
+							print("Grail: world map is not open or map ID unavailable")
+							return
+						end
+						local mapName = self:_GetMapNameByID(uiMapID) or "?"
+						local count = 0
+						-- currentPins tracks questID → formatted line for MAPPIN/QUESTPIN entries
+						-- so we can diff against the previous invocation when debug is on.
+						local currentPins = {}
+
+						-- Blizzard quest pins (C_QuestLog.GetQuestsOnMap)
+						if C_QuestLog.GetQuestsOnMap then
+							local pins = C_QuestLog.GetQuestsOnMap(uiMapID)
+							if pins then
+								for _, pin in ipairs(pins) do
+									local questID = tonumber(pin.questID)
+									if questID then
+										-- Determine a one-character status:
+										--   C = flagged completed   P = in progress (in quest log)
+										--   T = task/bonus objective   A = available (visible but not in log)
+										local status
+										if C_QuestLog.IsComplete and C_QuestLog.IsComplete(questID) then
+											status = "C"
+										elseif C_QuestLog.IsOnQuest and C_QuestLog.IsOnQuest(questID) then
+											status = "P"
+										elseif C_QuestLog.IsQuestTask and C_QuestLog.IsQuestTask(questID) then
+											status = "T"
+										else
+											status = "A"
+										end
+										-- Quest tag (world quest type, dungeon, etc.) and title
+										local tagID, tagName = self:GetQuestTagInfo(questID)
+										local title = self:QuestName(questID) or (C_QuestLog.GetQuestInfo and C_QuestLog.GetQuestInfo(questID)) or ""
+										title = title or ""
+										tagName = tagName or ""
+										local msg = strformat("MAPPIN|%d|%d|%.4f|%.4f|%s|%s|%s", uiMapID, questID, pin.x or 0, pin.y or 0, status, tagName, title)
+										self:_AddTrackingMessage(msg)
+										currentPins[questID] = msg
+										count = count + 1
+									end
+								end
+							end
+						end
+
+						-- Quest hub POIs (C_AreaPoiInfo.GetQuestHubsForMap)
+						if C_AreaPoiInfo and C_AreaPoiInfo.GetQuestHubsForMap and C_AreaPoiInfo.GetAreaPOIInfo then
+							local hubs = C_AreaPoiInfo.GetQuestHubsForMap(uiMapID)
+							if hubs then
+								for _, areaPoiID in ipairs(hubs) do
+									local info = C_AreaPoiInfo.GetAreaPOIInfo(uiMapID, areaPoiID)
+									if info and info.position then
+										local questID = (info.questID and info.questID > 0) and info.questID or 0
+										self:_AddTrackingMessage(strformat("HUBPOI|%d|%d|%.4f|%.4f|%d", uiMapID, areaPoiID, info.position.x or 0, info.position.y or 0, questID))
+										count = count + 1
+									end
+								end
+							end
+						end
+
+						-- Map canvas active pins: QuestOfferPinTemplate (yellow "!"),
+						-- QuestBlobPinTemplate, QuestHubPinTemplate, etc.
+						-- These quest-giver pins are NOT returned by GetQuestsOnMap.
+						-- Build a seen set from what GetQuestsOnMap already recorded so we
+						-- don't emit duplicate entries.
+						do
+							local seen = {}
+							if C_QuestLog.GetQuestsOnMap then
+								local existing = C_QuestLog.GetQuestsOnMap(uiMapID)
+								if existing then
+									for _, p in ipairs(existing) do
+										if p.questID then seen[tonumber(p.questID)] = true end
+									end
+								end
+							end
+							self:_ScanMapCanvasQuestPins(uiMapID, seen, function(questID, x, y, pin)
+								local status
+								if C_QuestLog.IsComplete and C_QuestLog.IsComplete(questID) then
+									status = "C"
+								elseif C_QuestLog.IsOnQuest and C_QuestLog.IsOnQuest(questID) then
+									status = "P"
+								elseif C_QuestLog.IsQuestTask and C_QuestLog.IsQuestTask(questID) then
+									status = "T"
+								else
+									status = "A"
+								end
+								local tagID, tagName = self:GetQuestTagInfo(questID)
+								-- Try Grail's own name table first, then the retail API that works
+								-- for available (not-yet-accepted) quests, then fields stored on
+								-- the pin frame itself, then the log-based API as a last resort.
+								local title = self:QuestName(questID)
+									or (C_QuestLog.GetTitleForQuestID and C_QuestLog.GetTitleForQuestID(questID))
+									or (pin and (pin.title or pin.questName or pin.name))
+									or (C_QuestLog.GetQuestInfo and C_QuestLog.GetQuestInfo(questID))
+									or ""
+								title = title or ""
+								tagName = tagName or ""
+								local msg = strformat("QUESTPIN|%d|%d|%.4f|%.4f|%s|%s|%s", uiMapID, questID, x, y, status, tagName, title)
+								self:_AddTrackingMessage(msg)
+								currentPins[questID] = msg
+								count = count + 1
+							end)
+						end
+
+						-- Debug diff: show what changed since the last /grail savepins this session.
+						-- self.lastSavePinsQuestIDs is nil at session start so the first call prints everything.
+						if self.GDE.debug then
+							local prev = self.lastSavePinsQuestIDs or {}
+							for questID, msg in pairs(currentPins) do
+								if not prev[questID] then
+									print("|cFF00FF00Grail savepins NEW:|r " .. msg)
+								end
+							end
+							for questID, msg in pairs(prev) do
+								if not currentPins[questID] then
+									print("|cFFFF4400Grail savepins GONE:|r " .. msg)
+								end
+							end
+						end
+						self.lastSavePinsQuestIDs = currentPins
+
+						print(strformat("Grail: saved %d pin(s) for map %d (%s) to tracking data", count, uiMapID, mapName))
+					end)
 					self:RegisterSlashOption("help", "|cFF00FF00help|r => print out this list of commands", function()
 						print("|cFFFF0000Grail|r slash commands:")
 						for option, value in pairs(self.slashCommandOptions) do
@@ -2373,6 +2497,7 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 					self:_CleanDatabaseLearnedNPCLocation()
 					self:_CleanDatabaseLearnedQuest()
 					self:_CleanDatabaseLearnedQuestCode()
+					self:_CleanDatabaseObservedQuestLocations()
 
 					self:RegisterObserver("Bags", self._BagUpdates)
 					self:RegisterObserver("QuestLogChange", self._QuestLogUpdate)
@@ -6044,6 +6169,11 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 							else
 								shouldAdd = false
 							end
+						elseif 'e' == code then
+							local codeString = self.questCodes[questId]
+							if codeString and strfind(" " .. codeString .. " ", " " .. questCode .. " ", 1, true) then
+								shouldAdd = false
+							end
 						end
 					end
 					if shouldAdd then
@@ -6051,6 +6181,53 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					end
 				end
 				self.GDE.learned.QUEST_CODE = newQuestCodes
+			end
+		end,
+
+		-- Removes entries from GDE.observedQuestLocations whose quest giver (A: code) already
+		-- has a matching location in the database.  "Matching" means the same mapID and a
+		-- euclidean distance within locationCloseness (stored in percent-coordinate space, same
+		-- as the NPC location tables).  The observed pin coordinates arrive as normalized (0-1)
+		-- values, so they are multiplied by 100 before comparison.
+		_CleanDatabaseObservedQuestLocations = function(self)
+			if nil == self.GDE.observedQuestLocations then return end
+			local toRemove = {}
+			for questId, obs in pairs(self.GDE.observedQuestLocations) do
+				-- Convert normalized pin coordinates to percent-coordinate space for comparison
+				local obsStructure = { mapArea = obs.mapID, x = obs.x * 100, y = obs.y * 100 }
+				local codeString = self.questCodes[questId]
+				if codeString then
+					local start, length = 1, strlen(codeString)
+					while start <= length do
+						local spacePos = strfind(codeString, " ", start, true)
+						local token
+						if spacePos then
+							token = strsub(codeString, start, spacePos - 1)
+							start = spacePos + 1
+						else
+							token = strsub(codeString, start)
+							start = length + 1
+						end
+						if strsub(token, 1, 2) == 'A:' then
+							local npcId = tonumber(strsub(token, 3))
+							if npcId then
+								local locations = self:NPCLocations(npcId)
+								if locations then
+									for _, loc in ipairs(locations) do
+										if self:_LocationsCloseStructures(loc, obsStructure) then
+											toRemove[questId] = true
+											break
+										end
+									end
+								end
+							end
+						end
+						if toRemove[questId] then break end
+					end
+				end
+			end
+			for questId in pairs(toRemove) do
+				self.GDE.observedQuestLocations[questId] = nil
 			end
 		end,
 
@@ -6126,6 +6303,11 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		end,
 
 		_LearnQuestCode = function(self, questId, questCode)
+			-- Skip if the code is already present in the database to avoid redundant saved-variables entries
+			local codeString = self.questCodes[questId]
+			if codeString and strfind(" " .. codeString .. " ", " " .. questCode .. " ", 1, true) then
+				return
+			end
 			self.GDE.learned = self.GDE.learned or {}
 			self.GDE.learned.QUEST_CODE = self.GDE.learned.QUEST_CODE or {}
 			-- The Grail version is added because we need to be able to differentiate between different questCode structures
@@ -8882,6 +9064,37 @@ end
 		end,
 
 		---
+		--	Iterates the active pins in WorldMapFrame's map canvas pin pools and calls
+		--	callback(questID, normalizedX, normalizedY) for each pin that carries a questID
+		--	and has not already been seen (tracked via the alreadySeen table).
+		--	This captures QuestOfferPinTemplate (yellow "!"), QuestBlobPinTemplate, and
+		--	QuestHubPinTemplate pins that C_QuestLog.GetQuestsOnMap() does not return.
+		--
+		--	Iterates the child frames of the map canvas (WorldMapFrame:GetCanvas()) looking for
+		--	any frame that carries a questID field.  This catches QuestOfferPinTemplate (yellow
+		--	"!"), QuestBlobPinTemplate, QuestHubPinTemplate, etc., which are not returned by
+		--	C_QuestLog.GetQuestsOnMap().
+		--	WorldMapFrame.pinPools stores factory descriptors (private + GetTemplate), not pools
+		--	of live instances, so we must walk the canvas children directly.
+		--	MapCanvasPinMixin:SetPosition() stores the plain [0,1] normalised coordinates in
+		--	pin.normalizedX / pin.normalizedY; we use those to avoid secret (tainted) numbers.
+		_ScanMapCanvasQuestPins = function(self, uiMapID, alreadySeen, callback)
+			if not WorldMapFrame or not WorldMapFrame.GetCanvas then return end
+			local canvas = WorldMapFrame:GetCanvas()
+			if not canvas then return end
+			local children = { canvas:GetChildren() }
+			for _, frame in ipairs(children) do
+				local questID = frame.questID and tonumber(frame.questID)
+				if questID and questID > 0 and not alreadySeen[questID] then
+					alreadySeen[questID] = true
+					local x = frame.normalizedX or 0
+					local y = frame.normalizedY or 0
+					callback(questID, x, y, frame)
+				end
+			end
+		end,
+
+		---
 		--	Scans C_QuestLog.GetQuestsOnMap() for the given map and records each quest pin
 		--	position into GDE.observedQuestLocations[questID] = {mapID, x, y}.
 		--	This builds a passive dataset of "where each quest giver stands" that can be
@@ -8889,18 +9102,46 @@ end
 		--	observation per quest is kept; later sightings overwrite earlier ones.
 		_ScanMapQuestPins = function(self, uiMapID)
 			if not uiMapID then return end
-			local pins = C_QuestLog.GetQuestsOnMap(uiMapID)
-			if not pins or #pins == 0 then return end
 			if nil == self.GDE.observedQuestLocations then
 				self.GDE.observedQuestLocations = {}
 			end
 			local locs = self.GDE.observedQuestLocations
-			for _, pin in ipairs(pins) do
-				local questID = tonumber(pin.questID)
-				if questID then
-					locs[questID] = {mapID = uiMapID, x = pin.x, y = pin.y}
+			local seen = {}
+
+			-- Blizzard quest pins visible on this map.
+			local pins = C_QuestLog.GetQuestsOnMap(uiMapID)
+			if pins then
+				for _, pin in ipairs(pins) do
+					local questID = tonumber(pin.questID)
+					if questID then
+						seen[questID] = true
+						locs[questID] = {mapID = uiMapID, x = pin.x, y = pin.y}
+					end
 				end
 			end
+
+			-- Quest hub POIs: may expose quests not yet shown as individual pins.
+			if C_AreaPoiInfo and C_AreaPoiInfo.GetQuestHubsForMap and C_AreaPoiInfo.GetAreaPOIInfo then
+				local hubs = C_AreaPoiInfo.GetQuestHubsForMap(uiMapID)
+				if hubs then
+					for _, areaPoiID in ipairs(hubs) do
+						local info = C_AreaPoiInfo.GetAreaPOIInfo(uiMapID, areaPoiID)
+						if info and info.position and info.questID and info.questID > 0 then
+							local questID = info.questID
+							if not seen[questID] then
+								seen[questID] = true
+								locs[questID] = {mapID = uiMapID, x = info.position.x, y = info.position.y}
+							end
+						end
+					end
+				end
+			end
+
+			-- Map canvas active pins (QuestOfferPinTemplate yellow "!", QuestBlobPinTemplate, etc.)
+			-- These are quest givers / available quests not returned by GetQuestsOnMap.
+			self:_ScanMapCanvasQuestPins(uiMapID, seen, function(questID, x, y)
+				locs[questID] = {mapID = uiMapID, x = x, y = y}
+			end)
 		end,
 
 		_HandleEventGarrisonBuildingActivated = function(self, buildingId)
