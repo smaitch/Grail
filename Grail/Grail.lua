@@ -2563,14 +2563,36 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			['ITEM_TEXT_READY'] = function(self, frame, ...)
 				local targetName, npcId, coordinates = self:TargetInformation()
 				local questToComplete = self._ItemTextBeginList[npcId]
+				-- Always log target and coordinates, even for unknown books
+				local baseMessage = strformat("ITEM_TEXT_READY | Target: %s (%d) | Coords: %s", tostring(targetName), tonumber(npcId) or -1, tostring(coordinates))
+				if self.GDE.debug then
+					print(baseMessage)
+				end
+				self:_AddTrackingMessage(baseMessage)
 				if nil ~= questToComplete then
 					self:_MarkQuestComplete(questToComplete, true)
 					local message = strformat("ITEM_TEXT_READY completes %d | Target: %s (%d) | Coords: %s", questToComplete, tostring(targetName), tonumber(npcId) or -1, tostring(coordinates))
 					if self.GDE.debug then
 						print(message)
 					end
-						self:_AddTrackingMessage(message)
+					self:_AddTrackingMessage(message)
 				end
+				-- Fallback: if ITEM_TEXT_BEGIN did not fire (or was in a non-treasure zone),
+				-- take a fresh backup now so QUEST_QUERY_COMPLETE can compare against a valid snapshot.
+				if not self.doneProcessingBackup then
+					self:_ProcessServerBackup(true)
+					self.doneProcessingBackup = true
+				end
+				-- QueryQuestsCompleted() is async in Retail: the server response arrives later
+				-- via QUEST_QUERY_COMPLETE -> _ProcessServerQuests().  Store context so the
+				-- deferred handler can diff against the backup taken in ITEM_TEXT_BEGIN (or above).
+				self.pendingBookReadContext = {
+					targetName  = targetName,
+					npcId       = npcId,
+					coordinates = coordinates,
+					knownQuest  = questToComplete,
+				}
+				QueryQuestsCompleted()
 			end,
 
 			--	We want to be able to handle the chests on the Timeless Isle.  To do so we need to be able to determine
@@ -2815,7 +2837,31 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			end,
 
 			['QUEST_QUERY_COMPLETE'] = function(self, frame, arg1)
+				-- DEBUG
+				print(strformat("DBG QUEST_QUERY_COMPLETE: pendingBookReadContext=%s", tostring(self.pendingBookReadContext ~= nil)))
 				self:_ProcessServerQuests()
+				-- If a book was just read, diff against the pre-read backup to find
+				-- any quests the server newly marked complete.
+				if nil ~= self.pendingBookReadContext then
+					local ctx = self.pendingBookReadContext
+					self.pendingBookReadContext = nil
+					local newlyCompleted = {}
+					self:_ProcessServerCompare(newlyCompleted)
+					print(strformat("DBG QUEST_QUERY_COMPLETE: newlyCompleted count=%d", #newlyCompleted))
+					for _, qId in pairs(newlyCompleted) do
+						print(strformat("DBG QUEST_QUERY_COMPLETE: newly completed quest=%d knownQuest=%s", qId, tostring(ctx.knownQuest)))
+						if qId ~= ctx.knownQuest then   -- avoid double-marking
+							self:_MarkQuestComplete(qId, true)
+						end
+						local msg = strformat("Book read completes %d | Target: %s (%d) | Coords: %s", qId, tostring(ctx.targetName), tonumber(ctx.npcId) or -1, tostring(ctx.coordinates))
+						if self.GDE.debug then
+							print(msg)
+						end
+						self:_AddTrackingMessage(msg)
+					end
+					self:_ProcessServerBackup(true)   -- update snapshot for next book read
+					self.doneProcessingBackup = false  -- allow ITEM_TEXT_BEGIN to snapshot again
+				end
 			end,
 
 			['QUEST_REMOVED'] = function(self, frame, questId)
