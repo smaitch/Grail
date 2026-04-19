@@ -2198,6 +2198,19 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						print(message)
 						self:_AddTrackingMessage(message)
 					end)
+					self:RegisterSlashOption("buffs", "|cFF00FF00buffs|r => lists all active buffs on the player with their spell IDs", function()
+						print("|cFFFF0000Grail|r active player buffs:")
+						local i = 1
+						local count = 0
+						while true do
+							local name, spellId = self:UnitAura('player', i, 'HELPFUL')
+							if not name then break end
+							print(strformat("  [%d] %s (spellId %s)", i, name, tostring(spellId)))
+							count = count + 1
+							i = i + 1
+						end
+						if count == 0 then print("  (none)") end
+					end)
 					self:RegisterSlashOption("c ", "|cFF00FF00c|r |cFFFF8C00msg|r => adds the |cFFFF8C00msg|r to the tracking data", function(msg)
 						self:_AddTrackingMessage(strsub(msg, 3))
 					end)
@@ -8857,19 +8870,23 @@ end
 				if nil ~= gid then
 					local targetType = nil
 					--	Blizzard has changed the separator from : to - but we will try both if needed
-					local npcBits = { strsplit("-", gid) }
-					if #npcBits == 1 then
-						npcBits = { strsplit(":", gid) }
-					end
-					if #npcBits == 3 and npcBits[1] == "Player" then
-						npcId = Grail.GetCurrentMapAreaID() * -1
-						targetName = "Player: " .. targetName
-					end
-					if #npcBits > 5 then
-						npcId = npcBits[6]
-						targetType = (npcBits[1] == "GameObject") and 1 or nil
-					end
-					if 1 == targetType then npcId = npcId + 1000000 end		-- our representation of a world object
+					--	strsplit on a secret string (dead body GUID) is blocked by WoW taint;
+					--	pcall prevents taint from escaping into the caller's execution context
+					pcall(function()
+						local npcBits = { strsplit("-", gid) }
+						if #npcBits == 1 then
+							npcBits = { strsplit(":", gid) }
+						end
+						if #npcBits == 3 and npcBits[1] == "Player" then
+							npcId = Grail.GetCurrentMapAreaID() * -1
+							targetName = "Player: " .. targetName
+						end
+						if #npcBits > 5 then
+							npcId = npcBits[6]
+							targetType = (npcBits[1] == "GameObject") and 1 or nil
+						end
+						if 1 == targetType then npcId = npcId + 1000000 end		-- our representation of a world object
+					end)
 				end
 			end
 			return npcId, targetName
@@ -9342,6 +9359,21 @@ end
 -- And back to the original code...
 			if #newlyCompleted > 0 or Grail.GDE.debug then
 				local lootingNameToUse = self.lootingName or "NO LOOTING OBJECT"
+				-- print() and _AddTrackingMessage must happen BEFORE the pcall that
+				-- compares guidParts[1] against "GameObject".  WoW's taint system leaves
+				-- the execution context tainted after a pcall catches a secret-value
+				-- comparison error, so any write to shared Blizzard state (ChatFrame)
+				-- that occurs after the pcall would propagate taint even if the value
+				-- being written is itself clean.
+				local safeMessage = "Looting locale: " .. self.playerLocale .. " name: " .. lootingNameToUse .. " Coords: " .. Grail:Coordinates()
+				local message = "Looting from " .. (self.lootingGUID or "NO LOOTING GUID") .. " " .. safeMessage
+				if self.GDE.debug then
+					print(safeMessage)	-- no secret GUID; before pcall taint; safe for ChatFrame
+				end
+				self:_AddTrackingMessage(message)
+				-- guidParts comparison: execution context is tainted after this pcall
+				-- returns (WoW does not reset taint context on pcall exit).  No writes
+				-- to shared Blizzard state may follow.
 				local guidParts = { strsplit('-', self.lootingGUID or "") }
 				local okIsGameObj, isGameObj = pcall(function()
 					return nil ~= guidParts and guidParts[1] == "GameObject" and self.lootingName ~= self.defaultUnfoundLootingName
@@ -9353,11 +9385,6 @@ end
 						self:_LearnObjectName(guidParts[6], lootingNameToUse)
 					end
 				end
-				local message = "Looting from " .. (self.lootingGUID or "NO LOOTING GUID") .. " locale: " .. self.playerLocale .. " name: " .. lootingNameToUse .. " Coords: " .. Grail:Coordinates()
-				if self.GDE.debug then
-					print(message)
-				end
-				self:_AddTrackingMessage(message)
 			end
 			for _, questId in pairs(newlyCompleted) do
 				self:_MarkQuestComplete(questId, true)

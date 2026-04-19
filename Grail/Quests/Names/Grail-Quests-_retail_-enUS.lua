@@ -78517,6 +78517,7 @@ G[89206]='Break and Enter'
 G[89207]='Rats Can Bite'
 G[89208]="What We're Owed"
 G[89209]='Bu-zzz'
+G[89210]="Photography is the Bee's Knees"
 G[89222]='Remnant of Azeroth'
 G[89223]='Remnant of Azeroth'
 G[89230]='A Lover Not a Fighter'

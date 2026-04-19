@@ -169,7 +169,7 @@ Grail.extraAchievements = {
 		[mapKulTiras] = { 512510, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514279, 514961, 515515, 515259, },
 		[mapDragonIsles] = { 516401, 516398, 516428, 516409, 516405, 516406, 516808, },
-		[mapKhazAlgar] = { 519559, 519560, 520118, 520595, 520597, 520598, 540618, 540636, 540799, 540844, },
+		[mapKhazAlgar] = { 519559, 519560, 520118, 520595, 520597, 520598, 540618, 540636, 540799, 540844, 541808, 542739, },
 		[mapQuelThalas] = { 541802, 541803, 541804, 541805, 541806, 542117, 542278, 560891, 561452, 561506, 561574, 561739, 561864, 561910, 561957, },
 		},
 	[factionHorde] = {
@@ -186,7 +186,7 @@ Grail.extraAchievements = {
 		[mapKulTiras] = { 512509, 512853, 512852, 512995, },
 		[mapShadowlands] = { 514801, 514800, 514799, 514798, 513997, 514234, 514282, 514961, 515515, 515259, },
 		[mapDragonIsles] = { 516401, 516398, 516428, 516409, 516405, 516406, 516808, },
-		[mapKhazAlgar] = { 519559, 519560, 520118, 520595, 520597, 520598, 540618, 540636, 540799, 540844, },
+		[mapKhazAlgar] = { 519559, 519560, 520118, 520595, 520597, 520598, 540618, 540636, 540799, 540844, 541808, 542739, },
 		[mapQuelThalas] = { 541802, 541803, 541804, 541805, 541806, 542117, 542278, 560891, 561452, 561506, 561574, 561739, 561864, 561910, 561957, },
 		},
 	}
@@ -7471,9 +7471,25 @@ G[83283]={540844}	-- Suspicious Minds (Sojourner of Hallowfall) (The War Within)
 G[83503]={520597,540307}	-- A Light in the Dark (The War Within) (The War Within), The War Within (Allied Races: Earthen) (The War Within)
 G[83639]={540636}	-- The Wild Camp (Sojourner of Azj-Kahet) (The War Within)
 G[84022]={519559}	-- Plans within Plans (Azj-Kahet) (The War Within)
-
-
--- *** MUST ADD
+G[84765]={542739}	-- Of Boughs and Bonds (Sojourner of K'aresh) (The War Within)
+G[85009]={542739}	-- Chasing Echoes (Sojourner of K'aresh) (The War Within)
+G[85018]={542739}	-- Avoiding the Void (Sojourner of K'aresh) (The War Within)
+G[85022]={542739}	-- Priest of the Old Ways (Sojourner of K'aresh) (The War Within)
+G[85055]={542739}	-- Lost and Found Storage (Sojourner of K'aresh) (The War Within)
+G[85262]={541808}	-- The Bees Knees (Otherworldly Ecologist) (The War Within)
+G[85394]={542739}	-- That Tazavesh Taste (Sojourner of K'aresh) (The War Within)
+G[85434]={542739}	-- On a Technicality (Sojourner of K'aresh) (The War Within)
+G[86193]={542739}	-- A Stranger's Gift (Sojourner of K'aresh) (The War Within)
+G[86195]={541808}	-- Roaming Free (Otherworldly Ecologist) (The War Within)
+G[86201]={542739}	-- Anyway, Here's Firewall (Sojourner of K'aresh) (The War Within)
+G[86359]={541808}	-- Nesingwary Neccesities (Otherworldly Ecologist) (The War Within)
+G[86392]={541808}	-- Fox-strut (Otherworldly Ecologist) (The War Within)
+G[86607]={541808}	-- Rays of Sunshine (Otherworldly Ecologist) (The War Within)
+G[87294]={541808}	-- Lil' Lapbugs (Otherworldly Ecologist) (The War Within)
+G[87415]={541808}	-- Hard K'arroc (Otherworldly Ecologist) (The War Within)
+G[88672]={541808}	-- A Slither of Snakes (Otherworldly Ecologist) (The War Within)
+G[91044]={542739}	-- In Search of Darkness (Sojourner of K'aresh) (The War Within)
+G[91454]={542739}	-- Untethered Potential (Sojourner of K'aresh) (The War Within)
 
 -- Note that 11570 is added above, but listed here for reference
 --G[11570]={561910}	-- Winterfin Retreat (Mrglgrgl of Grglmrgl) (Midnight)
