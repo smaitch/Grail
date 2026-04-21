@@ -2118,8 +2118,59 @@ G[1444802]='Kobyss Ritual Cache'
 G[1455716]="DELVER'S CALL"
 end
 
+if release >= 61265 then
+G[1245793]='Battered Journal'
+G[1307277]='Old Jug'
+G[1307307]='Broken Barrel'
+G[1307330]="Captain's Footlocker"
+G[1307340]='Locked Chest'
+end
+
+if release >= 61609 then
+G[1406829]='Old Keyring'
+G[1485669]="DELVER'S CALL: Fungal Folly"
+end
+
+if release >= 61967 then
+G[1280948]='Twilight Outhouse'
+end
+
 if release >= 62438 then
 G[1307066]='Ocean Chest'
+end
+
+if release >= 62493 then
+G[1206293]='A.I.D.A. Terminal'
+end
+
+if release >= 62876 then
+G[1296536]="Bloodied Sentinel's Glaive"
+end
+
+if release >= 63003 then
+G[1307265]='Wanted Poster'
+G[1307325]='Wanted Poster'
+end
+
+if release >= 63906 then
+G[1278452]='Brazier'
+G[1290750]='Jambani Stockpile'
+end
+
+if release >= 64154 then
+G[1287229]='Wanted: Dark Chronicler'
+G[1291291]='Wanted: Poacher'
+end
+
+if release >= 64877 then
+G[1241840]='Rune-Carved Tablet'
+G[1243454]='Gilnean Heavy Explosive'
+G[1244453]="Cullen's Scouting Report"
+end
+
+if release >= 64978 then
+G[1251992]='The Aegis of Aggramar'
+G[1587681]='Buried Treasure'
 end
 
 if release >= 66192 then
@@ -2243,6 +2294,17 @@ G[1612894]='Parhelion Plaza'
 end
 
 if release >= 66838 then
+G[1000324]='Summon Random Favorite Mount'
+G[1001731]='Copper Vein'
+G[1035591]='Sagefish School'
+G[1154357]='Freshwater Eel'
+G[1175404]='Summon Random Favorite Mount'
+G[1204352]='Redridge Supply Crate'
+G[1204388]='Blackrock Coffer'
+G[1204389]='Blackrock Key Pouch'
+G[1209311]='Silverhorn Stag'
+G[1213368]='Lucky Pandaren Coin'
+G[1310709]='Waterlogged Chest'
 G[1466810]='Void Cleft'
 G[1466978]="Om'Bera's Clipboard"
 G[1466983]='Curved Dagger'

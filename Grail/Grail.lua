@@ -591,6 +591,7 @@
 --			Corrects some issues that would cause taint.
 --			Adds a startup message encouraging players to enable tracking and submit data.
 --			Updates some Quest/NPC information.
+--			Adds the ability to indicate profession requirements using professions based on release.
 --
 --	Known Issues
 --
@@ -1978,6 +1979,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 --			nx	where x is the key to a forbidden class (see classMapping).
 --			O	quest must be accepted
 --			Pxyyy	profession x (see professionMapping) must have a skill value of at least yyy
+--			Pnnnnnnn	specific profession tier by Blizzard skill line ID, encoded as skillLineID*1000+minLevel (0 = any level; e.g. P2827000 = any Dragonflight Engineering, P2827050 = Dragonflight Engineering level 50+)
 --			Qxxxx	the equipped iLvl must be >= xxxx
 --			qxxxx	the equipped iLvl must be < xxxx
 --			R	spell effect has ever been present
@@ -2429,6 +2431,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					frame:RegisterEvent("CHAT_MSG_COMBAT_FACTION_CHANGE")	-- needed for quest status caching
 					frame:RegisterEvent("COMBAT_TEXT_UPDATE")				-- used to capture structured faction rep changes
 					frame:RegisterEvent("CHAT_MSG_SKILL")	-- needed for quest status caching
+					frame:RegisterEvent("TRADE_SKILL_DATA_SOURCE_CHANGED")	-- GetProfessionInfoBySkillLineID returns 0 until trade skill UI loads; invalidate P cache when it does
 					if self.capabilities.usesGarrisons then
 						frame:RegisterEvent("GARRISON_BUILDING_ACTIVATED")
 						frame:RegisterEvent("GARRISON_BUILDING_REMOVED")
@@ -2666,6 +2669,13 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 				else
 					self:_RegisterDelayedEvent(frame, { 'CHAT_MSG_SKILL' } )
 				end
+			end,
+
+			['TRADE_SKILL_DATA_SOURCE_CHANGED'] = function(self, frame)
+				-- GetProfessionInfoBySkillLineID returns skillLevel=0 until the trade skill
+				-- UI is opened; once it fires, invalidate the profession cache so quests
+				-- with P: prerequisites are re-evaluated with the real skill level.
+				self:_HandleEventChatMsgSkill()
 			end,
 
 			['CRITERIA_EARNED'] = function(self, frame, ...)
@@ -5801,7 +5811,11 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				elseif 'n' == code then
 					retval = (self.classNameToCodeMapping[self.playerClass] == subcode) and 'B' or 'C'
 				elseif 'P' == code then
-					retval = self:ProfessionExceeds(subcode, numeric) and 'C' or 'P'
+					if subcode == '' then
+						retval = self:ProfessionSkillLineExceeds(math.floor(numeric / 1000), numeric % 1000) and 'C' or 'P'
+					else
+						retval = self:ProfessionExceeds(subcode, numeric) and 'C' or 'P'
+					end
 				elseif 'R' == code then
 					retval = self:EverExperiencedSpell(numeric) and 'C' or 'P'
 				elseif 'r' == code then
@@ -8043,6 +8057,14 @@ end
 				end
 
 			end
+
+			--	Second pass: re-register profession (and reputation) map areas for quests whose questBits
+			--	were already computed before this function ran and thus were skipped by _CodeAllFixed above.
+			--	_InsertSet is idempotent so quests processed in the first pass are not duplicated.
+			for questId, prereqs in pairs(self.questPrerequisites) do
+				self:_ProcessQuestsForHandlers(questId, prereqs)
+			end
+
 			mapIdsWithNames = nil
 			self.timings.CreateIndexedQuestList = debugprofilestop() - debugStartTime
 			self.timings.CreateIndexedQuestListLocations = totalLocationsTime
@@ -8149,6 +8171,7 @@ end
 				local questCompleted, questInLog, questStatus, questEverCompleted, canAcceptQuest, spellPresent, achievementComplete, itemPresent, questEverAbandoned, professionGood, questEverAccepted, hasSkill, spellEverCast, spellEverExperienced, groupDone, groupAccepted, reputationUnder, reputationExceeds, factionMatches, phaseMatches, iLvlMatches, garrisonBuildingMatches, needsMatchBoth, levelMeetsOrExceeds, groupDoneOrComplete, achievementNotComplete, levelLessThan, playerAchievementComplete, playerAchievementNotComplete, garrisonBuildingNPCMatches, classMatches, artifactKnowledgeLevelMatches, worldQuestAvailable, friendshipReputationUnder, friendshipReputationExceeds, artifactLevelMatches, missionMatches, threatQuestAvailable, azeriteLevelMatches, renownExceeds, callingQuestAvailable, garrisonTalentResearched, questTurnedIndBeforeLastWeeklyReset, questTurnedIndBeforeTodaysReset, currencyAmountMatches, majorFactionRenownLevelMatches, poiPresent, majorFactionRenownLevelMatchesAccountWide, groupInLogOrTurnedIn = false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local checkLog, checkEver, checkStatusComplete, shouldCheckTurnin, checkSpell, checkAchievement, checkItem, checkItemLack, checkEverAbandoned, checkNeverAbandoned, checkProfession, checkEverAccepted, checkHasSkill, checkNotCompleted, checkNotSpell, checkEverCastSpell, checkEverExperiencedSpell, checkGroupDone, checkGroupAccepted, checkReputationUnder, checkReputationExceeds, checkSkillLack, checkFaction, checkPhase, checkILvl, checkGarrisonBuilding, checkStatusNotComplete, checkLevelMeetsOrExceeds, checkGroupDoneOrComplete, checkAchievementLack, checkLevelLessThan, checkPlayerAchievement, checkPlayerAchievementLack, checkGarrisonBuildingNPC, checkNotTurnin, checkNotLog, checkClass, checkArtifactKnowledgeLevel, checkWorldQuestAvailable, checkFriendshipReputationExceeds, checkFriendshipReputationUnder, checkArtifactLevel, checkMission, checkNever, checkThreatQuestAvailable, checkAzeriteLevel, checkRenownLevel, checkCallingQuestAvailable, checkGarrisonTalent, checkQuestTurnedInBeforeLastWeeklyReset, checkRenownDoesNotMeetOrExceed, checkNotClass, checkQuestTurnedInBeforeTodaysReset, checkCurrencyAmount, checkMajorFactionRenownLevel, checkPOIPresent, checkMajorFactionRenownLevelAccountWide, checkGroupInLogOrTurnedIn = false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
 				local forcingProfessionOnly, forcingReputationOnly = false, false
+				local checkSkillLineProfession = false
 
 				if forceSpecificChecksOnly then
 					if bitband(forceSpecificChecksOnly, Grail.bitMaskProfession) > 0 then
@@ -8210,7 +8233,8 @@ end
 				elseif code == 'N' then checkClass = true
 				elseif code == 'n' then checkNotClass = true
 				elseif code == 'O' then	checkEverAccepted = true
-				elseif code == 'P' then	checkProfession = true
+				elseif code == 'P' then
+				if subcode == '' then checkSkillLineProfession = true else checkProfession = true end
 				elseif code == 'Q' or
 					   code == 'q' then checkILvl = true
 				elseif code == 'R' then checkEverExperiencedSpell = true
@@ -8290,6 +8314,7 @@ end
 				end
 				if checkEverAbandoned or checkNeverAbandoned then questEverAbandoned = Grail:HasQuestEverBeenAbandoned(value) end
 				if checkProfession then professionGood = Grail:ProfessionExceeds(subcode, value) end
+				if checkSkillLineProfession then professionGood = Grail:ProfessionSkillLineExceeds(math.floor(value / 1000), value % 1000) end
 				if checkEverAccepted then questEverAccepted = Grail:HasQuestEverBeenAccepted(value) end
 				if checkHasSkill or checkSkillLack then hasSkill = Grail:_HasSkill(value) end
 				if checkEverCastSpell then spellEverCast = Grail:_EverCastSpell(value) end
@@ -8406,6 +8431,7 @@ end
 					(checkEverAbandoned and questEverAbandoned) or
 					(checkNeverAbandoned and not questEverAbandoned) or
 					(checkProfession and professionGood) or
+					(checkSkillLineProfession and professionGood) or
 					(checkEverAccepted and questEverAccepted) or
 					(checkHasSkill and hasSkill) or
 					(checkEverCastSpell and spellEverCast) or
@@ -9154,11 +9180,12 @@ end
 				end
 			end
 
-			-- Map canvas active pins (QuestOfferPinTemplate yellow "!", QuestBlobPinTemplate, etc.)
-			-- These are quest givers / available quests not returned by GetQuestsOnMap.
-			self:_ScanMapCanvasQuestPins(uiMapID, seen, function(questID, x, y)
-				locs[questID] = {mapID = uiMapID, x = x, y = y}
-			end)
+			-- Note: _ScanMapCanvasQuestPins is intentionally NOT called here.
+			-- Walking canvas:GetChildren() touches AreaPOI pin frames, which taints their
+			-- text-element heights (secret numbers). When Blizzard's UIWidgetManager later
+			-- calls GetStringHeight() on those frames for AreaPOI tooltips it crashes with
+			-- "secret number tainted by Wholly". The canvas scan is safe only in the explicit
+			-- /grail savepins command where the user deliberately invokes it.
 		end,
 
 		_HandleEventGarrisonBuildingActivated = function(self, buildingId)
@@ -11845,7 +11872,38 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 					tinsert(destinationTable.L, questId)
 				end
 			elseif 'P' == code then
-				self:AddQuestToMapArea(questId, tonumber(self.professionToMapAreaMapping['P'..subcode]), self.professionMapping[subcode])
+				local letterCode = subcode
+				if '' == subcode then
+					-- New format: numeric encodes skillLineID * 1000 + minLevel.
+					-- Map the skill line ID back to a profession letter code so the quest appears
+					-- in the correct Profession section of the Wholly panel.
+					local lineId = math.floor(numeric / 1000)
+					-- Build a reverse table lazily (skill line ID → letter code).
+					if not self._skillLineToLetterCode then
+						self._skillLineToLetterCode = {}
+						for letter, ids in pairs(self.professionSkillLineIdMapping) do
+							for _, id in ipairs(ids) do
+								self._skillLineToLetterCode[id] = letter
+							end
+						end
+					end
+					letterCode = self._skillLineToLetterCode[lineId]
+					-- If not found in the static table, try the runtime API and match by name substring.
+					if not letterCode and C_TradeSkillUI and C_TradeSkillUI.GetProfessionInfoBySkillLineID then
+						local info = C_TradeSkillUI.GetProfessionInfoBySkillLineID(lineId)
+						if info and info.professionName and info.professionName ~= '' then
+							for letter, name in pairs(self.professionMapping) do
+								if strfind(info.professionName, name, 1, true) then
+									letterCode = letter
+									break
+								end
+							end
+						end
+					end
+				end
+				if letterCode and '' ~= letterCode then
+					self:AddQuestToMapArea(questId, tonumber(self.professionToMapAreaMapping['P'..letterCode]), self.professionMapping[letterCode])
+				end
 			elseif 'T' == code or 't' == code or 'U' == code or 'u' == code then
 				self.questReputationRequirements[questId] = (self.questReputationRequirements[questId] or "") .. self:_ReputationCode(subcode..numeric)
 			elseif 'G' == code or 'z' == code then
@@ -12115,7 +12173,7 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 		end,
 
 		-- The key is the professionCode used as the key in professionMapping, and the value is a table of ids for each extension
-		-- These values are the ones that are returned by C_TradeSkillUI.GetAllProfessionTradeSkillLines() as of 2020-11-14.
+		-- These values are the ones that are returned by C_TradeSkillUI.GetAllProfessionTradeSkillLines() as of 2026-04-19.
 		-- Note that these do not cover Riding, Cooking, Fishing or Archaeology as the API does not return anything for those.
 		-- Using the values from here with the C_TradeSkillUI.GetTradeSkillLineInfoByID(id) API allows access to the following:
 		--		skillLineDisplayName, skillLineRank, skillLineMaxRank, skillLineModifier
@@ -12123,17 +12181,19 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 		-- TODO: Determine whether someone can have a 0 skillLineMaxRank at a lower expansion but a non-zero at a higher one (i.e.,
 		--		skipped over a "lower level" of the skill.
 		professionSkillLineIdMapping = {
-			A = { 2485, 2484, 2483, 2482, 2481, 2480, 2479, 2478, 2750, }, -- 'Alchemy',		-- 171, -- this is parent skillId
-			B = { 2477, 2476, 2475, 2474, 2473, 2472, 2454, 2437, 2751, }, -- 'Blacksmithing',	-- 164,
-			E = { 2494, 2493, 2492, 2491, 2489, 2488, 2487, 2486, 2753, }, -- 'Enchanting',		-- 333,
-			H = { 2556, 2555, 2554, 2553, 2552, 2551, 2550, 2549, 2760, }, -- 'Herbalism',		-- 182,
-			I = { 2514, 2513, 2512, 2511, 2510, 2509, 2508, 2507, 2756, }, -- 'Inscription',	-- 773,
-			J = { 2524, 2523, 2522, 2521, 2520, 2519, 2518, 2517, 2757, }, -- 'Jewelcrafting',	-- 755,
-			L = { 2532, 2531, 2530, 2529, 2528, 2527, 2526, 2525, 2758, }, -- 'Leatherworking',	-- 165,
-			M = { 2572, 2571, 2570, 2569, 2568, 2567, 2566, 2565, 2761, }, -- 'Mining',			-- 186,
-			N = { 2506, 2505, 2504, 2503, 2502, 2501, 2500, 2499, 2755, }, -- 'Engineering',	-- 202,
-			S = { 2564, 2563, 2562, 2561, 2560, 2559, 2558, 2557, 2762, }, -- 'Skinning',		-- 393,
-			T = { 2540, 2539, 2538, 2537, 2536, 2535, 2534, 2533, 2759, }, -- 'Tailoring',		-- 197,
+			-- Classic, Outland, Northrend, Cataclysm, Pandaria, Draenor,
+			-- Legion, Kul Tiran, Shadowlands, Dragon Isles, Khaz Algar, Midnight
+			A = { 2485, 2484, 2483, 2482, 2481, 2480, 2479, 2478, 2750, 2823, 2871, 2906, }, -- 'Alchemy',		-- 171, -- this is parent skillId
+			B = { 2477, 2476, 2475, 2474, 2473, 2472, 2454, 2437, 2751, 2822, 2872, 2907, }, -- 'Blacksmithing',-- 164,
+			E = { 2494, 2493, 2492, 2491, 2489, 2488, 2487, 2486, 2753, 2825, 2874, 2909, }, -- 'Enchanting',	-- 333,
+			H = { 2556, 2555, 2554, 2553, 2552, 2551, 2550, 2549, 2760, 2832, 2877, 2912, }, -- 'Herbalism',	-- 182,
+			I = { 2514, 2513, 2512, 2511, 2510, 2509, 2508, 2507, 2756, 2828, 2878, 2913, }, -- 'Inscription',	-- 773,
+			J = { 2524, 2523, 2522, 2521, 2520, 2519, 2518, 2517, 2757, 2829, 2879, 2914, }, -- 'Jewelcrafting',-- 755,
+			L = { 2532, 2531, 2530, 2529, 2528, 2527, 2526, 2525, 2758, 2830, 2880, 2915, }, -- 'Leatherworking',-- 165,
+			M = { 2572, 2571, 2570, 2569, 2568, 2567, 2566, 2565, 2761, 2833, 2881, 2916, }, -- 'Mining',		-- 186,
+			N = { 2506, 2505, 2504, 2503, 2502, 2501, 2500, 2499, 2755, 2827, 2875, 2910, }, -- 'Engineering',	-- 202,
+			S = { 2564, 2563, 2562, 2561, 2560, 2559, 2558, 2557, 2762, 2834, 2882, 2917, }, -- 'Skinning',		-- 393,
+			T = { 2540, 2539, 2538, 2537, 2536, 2535, 2534, 2533, 2759, 2831, 2883, 2918, }, -- 'Tailoring',	-- 197,
 			-- 'Ascension Crafting',	-- 2791,
 			-- 'Abominable Stiching',	-- 2787,
 			-- 'Soul Cyphering',		-- 2777,
@@ -12258,6 +12318,23 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 				retval = true
 			end
 			return retval, skillLevel
+		end,
+
+		--	Internal Use.
+		--	Returns whether the character has the specific expansion-tier profession skill line at at least the
+		--	specified minimum level.  The skillLineId is the Blizzard skill line ID for the specific tier
+		--	(e.g. Dragonflight Engineering, Khaz Algar Engineering).  A minLevel of 0 means any level suffices.
+		--	@param skillLineId The Blizzard skill line ID for the profession tier (from C_TradeSkillUI).
+		--	@param minLevel The minimum level required within that tier; 0 means the player simply must have it.
+		--	@return True when the character possesses the skill line at or above minLevel, false otherwise.
+		--	@return The actual skill level the character has in that tier (0 if not possessed).
+		ProfessionSkillLineExceeds = function(self, skillLineId, minLevel)
+			if not C_TradeSkillUI then return false, 0 end
+			if not C_TradeSkillUI.GetProfessionInfoBySkillLineID then return false, 0 end
+			local info = C_TradeSkillUI.GetProfessionInfoBySkillLineID(skillLineId)
+			if not info then return false, 0 end
+			local level = info.skillLevel or 0
+			return level > 0 and level >= minLevel, level
 		end,
 
 		--	Internal Use.
@@ -12624,17 +12701,17 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 					self:_LearnQuestCode(questId, strformat("L%d", suggestedLevel))
 				elseif databaseVariableLevel == 0 then
 					-- The quest is indicated at a higher level than expected, so assume this is a variable quest.
-					self:_LearnQuestCode(questId, strformat("N%d", suggestedLevel))
+--					self:_LearnQuestCode(questId, strformat("N%d", suggestedLevel))
 				elseif databaseVariableLevel >= suggestedLevel then
 					if suggestedLevel < playerLevel then
 						-- Because the level is lower than the player level this really should be the maximum for the variable level which means the data has changed so update the variable level.
-						self:_LearnQuestCode(questId, strformat("N%d", suggestedLevel))
+--						self:_LearnQuestCode(questId, strformat("N%d", suggestedLevel))
 					else
 						-- Nothing to do since the suggestedLevel is already marked as the variable level or falls between the variable level and level required.
 					end
 				else
 					-- The suggestedLevel is higher than the current expected variable level, so update it.
-					self:_LearnQuestCode(questId, strformat("N%d", suggestedLevel))
+--					self:_LearnQuestCode(questId, strformat("N%d", suggestedLevel))
 				end
 			else
 				-- Nothing to do since the suggestedLevel is the same as the required level
