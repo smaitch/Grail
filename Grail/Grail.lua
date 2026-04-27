@@ -1094,6 +1094,165 @@ experimental = false,	-- currently this implementation does not reduce memory si
 		},
 		eventDispatch = {			-- table of functions whose keys are the events
 
+			-- >>>VIGNETTE_DEBUG
+			['VIGNETTES_UPDATED'] = function(self, frame)
+				-- Use persistent snapshots: by the time this event fires the state has
+				-- already changed, so a local before/after within this call would be identical.
+				local _vigNow = self:_VignetteSnapshot()
+				-- Build a context label so we know what was happening when the vignette changed
+				local _ctx = 'VIGNETTES_UPDATED'
+				if nil ~= self.questTurningIn then
+					_ctx = _ctx .. strformat(' [during QUEST_TURNED_IN quest=%d]', self.questTurningIn)
+				elseif nil ~= self.lootingGUID then
+					_ctx = _ctx .. strformat(' [during loot guid=%s]', self.lootingGUID)
+				end
+				-- _VignetteCompareAndLog is deferred to after link-writing:
+				-- if links are written, the compare is suppressed (redundant).
+				local _linksWritten = 0
+				-- Store disappeared vignettes keyed by spawn UID (last GUID segment) so
+				-- _HandleEventLootClosed can correlate them with the creature and its quests.
+				self._recentlyDisappearedVignettes = self._recentlyDisappearedVignettes or {}
+				self._recentlyAppearedVignettes    = self._recentlyAppearedVignettes or {}
+				local _disappearedThisUpdate = {}
+				local _appearedThisUpdate    = {}
+				for guid, info in pairs(self._persistentVigSnapshot or {}) do
+					if not _vigNow[guid] then
+						local spawnUID = select(7, strsplit('-', guid))
+						if spawnUID then
+							self._recentlyDisappearedVignettes[spawnUID] = { guid=guid, name=info.name, vignetteType=info.vignetteType, time=GetTime(), coords=info.coords }
+							table.insert(_disappearedThisUpdate, { guid=guid, name=info.name, spawnUID=spawnUID })
+						end
+					end
+				end
+				for guid, info in pairs(_vigNow) do
+					local prev = (self._persistentVigSnapshot or {})[guid]
+					local isNew      = (prev == nil)
+					local cameInRange = (prev ~= nil and not prev.onMinimap and info.onMinimap)
+					if isNew or cameInRange then
+						local spawnUID = select(7, strsplit('-', guid))
+						if spawnUID then
+							local timeToUse = cameInRange and (GetTime() - 120) or GetTime()  -- wider window for in-range
+							self._recentlyAppearedVignettes[spawnUID] = { guid=guid, name=info.name, vignetteType=info.vignetteType, time=timeToUse, coords=info.coords }
+							table.insert(_appearedThisUpdate, { guid=guid, name=info.name, spawnUID=spawnUID, cameInRange=cameInRange })
+							_linksWritten = _linksWritten + 1  -- suppress compare: vignette stored for future linking
+						end
+					end
+				end
+				-- Reverse rep lookup: if a vignette appeared and there are recent rep changes not yet linked,
+				-- log the correlation now (rep event fired before VIGNETTES_UPDATED).
+				if #_appearedThisUpdate > 0 and nil ~= self._recentlyRepChanges then
+					local now = GetTime()
+					-- Collect all valid rep entries first, then link ALL vignettes
+					-- Use wider window (120s) for vignettes that just came in range
+					local maxWindow = 10
+					for _, ve in ipairs(_appearedThisUpdate) do
+						if ve.cameInRange then maxWindow = 120 break end
+					end
+					local linkedReps = {}
+					local usedRepKeys = {}
+					for repKey, repInfo in pairs(self._recentlyRepChanges) do
+						if (now - repInfo.time) <= maxWindow then
+							table.insert(linkedReps, strformat('%s+%s', repInfo.faction, tostring(repInfo.amount)))
+							table.insert(usedRepKeys, repKey)
+						end
+					end
+					if #linkedReps > 0 then
+						local repStr = table.concat(linkedReps, ', ')
+						for _, vigEntry in ipairs(_appearedThisUpdate) do
+							local _vigCoords = (self._recentlyAppearedVignettes[vigEntry.spawnUID] and self._recentlyAppearedVignettes[vigEntry.spawnUID].coords)
+								or tostring(self:Coordinates())
+							local _src = strformat('rep=%s | coords=%s', repStr, _vigCoords)
+							if self:_IsNewVignetteLink(vigEntry.guid, _src) then
+								local msg = strformat('VIGNETTE_REP_LINK (rep before vig): vignette=%s name=%s | %s', vigEntry.guid, tostring(vigEntry.name), _src)
+								print(msg)
+								self:_AddTrackingMessage(msg)
+								_linksWritten = _linksWritten + 1
+							end
+							self._recentlyAppearedVignettes[vigEntry.spawnUID] = nil
+						end
+						-- Clean up rep entries after all vignettes are linked
+						for _, repKey in ipairs(usedRepKeys) do
+							self._recentlyRepChanges[repKey] = nil
+						end
+					end
+				end
+				-- If a book was just read and a vignette disappeared in the same event,
+				-- do a deferred quest compare to catch async-completed tracking quests.
+				-- Expire the context after 5 seconds to avoid false matches when a book
+				-- has no associated vignette and one disappears later for unrelated reasons.
+				if nil ~= self._pendingBookVignetteContext
+					and (GetTime() - self._pendingBookVignetteContext.time) <= 5
+					and #_disappearedThisUpdate > 0 then
+					local bctx = self._pendingBookVignetteContext
+					self._pendingBookVignetteContext = nil
+					local silentValue, manualValue = self.GDE.silent, self.manuallyExecutingServerQuery
+					self.GDE.silent, self.manuallyExecutingServerQuery = true, false
+					QueryQuestsCompleted()
+					local newlyCompleted = {}
+					self:_ProcessServerCompare(newlyCompleted)
+					for _, qId in pairs(newlyCompleted) do
+						self:_MarkQuestComplete(qId, true)
+						local vigNames = {}
+						for _, v in ipairs(_disappearedThisUpdate) do table.insert(vigNames, v.name) end
+						local msg = strformat('Book read completes %d | Target: %s (%d) | Coords: %s | vignette: %s',
+							qId, tostring(bctx.targetName), tonumber(bctx.npcId) or -1,
+							tostring(bctx.coordinates), table.concat(vigNames, ', '))
+						print(msg)
+						self:_AddTrackingMessage(msg)
+					end
+					self:_ProcessServerBackup(true)
+					self.GDE.silent, self.manuallyExecutingServerQuery = silentValue, manualValue
+				end
+				-- Reverse lookup: if vignettes disappeared and there are recently completed
+				-- quests not yet linked (quest completed before vignette update fired),
+				-- log the link now.
+				if #_disappearedThisUpdate > 0 and nil ~= self._recentlyCompletedUnlinkedQuests then
+					local now = GetTime()
+					-- Collect all valid quests first, then link ALL vignettes
+					-- Wider window for vignettes that just came in range
+					local _qWindow = 10
+					for _, ve in ipairs(_disappearedThisUpdate) do
+						if ve.cameInRange then _qWindow = 120 break end
+					end
+					local linkedQuests = {}
+					for qId, qTime in pairs(self._recentlyCompletedUnlinkedQuests) do
+						if (now - qTime) <= _qWindow then
+							table.insert(linkedQuests, tostring(qId))
+						end
+					end
+					if #linkedQuests > 0 then
+						local questStr = table.concat(linkedQuests, ',')
+						for _, vigEntry in ipairs(_disappearedThisUpdate) do
+							local _vcoords = (self._recentlyDisappearedVignettes[vigEntry.spawnUID] and self._recentlyDisappearedVignettes[vigEntry.spawnUID].coords)
+								or tostring(self:Coordinates())
+							local _src = strformat('quests=%s | coords=%s', questStr, _vcoords)
+							if self:_IsNewVignetteLink(vigEntry.guid, _src) then
+								local msg = strformat('VIGNETTE_QUEST_LINK (no loot): vignette=%s name=%s | %s', vigEntry.guid, tostring(vigEntry.name), _src)
+								print(msg)
+								self:_AddTrackingMessage(msg)
+								_linksWritten = _linksWritten + 1
+							end
+							self._recentlyDisappearedVignettes[vigEntry.spawnUID] = nil
+						end
+						-- Clean up quests after all vignettes are linked
+						for _, qId in ipairs(linkedQuests) do
+							self._recentlyCompletedUnlinkedQuests[tonumber(qId)] = nil
+						end
+					end
+				end
+				-- Clear expired book context even when no vignette disappeared
+				if nil ~= self._pendingBookVignetteContext
+					and (GetTime() - self._pendingBookVignetteContext.time) > 5 then
+					self._pendingBookVignetteContext = nil
+				end
+				-- Only show compare if no links were written for this update
+				if _linksWritten == 0 then
+					self:_VignetteCompareAndLog(self._persistentVigSnapshot or {}, _vigNow, _ctx)
+				end
+				self._persistentVigSnapshot = _vigNow
+			end,
+			-- >>>VIGNETTE_DEBUG_END
+
 			['AREA_POIS_UPDATED'] = function(self, frame)
 				if not self.inCombat or not self.GDE.delayEvents then
 					self:_HandleEventAreaPOIsUpdated()
@@ -1271,7 +1430,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.capabilities.usesCampaignQuests = self.existsMainline
 					self.capabilities.usesFlightPoints = self.existsMainline
 					self.capabilities.usesMajorFactions = self.existsMainline
-					self.capabilities.usesAreaPOIs = self.existsMainline
+					self.capabilities.usesAreaPOIs    = self.existsMainline
+					-- >>>VIGNETTE_DEBUG
+					self.capabilities.usesVignettes   = self.existsMainline and (C_VignetteInfo ~= nil)
+					-- >>>VIGNETTE_DEBUG_END
 					self.capabilities.usesLegendaryQuests = self.existsMainline
 					self.capabilities.usesThreatQuests = self.existsMainline
 					self.capabilities.usesPetBattles = self.existsMainline or self.existsClassicPandaria
@@ -1708,6 +1870,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					GrailDatabasePlayer.spellsCast = GrailDatabasePlayer.spellsCast or {}
 					GrailDatabasePlayer.buffsExperienced = GrailDatabasePlayer.buffsExperienced or {}
 					GrailDatabasePlayer.dailyGroups = GrailDatabasePlayer.dailyGroups or {}
+					GrailDatabasePlayer.vignetteLinks      = GrailDatabasePlayer.vignetteLinks or {}
+					GrailDatabasePlayer.vignetteGuidIndex  = GrailDatabasePlayer.vignetteGuidIndex or {}
+					GrailDatabasePlayer.questPinEvents     = GrailDatabasePlayer.questPinEvents or {}
+					GrailDatabasePlayer.questPinEventIndex = GrailDatabasePlayer.questPinEventIndex or {}
 
 					-- See if we can load LibArtifactData
 --					local LibStub = _G["LibStub"]
@@ -1838,7 +2004,6 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					--	if we are to do anything.  GOSSIP_SHOW will record the NPC and GOSSIP_CLOSED will reset it.
 					if nil ~= SelectGossipOption then -- workaround for Shadowlands
 					hooksecurefunc("SelectGossipOption", function(index, text, confirm)
---						print("Gossip index selected:", index, text, confirm)
 						local questToComplete = nil
 						local gossipTable = self.currentGossipNPCId and self.gossipNPCs[self.currentGossipNPCId] or nil
 						if gossipTable then
@@ -1851,9 +2016,36 @@ experimental = false,	-- currently this implementation does not reduce memory si
 								end
 							end
 						end
+						-- >>>GOSSIP_DEBUG
+						if nil ~= questToComplete then
+							local ctx = self._gossipDebugContext
+							local msg = strformat('GOSSIP_DEBUG QUEST_COMPLETE: quest=%d npc=%s(%s) coords=%s',
+								questToComplete, tostring(ctx and ctx.targetName), tostring(ctx and ctx.npcId), tostring(ctx and ctx.coordinates))
+							print(msg)
+							self:_AddTrackingMessage(msg)
+						end
+						-- >>>GOSSIP_DEBUG_END
 						if nil ~= questToComplete then
 							self:_MarkQuestComplete(questToComplete, true)
 						end
+						-- >>>GOSSIP_DEBUG: check for quest triggered by selecting this option
+						do
+							local _sv, _mv = self.GDE.silent, self.manuallyExecutingServerQuery
+							self.GDE.silent, self.manuallyExecutingServerQuery = true, false
+							QueryQuestsCompleted()
+							local _nc = {}
+							self:_ProcessServerCompare(_nc)
+							for _, qId in pairs(_nc) do
+								if qId ~= questToComplete then self:_MarkQuestComplete(qId, true) end
+								local ctx = self._gossipDebugContext
+								local msg = strformat('GOSSIP_DEBUG SELECT_COMPLETE: quest=%d npc=%s(%s) coords=%s',
+									qId, tostring(ctx and ctx.targetName), tostring(ctx and ctx.npcId), tostring(ctx and ctx.coordinates))
+								print(msg)
+								self:_AddTrackingMessage(msg)
+							end
+							self.GDE.silent, self.manuallyExecutingServerQuery = _sv, _mv
+						end
+						-- >>>GOSSIP_DEBUG_END
 					end)
 					end
 
@@ -2224,6 +2416,155 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.questStatuses = {}
 						self:_CoalesceDelayedNotification("Status", 0)
 					end)
+					-- >>>VIGNETTE_DEBUG
+					self:RegisterSlashOption("vignettes", "|cFF00FF00vignettes|r => dumps all known vignettes on the current map with coordinates and distance to player", function()
+						local mapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit('player')
+						if not mapID then print('vignettes: no map') return end
+						local px, py = Grail.GetPlayerMapPosition('player', mapID)
+						if not px then print('vignettes: player position unavailable') return end
+						local vignettes = C_VignetteInfo and C_VignetteInfo.GetVignettes and C_VignetteInfo.GetVignettes()
+						if not vignettes or #vignettes == 0 then print('vignettes: none on this map') return end
+						print(strformat('|cFFFFFF00Grail vignettes|r on map %d (player %.4f,%.4f):', mapID, px, py))
+						for _, guid in ipairs(vignettes) do
+							local info = C_VignetteInfo.GetVignetteInfo(guid)
+							local pos  = C_VignetteInfo.GetVignettePosition and C_VignetteInfo.GetVignettePosition(guid, mapID)
+							local coordStr, distStr = 'no pos', 'n/a'
+							if pos then
+								coordStr = strformat('%d:%.2f,%.2f', mapID, pos.x * 100, pos.y * 100)
+								-- Map coords are 0-1 fractions. Convert delta to approximate yards
+								-- using UnitPosition world coords for accuracy.
+								local wx, wy, wz = UnitPosition('player')
+								local vwx, vwy
+								if wx and C_Map.GetWorldPosFromMapPos then
+									local _, worldPos = C_Map.GetWorldPosFromMapPos(mapID, CreateVector2D(pos.x, pos.y))
+									if worldPos then vwx, vwy = worldPos.x, worldPos.y end
+								end
+								if vwx and wx then
+									local dx, dy = vwx - wx, vwy - wy
+									distStr = strformat('%.0f yds', math.sqrt(dx*dx + dy*dy))
+								else
+									local dx = (pos.x - px) * 533
+									local dy = (pos.y - py) * 533
+									distStr = strformat('~%.0f yds', math.sqrt(dx*dx + dy*dy))
+								end
+							end
+							local name    = info and info.name or '?'
+							local vigType = info and tostring(info.vignetteType) or '?'
+							local msg = strformat('  %s | %s | coords=%s | dist=%s | type=%s', guid, name, coordStr, distStr, vigType)
+							print(msg)
+							self:_AddTrackingMessage(msg)
+						end
+					end)
+					-- Manual vignette link: /grail viglink <guid> <name> <rep> <coords>
+					-- Example: /grail viglink Vignette-0-2012-2694-261-7195-000069CAE1 "Leuchtende Motte" "Hara'ti+2500" 2413:50.83,53.30
+					self:RegisterSlashOption("viglink ", "|cFF00FF00viglink|r |cFFFF8C00guid name rep coords|r => manually records a vignette-rep or vignette-quest link", function(msg)
+						-- Parse: first token=guid, then quoted or unquoted name, then rep/quest, then coords
+						local guid, rest = strmatch(strsub(msg, 9), '^(%S+)%s+(.*)')
+						if not guid then
+							print('Usage: /grail viglink <guid> <name> <rep_or_quest> <coords>')
+							return
+						end
+						-- Name may be quoted
+						local name, remainder
+						if strsub(rest, 1, 1) == '"' then
+							name, remainder = strmatch(rest, '^"([^"]+)"%s+(.*)')
+						else
+							name, remainder = strmatch(rest, '^(%S+)%s+(.*)')
+						end
+						if not name or not remainder then
+							print('Usage: /grail viglink <guid> <name> <rep_or_quest> <coords>')
+							return
+						end
+						local source, coords = strmatch(remainder, '^(%S+)%s*(.*)')
+						coords = (coords and strlen(coords) > 0) and coords or tostring(self:Coordinates())
+						-- Detect if source looks like a quest ID (pure number) or rep string
+						local questId = tonumber(source)
+						local msg
+						if questId then
+							local _src = strformat('quests=%s | coords=%s', source, coords)
+							msg = self:_IsNewVignetteLink(guid, _src)
+								and strformat('VIGNETTE_QUEST_LINK (manual): vignette=%s name=%s | %s', guid, name, _src) or nil
+						else
+							local _src = strformat('rep=%s | coords=%s', source, coords)
+							msg = self:_IsNewVignetteLink(guid, _src)
+								and strformat('VIGNETTE_REP_LINK (manual): vignette=%s name=%s | %s', guid, name, _src) or nil
+						end
+						if msg then
+							print(msg)
+							self:_AddTrackingMessage(msg)
+						else
+							print('viglink: already recorded, skipped')
+						end
+					end)
+					-- >>>VIGNETTE_DEBUG_END
+					-- >>>VIGNETTE_DEBUG
+					-- /grail viglink all [filter] -- links all visible vignettes to unlinked quests/rep
+					-- /grail viglink all name=Leuchtende  -- only vignettes whose name contains 'Leuchtende'
+					-- /grail viglink all quest=93144  -- links to a specific quest instead of all unlinked
+					-- /grail viglink all rep=Hara'ti+50  -- links to a specific rep string instead of all unlinked
+					self:RegisterSlashOption("viglink all", "|cFF00FF00viglink all|r |cFFFF8C00[name=X] [quest=N] [rep=X]|r => links all visible vignettes to recent unlinked quests/rep, with optional filters", function(msg)
+						local args = strsub(msg, 12)  -- skip 'viglink all'
+						local nameFilter  = strmatch(args, 'name=([^%s]+)')
+						local questFilter = strmatch(args, 'quest=(%d+)')
+						local repFilter   = strmatch(args, 'rep=([^%s]+)')
+						local mapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit('player')
+						local vignettes = C_VignetteInfo and C_VignetteInfo.GetVignettes and C_VignetteInfo.GetVignettes()
+						if not vignettes or #vignettes == 0 then print('viglink all: no vignettes visible') return end
+						local now = GetTime()
+						-- Collect sources: quests and rep changes
+						local questSources, repSources = {}, {}
+						if questFilter then
+							table.insert(questSources, questFilter)
+						else
+							for qId, qTime in pairs(self._recentlyCompletedUnlinkedQuests or {}) do
+								if (now - qTime) <= 120 then table.insert(questSources, tostring(qId)) end
+							end
+						end
+						if repFilter then
+							table.insert(repSources, repFilter)
+						else
+							for _, repInfo in pairs(self._recentlyRepChanges or {}) do
+								if (now - repInfo.time) <= 120 then
+									table.insert(repSources, strformat('%s+%s', repInfo.faction, tostring(repInfo.amount)))
+								end
+							end
+						end
+						if #questSources == 0 and #repSources == 0 then
+							print('viglink all: no recent unlinked quests or rep changes (within 120s)')
+							return
+						end
+						local count = 0
+						for _, guid in ipairs(vignettes) do
+							local info = C_VignetteInfo.GetVignetteInfo(guid)
+							local name = info and info.name or '?'
+							-- Apply name filter if set
+							if nameFilter and not strfind(strlower(name), strlower(nameFilter), 1, true) then
+								-- skip
+							else
+								local coordStr = self:Coordinates()
+								if mapID and C_VignetteInfo.GetVignettePosition then
+									local pos = C_VignetteInfo.GetVignettePosition(guid, mapID)
+									if pos then coordStr = strformat('%d:%.2f,%.2f', mapID, pos.x * 100, pos.y * 100) end
+								end
+								for _, qId in ipairs(questSources) do
+									local _src = strformat('quests=%s | coords=%s', qId, coordStr)
+									if self:_IsNewVignetteLink(guid, _src) then
+										local m = strformat('VIGNETTE_QUEST_LINK (manual): vignette=%s name=%s | %s', guid, name, _src)
+										print(m) self:_AddTrackingMessage(m) count = count + 1
+									end
+								end
+								for _, rep in ipairs(repSources) do
+									local _src = strformat('rep=%s | coords=%s', rep, coordStr)
+									if self:_IsNewVignetteLink(guid, _src) then
+										local m = strformat('VIGNETTE_REP_LINK (manual): vignette=%s name=%s | %s', guid, name, _src)
+										print(m) self:_AddTrackingMessage(m) count = count + 1
+									end
+								end
+							end
+						end
+						print(strformat('viglink all: wrote %d link(s)', count))
+					end)
+					-- >>>VIGNETTE_DEBUG_END
 
 					if self.capabilities.usesAchievements then
 						frame:RegisterEvent("ACHIEVEMENT_EARNED")		-- e.g., quest 29452 can be gotten if certain achievements are complete
@@ -2232,6 +2573,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					if self.existsClassicPandaria or self.existsMainline then
 						frame:RegisterEvent("CRITERIA_COMPLETE")
 					end
+					-- >>>WARBAND_DEBUG
+					frame:RegisterEvent("CRITERIA_UPDATE")
+					frame:RegisterEvent("QUEST_WATCH_UPDATE")
+					-- >>>WARBAND_DEBUG_END
 					frame:RegisterEvent("CHAT_MSG_COMBAT_FACTION_CHANGE")	-- needed for quest status caching
 					frame:RegisterEvent("COMBAT_TEXT_UPDATE")				-- used to capture structured faction rep changes
 					frame:RegisterEvent("CHAT_MSG_SKILL")	-- needed for quest status caching
@@ -2267,6 +2612,11 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 					if self.capabilities.usesAreaPOIs then
 						frame:RegisterEvent("AREA_POIS_UPDATED")
 					end
+					-- >>>VIGNETTE_DEBUG
+					if self.capabilities.usesVignettes then
+						frame:RegisterEvent("VIGNETTES_UPDATED")
+					end
+					-- >>>VIGNETTE_DEBUG_END
 
 -- ReloadUI in Classic same as startup
 -- Normal startup in Classic		startup in Retail		ReloadUI in Retail
@@ -2527,13 +2877,41 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			end,
 
 			['GOSSIP_CLOSED'] = function(self, frame, ...)
---				print("GOSSIP_CLOSED:", ...)
+				-- >>>GOSSIP_DEBUG
+				local ctx = self._gossipDebugContext
+				if nil ~= ctx then
+					local newlyCompleted = {}
+					QueryQuestsCompleted()
+					self:_ProcessServerCompare(newlyCompleted)
+					for _, qId in pairs(newlyCompleted) do
+						self:_MarkQuestComplete(qId, true)
+						local msg = strformat('GOSSIP_DEBUG CLOSED_COMPLETE: quest=%d npc=%s(%s) coords=%s',
+							qId, tostring(ctx.targetName), tostring(ctx.npcId), tostring(ctx.coordinates))
+						print(msg)
+						self:_AddTrackingMessage(msg)
+					end
+					if #newlyCompleted == 0 then
+					end
+					self:_ProcessServerBackup(true)
+					-- Keep context briefly for async quest completion detection
+					self._lastGossipContext = { targetName=ctx.targetName, npcId=ctx.npcId, coordinates=ctx.coordinates, time=GetTime() }
+					self._gossipDebugContext = nil
+				end
+				-- >>>GOSSIP_DEBUG_END
 				self.currentGossipNPCId = nil
 			end,
 
 			['GOSSIP_SHOW'] = function(self, frame, ...)
 				local targetName, npcId, coordinates = self:TargetInformation()
 				self.currentGossipNPCId = npcId
+				-- >>>GOSSIP_DEBUG
+				self._gossipDebugContext = {
+					targetName  = targetName,
+					npcId       = npcId,
+					coordinates = coordinates,
+				}
+				self:_ProcessServerBackup(true)
+				-- >>>GOSSIP_DEBUG_END
 --				print("GOSSIP_SHOW:",targetName, npcId, coordinates,GetNumGossipAvailableQuests(),GetNumGossipActiveQuests(),GetNumGossipOptions(),GetGossipOptions())
 				-- Check available gossip quests for unverified prerequisite observations.
 				-- This covers multi-quest NPCs where QUEST_DETAIL only fires after the player selects a quest.
@@ -2558,6 +2936,14 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						self.doneProcessingBackup = true
 					end
 				end
+				-- Book path uses its own flag, independent of the loot path
+				-- >>>VIGNETTE_DEBUG (also useful general book debug, remove with vignette code)
+				print(strformat('DBG ITEM_TEXT_BEGIN: doneProcessingBookBackup=%s doneProcessingBackup=%s', tostring(self.doneProcessingBookBackup), tostring(self.doneProcessingBackup)))
+				-- >>>VIGNETTE_DEBUG_END
+				if not self.doneProcessingBookBackup then
+					self:_ProcessServerBackup(true)
+					self.doneProcessingBookBackup = true
+				end
 			end,
 
 			['ITEM_TEXT_READY'] = function(self, frame, ...)
@@ -2577,15 +2963,20 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					end
 					self:_AddTrackingMessage(message)
 				end
-				-- Fallback: if ITEM_TEXT_BEGIN did not fire (or was in a non-treasure zone),
-				-- take a fresh backup now so QUEST_QUERY_COMPLETE can compare against a valid snapshot.
-				if not self.doneProcessingBackup then
+				-- Fallback: if ITEM_TEXT_BEGIN did not fire, take a fresh backup now.
+				-- Uses doneProcessingBookBackup, independent from the loot path flag.
+				if not self.doneProcessingBookBackup then
 					self:_ProcessServerBackup(true)
-					self.doneProcessingBackup = true
+					self.doneProcessingBookBackup = true
 				end
-				-- QueryQuestsCompleted() is async in Retail: the server response arrives later
-				-- via QUEST_QUERY_COMPLETE -> _ProcessServerQuests().  Store context so the
-				-- deferred handler can diff against the backup taken in ITEM_TEXT_BEGIN (or above).
+				-- >>>VIGNETTE_DEBUG
+				local _vigSnapBefore = self:_VignetteSnapshot()
+				-- >>>VIGNETTE_DEBUG_END
+				-- In Retail, QueryQuestsCompleted is replaced at startup with a synchronous
+				-- wrapper around _ProcessServerQuests() -- completedQuests is updated immediately
+				-- and QUEST_QUERY_COMPLETE never fires.  So we diff right after the call.
+				-- In Classic, the call is async and QUEST_QUERY_COMPLETE fires later; we store
+				-- context in pendingBookReadContext for that deferred handler to pick up.
 				self.pendingBookReadContext = {
 					targetName  = targetName,
 					npcId       = npcId,
@@ -2593,6 +2984,39 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					knownQuest  = questToComplete,
 				}
 				QueryQuestsCompleted()
+				-- Retail: if pendingBookReadContext is still set after the call, the compare
+				-- was not done by QUEST_QUERY_COMPLETE, so do it now synchronously.
+				if nil ~= self.pendingBookReadContext then
+					local ctx = self.pendingBookReadContext
+					self.pendingBookReadContext = nil
+					local newlyCompleted = {}
+					self:_ProcessServerCompare(newlyCompleted)
+					for _, qId in pairs(newlyCompleted) do
+						if qId ~= ctx.knownQuest then
+							self:_MarkQuestComplete(qId, true)
+						end
+						local msg = strformat("Book read completes %d | Target: %s (%d) | Coords: %s", qId, tostring(ctx.targetName), tonumber(ctx.npcId) or -1, tostring(ctx.coordinates))
+						if self.GDE.debug then
+							print(msg)
+						end
+						self:_AddTrackingMessage(msg)
+					end
+					self:_ProcessServerBackup(true)
+					self.doneProcessingBookBackup = false
+					-- >>>VIGNETTE_DEBUG
+					self:_VignetteCompareAndLog(_vigSnapBefore, self:_VignetteSnapshot(),
+						strformat('ITEM_TEXT_READY npc=%s(%s)', tostring(targetName), tostring(npcId)))
+					-- Store book-read context so VIGNETTES_UPDATED can correlate a disappearing
+					-- vignette with this NPC and trigger a deferred quest compare.
+					-- Timestamp guards against false matches if no vignette disappears for this book.
+					self._pendingBookVignetteContext = {
+						targetName  = targetName,
+						npcId       = npcId,
+						coordinates = coordinates,
+						time        = GetTime(),
+					}
+					-- >>>VIGNETTE_DEBUG_END
+				end
 			end,
 
 			--	We want to be able to handle the chests on the Timeless Isle.  To do so we need to be able to determine
@@ -2710,6 +3134,9 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				if self.capabilities.usesArtifacts then
 					frame:RegisterEvent("ARTIFACT_XP_UPDATE")
 				end
+				-- >>>WARBAND_DEBUG
+				self:_CheckWarbandQuestChanges('PLAYER_ENTERING_WORLD')
+				-- >>>WARBAND_DEBUG_END
 			end,
 
 			-- Note that the new level is recorded here, because during processing of this event calls to UnitLevel('player')
@@ -2748,6 +3175,9 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			-- In Shadowlands, the signature is       (self, frame, questId)
 			-- To run in both, we need to detect the number of parameters and deal with them appropriately.
 			['QUEST_ACCEPTED'] = function(self, frame, questIndexOrIdBasedOnRelease, aQuestId)
+				-- >>>WARBAND_DEBUG: accepting a quest may unlock warband quests
+				self:_CheckWarbandQuestChanges('QUEST_ACCEPTED')
+				-- >>>WARBAND_DEBUG_END
 				-- If there are two parameters, the first will be the questIndex, otherwise we have no questIndex
 				local questIndex = aQuestId and questIndexOrIdBasedOnRelease or nil
 				
@@ -2815,6 +3245,9 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			['QUEST_LOG_UPDATE'] = function(self, frame)
 				frame:UnregisterEvent("QUEST_LOG_UPDATE")
 				self.receivedQuestLogUpdate = true
+				-- >>>WARBAND_DEBUG
+				self:_CheckWarbandQuestChanges('QUEST_LOG_UPDATE')
+				-- >>>WARBAND_DEBUG_END
 				frame:RegisterEvent("BAG_UPDATE")						-- we need to know when certain items are present or not (for quest 28607 e.g.)
 				if self.capabilities.usesCalendar then
 					frame:RegisterEvent("CALENDAR_UPDATE_EVENT_LIST")		-- to indicate the calendar is primed and can be accurately read
@@ -2837,8 +3270,6 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			end,
 
 			['QUEST_QUERY_COMPLETE'] = function(self, frame, arg1)
-				-- DEBUG
-				print(strformat("DBG QUEST_QUERY_COMPLETE: pendingBookReadContext=%s", tostring(self.pendingBookReadContext ~= nil)))
 				self:_ProcessServerQuests()
 				-- If a book was just read, diff against the pre-read backup to find
 				-- any quests the server newly marked complete.
@@ -2847,9 +3278,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					self.pendingBookReadContext = nil
 					local newlyCompleted = {}
 					self:_ProcessServerCompare(newlyCompleted)
-					print(strformat("DBG QUEST_QUERY_COMPLETE: newlyCompleted count=%d", #newlyCompleted))
 					for _, qId in pairs(newlyCompleted) do
-						print(strformat("DBG QUEST_QUERY_COMPLETE: newly completed quest=%d knownQuest=%s", qId, tostring(ctx.knownQuest)))
 						if qId ~= ctx.knownQuest then   -- avoid double-marking
 							self:_MarkQuestComplete(qId, true)
 						end
@@ -2859,8 +3288,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						end
 						self:_AddTrackingMessage(msg)
 					end
-					self:_ProcessServerBackup(true)   -- update snapshot for next book read
-					self.doneProcessingBackup = false  -- allow ITEM_TEXT_BEGIN to snapshot again
+					self:_ProcessServerBackup(true)        -- update snapshot for next book read
+					self.doneProcessingBookBackup = false  -- allow ITEM_TEXT_BEGIN to snapshot again
 				end
 			end,
 
@@ -2870,12 +3299,44 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				if nil == self.questTurningIn then
 					self:_QuestAbandon(questId)
 				end
+				-- >>>VIGNETTE_DEBUG
+				if nil ~= self._vignetteSnapshotBefore then
+					self:_VignetteCompareAndLog(self._vignetteSnapshotBefore, self:_VignetteSnapshot(), self._vignetteSnapshotLabel or 'QUEST_REMOVED')
+					self._vignetteSnapshotBefore = nil
+				end
+				self._vignetteSnapshotLabel  = nil
+				-- >>>VIGNETTE_DEBUG_END
+				-- >>>QUESTPIN_DEBUG
+				if nil ~= self._questPinSnapshotBefore then
+					self:_QuestPinCompareAndRecord(self._questPinSnapshotBefore, self:_QuestPinSnapshot(),
+						self._questPinTrigger or 'QUEST_REMOVED', self._questPinTriggerDetail)
+					self._questPinSnapshotBefore, self._questPinTrigger, self._questPinTriggerDetail = nil, nil, nil
+				end
+				-- >>>QUESTPIN_DEBUG_END
 				self.questTurningIn = nil
 				self.pendingRepChanges = nil
 			end,
 
+			-- >>>WARBAND_DEBUG
+			['CRITERIA_UPDATE'] = function(self, frame, ...)
+				self:_CheckWarbandQuestChanges('CRITERIA_UPDATE')
+			end,
+			['QUEST_WATCH_UPDATE'] = function(self, frame, ...)
+				self:_CheckWarbandQuestChanges('QUEST_WATCH_UPDATE')
+			end,
+			-- >>>WARBAND_DEBUG_END
+
 			['QUEST_TURNED_IN'] = function(self, frame, questId, xp, money)
 				self.questTurningIn = questId
+				-- >>>VIGNETTE_DEBUG
+				self._vignetteSnapshotBefore = self:_VignetteSnapshot()
+				self._vignetteSnapshotLabel  = strformat('QUEST_TURNED_IN quest=%d', questId)
+				-- >>>VIGNETTE_DEBUG_END
+				-- >>>QUESTPIN_DEBUG
+				self._questPinSnapshotBefore = self:_QuestPinSnapshot()
+				self._questPinTrigger        = 'QUEST_TURNED_IN'
+				self._questPinTriggerDetail  = strformat('quest=%d', questId)
+				-- >>>QUESTPIN_DEBUG_END
 				-- Consume any rep changes buffered from CHAT_MSG_COMBAT_FACTION_CHANGE
 				-- (which fires before this event).
 				if nil ~= self.pendingRepChanges then
@@ -8312,7 +8773,7 @@ end
 
 					local t = Grail.questStatusCache.Q[currentQuestId] or {}
 					if not tContains(t, questId) then tinsert(t, questId) end
-					if nil == currentQuestId then print("*** NIL from ", codeString, questId) end
+					if nil == currentQuestId then print("*** NIL from ", codeString, questId) return anyFailure end
 					Grail.questStatusCache.Q[currentQuestId] = t
 					local subCode = Grail:StatusCode(currentQuestId)
 					--	SMH 2014-02-09
@@ -8839,6 +9300,39 @@ end
 			end
 			self:_AddTrackingMessage(message)
 			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupMajorFactionQuests])
+			-- >>>QUESTPIN_DEBUG
+			local _pinBeforeUnlock = self:_QuestPinSnapshot()
+			-- >>>QUESTPIN_DEBUG_END
+			-- >>>VIGNETTE_DEBUG: use persistent snapshots; VIGNETTES_UPDATED may have already fired
+			local _label = strformat('MAJOR_FACTION_UNLOCKED faction=%s', tostring(factionId))
+			local _vigNow = self:_VignetteSnapshot()
+			self:_VignetteCompareAndLog(self._persistentVigSnapshot or {}, _vigNow, _label)
+			self._persistentVigSnapshot = _vigNow
+			-- Store rep change and do forward vignette lookup
+			self._recentlyRepChanges = self._recentlyRepChanges or {}
+			local _repKey = strformat('unlock_%s_%s', tostring(factionId), tostring(GetTime()))
+			self._recentlyRepChanges[_repKey] = { faction=strformat('unlock:%s', tostring(factionId)), amount=0, time=GetTime() }
+			if nil ~= self._recentlyAppearedVignettes then
+				local _now = GetTime()
+				for _spawnUID, _vigInfo in pairs(self._recentlyAppearedVignettes) do
+					if (_now - _vigInfo.time) <= 10 then
+						local _ucoords = _vigInfo.coords or tostring(self:Coordinates())
+						local _usrc = strformat('faction unlocked=%s | coords=%s', tostring(factionId), _ucoords)
+						if self:_IsNewVignetteLink(_vigInfo.guid, _usrc) then
+							local _msg = strformat('VIGNETTE_REP_LINK (vig before unlock): vignette=%s name=%s | %s', _vigInfo.guid, tostring(_vigInfo.name), _usrc)
+							print(_msg)
+							self:_AddTrackingMessage(_msg)
+						end
+						self._recentlyAppearedVignettes[_spawnUID] = nil
+						self._recentlyRepChanges[_repKey] = nil
+					end
+				end
+			end
+			-- >>>VIGNETTE_DEBUG_END
+			-- >>>QUESTPIN_DEBUG
+			self:_QuestPinCompareAndRecord(_pinBeforeUnlock, self:_QuestPinSnapshot(),
+				'MAJOR_FACTION_UNLOCKED', strformat('faction=%s', tostring(factionId)))
+			-- >>>QUESTPIN_DEBUG_END
 		end,
 
 		_HandleEventMajorFactionRenownLevelChanged = function(self, factionId, newRenownLevel, oldRenownLevel)
@@ -8848,10 +9342,57 @@ end
 			end
 			self:_AddTrackingMessage(message)
 			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupMajorFactionQuests])
+			-- >>>QUESTPIN_DEBUG
+			local _pinBeforeRenown = self:_QuestPinSnapshot()
+			-- >>>QUESTPIN_DEBUG_END
+			-- >>>VIGNETTE_DEBUG: use persistent snapshots; VIGNETTES_UPDATED may have already fired
+			local _label = strformat('MAJOR_FACTION_RENOWN_CHANGED faction=%s old=%s new=%s', tostring(factionId), tostring(oldRenownLevel), tostring(newRenownLevel))
+			local _vigNow = self:_VignetteSnapshot()
+			self:_VignetteCompareAndLog(self._persistentVigSnapshot or {}, _vigNow, _label)
+			self._persistentVigSnapshot = _vigNow
+			-- Store rep change and do forward vignette lookup
+			self._recentlyRepChanges = self._recentlyRepChanges or {}
+			local _repKey = strformat('renown_%s_%s', tostring(factionId), tostring(GetTime()))
+			self._recentlyRepChanges[_repKey] = { faction=strformat('renown:%s', tostring(factionId)), amount=newRenownLevel, time=GetTime() }
+			if nil ~= self._recentlyAppearedVignettes then
+				local _now = GetTime()
+				for _spawnUID, _vigInfo in pairs(self._recentlyAppearedVignettes) do
+					if (_now - _vigInfo.time) <= 10 then
+						local _rcoords = _vigInfo.coords or tostring(self:Coordinates())
+						local _rsrc = strformat('renown faction=%s level=%s | coords=%s', tostring(factionId), tostring(newRenownLevel), _rcoords)
+						if self:_IsNewVignetteLink(_vigInfo.guid, _rsrc) then
+							local _msg = strformat('VIGNETTE_REP_LINK (vig before renown): vignette=%s name=%s | %s', _vigInfo.guid, tostring(_vigInfo.name), _rsrc)
+							print(_msg)
+							self:_AddTrackingMessage(_msg)
+						end
+						self._recentlyAppearedVignettes[_spawnUID] = nil
+						self._recentlyRepChanges[_repKey] = nil
+					end
+				end
+			end
+			-- >>>VIGNETTE_DEBUG_END
+			-- >>>QUESTPIN_DEBUG
+			self:_QuestPinCompareAndRecord(_pinBeforeRenown, self:_QuestPinSnapshot(),
+				'MAJOR_FACTION_RENOWN_CHANGED', strformat('faction=%s old=%s new=%s',
+					tostring(factionId), tostring(oldRenownLevel), tostring(newRenownLevel)))
+			-- >>>QUESTPIN_DEBUG_END
 		end,
 
 		_HandleEventAreaPOIsUpdated = function(self)
+			-- >>>QUESTPIN_DEBUG
+			local _pinBeforeAOI = self:_QuestPinSnapshot()
+			-- >>>QUESTPIN_DEBUG_END
 			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupAreaPOIQuests])
+			-- >>>VIGNETTE_DEBUG
+			-- Use persistent snapshots: state has already changed when this fires
+			local _vigNow = self:_VignetteSnapshot()
+			self:_VignetteCompareAndLog(self._persistentVigSnapshot or {}, _vigNow, 'AREA_POIS_UPDATED')
+			self._persistentVigSnapshot = _vigNow
+			-- >>>VIGNETTE_DEBUG_END
+			-- >>>QUESTPIN_DEBUG
+			self:_QuestPinCompareAndRecord(_pinBeforeAOI, self:_QuestPinSnapshot(),
+				'AREA_POIS_UPDATED', nil)
+			-- >>>QUESTPIN_DEBUG_END
 		end,
 
 		---
@@ -8910,6 +9451,30 @@ end
 					self.pendingRepChanges = self.pendingRepChanges or {}
 					tinsert(self.pendingRepChanges, { factionName = factionName, amount = amount, time = GetTime() })
 				end
+				-- >>>VIGNETTE_DEBUG: store rep change for vignette correlation
+				self._recentlyRepChanges = self._recentlyRepChanges or {}
+				local repKey = strformat('%s_%s', tostring(factionName), tostring(GetTime()))
+				self._recentlyRepChanges[repKey] = { faction=factionName, amount=amount, time=GetTime() }
+				-- Forward lookup: vignette appeared before this rep event fired
+				if nil ~= self._recentlyAppearedVignettes then
+					local now = GetTime()
+					local repLinked = false
+					for spawnUID, vigInfo in pairs(self._recentlyAppearedVignettes) do
+						if (now - vigInfo.time) <= 10 then
+							local _coords = vigInfo.coords or tostring(self:Coordinates())
+							local _src = strformat('rep=%s+%s | coords=%s', tostring(factionName), tostring(amount), _coords)
+							if self:_IsNewVignetteLink(vigInfo.guid, _src) then
+								local msg = strformat('VIGNETTE_REP_LINK (vig before rep): vignette=%s name=%s | %s', vigInfo.guid, tostring(vigInfo.name), _src)
+								print(msg)
+								self:_AddTrackingMessage(msg)
+							end
+							self._recentlyAppearedVignettes[spawnUID] = nil
+							repLinked = true
+						end
+					end
+					if repLinked then self._recentlyRepChanges[repKey] = nil end
+				end
+				-- >>>VIGNETTE_DEBUG_END
 			end
 		end,
 
@@ -9049,6 +9614,9 @@ end
 			-- Since querying the server is a little noisy we force it to be less so, reseting values later
 			local silentValue, manualValue = self.GDE.silent, self.manuallyExecutingServerQuery
 			self.GDE.silent, self.manuallyExecutingServerQuery = true, false
+			-- >>>VIGNETTE_DEBUG
+			local _vigSnapBeforeLoot = self:_VignetteSnapshot()
+			-- >>>VIGNETTE_DEBUG_END
 -- The old way of doing this was to query all the quests that were completed and see how they differ from the currently completed
 -- list and then assume the newly completed one(s) are associated with the treasure.  However, that is a little expensive.  Thus,
 -- only the treasure quests associated with the current zone are queried to see if there is any change in their status.
@@ -9082,19 +9650,52 @@ end
 					end
 				end
 				local message = "Looting from " .. (self.lootingGUID or "NO LOOTING GUID") .. " locale: " .. self.playerLocale .. " name: " .. lootingNameToUse .. " Coords: " .. Grail:Coordinates()
-				if self.GDE.debug then
-					print(message)
+				if message ~= self._lastLootingMessage then
+					self._lastLootingMessage = message
+					if self.GDE.debug then
+						print(message)
+					end
+					self:_AddTrackingMessage(message)
 				end
-				self:_AddTrackingMessage(message)
 			end
 			for _, questId in pairs(newlyCompleted) do
 				self:_MarkQuestComplete(questId, true)
 			end
 			self:_ProcessServerBackup(true)
+			-- >>>VIGNETTE_DEBUG
+			self:_VignetteCompareAndLog(_vigSnapBeforeLoot, self:_VignetteSnapshot(),
+				strformat('LOOT_CLOSED guid=%s', tostring(self.lootingGUID)))
+			-- Correlate disappeared vignettes with this creature and its completed quests
+			if nil ~= self._recentlyDisappearedVignettes and nil ~= self.lootingGUID then
+				local lootSpawnUID = select(7, strsplit('-', self.lootingGUID))
+				local lootNpcId    = select(6, strsplit('-', self.lootingGUID))
+				local vigInfo = lootSpawnUID and self._recentlyDisappearedVignettes[lootSpawnUID]
+				if nil ~= vigInfo then
+					local questList = {}
+					for _, qId in pairs(newlyCompleted) do
+						table.insert(questList, tostring(qId))
+					end
+					local questStr = #questList > 0 and table.concat(questList, ',') or 'none'
+					local coords = Grail:Coordinates()
+					local _lootSrc = strformat('npcId=%s | quests=%s | coords=%s', tostring(lootNpcId), questStr, tostring(coords))
+					if self:_IsNewVignetteLink(vigInfo.guid, _lootSrc) then
+						local msg = strformat(
+							'VIGNETTE_QUEST_LINK: vignette=%s name=%s | npcId=%s | quests=%s | coords=%s',
+							vigInfo.guid, tostring(vigInfo.name), tostring(lootNpcId), questStr, tostring(coords))
+						print(msg)
+						self:_AddTrackingMessage(msg)
+					end
+					self._recentlyDisappearedVignettes[lootSpawnUID] = nil
+				end
+			end
+			-- >>>VIGNETTE_DEBUG_END
 			self.GDE.silent, self.manuallyExecutingServerQuery = silentValue, manualValue
 		end,
 
 		_HandleEventPlayerLevelUp = function(self)
+			-- >>>QUESTPIN_DEBUG
+			local _pinBefore = self:_QuestPinSnapshot()
+			-- >>>QUESTPIN_DEBUG_END
 			if nil ~= self.questStatusCache then
 				self:_StatusCodeInvalidate(self.questStatusCache["L"])
 				self.questStatusCache["L"] = {}
@@ -9104,6 +9705,10 @@ end
 			if self.GDE.debug then
 				self:_PostDelayedNotification("PlayerLevelUp", self.levelingLevel, 1.0)
 			end
+			-- >>>QUESTPIN_DEBUG
+			self:_QuestPinCompareAndRecord(_pinBefore, self:_QuestPinSnapshot(),
+				'PLAYER_LEVEL_UP', strformat('level=%s', tostring(self.levelingLevel)))
+			-- >>>QUESTPIN_DEBUG_END
 		end,
 
 		_HandleEventSkillLinesChanged = function(self)
@@ -10311,6 +10916,42 @@ end
 				end
 				self:_UpdateQuestDatabase(questId, 'No Title Stored', npcId, false, 'T', version)
 				self:_RemoveWorldQuest(questId)
+				-- >>>VIGNETTE_DEBUG: correlate with recently disappeared vignettes
+				do
+					local _now = GetTime()
+					-- Store as recently completed for reverse vignette lookup
+					self._recentlyCompletedUnlinkedQuests = self._recentlyCompletedUnlinkedQuests or {}
+					self._recentlyCompletedUnlinkedQuests[v] = _now
+					-- Forward lookup: link ALL recently disappeared vignettes to this quest
+					if nil ~= self._recentlyDisappearedVignettes then
+						local lootSpawnUID = self.lootingGUID and select(7, strsplit('-', self.lootingGUID))
+						local linked = false
+						for spawnUID, vigInfo in pairs(self._recentlyDisappearedVignettes) do
+							if spawnUID ~= lootSpawnUID and (_now - vigInfo.time) <= 10 then
+								local _coords = vigInfo.coords or tostring(self:Coordinates())
+								local _src = strformat('quests=%s | coords=%s', tostring(v), _coords)
+								if self:_IsNewVignetteLink(vigInfo.guid, _src) then
+									local msg = strformat('VIGNETTE_QUEST_LINK (no loot): vignette=%s name=%s | %s', vigInfo.guid, tostring(vigInfo.name), _src)
+									print(msg)
+									self:_AddTrackingMessage(msg)
+								end
+								self._recentlyDisappearedVignettes[spawnUID] = nil
+								linked = true
+							end
+						end
+						if linked then self._recentlyCompletedUnlinkedQuests[v] = nil end
+					end
+				end
+				-- >>>GOSSIP_DEBUG: async gossip quest correlation
+				if nil ~= self._lastGossipContext and (GetTime() - self._lastGossipContext.time) <= 10 then
+					local gctx = self._lastGossipContext
+					local msg = strformat('GOSSIP_DEBUG CLOSED_COMPLETE (async): quest=%d npc=%s(%s) coords=%s',
+						v, tostring(gctx.targetName), tostring(gctx.npcId), tostring(gctx.coordinates))
+					print(msg)
+					self:_AddTrackingMessage(msg)
+				end
+				-- >>>GOSSIP_DEBUG_END
+				-- >>>VIGNETTE_DEBUG_END
 				self:_PostNotification("Complete", questId)
 			end
 
@@ -11611,6 +12252,328 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 				self.invalidateControl[self.invalidateGroupAreaPOIQuests] = t
 			end
 		end,
+
+		-- >>>WARBAND_DEBUG_BEGIN: detects account-wide quests completed while logged out
+		-- Remove entire block when no longer needed
+		_CheckWarbandQuestChanges = function(self, triggerEvent)
+			QueryQuestsCompleted()
+			local db = GrailDatabasePlayer
+			local coords = tostring(self:Coordinates())
+			-- If no backup exists, do a first-time scan: find quests the server reports
+			-- as complete that Grail knows about but hasn't recorded yet.
+			if nil == db['backupCompletedQuests'] then
+				local count = 0
+				for index, bits in pairs(db['completedQuests'] or {}) do
+					for i = 0, 31 do
+						if bitband(bits, 2^i) > 0 then
+							local qId = index * 32 + i + 1
+							local title = self:QuestName(qId) or 'UNKNOWN'
+							local msg = strformat('WARBAND_QUEST_COMPLETE [first-login]: quest=%d title=%s coords=%s',
+								qId, title, coords)
+							print(msg)
+							self:_AddTrackingMessage(msg)
+							count = count + 1
+						end
+					end
+				end
+				if count > 0 then
+					print(strformat('WARBAND: first-login scan found %d known completed quests', count))
+				end
+				self:_ProcessServerBackup(true)
+				return
+			end
+			-- Normal compare against existing backup
+			local newlyCompleted, newlyLost = {}, {}
+			self:_ProcessServerCompare(newlyCompleted, newlyLost)
+			for _, qId in ipairs(newlyCompleted) do
+				self:_MarkQuestComplete(qId, true)
+				local title = self:QuestName(qId) or 'UNKNOWN'
+				local msg = strformat('WARBAND_QUEST_COMPLETE [%s]: quest=%d title=%s coords=%s',
+					triggerEvent, qId, title, coords)
+				print(msg)
+				self:_AddTrackingMessage(msg)
+			end
+			for _, qId in ipairs(newlyLost) do
+				local title = self:QuestName(qId) or 'UNKNOWN'
+				local msg = strformat('WARBAND_QUEST_LOST [%s]: quest=%d title=%s coords=%s',
+					triggerEvent, qId, title, coords)
+				print(msg)
+				self:_AddTrackingMessage(msg)
+			end
+			if #newlyCompleted > 0 or #newlyLost > 0 then
+				self:_ProcessServerBackup(true)
+			end
+		end,
+		-- >>>WARBAND_DEBUG_END
+
+		-- >>>QUESTPIN_DEBUG_BEGIN: remove this entire block when no longer needed
+		_QuestPinSnapshot = function(self)
+			local snapshot = {}
+			local mapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit('player')
+			if not mapID then return snapshot end
+			if C_QuestLog and C_QuestLog.GetQuestsOnMap then
+				local pins = C_QuestLog.GetQuestsOnMap(mapID)
+				if pins then
+					for _, pin in ipairs(pins) do
+						local qid = tonumber(pin.questID)
+						if qid then
+							snapshot[strformat('offer:%d', qid)] = {
+								questId = qid, pinType = 'offer',
+								coords  = strformat('%d:%.2f,%.2f', mapID, (pin.x or 0)*100, (pin.y or 0)*100),
+							}
+						end
+					end
+				end
+			end
+			if C_AreaPoiInfo and C_AreaPoiInfo.GetAreaPOIForMap then
+				local pois = C_AreaPoiInfo.GetAreaPOIForMap(mapID)
+				if pois then
+					for _, poiID in ipairs(pois) do
+						local info = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
+						if info and info.atlasName and strfind(info.atlasName, '[Qq]uest') then
+							snapshot[strformat('hub:%d', poiID)] = {
+								questId = poiID, pinType = 'hub', name = info.name, atlas = info.atlasName,
+								coords  = strformat('%d:%.2f,%.2f', mapID,
+									(info.position and info.position.x or 0)*100,
+									(info.position and info.position.y or 0)*100),
+							}
+						end
+					end
+				end
+			end
+			return snapshot
+		end,
+
+		_QuestPinCompareAndRecord = function(self, before, after, trigger, triggerDetail)
+			local db = GrailDatabasePlayer
+			db.questPinEvents     = db.questPinEvents or {}
+			db.questPinEventIndex = db.questPinEventIndex or {}
+			local coords = tostring(self:Coordinates())
+			local now    = GetTime()
+			local count  = 0
+			for key, info in pairs(before) do
+				if not after[key] then
+					local idxKey = strformat('%s|disappeared|%s', key, trigger)
+					if not db.questPinEventIndex[idxKey] then
+						db.questPinEventIndex[idxKey] = true
+						table.insert(db.questPinEvents, { questId=info.questId, pinType=info.pinType, event='disappeared',
+							trigger=trigger, triggerDetail=triggerDetail, coords=info.coords or coords,
+							name=info.name, atlas=info.atlas, time=now })
+						count = count + 1
+						local msg = strformat('QUESTPIN: disappeared questId=%s type=%s | trigger=%s %s | coords=%s',
+							tostring(info.questId), tostring(info.pinType), trigger, tostring(triggerDetail), info.coords or coords)
+						print(msg)
+						self:_AddTrackingMessage(msg)
+					end
+				end
+			end
+			for key, info in pairs(after) do
+				if not before[key] then
+					local idxKey = strformat('%s|appeared|%s', key, trigger)
+					if not db.questPinEventIndex[idxKey] then
+						db.questPinEventIndex[idxKey] = true
+						table.insert(db.questPinEvents, { questId=info.questId, pinType=info.pinType, event='appeared',
+							trigger=trigger, triggerDetail=triggerDetail, coords=info.coords or coords,
+							name=info.name, atlas=info.atlas, time=now })
+						count = count + 1
+						local msg = strformat('QUESTPIN: appeared questId=%s type=%s | trigger=%s %s | coords=%s',
+							tostring(info.questId), tostring(info.pinType), trigger, tostring(triggerDetail), info.coords or coords)
+						print(msg)
+						self:_AddTrackingMessage(msg)
+					end
+				end
+			end
+			return count
+		end,
+		-- >>>QUESTPIN_DEBUG_END
+
+		-- >>>VIGNETTE_DEBUG_BEGIN: remove this entire block when no longer needed
+		_VignetteSnapshot = function(self)
+			local snapshot = {}
+			if C_VignetteInfo and C_VignetteInfo.GetVignettes then
+				local mapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit('player')
+				local vignettes = C_VignetteInfo.GetVignettes()
+				if vignettes then
+					for _, vignetteGUID in ipairs(vignettes) do
+						local info = C_VignetteInfo.GetVignetteInfo(vignetteGUID)
+						if info then
+							local coordStr = nil
+							if mapID and C_VignetteInfo.GetVignettePosition then
+								local pos = C_VignetteInfo.GetVignettePosition(vignetteGUID, mapID)
+								if pos then
+									coordStr = strformat('%d:%.2f,%.2f', mapID, pos.x * 100, pos.y * 100)
+								end
+							end
+							snapshot[vignetteGUID] = { name=info.name, vignetteType=info.vignetteType, onMinimap=info.onMinimap, coords=coordStr }
+						end
+					end
+				end
+			end
+			return snapshot
+		end,
+
+		_VignetteDumpAll = function(self, label)
+			local snap = self:_VignetteSnapshot()
+			local count = 0
+			for _ in pairs(snap) do count = count + 1 end
+			if count == 0 then return end
+			-- Skip duplicate dumps: only print if content differs from last dump
+			local fingerprint = ''
+			for guid, info in pairs(snap) do
+				fingerprint = fingerprint .. guid .. tostring(info.onMinimap)
+			end
+			if fingerprint == self._lastVignetteDumpFingerprint then return end
+			self._lastVignetteDumpFingerprint = fingerprint
+			-- Only show unknown vignettes
+			local unknownSnap = {}
+			for guid, info in pairs(snap) do
+				if not self:_IsKnownVignetteType(guid) then unknownSnap[guid] = info end
+			end
+			local unknownCount = 0
+			for _ in pairs(unknownSnap) do unknownCount = unknownCount + 1 end
+			if unknownCount == 0 then return end
+			print(strformat('VIGNETTE_DEBUG DUMP [%s]: total=%d (unknown=%d)', label, count, unknownCount))
+			for guid, info in pairs(unknownSnap) do
+				print(strformat('  VIG: GUID=%s name=%s type=%s minimap=%s', guid, tostring(info.name), tostring(info.vignetteType), tostring(info.onMinimap)))
+			end
+		end,
+
+		_VignetteCompareAndLog = function(self, before, after, label)
+			local disappeared, appeared = {}, {}
+			for guid, info in pairs(before) do
+				if not after[guid] then
+					table.insert(disappeared, strformat('GUID=%s name=%s type=%s', guid, tostring(info.name), tostring(info.vignetteType)))
+				end
+			end
+			for guid, info in pairs(after) do
+				if not before[guid] then
+					table.insert(appeared, strformat('GUID=%s name=%s type=%s', guid, tostring(info.name), tostring(info.vignetteType)))
+				end
+			end
+			-- Filter out known vignette types
+			local filteredGone, filteredNew = {}, {}
+			for _, s in ipairs(disappeared) do
+				local g = strmatch(s, 'GUID=(%S+)')
+				if not g or not self:_IsKnownVignetteType(g) then table.insert(filteredGone, s) end
+			end
+			for _, s in ipairs(appeared) do
+				local g = strmatch(s, 'GUID=(%S+)')
+				if not g or not self:_IsKnownVignetteType(g) then table.insert(filteredNew, s) end
+			end
+			if #filteredGone > 0 or #filteredNew > 0 then
+				local msg = strformat('VIGNETTE_DEBUG [%s]: disappeared=%d appeared=%d', label, #filteredGone, #filteredNew)
+				print(msg)
+				self:_AddTrackingMessage(msg)
+				for _, s in ipairs(filteredGone) do
+					print('  GONE: ' .. s)
+					self:_AddTrackingMessage('  GONE: ' .. s)
+				end
+				for _, s in ipairs(filteredNew) do
+					print('  NEW:  ' .. s)
+					self:_AddTrackingMessage('  NEW:  ' .. s)
+				end
+			end
+		end,
+		-- >>>VIGNETTE_DEBUG_END
+
+		-- >>>VIGNETTE_DEBUG_BEGIN
+		_VignetteLinkKey = function(self, guid, source)
+			return strformat('%s|%s', tostring(guid), tostring(source))
+		end,
+
+		-- Returns the type ID (segment 6) from a vignette GUID.
+		_VignetteTypeId = function(self, guid)
+			return select(6, strsplit('-', tostring(guid)))
+		end,
+
+		-- Returns true if we have ever recorded a link for this vignette type ID.
+		_IsKnownVignetteType = function(self, guid)
+			if not self._knownVignetteTypeIds then
+				self._knownVignetteTypeIds = {}
+				local db = GrailDatabasePlayer
+				if db.vignetteLinks then
+					for key in pairs(db.vignetteLinks) do
+						local g = strmatch(key, '^([^|]+)')
+						if g then
+							local typeId = self:_VignetteTypeId(g)
+							if typeId then self._knownVignetteTypeIds[typeId] = true end
+						end
+					end
+				end
+			end
+			local typeId = self:_VignetteTypeId(guid)
+			return typeId and self._knownVignetteTypeIds[typeId] == true
+		end,
+
+
+		-- Returns true if this vignette+source combo is new (and registers it).
+		-- On first call per session, rebuilds the index from GDE.Tracking.
+		_IsNewVignetteLink = function(self, guid, source)
+			local db = GrailDatabasePlayer
+			if not self._vignetteLinkIndexBuilt then
+				self._vignetteLinkIndexBuilt = true
+				db.vignetteLinks     = db.vignetteLinks or {}
+				db.vignetteGuidIndex = db.vignetteGuidIndex or {}
+				if next(db.vignetteLinks) == nil and db.Tracking then
+					for _, entry in ipairs(db.Tracking) do
+						local g, s = strmatch(entry, 'vignette=(%S+).-|%s*(%w[^|]+)%s*|%s*coords=')
+						if g and s then
+							local k = self:_VignetteLinkKey(g, strtrim(s))
+							db.vignetteLinks[k] = true
+							db.vignetteGuidIndex[g] = k
+						end
+					end
+				end
+			end
+			local key = self:_VignetteLinkKey(guid, source)
+			if db.vignetteLinks[key] then return false end
+			-- Check if an existing entry for this GUID can be upgraded
+			local existingKey = db.vignetteGuidIndex and db.vignetteGuidIndex[guid]
+			if existingKey and db.vignetteLinks[existingKey] then
+				local hasIncomplete = strfind(existingKey, 'quests=none', 1, true)
+					or strfind(existingKey, 'npcId=nil', 1, true)
+					or strfind(existingKey, '| coords=$', 1, false)
+				local hasNewInfo = not strfind(source, 'quests=none', 1, true)
+					and not strfind(source, 'npcId=nil', 1, true)
+				if hasIncomplete and hasNewInfo then
+					-- Upgrade: replace old entry with new one
+					self:_UpgradeVignetteLink(guid, existingKey, key)
+					return true
+				end
+			end
+			db.vignetteLinks[key] = true
+			db.vignetteGuidIndex[guid] = key
+			if self._knownVignetteTypeIds then
+				local typeId = self:_VignetteTypeId(guid)
+				if typeId then self._knownVignetteTypeIds[typeId] = true end
+			end
+			return true
+		end,
+
+		-- Replaces an incomplete vignette link with a better one in DB and Tracking log.
+		_UpgradeVignetteLink = function(self, guid, oldKey, newKey)
+			local db = GrailDatabasePlayer
+			db.vignetteLinks[oldKey] = nil
+			db.vignetteLinks[newKey] = true
+			db.vignetteGuidIndex[guid] = newKey
+			-- Patch Tracking log: find old entry and replace with new message
+			if db.Tracking then
+				local oldGuidPart = strformat('vignette=%s', guid)
+				for i, entry in ipairs(db.Tracking) do
+					if strfind(entry, oldGuidPart, 1, true) then
+						-- Build replacement from new key: extract fields
+						local newFields = strmatch(newKey, '^[^|]+|(.+)$')
+						local newEntry = strmatch(entry, '^(VIGNETTE[^:]*: vignette=%S+ name=[^|]+| )') or ''
+						if newEntry ~= '' and newFields then
+							db.Tracking[i] = newEntry .. newFields .. ' [updated]'
+							print(strformat('VIGNETTE_LINK_UPDATED: %s', db.Tracking[i]))
+						end
+						break
+					end
+				end
+			end
+		end,
+		-- >>>VIGNETTE_DEBUG_END
 
 		_ProcessServerBackup = function(self, quiet)
 			GrailDatabasePlayer["backupCompletedQuests"] = {}
