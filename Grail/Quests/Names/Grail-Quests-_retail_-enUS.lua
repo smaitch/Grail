@@ -80156,4 +80156,39 @@ G[96245]="You've Seen it All Before"
 G[96388]='Joining the Abyss Anglers'
 end
 
+if release >= 67186 then
+G[1080]='Covert Ops - Beta'
+G[1301]='[DEPRECATED]James Hyal'
+G[1651]='The Tome of Valor'
+G[1708]='Iron Coral'
+G[5229]='Target: Felstone Field'
+G[10593]='Ancient Evil'
+G[11185]="[DEPRECATED]The Apothecary's Letter"
+G[11198]='[DEPRECATED]Take Down Tethyr!'
+G[51333]='Anchors Aweigh!'
+G[81650]='Special Assignment: Titanic Resurgence'
+G[82970]='A Bloom and a Blossom'
+G[89213]='Flights of Fancy'
+G[89277]='Illuminate the Space'
+G[91984]='Sungrub Silk'
+G[92589]='<DNT> Last Scenario Step Quest'
+G[92722]="The Story of Russula's Outreach"
+G[93504]='Enshrouded in Skirmishes'
+G[93612]='A Shrouded Path Through Time'
+G[93703]="Sin'dorei Vices"
+G[93717]='Learning the Cloaks - Part 2'
+G[93719]='Nothing Captured, Nothing Gained'
+G[93752]='Murder Row'
+G[93907]='Edification of the Worthy'
+G[94456]='<DNT> Last Scenario Step Quest'
+G[94675]='Voidforge Reforged'
+G[95268]='New Tools, New Heights'
+G[95269]='Feeding the Nilhammer'
+G[95279]='Nebulous Voidcores: Gold'
+G[95290]='Nebulous Voidcores: Voidlight Marl'
+G[95304]='Nebulous Voidcores: Veteran Dawncrest'
+G[95373]='A Nebulous Endeavour'
+G[96936]='Accolades for the Umbral Contender'
+end
+
 --	End of localized quest names

@@ -2359,4 +2359,67 @@ G[1543787]='Phase Energy'
 G[1573743]='Crown of the High King'
 end
 
+if release >= 67088 then
+G[1035591]='Fishing Bobber'
+G[1423570]='Pillaged Riches'
+G[1441527]='Luminous Shore-Strangler'
+G[1441529]='Eyeless Violet'
+G[1454502]='Radiant Prism Crystal'
+G[1454707]='Bag of Stolen Goods'
+G[1465294]="Antonidas' Introduction to Arcane Magic"
+G[1465295]="Medivh's Karazhan Schematics"
+G[1465300]="Thalen Songweaver's Notes"
+G[1474043]='Gorgoa Reed'
+G[1494923]='Tattered Journal'
+G[1500640]='Metal Scrap'
+G[1507470]='Tool Rack'
+end
+
+if release >= 67114 then
+G[1452923]='Chillburst Canister'
+G[1461478]='For Rent Sign'
+end
+
+if release >= 67186 then
+G[1452866]='Semi-Deluxe Noggenfogger Elixirs'
+G[1452867]='Employee Schedule'
+G[1461492]='Weapons Cache'
+G[1480708]='Overpriced Tropical Punch'
+G[1482270]='Blackwater Ordinance'
+G[1488280]='Overpriced Tropical Punch'
+G[1500345]='Ethereal Warning Letter'
+G[1500619]="Zirdo's Ledger"
+G[1503745]='Heat-Beater 2001'
+G[1525374]='Stolen Equipment'
+G[1527670]='Lightwood Pile'
+G[1528004]='Weeping Caps'
+G[1528034]='Fallen Branch'
+G[1528071]='Shrine Piece'
+G[1529683]='Blisterskin Kelp'
+G[1531204]='Completed Javelin'
+G[1531213]='Old Amani Pot'
+G[1531227]='Lost Amani Oar'
+G[1539051]="Mrruk's Mangy Trove"
+G[1547829]='Golden Sunleaf'
+G[1548731]='Stolen Provisions'
+G[1566020]="Groffa's Hoard"
+G[1567976]='Eagle Feather'
+G[1572428]='Lost Amani Bolt'
+G[1572498]='Lost Amani Trinket'
+G[1574576]="Idago's Warspear"
+G[1574585]="Idago's Banner"
+G[1574587]="Lilaju's Hiding Spot"
+G[1574750]='Stolen Supplies'
+G[1584793]='Ritual Supplies'
+G[1587574]="Ani's Feathered Totem"
+G[1587576]="Ani's Scented Strobilus"
+G[1587577]="Ani's Carved Effigy"
+G[1588832]='Fallen Hunter'
+G[1612930]='Ransacked Heirloom'
+G[1612932]='Ransacked Heirloom'
+G[1613439]='Dragonhawk Fern'
+G[1617375]='Murloc-Skewered Lynxfish'
+G[1619616]='Thorncap'
+end
+
 --	End of localized NPC names

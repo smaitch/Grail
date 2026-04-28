@@ -7676,8 +7676,8 @@ for expansionIndex = 4, highestSupportedExpansion do
 			end
 		end
 	else
-		if Grail.GDE and Grail.GDE.debug then
-			print("Grail-Achievements: skipping unsupported expansionIndex", expansionIndex)
+		if Grail.GDE and Grail.GDE.debug and Grail.GDE.acceptsTaint then
+			print("|cFF00FF00Grail-Achievements|r: skipping unsupported expansionIndex", expansionIndex)
 		end
 	end
 end

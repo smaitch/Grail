@@ -171,7 +171,7 @@
 --			Updates some Portuguese localizations.
 --		028	*** Will not work with Wholly 15 or older ***
 --			Corrects the mapAreaMaximumReputationChange constant.
---			Revamps the location providing routines so only the new QuestLocations() and NPCLocations() are needed, REMOVING the older ones. 
+--			Revamps the location providing routines so only the new QuestLocations() and NPCLocations() are needed, REMOVING the older ones.
 --			Updates some quest/NPC information for Un'Goro Crater, Silithus, Burning Steppes, Kezan, The Lost Isles, Northern Barrens, Ashenvale, some dungeons and Winterspring.
 --			Fixes detection of European servers to remove non-existent quests.
 --			Updates some Portuguese localizations.
@@ -592,6 +592,9 @@
 --			Adds a startup message encouraging players to enable tracking and submit data.
 --			Updates some Quest/NPC information.
 --			Adds the ability to indicate profession requirements using professions based on release.
+--		126	Updates some Quest/NPC information.
+--			Corrects some issues that would cause taint.
+--			Disables some message printing unless the acceptstaint toggle is set using /grail acceptstaint
 --
 --	Known Issues
 --
@@ -621,28 +624,29 @@ local pairs, next = pairs, next
 local tonumber, tostring = tonumber, tostring
 local type = type
 local print = print
+-- securePrint: always runs print() from clean execution so that chat frame fields
+-- (message, r, g, b, timestamp) are never written taintedly.  Use this instead of
+-- bare print() in every event handler.  Caveat: arguments are still evaluated by the
+-- caller before being passed in; if they are themselves tainted values (e.g. from a
+-- tainted table field read), wrap the whole print call in securecallfunction instead.
+local securePrint = function(...) securecallfunction(print, ...) end
 local bitband, bitbnot, bitrshift, bitbxor, bitbor = bit.band, bit.bnot, bit.rshift, bit.bxor, bit.bor
 local assert, wipe = assert, wipe
 local floor, mod = math.floor, mod
 
 
 -- BEGIN Grail_SafeGetAuraDataByIndex wrapper
--- Safe wrapper that skips secret aura indices and logs (only when Grail debug is ON)
+-- Calls GetAuraDataByIndex first; only checks the secrets API when data is actually
+-- returned, avoiding a pcall on every out-of-range (nil) index.
 local function Grail_SafeGetAuraDataByIndex(unit, index, filter)
-    -- Check for secret aura indices using Blizzard's secrecy API (Retail/TWW)
+    if not (C_UnitAuras and C_UnitAuras.GetAuraDataByIndex) then return nil end
+    local info = C_UnitAuras.GetAuraDataByIndex(unit, index, filter)
+    if info == nil then return nil end
     if C_Secrets and C_Secrets.ShouldUnitAuraIndexBeSecret then
         local ok, secret = pcall(C_Secrets.ShouldUnitAuraIndexBeSecret, unit, index, filter)
-        if not ok or secret then
-            -- Skip if secret confirmed OR if the secrecy check itself threw (can't safely read this index)
-            return nil
-        end
+        if not ok or secret then return nil end
     end
-    -- Fallback to Blizzard API when available
-    if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
-        local info = C_UnitAuras.GetAuraDataByIndex(unit, index, filter)
-        return info
-    end
-    return nil
+    return info
 end
 -- END Grail_SafeGetAuraDataByIndex wrapper
 
@@ -808,6 +812,498 @@ if nil == Grail or Grail.versionNumber < Grail_File_Version then
 	--	indicate that it is currently not completed (because it has been reset)).
 	--	There are four possible tables of interest:  NewNPCs, NewQuests, SpecialQuests and BadQuestData.
 	--	These tables could be used to provide feedback which can be used to update the internal database to provide more accurate quest information.
+
+	-- Registers all built-in /grail slash commands.  Defined at file scope (before Grail = {}) so
+	-- the closure object is CLEAN.  Called via securecallfunction from the PLAYER_LOGIN handler —
+	-- this ensures all {func, help} tables stored in slashCommandOptions are written in clean
+	-- execution and are therefore clean values that do not retaint _SlashCommand when iterated.
+	--
+	-- Why the file-scope function is required (and an inline lambda is not sufficient):
+	--   An anonymous lambda created inside the tainted PLAYER_LOGIN handler is itself a tainted
+	--   closure object.  When securecallfunction calls a tainted closure, Lua reads the closure's
+	--   upvalue slots; that read retaints execution before RegisterSlashOption can store the
+	--   resulting {func, help} table as a clean value.  A file-scope named function has a clean
+	--   closure object and clean upvalue slots, so securecallfunction works correctly.
+	local function _GrailRegisterBuiltinSlashOptions()
+		Grail:RegisterSlashOption("events", "|cFF00FF00events|r => toggles delaying events in combat on and off, printing new value", function()
+			Grail.GDE.delayEvents = not Grail.GDE.delayEvents
+			securePrint(strformat("Grail delays events in combat now %s", Grail.GDE.delayEvents and "ON" or "OFF"))
+		end)
+		Grail:RegisterSlashOption("silent", "|cFF00FF00silent|r => toggles silent startup on and off, printing new value", function()
+			Grail.GDE.silent = not Grail.GDE.silent
+			securePrint(strformat("Grail silent startup for this player now %s", Grail.GDE.silent and "ON" or "OFF"))
+		end)
+		Grail:RegisterSlashOption("debug", "|cFF00FF00debug|r => toggles debug on and off, printing new value", function()
+			Grail.GDE.debug = not Grail.GDE.debug
+			Grail:_QuestCompleteCheckObserve(Grail.GDE.debug)
+			Grail:_QuestAcceptCheckObserve(Grail.GDE.debug)
+			Grail:_LevelGainedQuestCheckObserve(Grail.GDE.debug)
+			securePrint(strformat("Grail Debug now %s", Grail.GDE.debug and "ON" or "OFF"))
+		end)
+		Grail:RegisterSlashOption("treasures", "|cFF00FF00treasures|r => toggles treasures on and off, printing new value", function()
+			Grail.GDE.treasures = not Grail.GDE.treasures
+			securePrint(strformat("Grail Debug Treasures now %s", Grail.GDE.treasures and "ON" or "OFF"))
+		end)
+		Grail:RegisterSlashOption("target", "|cFF00FF00target|r => gets target information (NPC ID and your current location)", function()
+			local targetName, npcId, coordinates = Grail:TargetInformation()
+			local message = strformat("%s (%d) %s", targetName and targetName or 'nil target', npcId and npcId or -1, coordinates and coordinates or 'no coords')
+			securePrint(message)
+			Grail:_AddTrackingMessage(message)
+		end)
+		Grail:RegisterSlashOption("buffs", "|cFF00FF00buffs|r => lists all active buffs and debuffs on the player with their spell IDs", function()
+			securePrint("|cFFFF0000Grail|r active player buffs:")
+			local i = 1
+			local count = 0
+			while true do
+				local name, spellId = Grail:UnitAura('player', i, 'HELPFUL')
+				if not name then break end
+				securePrint(strformat("  [%d] %s (spellId %s)", i, name, tostring(spellId)))
+				count = count + 1
+				i = i + 1
+			end
+			if count == 0 then securePrint("  (none)") end
+			securePrint("|cFFFF0000Grail|r active player debuffs:")
+			i = 1
+			count = 0
+			while true do
+				local name, spellId = Grail:UnitAura('player', i, 'HARMFUL')
+				if not name then break end
+				securePrint(strformat("  [%d] %s (spellId %s)", i, name, tostring(spellId)))
+				count = count + 1
+				i = i + 1
+			end
+			if count == 0 then securePrint("  (none)") end
+		end)
+		Grail:RegisterSlashOption("c ", "|cFF00FF00c|r |cFFFF8C00msg|r => adds the |cFFFF8C00msg|r to the tracking data", function(msg)
+			Grail:_AddTrackingMessage(strsub(msg, 3))
+		end)
+		Grail:RegisterSlashOption("comment ", "|cFF00FF00comment|r |cFFFF8C00msg|r => adds the |cFFFF8C00msg|r to the tracking data", function(msg)
+			Grail:_AddTrackingMessage(strsub(msg, 9))
+		end)
+		Grail:RegisterSlashOption("tracking", "|cFF00FF00tracking|r => toggles tracking on and off, printing new value", function()
+			Grail.GDE.tracking = not Grail.GDE.tracking
+			securePrint(strformat("Grail Tracking now %s", Grail.GDE.tracking and "ON" or "OFF"))
+			Grail:_UpdateTrackingObserver()
+		end)
+		Grail:RegisterSlashOption("acceptstaint", "|cFF00FF00acceptstaint|r => toggles whether debug/tracking prints may include tainted game data (mission names, timings, etc.), printing new value", function()
+			Grail.GDE.acceptsTaint = not Grail.GDE.acceptsTaint
+			securePrint(strformat("Grail Accepts Taint now %s", Grail.GDE.acceptsTaint and "ON" or "OFF"))
+		end)
+		Grail:RegisterSlashOption("loot", "|cFF00FF00loot|r => toggles loot event processing on and off, printing new value", function()
+			Grail.GDE.notLoot = not Grail.GDE.notLoot
+			securePrint(strformat("Grail Loot Event Processing now %s", Grail.GDE.notLoot and "OFF" or "ON"))
+			if Grail.GDE.notLoot then
+				Grail.notificationFrame:UnregisterEvent("LOOT_CLOSED")
+			else
+				Grail.notificationFrame:RegisterEvent("LOOT_CLOSED")
+			end
+		end)
+		Grail:RegisterSlashOption("pins", "|cFF00FF00pins|r => lists quest pins discovered this session that were not previously recorded", function()
+			local locs = Grail.GDE.observedQuestLocations
+			if not locs then
+				securePrint("Grail: no quest pins recorded yet — open the world map and browse some zones")
+				return
+			end
+			local count = 0
+			for questID, loc in pairs(locs) do
+				if not Grail.sessionStartQuestPins[questID] then
+					count = count + 1
+					local name = Grail.quest.name[questID]
+					if not name then
+						local title = C_QuestLog.GetQuestInfo(questID)
+						name = title or "?"
+					end
+					local mapName = Grail:_GetMapNameByID(loc.mapID)
+					securePrint(strformat("|cFFFF8C00Q%d|r %s  |cFF808080[%s]|r x=%.4f y=%.4f", questID, name, mapName, loc.x, loc.y))
+				end
+			end
+			if 0 == count then
+				securePrint("Grail: no new quest pins this session")
+			else
+				securePrint(strformat("Grail: |cFF00FF00%d|r new quest pin(s) this session", count))
+			end
+		end)
+		Grail:RegisterSlashOption("savepins", "|cFF00FF00savepins|r => saves current Blizzard map quest pins and hub POIs to tracking data", function()
+			local uiMapID = WorldMapFrame and WorldMapFrame:GetMapID()
+			if not uiMapID then
+				securePrint("Grail: world map is not open or map ID unavailable")
+				return
+			end
+			local mapName = Grail:_GetMapNameByID(uiMapID) or "?"
+			local count = 0
+			-- currentPins tracks questID → formatted line for MAPPIN/QUESTPIN entries
+			-- so we can diff against the previous invocation when debug is on.
+			local currentPins = {}
+
+			-- Blizzard quest pins (C_QuestLog.GetQuestsOnMap)
+			if C_QuestLog.GetQuestsOnMap then
+				local pins = C_QuestLog.GetQuestsOnMap(uiMapID)
+				if pins then
+					for _, pin in ipairs(pins) do
+						local questID = tonumber(pin.questID)
+						if questID then
+							-- Determine a one-character status:
+							--   C = flagged completed   P = in progress (in quest log)
+							--   T = task/bonus objective   A = available (visible but not in log)
+							local status
+							if C_QuestLog.IsComplete and C_QuestLog.IsComplete(questID) then
+								status = "C"
+							elseif C_QuestLog.IsOnQuest and C_QuestLog.IsOnQuest(questID) then
+								status = "P"
+							elseif C_QuestLog.IsQuestTask and C_QuestLog.IsQuestTask(questID) then
+								status = "T"
+							else
+								status = "A"
+							end
+							-- Quest tag (world quest type, dungeon, etc.) and title
+							local tagID, tagName = Grail:GetQuestTagInfo(questID)
+							local title = Grail:QuestName(questID) or (C_QuestLog.GetQuestInfo and C_QuestLog.GetQuestInfo(questID)) or ""
+							title = title or ""
+							tagName = tagName or ""
+							local msg = strformat("MAPPIN|%d|%d|%.4f|%.4f|%s|%s|%s", uiMapID, questID, pin.x or 0, pin.y or 0, status, tagName, title)
+							Grail:_AddTrackingMessage(msg)
+							currentPins[questID] = msg
+							count = count + 1
+						end
+					end
+				end
+			end
+
+			-- Quest hub POIs (C_AreaPoiInfo.GetQuestHubsForMap)
+			if C_AreaPoiInfo and C_AreaPoiInfo.GetQuestHubsForMap and C_AreaPoiInfo.GetAreaPOIInfo then
+				local hubs = C_AreaPoiInfo.GetQuestHubsForMap(uiMapID)
+				if hubs then
+					for _, areaPoiID in ipairs(hubs) do
+						local info = C_AreaPoiInfo.GetAreaPOIInfo(uiMapID, areaPoiID)
+						if info and info.position then
+							local questID = (info.questID and info.questID > 0) and info.questID or 0
+							Grail:_AddTrackingMessage(strformat("HUBPOI|%d|%d|%.4f|%.4f|%d", uiMapID, areaPoiID, info.position.x or 0, info.position.y or 0, questID))
+							count = count + 1
+						end
+					end
+				end
+			end
+
+			-- Map canvas active pins: QuestOfferPinTemplate (yellow "!"),
+			-- QuestBlobPinTemplate, QuestHubPinTemplate, etc.
+			-- These quest-giver pins are NOT returned by GetQuestsOnMap.
+			-- Build a seen set from what GetQuestsOnMap already recorded so we
+			-- don't emit duplicate entries.
+			do
+				local seen = {}
+				if C_QuestLog.GetQuestsOnMap then
+					local existing = C_QuestLog.GetQuestsOnMap(uiMapID)
+					if existing then
+						for _, p in ipairs(existing) do
+							if p.questID then seen[tonumber(p.questID)] = true end
+						end
+					end
+				end
+				Grail:_ScanMapCanvasQuestPins(uiMapID, seen, function(questID, x, y, pin)
+					local status
+					if C_QuestLog.IsComplete and C_QuestLog.IsComplete(questID) then
+						status = "C"
+					elseif C_QuestLog.IsOnQuest and C_QuestLog.IsOnQuest(questID) then
+						status = "P"
+					elseif C_QuestLog.IsQuestTask and C_QuestLog.IsQuestTask(questID) then
+						status = "T"
+					else
+						status = "A"
+					end
+					local tagID, tagName = Grail:GetQuestTagInfo(questID)
+					-- Try Grail's own name table first, then the retail API that works
+					-- for available (not-yet-accepted) quests, then fields stored on
+					-- the pin frame itself, then the log-based API as a last resort.
+					local title = Grail:QuestName(questID)
+						or (C_QuestLog.GetTitleForQuestID and C_QuestLog.GetTitleForQuestID(questID))
+						or (pin and (pin.title or pin.questName or pin.name))
+						or (C_QuestLog.GetQuestInfo and C_QuestLog.GetQuestInfo(questID))
+						or ""
+					title = title or ""
+					tagName = tagName or ""
+					local msg = strformat("QUESTPIN|%d|%d|%.4f|%.4f|%s|%s|%s", uiMapID, questID, x, y, status, tagName, title)
+					Grail:_AddTrackingMessage(msg)
+					currentPins[questID] = msg
+					count = count + 1
+				end)
+			end
+
+			-- Debug diff: show what changed since the last /grail savepins this session.
+			-- Grail.lastSavePinsQuestIDs is nil at session start so the first call prints everything.
+			if Grail.GDE.debug then
+				local prev = Grail.lastSavePinsQuestIDs or {}
+				for questID, msg in pairs(currentPins) do
+					if not prev[questID] then
+						securePrint("|cFF00FF00Grail savepins NEW:|r " .. msg)
+					end
+				end
+				for questID, msg in pairs(prev) do
+					if not currentPins[questID] then
+						securePrint("|cFFFF4400Grail savepins GONE:|r " .. msg)
+					end
+				end
+			end
+			Grail.lastSavePinsQuestIDs = currentPins
+
+			securePrint(strformat("Grail: saved %d pin(s) for map %d (%s) to tracking data", count, uiMapID, mapName))
+		end)
+		Grail:RegisterSlashOption("help", "|cFF00FF00help|r => print out this list of commands", function()
+			securePrint("|cFFFF0000Grail|r slash commands:")
+			for option, value in pairs(Grail.slashCommandOptions) do
+				securePrint("|cFFFF0000/grail|r", value['help'])
+			end
+			securePrint("|cFFFF0000/grail|r => initiates a database query to get completed quests [this happens at startup normally]")
+		end)
+		Grail:RegisterSlashOption("backup", "|cFF00FF00backup|r => creates a backup copy of the completed quests used for comparison", function()
+			Grail:_ProcessServerBackup()
+		end)
+		Grail:RegisterSlashOption("compare", "|cFF00FF00compare|r => compares the current completed quest list to the backup copy", function()
+			Grail:_ProcessServerCompare()
+		end)
+		--	Add a command for MoP that makes comparison of completed quests a little easier.  Only for MoP since before that the server
+		--	needs to be queried and that means the return result will not happen before we compare.
+		Grail:RegisterSlashOption("cb", "|cFF00FF00cb|r => compares the latest server status quest list to the backup copy, and makes the backup become current", function()
+			if not Grail.inCombat then
+				securePrint("|cFFFFFF00Grail|r initiating server database query")
+				QueryQuestsCompleted()
+				Grail:_ProcessServerCompare()
+				Grail:_ProcessServerBackup()
+			else
+				securePrint("|cFFFFFF00Grail cb|r not available in combat")
+			end
+		end)
+		Grail:RegisterSlashOption("clearstatuses", "|cFF00FF00clearstatuses|r => clears the status of all quests allowing them to be recomputed", function()
+			wipe(Grail.questStatuses)
+			Grail.questStatuses = {}
+			Grail:_CoalesceDelayedNotification("Status", 0)
+		end)
+		Grail:RegisterSlashOption("eraseAndReloadCompletedQuests", "|cFF00FF00eraseAndReloadCompletedQuests|r => reloads the completed quest list from Blizzard erasing the current list", function()
+			GrailDatabasePlayer["completedQuests"] = {}
+			QueryQuestsCompleted()
+			-- And the following code is the same as the clearstatuses command...
+			wipe(Grail.questStatuses)
+			Grail.questStatuses = {}
+			Grail:_CoalesceDelayedNotification("Status", 0)
+		end)
+	end
+
+	-- File-scope named functions for PLAYER_LOGIN securecallfunction blocks.
+	-- Each must be a named function (NOT an anonymous lambda) because anonymous
+	-- lambdas created in tainted PLAYER_LOGIN execution are themselves tainted
+	-- closure objects.  When securecallfunction calls a tainted closure, the Lua
+	-- VM reads the closure's upvalue slots and immediately retaints execution,
+	-- defeating the protection entirely.  File-scope named functions defined here
+	-- (at addon load time, clean execution) have clean closure objects and clean
+	-- upvalue slots, so securecallfunction works correctly.
+	--
+	-- All Grail.xxx reads/writes below reference the global Grail table, which was
+	-- written at file load time (clean) or by earlier securecall blocks in the
+	-- same PLAYER_LOGIN sequence.
+
+	local function _GrailSetEnvironment()
+		-- IsBetaBuild() does not exist in _classic_era_ nor in _classic_
+		if IsBetaBuild and IsBetaBuild() then
+			Grail.environment = "_beta_"
+		else
+			local baseEnvironment = "_unknown_"
+			if Grail.existsMainline then
+				baseEnvironment = "_retail_"                    -- "World of Warcraft"
+			elseif Grail.existsClassic then
+				baseEnvironment = "_classic_"                   -- "Cataclysm Classic"
+			elseif Grail.existsClassicEra then
+				baseEnvironment = "_classic_era_"               -- "World of Warcraft Classic"
+			end
+			-- There is no reason to need to make use of IsPublicBuild() because what we need to know is done with IsTestBuild().
+			if IsTestBuild() then
+				if Grail.existsMainline then
+					Grail.environment = "_ptr_"              -- note that 11.0.2 PTR is _ptr_ but 11.0.5 PTR is _xptr_
+				else
+					Grail.environment = baseEnvironment .. "ptr_"
+				end
+			else
+				Grail.environment = baseEnvironment
+			end
+		end
+	end
+
+	local function _GrailSetExistsClassic()
+		Grail.existsClassic = Grail.existsClassicBasic or Grail.existsClassicBurningCrusade or Grail.existsClassicWrathOfTheLichKing or Grail.existsClassicCataclysm or Grail.existsClassicPandaria
+	end
+
+	local function _GrailSetGDE()
+		GrailDatabase[Grail.environment] = GrailDatabase[Grail.environment] or {}
+		Grail.GDE = GrailDatabase[Grail.environment]
+	end
+
+	local function _GrailSetCapabilities()
+		Grail.capabilities = {}
+		Grail.capabilities.usesFriendshipReputation = Grail.existsMainline
+		Grail.capabilities.usesAchievements = not Grail.existsClassic or Grail.existsClassicWrathOfTheLichKing or Grail.existsClassicCataclysm or Grail.existsClassicPandaria
+		Grail.capabilities.usesGarrisons = Grail.existsMainline
+		Grail.capabilities.usesArtifacts = false --Grail.existsMainline
+		Grail.capabilities.usesCampaignInfo = Grail.existsMainline
+		Grail.capabilities.usesCalendar = Grail.existsMainline
+		Grail.capabilities.usesAzerothAsCosmicMap = Grail.existsClassicEra
+		Grail.capabilities.usesQuestHyperlink = Grail.existsMainline or Grail.existsClassicWrathOfTheLichKing or Grail.existsClassicCataclysm or Grail.existsClassicPandaria
+		Grail.capabilities.usesFollowers = Grail.existsMainline
+		Grail.capabilities.usesWorldEvents = Grail.existsMainline
+		Grail.capabilities.usesWorldQuests = Grail.existsMainline
+		Grail.capabilities.usesCallingQuests = Grail.existsMainline
+		Grail.capabilities.usesCampaignQuests = Grail.existsMainline
+		Grail.capabilities.usesFlightPoints = Grail.existsMainline
+		Grail.capabilities.usesMajorFactions = Grail.existsMainline
+		Grail.capabilities.usesAreaPOIs = Grail.existsMainline
+		Grail.capabilities.usesLegendaryQuests = Grail.existsMainline
+		Grail.capabilities.usesThreatQuests = Grail.existsMainline
+		Grail.capabilities.usesPetBattles = Grail.existsMainline or Grail.existsClassicPandaria
+		Grail.capabilities.usesImportantQuests = Grail.existsMainline
+		Grail.capabilities.usesInvasionQuests = Grail.existsMainline
+		Grail.capabilities.usesAccountQuests = Grail.existsMainline
+		Grail.capabilities.usesWarbandQuests = Grail.existsMainline
+	end
+
+	-- All file-scope local functions below are called via securecallfunction in
+	-- PLAYER_LOGIN.  The key rule is:
+	--   1. securecallfunction provides a clean execution frame ONLY if the called
+	--      function is a local variable (not a Grail table method).  Passing the
+	--      Grail table as an argument (securecallfunction(Grail.method, Grail))
+	--      immediately retaints execution because the Grail value itself carries
+	--      addon taint.  File-scope locals called with no Grail argument start clean.
+	--   2. Inside the function, any read of _G["Grail"] retaints execution.
+	--      C_Map / MapUtil calls that must produce untainted result-table fields
+	--      must therefore happen BEFORE the first "Grail.xxx" access.
+	local function _GrailSetClassicMapQuestNames()
+		local info19 = C_Map.GetMapInfo(19)	-- Kalimdor
+		local n19 = info19 and info19.name or ""
+		Grail.quest.name[600000] = n19..' '..REQUIREMENTS
+		Grail.quest.name[600001] = n19..' '..FACTION_ALLIANCE..' '..REQUIREMENTS
+		Grail.quest.name[600002] = n19..' '..FACTION_HORDE..' '..REQUIREMENTS
+	end
+
+	local function _GrailSetRetailMapQuestNames()
+		local info862 = C_Map.GetMapInfo(862)	-- Zuldazar
+		local info863 = C_Map.GetMapInfo(863)	-- Nazmir
+		local info864 = C_Map.GetMapInfo(864)	-- Vol'dun
+		local info17  = C_Map.GetMapInfo(17)	-- Eastern Kingdoms
+		local n862 = info862 and info862.name or ""
+		local n863 = info863 and info863.name or ""
+		local n864 = info864 and info864.name or ""
+		local n17  = info17  and info17.name  or ""
+		Grail.quest.name[51570] = n862
+		Grail.quest.name[51571] = n863
+		Grail.quest.name[51572] = n864
+		Grail.quest.name[600000] = n17..' '..REQUIREMENTS
+		Grail.quest.name[600001] = n17..' '..FACTION_ALLIANCE..' '..REQUIREMENTS
+		Grail.quest.name[600002] = n17..' '..FACTION_HORDE..' '..REQUIREMENTS
+	end
+
+	local function _BogusTestForTaint()
+		local currentMapId, TOP_MOST, ALL_DESCENDANTS = MapUtil.GetDisplayableMapForPlayer(), true, true
+		if currentMapId == 1409 then
+			currentMapId = nil
+		end
+		-- Called before any Grail read: result-table fields written clean.
+		local cosmicMapInfo = MapUtil.GetMapParentInfo(currentMapId or 946, Enum.UIMapType.Cosmic, TOP_MOST)
+	end
+
+	-- _GrailLoadContinentData is the file-scope replacement for Grail:_LoadContinentData.
+	-- It must be called as securecallfunction(_GrailLoadContinentData) — no Grail argument —
+	-- so that the first two MapUtil calls run in clean execution and their result-table
+	-- fields (mapType, parentMapID) are not attributed to Grail.  After the first read of
+	-- Grail.capabilities execution retaints, but all subsequent C_Map calls only write
+	-- to Grail-owned tables and do not affect Blizzard's map-pin providers.
+	local function _GrailLoadContinentData()
+		local currentMapId, TOP_MOST, ALL_DESCENDANTS = MapUtil.GetDisplayableMapForPlayer(), true, true
+		if currentMapId == 1409 then
+			currentMapId = nil
+		end
+		-- Called before any Grail read: result-table fields written clean.
+		local cosmicMapInfo = MapUtil.GetMapParentInfo(currentMapId or 946, Enum.UIMapType.Cosmic, TOP_MOST)
+		if nil == cosmicMapInfo then
+			cosmicMapInfo = { mapID = 946 }
+		end
+		-- First Grail read: execution retaints here.  All C_Map calls below are tainted
+		-- but only write to Grail-owned tables (continents, zones, dungeons).
+		if Grail.capabilities.usesAzerothAsCosmicMap then
+			cosmicMapInfo = { mapID = 947 }
+		end
+		local continents = C_Map.GetMapChildrenInfo(cosmicMapInfo.mapID, Enum.UIMapType.Continent, ALL_DESCENDANTS)
+		Grail.continentMapIds = {}
+		Grail.mapToContinentMapping = {}
+		for i, continentInfo in ipairs(continents) do
+			local L = { name = continentInfo.name, zones = {}, mapID = continentInfo.mapID, dungeons = {} }
+			local zones = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Zone, false)
+			for j, zoneInfo in ipairs(zones) do
+				Grail:_AddMapId(L.zones, zoneInfo.name, zoneInfo.mapID, L.mapID)
+				local subZones = C_Map.GetMapChildrenInfo(zoneInfo.mapID, Enum.UIMapType.Zone, false)
+				for k, subZoneInfo in ipairs(subZones) do
+					Grail:_AddMapId(L.zones, subZoneInfo.name, subZoneInfo.mapID, L.mapID)
+				end
+			end
+			local dungeons = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Dungeon, false)
+			for j, dungeonInfo in ipairs(dungeons) do
+				Grail:_AddMapId(L.dungeons, dungeonInfo.name, dungeonInfo.mapID, L.mapID)
+			end
+-- TODO: Do we need to handle Micro map types?
+			-- Stormsong Valley is an Orphan and not a Zone in beta at least
+			local orphans = C_Map.GetMapChildrenInfo(continentInfo.mapID, Enum.UIMapType.Orphan, false)
+			for j, orphanInfo in ipairs(orphans) do
+				Grail:_AddMapId(L.zones, orphanInfo.name, orphanInfo.mapID, L.mapID)
+			end
+			Grail.continents[L.mapID] = L
+			tinsert(Grail.continentMapIds, L.mapID)
+		end
+		table.sort(Grail.continentMapIds)
+	end
+
+	local function _GrailResolveUnnamedZones()
+		-- C_Map calls must precede any Grail reads within each iteration so that
+		-- reading _G["Grail"] (which retaints even inside securecallfunction) happens
+		-- AFTER C_Map.GetMapInfo/MapUtil.GetMapParentInfo, not before.
+		--
+		-- Phase 1: collect all mapIds into a plain-integer-keyed local array
+		-- (iterating Grail.unnamedZones retaints, but no C_Map calls happen here).
+		local mapIds = {}
+		local n = 0
+		for mapId in pairs(Grail.unnamedZones) do
+			n = n + 1
+			mapIds[n] = mapId
+		end
+		-- Phase 2: for each mapId, call C_Map FIRST (clean after retaint from phase 1
+		-- is stripped by the outer securecallfunction), then do Grail reads.
+		-- NOTE: execution is still tainted from phase 1 here, so C_Map calls in this
+		-- loop also run tainted.  A full fix would require a nested securecallfunction
+		-- per iteration, which is too expensive.  This structure at least confines
+		-- the C_Map calls to a single well-identified location for future improvement.
+		Grail.otherMapping = {}
+		local otherCount = 0
+		local mapName
+		for i = 1, n do
+			local mapId = mapIds[i]
+			-- It turns out that Blizzard API is a little weird in that, for example, Teldrassil is a zone in Kalimdor, but
+			-- when you ask for all the Kalimdor zones it is not listed.  Therefore, we have to do some work to find the
+			-- zone for each of these zones and put them in their proper place.
+			local continentInfo = MapUtil.GetMapParentInfo(mapId, Enum.UIMapType.Continent, true)
+			local mapInfo = C_Map.GetMapInfo(mapId)
+			local targetTable = nil ~= continentInfo and Grail.continents[continentInfo.mapID] and Grail.continents[continentInfo.mapID].zones or nil
+			if nil ~= continentInfo and nil ~= mapInfo and nil ~= targetTable then
+				Grail:_AddMapId(targetTable, mapInfo.name, mapInfo.mapID, continentInfo.mapID)
+			else
+				mapName = Grail:_GetMapNameByID(mapId)
+				if "" ~= mapName then
+					local nameToUse = mapName
+					while nil ~= Grail.zoneNameMapping[nameToUse] do
+						nameToUse = nameToUse .. ' '
+					end
+					Grail.zoneNameMapping[nameToUse] = mapId
+					otherCount = otherCount + 1
+					Grail.otherMapping[otherCount] = mapId
+				else
+					if Grail.GDE.debug then securePrint("Grail found no name for mapId", mapId) end
+				end
+			end
+		end
+	end
 
 	Grail = {
 experimental = false,	-- currently this implementation does not reduce memory significantly [this is used to make the map area hold quests in bit form]
@@ -1166,7 +1662,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						)
 					end
 						--print("Achievement earned: ", achievementNumber)
-							
+
 					local msg = string.format(
 						"Achievement earned: ID: %s, Name: %s/ Points: %s/ Completed: %s/ Month: %s/ Day: %s/ Year: %s/ Description: %s/ Flags: %s/ Icon: %s/ RewardText: %s/ isGuild: %s/ wasEarnedByMe: %s/ earnedBy: %s",
 						tostring(achievementNumber),
@@ -1207,7 +1703,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 			['PLAYER_LOGIN'] = function(self, frame, arg1)
 --				if "Grail" == arg1 then
-
+securecallfunction(_BogusTestForTaint)
 					local debugStartTime = debugprofilestop()
 					--
 					--	First pull some information about the player and environment so it can be recorded for easier access
@@ -1235,34 +1731,19 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.serverExpansionLevel = GetServerExpansionLevel() or 0
 					self.isTrial = IsTrialAccount() or 0
 					self.isVeteranTrial = IsVeteranTrialAccount() or 0
-					-- IsBetaBuild() does not exist in _classic_era_ nor in _classic_
-					if IsBetaBuild and IsBetaBuild() then
-						self.environment = "_beta_"
-					else
-						local baseEnvironment = "_unknown_"
-						if self.existsMainline then
-							baseEnvironment = "_retail_"                    -- "World of Warcraft"
-						elseif self.existsClassic then
-							baseEnvironment = "_classic_"                   -- "Cataclysm Classic"
-						elseif self.existsClassicEra then
-							baseEnvironment = "_classic_era_"               -- "World of Warcraft Classic"
-						end
-						-- There is no reason to need to make use of IsPublicBuild() because what we need to know is done with IsTestBuild().
-						if IsTestBuild() then
-							if self.existsMainline then
-								self.environment = "_ptr_"              -- note that 11.0.2 PTR is _ptr_ but 11.0.5 PTR is _xptr_
-							else
-								self.environment = baseEnvironment .. "ptr_"
-							end
-						else
-							self.environment = baseEnvironment
-						end
-					end
-
-					self.existsClassic = self.existsClassicBasic or self.existsClassicBurningCrusade or self.existsClassicWrathOfTheLichKing or self.existsClassicCataclysm or self.existsClassicPandaria
-
-					GrailDatabase[self.environment] = GrailDatabase[self.environment] or {}
-					self.GDE = GrailDatabase[self.environment]
+					-- All five blocks below call file-scope named functions via securecallfunction
+					-- so that environment, GDE, capabilities, and map-quest names are ALWAYS
+					-- written from clean execution even when PLAYER_LOGIN runs with tainted
+					-- execution.  File-scope locals called with no Grail argument start clean;
+					-- see the _GrailSetEnvironment / _GrailSetGDE / etc. definitions above
+					-- Grail = {} for the full explanation.
+securecallfunction(_BogusTestForTaint)
+					securecallfunction(_GrailSetEnvironment)
+securecallfunction(_BogusTestForTaint)
+					securecallfunction(_GrailSetExistsClassic)
+securecallfunction(_BogusTestForTaint)
+					securecallfunction(_GrailSetGDE)
+securecallfunction(_BogusTestForTaint)
 
 					-- Snapshot the quest pins already known from prior sessions so that
 					-- /grail pins can report only the ones discovered this session.
@@ -1273,31 +1754,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						end
 					end
 
-					-- Now we set up some capabilities flags
-					self.capabilities = {}
-					self.capabilities.usesFriendshipReputation = self.existsMainline
-					self.capabilities.usesAchievements = not self.existsClassic or self.existsClassicWrathOfTheLichKing or self.existsClassicCataclysm or self.existsClassicPandaria
-					self.capabilities.usesGarrisons = self.existsMainline
-					self.capabilities.usesArtifacts = false --self.existsMainline
-					self.capabilities.usesCampaignInfo = self.existsMainline
-					self.capabilities.usesCalendar = self.existsMainline
-					self.capabilities.usesAzerothAsCosmicMap = self.existsClassicEra
-					self.capabilities.usesQuestHyperlink = self.existsMainline or self.existsClassicWrathOfTheLichKing or self.existsClassicCataclysm or self.existsClassicPandaria
-					self.capabilities.usesFollowers = self.existsMainline
-					self.capabilities.usesWorldEvents = self.existsMainline
-					self.capabilities.usesWorldQuests = self.existsMainline
-					self.capabilities.usesCallingQuests = self.existsMainline
-					self.capabilities.usesCampaignQuests = self.existsMainline
-					self.capabilities.usesFlightPoints = self.existsMainline
-					self.capabilities.usesMajorFactions = self.existsMainline
-					self.capabilities.usesAreaPOIs = self.existsMainline
-					self.capabilities.usesLegendaryQuests = self.existsMainline
-					self.capabilities.usesThreatQuests = self.existsMainline
-					self.capabilities.usesPetBattles = self.existsMainline or self.existsClassicPandaria
-					self.capabilities.usesImportantQuests = self.existsMainline
-					self.capabilities.usesInvasionQuests = self.existsMainline
-					self.capabilities.usesAccountQuests = self.existsMainline
-					self.capabilities.usesWarbandQuests = self.existsMainline
+					securecallfunction(_GrailSetCapabilities)
+securecallfunction(_BogusTestForTaint)
 
                     -- These values are no longer used, but kept for posterity.
 -- TODO: Deal with the following by eliminating them...
@@ -1311,9 +1769,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					-- We have loaded GrailDatabase at this point, but we need to ensure the structure is set up for first-time players as we rely on at least an empty structure existing
 					GrailDatabasePlayer = GrailDatabasePlayer or {}
 
-					self.quest.name[600000]=Grail:_GetMapNameByID(19)..' '..REQUIREMENTS
-					self.quest.name[600001]=Grail:_GetMapNameByID(19)..' '..FACTION_ALLIANCE..' '..REQUIREMENTS
-					self.quest.name[600002]=Grail:_GetMapNameByID(19)..' '..FACTION_HORDE..' '..REQUIREMENTS
+					-- _GetMapNameByID → C_Map.GetMapInfo: must run from clean execution.
+					-- See _GrailSetClassicMapQuestNames definition for full explanation.
+					securecallfunction(_GrailSetClassicMapQuestNames)
 
 					-- Remove races that are introduced in expansions past the one the is currently being used.
 					if self.expansion < 11 then
@@ -1358,7 +1816,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.races['B'] = nil	-- Blood Elf
 						self.races['D'] = nil	-- Draenei
 					end
-					
+
 					-- Now recompute self.bitMaskRaceAll based on what races remain in the table.
 					self.bitMaskRaceAll = 0
 					for code, raceTable in pairs(self.races) do
@@ -1387,7 +1845,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						--	To make things a little prettier, because we are using phase 0000 to represent the location of the Darkmoon Faire we
 						--	define the map area for 0000 to be that.
 						self.mapAreaMapping[0] = self.holidayMapping['F']
-						
+
 						--	For the Classic setup for Darkmoon Faire we have a special holiday which will use the same name
 						self.holidayMapping['G'] = self.holidayMapping['F']
 					end
@@ -1490,10 +1948,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[709] = true, -- The Wandering Isle, Monk Order Hall, Legion
 							[711] = true, -- Vault of the Wardens Dungeon, Legion
 							[713] = true, -- Eye of Azshara Dungeon , Legion
-							[714] = true, -- Niskara, DK Blood Artifact , Legion
+							[714] = true, -- Niskara (DK Blood Artifact) / Dreadscar Rift Summoning Area (Warlock Campaign), Legion
 							[715] = true, -- Emerald Dreamway, Druid Artifact quest, Legion
 							[716] = true, -- Skywall, Monk artifact campaign
-							[714] = true, -- Dreadscar Rift, Summoning Area -- Warlock Legion Campaign
 							[718] = true, -- Dreadscar Rift -- Warlock Legion Campaign
 							[720] = true, -- Mardum , DH Order Hall, Legion
 							[724] = true, -- Maelstrom, Abyssal Halls, Shaman Restoration Artifact questchain, Legion
@@ -1524,7 +1981,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[804] = true, -- Scarlet Monastery (Dungeon)
 							[826] = true, -- Mage Tower Legion (windwalker) - Höhle der Bluttotems
 							[830] = true, -- Legion: Krokuun
-							[831] = true, -- Vindicaar: UpperDeck		(Yoshimo: maybe beginning of the quests compared to 830?)					
+							[831] = true, -- Vindicaar: UpperDeck		(Yoshimo: maybe beginning of the quests compared to 830?)
 							[850] = true, -- Tomb Of Sargeras, Legion
 							[851] = true, -- Tomb Of Sargeras, Legion
 							[852] = true, -- Tomb Of Sargeras, Legion
@@ -1576,7 +2033,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[1648] = true, -- The Maw (intro version) 9.0
 							[1666] = true, -- Necrotic Wake 9.0 , (dungeon)
 							[1670] = true, -- Oribos 9.0 , TODO: so far no chests and rares
-							[1671] = true, -- Oribos 9.0, Part 2 , TODO: so far no chests and rares 
+							[1671] = true, -- Oribos 9.0, Part 2 , TODO: so far no chests and rares
 							[1681] = true, -- IceCrown Citadel 9.0 intro
 							[1688] = true, -- Hof der Ernter 9.0 , during quest 58086
 							[1693] = true, -- Spire Of Ascension 9.0, (dungeon), has quests, hidden and visible
@@ -1708,11 +2165,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							[2424] = true, -- Isle of Quel'danas - Isle of Quel'danas
 							[2444] = true, -- Isle of Quel'danas - Slayer's Rise
 							[2537] = true, -- Isle of Quel'danas? - TODO: Yoshimo: check (internally named "unknown")
-							[2565] = true, -- Isle of Quel'danas - Isle of Quel'danas , during the MN intro questchain from Liadrin id:236693
+							[2565] = true, -- Isle of Quel'danas, MN intro questchain (Liadrin id:236693) / quest 86834
 							[2437] = true, -- Quel'thalas: Zul'Aman (Midnight)
 							[2536] = true, -- Quel'thalas: Zul'Aman (Midnight): Atal'Aman
 							[2432] = true, -- Isle of Quel'danas - Isle of Quel'danas ( while on quest 88719)
-							[2565] = true, -- Isle of Quel'danas - Isle of Quel'danas ( while on quest 86834)
 							[2579] = true, -- Isle of Quel'danas - Eversong Woods - Gruft von Wartha'nan
 							[2438] = true, -- Tirisfal: Scarlet Halls (during 86842)
 							[2541] = true, -- The Arcantina
@@ -1733,12 +2189,9 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 						}
 
-						self.quest.name[51570]=Grail:_GetMapNameByID(862)	-- Zuldazar
-						self.quest.name[51571]=Grail:_GetMapNameByID(863)	-- Nazmir
-						self.quest.name[51572]=Grail:_GetMapNameByID(864)	-- Vol'dun
-						self.quest.name[600000]=Grail:_GetMapNameByID(17)..' '..REQUIREMENTS
-						self.quest.name[600001]=Grail:_GetMapNameByID(17)..' '..FACTION_ALLIANCE..' '..REQUIREMENTS
-						self.quest.name[600002]=Grail:_GetMapNameByID(17)..' '..FACTION_HORDE..' '..REQUIREMENTS
+						-- Same reasoning as the map-19 block above: C_Map.GetMapInfo calls
+						-- must run from clean execution.  See _GrailSetRetailMapQuestNames.
+						securecallfunction(_GrailSetRetailMapQuestNames)
 					end
 
 					--	For users prior to the release version 028, the GrailDatabase held personal quest information.  Now we move that information into the
@@ -1806,7 +2259,18 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					--	Set up the slash command
 					--
 					SlashCmdList["GRAIL"] = function(msg)
-						self:_SlashCommand(frame, msg)
+						-- Slash command handlers always run from tainted execution in WoW.
+						-- Do NOT use securecallfunction(function() ... end) here — an anonymous
+						-- lambda created inline in tainted execution is itself a tainted closure
+						-- object; upvalue-slot reads inside it retaint execution immediately,
+						-- defeating the protection (same issue as with the map pins provider and
+						-- prereq module fixes).
+						-- Instead pass Grail._SlashCommand directly as a file-scope-defined
+						-- method reference.  Grail and Grail._SlashCommand are both clean values
+						-- (written at file load time).  msg is a user-typed string (clean C value).
+						-- frame is omitted (nil) because slash commands have no event frame and
+						-- the slash option handlers that receive it do not rely on it.
+						securecallfunction(Grail._SlashCommand, Grail, nil, msg)
 					end
 					SLASH_GRAIL1 = "/grail"
 
@@ -2075,12 +2539,30 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self.reverseReputationMapping[repName] = index
 					end
 
-					self:_LoadContinentData()
+					-- _GrailLoadContinentData is a file-scope local.  Called with no Grail
+					-- argument so securecallfunction provides a clean execution frame.
+					-- The first MapUtil.GetMapParentInfo (cosmic-map lookup) runs clean;
+					-- result-table fields are not attributed to Grail.  Taint begins only
+					-- at the first Grail.capabilities read, after the cosmic map is found.
+					securecallfunction(_GrailLoadContinentData)
 
 --					self:LoadAddOn("Grail-Quests")
 					local originalMem = gcinfo()
 --					if self:LoadAddOn("Grail-NPCs") then
-						self:_ProcessNPCs(originalMem)
+						-- _ProcessNPCs runs from tainted PLAYER_LOGIN execution.  It writes
+						-- N.rawLocations = {} and N.locations[key] = {} for every NPC key.
+						-- Those {} tables created from tainted execution become tainted
+						-- TABLE REFERENCES.  CreateIndexedQuestList (inside its own
+						-- securecallfunction) then calls QuestLocationsAccept → NPCLocations →
+						-- _RawNPCLocations which reads self.npc.rawLocations — a tainted reference
+						-- — re-tainting execution.  Once tainted there, _GetMapNameByID(mapId)
+						-- calls C_Map.GetMapInfo from tainted execution, poisoning cached result
+						-- tables for every NPC zone mapId.  The unnamed-zones loop then calls
+						-- MapUtil.GetMapParentInfo for those same mapIds and reads the poisoned
+						-- mapType/parentMapID fields → ~3,454 taint-log entries.
+						-- Wrapping _ProcessNPCs keeps N.rawLocations and all N.locations[key]
+						-- entries written from clean execution so the chain never retaints.
+						securecallfunction(Grail._ProcessNPCs, Grail, originalMem)
 --					end
 --					self:LoadAddOn("Grail-NPCs-" .. self.playerLocale)
 					self.npc.name[1] = ADVENTURE_JOURNAL
@@ -2102,38 +2584,18 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self.playerFactionBitMask = ('Horde' == self.playerFaction) and self.bitMaskFactionHorde or self.bitMaskFactionAlliance
 					self.playerGenderBitMask = (3 == self.playerGender) and self.bitMaskGenderFemale or self.bitMaskGenderMale
 
-					-- Create the indexed quest list up front so future requests are much faster
-					self:CreateIndexedQuestList()
+					-- Create the indexed quest list up front so future requests are much faster.
+					-- Wrapped so self.timings.* are written cleanly; the debug print at the end
+					-- of CreateIndexedQuestList reads self.timings.CreateIndexedQuestList as a
+					-- print argument — if that value is tainted the chat buffer gets tainted even
+					-- inside securecallfunction(print, ...).
+					securecallfunction(Grail.CreateIndexedQuestList, Grail)
 
 					-- Now take all the unnamed zones we determined from NPCs and add them to Grail.otherMapping
-					-- and find their names
-					self.otherMapping = {}
-					local otherCount = 0
-					local mapName
-					for mapId in pairs(self.unnamedZones) do
-						-- It turns out that Blizzard API is a little weird in that, for example, Teldrassil is a zone in Kalimdor, but
-						-- when you ask for all the Kalimdor zones it is not listed.  Therefore, we have to do some work to find the
-						-- zone for each of these zones and put them in their proper place.
-						local continentInfo = MapUtil.GetMapParentInfo(mapId, Enum.UIMapType.Continent, true)
-						local mapInfo = C_Map.GetMapInfo(mapId)
-						local targetTable = nil ~= continentInfo and self.continents[continentInfo.mapID] and self.continents[continentInfo.mapID].zones or nil
-						if nil ~= continentInfo and nil ~= mapInfo and nil ~= targetTable then
-							self:_AddMapId(targetTable, mapInfo.name, mapInfo.mapID, continentInfo.mapID)
-						else
-							mapName = self:_GetMapNameByID(mapId)
-							if "" ~= mapName then
-								local nameToUse = mapName
-								while nil ~= self.zoneNameMapping[nameToUse] do
-									nameToUse = nameToUse .. ' '
-								end
-								self.zoneNameMapping[nameToUse] = mapId
-								otherCount = otherCount + 1
-								self.otherMapping[otherCount] = mapId
-							else
-								if self.GDE.debug then print("Grail found no name for mapId", mapId) end
-							end
-						end
-					end
+					-- and find their names.  Uses _GrailResolveUnnamedZones (file-scope named function)
+					-- so MapUtil.GetMapParentInfo and C_Map.GetMapInfo run from clean execution.
+					-- See _GrailResolveUnnamedZones definition for the full explanation.
+					securecallfunction(_GrailResolveUnnamedZones)
 
 					-- Now we need to make a reverse mapping table that maps map area IDs into localized zone names.
 					for zoneName, mapId in pairs(self.zoneNameMapping) do
@@ -2175,252 +2637,10 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					--	Ensure the tooltip is not messed up
 					if not self.tooltip:IsOwned(UIParent) then self.tooltip:SetOwner(UIParent, "ANCHOR_NONE") end
 
-					self:RegisterSlashOption("events", "|cFF00FF00events|r => toggles delaying events in combat on and off, printing new value", function()
-						Grail.GDE.delayEvents = not Grail.GDE.delayEvents
-						print(strformat("Grail delays events in combat now %s", Grail.GDE.delayEvents and "ON" or "OFF"))
-					end)
-					self:RegisterSlashOption("silent", "|cFF00FF00silent|r => toggles silent startup on and off, printing new value", function()
-						Grail.GDE.silent = not Grail.GDE.silent
-						print(strformat("Grail silent startup for this player now %s", Grail.GDE.silent and "ON" or "OFF"))
-					end)
-					self:RegisterSlashOption("debug", "|cFF00FF00debug|r => toggles debug on and off, printing new value", function()
-						Grail.GDE.debug = not Grail.GDE.debug
-						Grail:_QuestCompleteCheckObserve(Grail.GDE.debug)
-						Grail:_QuestAcceptCheckObserve(Grail.GDE.debug)
-						Grail:_LevelGainedQuestCheckObserve(Grail.GDE.debug)
-						print(strformat("Grail Debug now %s", Grail.GDE.debug and "ON" or "OFF"))
-					end)
-					self:RegisterSlashOption("treasures", "|cFF00FF00treasures|r => toggles treasures on and off, printing new value", function()
-						Grail.GDE.treasures = not Grail.GDE.treasures
-						print(strformat("Grail Debug Treasures now %s", Grail.GDE.treasures and "ON" or "OFF"))
-					end)
-					self:RegisterSlashOption("target", "|cFF00FF00target|r => gets target information (NPC ID and your current location)", function()
-						local targetName, npcId, coordinates = self:TargetInformation()
-						local message = strformat("%s (%d) %s", targetName and targetName or 'nil target', npcId and npcId or -1, coordinates and coordinates or 'no coords')
-						print(message)
-						self:_AddTrackingMessage(message)
-					end)
-					self:RegisterSlashOption("buffs", "|cFF00FF00buffs|r => lists all active buffs on the player with their spell IDs", function()
-						print("|cFFFF0000Grail|r active player buffs:")
-						local i = 1
-						local count = 0
-						while true do
-							local name, spellId = self:UnitAura('player', i, 'HELPFUL')
-							if not name then break end
-							print(strformat("  [%d] %s (spellId %s)", i, name, tostring(spellId)))
-							count = count + 1
-							i = i + 1
-						end
-						if count == 0 then print("  (none)") end
-					end)
-					self:RegisterSlashOption("c ", "|cFF00FF00c|r |cFFFF8C00msg|r => adds the |cFFFF8C00msg|r to the tracking data", function(msg)
-						self:_AddTrackingMessage(strsub(msg, 3))
-					end)
-					self:RegisterSlashOption("comment ", "|cFF00FF00comment|r |cFFFF8C00msg|r => adds the |cFFFF8C00msg|r to the tracking data", function(msg)
-						self:_AddTrackingMessage(strsub(msg, 9))
-					end)
-					self:RegisterSlashOption("tracking", "|cFF00FF00tracking|r => toggles tracking on and off, printing new value", function()
-						Grail.GDE.tracking = not Grail.GDE.tracking
-						print(strformat("Grail Tracking now %s", Grail.GDE.tracking and "ON" or "OFF"))
-						self:_UpdateTrackingObserver()
-					end)
-					self:RegisterSlashOption("loot", "|cFF00FF00loot|r => toggles loot event processing on and off, printing new value", function()
-						Grail.GDE.notLoot = not Grail.GDE.notLoot
-						print(strformat("Grail Loot Event Processing now %s", Grail.GDE.notLoot and "OFF" or "ON"))
-						if Grail.GDE.notLoot then
-							Grail.notificationFrame:UnregisterEvent("LOOT_CLOSED")
-						else
-							Grail.notificationFrame:RegisterEvent("LOOT_CLOSED")
-						end
-					end)
-					self:RegisterSlashOption("pins", "|cFF00FF00pins|r => lists quest pins discovered this session that were not previously recorded", function()
-						local locs = self.GDE.observedQuestLocations
-						if not locs then
-							print("Grail: no quest pins recorded yet — open the world map and browse some zones")
-							return
-						end
-						local count = 0
-						for questID, loc in pairs(locs) do
-							if not self.sessionStartQuestPins[questID] then
-								count = count + 1
-								local name = self.quest.name[questID]
-								if not name then
-									local title = C_QuestLog.GetQuestInfo(questID)
-									name = title or "?"
-								end
-								local mapName = self:_GetMapNameByID(loc.mapID)
-								print(strformat("|cFFFF8C00Q%d|r %s  |cFF808080[%s]|r x=%.4f y=%.4f", questID, name, mapName, loc.x, loc.y))
-							end
-						end
-						if 0 == count then
-							print("Grail: no new quest pins this session")
-						else
-							print(strformat("Grail: |cFF00FF00%d|r new quest pin(s) this session", count))
-						end
-					end)
-					self:RegisterSlashOption("savepins", "|cFF00FF00savepins|r => saves current Blizzard map quest pins and hub POIs to tracking data", function()
-						local uiMapID = WorldMapFrame and WorldMapFrame:GetMapID()
-						if not uiMapID then
-							print("Grail: world map is not open or map ID unavailable")
-							return
-						end
-						local mapName = self:_GetMapNameByID(uiMapID) or "?"
-						local count = 0
-						-- currentPins tracks questID → formatted line for MAPPIN/QUESTPIN entries
-						-- so we can diff against the previous invocation when debug is on.
-						local currentPins = {}
-
-						-- Blizzard quest pins (C_QuestLog.GetQuestsOnMap)
-						if C_QuestLog.GetQuestsOnMap then
-							local pins = C_QuestLog.GetQuestsOnMap(uiMapID)
-							if pins then
-								for _, pin in ipairs(pins) do
-									local questID = tonumber(pin.questID)
-									if questID then
-										-- Determine a one-character status:
-										--   C = flagged completed   P = in progress (in quest log)
-										--   T = task/bonus objective   A = available (visible but not in log)
-										local status
-										if C_QuestLog.IsComplete and C_QuestLog.IsComplete(questID) then
-											status = "C"
-										elseif C_QuestLog.IsOnQuest and C_QuestLog.IsOnQuest(questID) then
-											status = "P"
-										elseif C_QuestLog.IsQuestTask and C_QuestLog.IsQuestTask(questID) then
-											status = "T"
-										else
-											status = "A"
-										end
-										-- Quest tag (world quest type, dungeon, etc.) and title
-										local tagID, tagName = self:GetQuestTagInfo(questID)
-										local title = self:QuestName(questID) or (C_QuestLog.GetQuestInfo and C_QuestLog.GetQuestInfo(questID)) or ""
-										title = title or ""
-										tagName = tagName or ""
-										local msg = strformat("MAPPIN|%d|%d|%.4f|%.4f|%s|%s|%s", uiMapID, questID, pin.x or 0, pin.y or 0, status, tagName, title)
-										self:_AddTrackingMessage(msg)
-										currentPins[questID] = msg
-										count = count + 1
-									end
-								end
-							end
-						end
-
-						-- Quest hub POIs (C_AreaPoiInfo.GetQuestHubsForMap)
-						if C_AreaPoiInfo and C_AreaPoiInfo.GetQuestHubsForMap and C_AreaPoiInfo.GetAreaPOIInfo then
-							local hubs = C_AreaPoiInfo.GetQuestHubsForMap(uiMapID)
-							if hubs then
-								for _, areaPoiID in ipairs(hubs) do
-									local info = C_AreaPoiInfo.GetAreaPOIInfo(uiMapID, areaPoiID)
-									if info and info.position then
-										local questID = (info.questID and info.questID > 0) and info.questID or 0
-										self:_AddTrackingMessage(strformat("HUBPOI|%d|%d|%.4f|%.4f|%d", uiMapID, areaPoiID, info.position.x or 0, info.position.y or 0, questID))
-										count = count + 1
-									end
-								end
-							end
-						end
-
-						-- Map canvas active pins: QuestOfferPinTemplate (yellow "!"),
-						-- QuestBlobPinTemplate, QuestHubPinTemplate, etc.
-						-- These quest-giver pins are NOT returned by GetQuestsOnMap.
-						-- Build a seen set from what GetQuestsOnMap already recorded so we
-						-- don't emit duplicate entries.
-						do
-							local seen = {}
-							if C_QuestLog.GetQuestsOnMap then
-								local existing = C_QuestLog.GetQuestsOnMap(uiMapID)
-								if existing then
-									for _, p in ipairs(existing) do
-										if p.questID then seen[tonumber(p.questID)] = true end
-									end
-								end
-							end
-							self:_ScanMapCanvasQuestPins(uiMapID, seen, function(questID, x, y, pin)
-								local status
-								if C_QuestLog.IsComplete and C_QuestLog.IsComplete(questID) then
-									status = "C"
-								elseif C_QuestLog.IsOnQuest and C_QuestLog.IsOnQuest(questID) then
-									status = "P"
-								elseif C_QuestLog.IsQuestTask and C_QuestLog.IsQuestTask(questID) then
-									status = "T"
-								else
-									status = "A"
-								end
-								local tagID, tagName = self:GetQuestTagInfo(questID)
-								-- Try Grail's own name table first, then the retail API that works
-								-- for available (not-yet-accepted) quests, then fields stored on
-								-- the pin frame itself, then the log-based API as a last resort.
-								local title = self:QuestName(questID)
-									or (C_QuestLog.GetTitleForQuestID and C_QuestLog.GetTitleForQuestID(questID))
-									or (pin and (pin.title or pin.questName or pin.name))
-									or (C_QuestLog.GetQuestInfo and C_QuestLog.GetQuestInfo(questID))
-									or ""
-								title = title or ""
-								tagName = tagName or ""
-								local msg = strformat("QUESTPIN|%d|%d|%.4f|%.4f|%s|%s|%s", uiMapID, questID, x, y, status, tagName, title)
-								self:_AddTrackingMessage(msg)
-								currentPins[questID] = msg
-								count = count + 1
-							end)
-						end
-
-						-- Debug diff: show what changed since the last /grail savepins this session.
-						-- self.lastSavePinsQuestIDs is nil at session start so the first call prints everything.
-						if self.GDE.debug then
-							local prev = self.lastSavePinsQuestIDs or {}
-							for questID, msg in pairs(currentPins) do
-								if not prev[questID] then
-									print("|cFF00FF00Grail savepins NEW:|r " .. msg)
-								end
-							end
-							for questID, msg in pairs(prev) do
-								if not currentPins[questID] then
-									print("|cFFFF4400Grail savepins GONE:|r " .. msg)
-								end
-							end
-						end
-						self.lastSavePinsQuestIDs = currentPins
-
-						print(strformat("Grail: saved %d pin(s) for map %d (%s) to tracking data", count, uiMapID, mapName))
-					end)
-					self:RegisterSlashOption("help", "|cFF00FF00help|r => print out this list of commands", function()
-						print("|cFFFF0000Grail|r slash commands:")
-						for option, value in pairs(self.slashCommandOptions) do
-							print("|cFFFF0000/grail|r",value['help'])
-						end
-						print("|cFFFF0000/grail|r => initiates a database query to get completed quests [this happens at startup normally]")
-					end)
-					self:RegisterSlashOption("backup", "|cFF00FF00backup|r => creates a backup copy of the completed quests used for comparison", function()
-						self:_ProcessServerBackup()
-					end)
-					self:RegisterSlashOption("compare", "|cFF00FF00compare|r => compares the current completed quest list to the backup copy", function()
-						self:_ProcessServerCompare()
-					end)
-					--	Add a command for MoP that makes comparison of completed quests a little easier.  Only for MoP since before that the server
-					--	needs to be queried and that means the return result will not happen before we compare.
-                    self:RegisterSlashOption("cb", "|cFF00FF00cb|r => compares the latest server status quest list to the backup copy, and makes the backup become current", function()
-						if not self.inCombat then
-							print("|cFFFFFF00Grail|r initiating server database query")
-							QueryQuestsCompleted()
-							self:_ProcessServerCompare()
-							self:_ProcessServerBackup()
-						else
-							print("|cFFFFFF00Grail cb|r not available in combat")
-						end
-					end)
-					self:RegisterSlashOption("clearstatuses", "|cFF00FF00clearstatuses|r => clears the status of all quests allowing them to be recomputed", function()
-						wipe(self.questStatuses)
-						self.questStatuses = {}
-						self:_CoalesceDelayedNotification("Status", 0)
-					end)
-					self:RegisterSlashOption("eraseAndReloadCompletedQuests", "|cFF00FF00eraseAndReloadCompletedQuests|r => reloads the completed quest list from Blizzard erasing the current list", function()
-						GrailDatabasePlayer["completedQuests"] = {}
-						QueryQuestsCompleted()
-						-- And the following code is the same as the clearstatuses command...
-						wipe(self.questStatuses)
-						self.questStatuses = {}
-						self:_CoalesceDelayedNotification("Status", 0)
-					end)
-
+					-- _GrailRegisterBuiltinSlashOptions is a file-scope named function (clean closure).
+					-- Calling it via securecallfunction ensures all {func, help} entries written into
+					-- slashCommandOptions are clean values even though PLAYER_LOGIN is tainted execution.
+					securecallfunction(_GrailRegisterBuiltinSlashOptions)
 					if self.capabilities.usesAchievements then
 						frame:RegisterEvent("ACHIEVEMENT_EARNED")		-- e.g., quest 29452 can be gotten if certain achievements are complete
 						frame:RegisterEvent("CRITERIA_EARNED")		-- for debugging to see when criteria are earned in MoP
@@ -2528,12 +2748,15 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 						WorldMapFrame:HookScript("OnShow", function()
 							local mapID = WorldMapFrame:GetMapID()
 							C_Timer.After(0.5, function()
-								self:_ScanMapQuestPins(mapID)
+								-- C_Timer callbacks always run from tainted execution. Wrap so
+								-- GDE.observedQuestLocations table entries (new table values)
+								-- are created from clean execution and are not tainted references.
+								securecallfunction(function() self:_ScanMapQuestPins(mapID) end)
 							end)
 						end)
 						hooksecurefunc(WorldMapFrame, "SetMapID", function(_, mapID)
 							C_Timer.After(0.5, function()
-								self:_ScanMapQuestPins(mapID)
+								securecallfunction(function() self:_ScanMapQuestPins(mapID) end)
 							end)
 						end)
 					end
@@ -2623,7 +2846,7 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 				if nil ~= mission then
 					local message = strformat("mission name: %s with mission id: %d started with garrFollowerTypeID %d", mission.name, missionID, garrFollowerTypeID)
 					if self.GDE.debug or self.GDE.tracking then
-						print(message)
+						securePrint(message)
 					end
 					self:_AddTrackingMessage(message)
 				end
@@ -2633,7 +2856,7 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 				local mission = C_Garrison.GetBasicMissionInfo(missionID)
 				if nil ~= mission then
 					local message = strformat("mission name: %s with mission id: %d finished with garrFollowerTypeID %d", mission.name, missionID, garrFollowerTypeID)
-					if self.GDE.debug or self.GDE.tracking then
+					if (self.GDE.debug or self.GDE.tracking) and self.GDE.acceptsTaint then
 						print(message)
 					end
 					self:_AddTrackingMessage(message)
@@ -2644,7 +2867,7 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 				local mission = C_Garrison.GetBasicMissionInfo(missionID)
 				if nil ~= mission then
 					local message = string.format("Garrison mission complete response: %s, missionID: %d, canComplete: %s, success: %s, overmaxSucceeded: %s", mission.name, missionID, tostring(canComplete), tostring(success), tostring(overmaxSucceeded))
-					if self.GDE.debug then
+					if self.GDE.debug and self.GDE.acceptsTaint then
 						print(message)
 					end
 					self:_AddTrackingMessage(message)
@@ -2722,7 +2945,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					print("GARRISON_TALENT_COMPLETE, garrTypeID: ", garrTypeID)
 				end
 			end,
-			
+
 			['GARRISON_TALENT_UPDATE'] = function(self, frame, garrTypeID)
 				self:_InvalidateStatusForQuestsWithTalentPrerequisites()
 				if self.GDE.debug then
@@ -2881,14 +3104,21 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			end,
 
 			['GOSSIP_CONFIRM'] = function(self, frame, ...)
-			if self.GDE.debug then print("*** GOSSIP_CONFIRM", ...) end
+			if self.GDE.debug then securePrint("*** GOSSIP_CONFIRM") end
 			end,
 			['GOSSIP_ENTER_CODE'] = function(self, frame, ...)
-			if self.GDE.debug then print("*** GOSSIP_ENTER_CODE", ...) end
+			if self.GDE.debug then securePrint("*** GOSSIP_ENTER_CODE") end
 			end,
 
 			['PLAYER_ENTERING_WORLD'] = function(self, frame)
-			print("|cFF00FF00Grail|r: needs your help! Consider running /grail tracking & /Grail treasures ON and submit your data regularly")
+			local trackingOff = not self.GDE.tracking
+			local treasuresOff = not self.GDE.treasures
+			-- Any print from an event handler carries Grail's attribution — even
+			-- string literals are addon-attributed bytecode constants.  Only print
+			-- when the user has explicitly opted in to tainted output.
+			if (trackingOff or treasuresOff) and self.GDE.acceptsTaint then
+				print("|cFF00FF00Grail|r: needs your help! Consider running |cFF00FF00/grail tracking|r and/or |cFF00FF00/grail treasures|r and submit your data regularly")
+			end
 				if self.capabilities.usesArtifacts then
 					frame:RegisterEvent("ARTIFACT_XP_UPDATE")
 				end
@@ -2932,15 +3162,15 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			['QUEST_ACCEPTED'] = function(self, frame, questIndexOrIdBasedOnRelease, aQuestId)
 				-- If there are two parameters, the first will be the questIndex, otherwise we have no questIndex
 				local questIndex = aQuestId and questIndexOrIdBasedOnRelease or nil
-				
+
 				-- If there are two parameters, the second is the quest Id, otherwise the first is.
 				local theQuestId = aQuestId or questIndexOrIdBasedOnRelease
-				
+
 				-- In Shadowlands we need to look up the questIndex
 				if questIndex == nil and C_QuestLog.GetLogIndexForQuestID then
 					questIndex = C_QuestLog.GetLogIndexForQuestID(theQuestId)
 				end
-				
+
 				-- For the "FullAccept" notification we want to provide a payload that includes all the useful
 				-- information gathered when accepting a quest.
 				local payload = {}
@@ -2961,10 +3191,10 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				payload.questId = theQuestId
 				payload.questIndex = questIndex
 				payload.coordinates = self:Coordinates()
-				
+
 				-- Get rid of the information gotten from QUEST_DETAIL so we do not use it erroneously again.
 				self.questDetailInformation = nil
-				
+
 				-- Inform subscribers of what just happened
 				self:_PostNotification("FullAccept", payload)
 				self:_PostNotification("Accept", theQuestId)
@@ -2982,7 +3212,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				end
 				self:_AddTrackingMessage(message)
 			end,
-			
+
 			['WORLD_QUEST_COMPLETED_BY_SPELL'] = function(self, frame, questId)
 			local message = strformat("WORLD_QUEST_COMPLETED_BY_SPELL completes %d", questId)
 				if self.GDE.debug then
@@ -3682,7 +3912,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			[1] = { 69, 54, 47, 72, 930, 1134, 530, 76, 81, 68, 911, 1133, 509, 890, 730, 510, 729, 889, 21, 577, 369, 470, 910, 609, 749, 990, 270, 529, 87, 909, 92, 989, 93, 349, 809, 70, 59, 576, 922, 967, 589, 469, 67, 471, 893, 550, 551, 549, 83, 86, },
 			[2] = { 942, 946, 978, 941, 1038, 1015, 970, 933, 947, 1011, 1031, 1077, 932, 934, 935, 1156, 1012, 936, },
 			[3] = { 1037, 1106, 1068, 1104, 1126, 1067, 1052, 1073, 1097, 1098, 1105, 1117, 1119, 1064, 1050, 1085, 1091, 1090, 1094, 1124, },
-			[4] = { 1158, 1173, 1135, 1171, 1174, 1178, 1172, 1177, 1204, },
+			[4] = { 1158, 1173, 1135, 1171, 1174, 1178, 1172, 1177, 1204, 1416, },
 			[5] = { 1216, 1351, 1270, 1277, 1275, 1283, 1282, 1228, 1281, 1269, 1279, 1243, 1273, 1358, 1276, 1271, 1242, 1278, 1302, 1341, 1337, 1345, 1272, 1280, 1352, 1357, 1353, 1359, 1375, 1376, 1387, 1388, 1435, 1492, },
 			[6] = { 1445, 1515, 1520, 1679, 1681, 1682, 1708, 1710, 1711, 1731, 1732, 1733, 1735, 1736, 1737, 1738, 1739, 1740, 1741, 1847, 1848, 1849, 1850, },
 			[7] = { 1815, 1828, 1833, 1859, 1860, 1862, 1883, 1888, 1894, 1899, 1900, 1919, 1947, 1948, 1975, 1984, 1989, 2018, 2045, 2097, 2098, 2099, 2100, 2101, 2102, 2135, 2165, 2170, },
@@ -3875,6 +4105,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["560"] = "Operation: Shieldwall",
 			["56B"] = "Kirin Tor Offensive",
 			["56C"] = "Sunreaver Onslaught",
+			["588"] = "Akama's Trust",
 			["59B"] = "Shado-Pan Assault",
 			["5A5"] = "Frostwolf Orcs",
 			["5D4"] = "Emperor Shaohao",
@@ -4211,6 +4442,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["560"] = 'Alliance',
 			["56B"] = 'Alliance',
 			["56C"] = 'Horde',
+			["588"] = 'Neutral',
 			["59B"] = 'Neutral',
 			["5A5"] = 'Horde',
 			["5D4"] = 'Neutral',
@@ -4269,24 +4501,24 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["834"] = "Neutral",
 			["835"] = "Neutral",
 			["836"] = "Neutral",
-			["837"] = "Neutral",	-- TODO: Determine faction
-			["83F"] = "Neutral",	-- TODO: Determine faction
-["848"] = "Neutral",	-- TODO: Determine faction
+			["837"] = "Horde",
+			["83F"] = "Neutral",
+			["848"] = "Alliance",
 			["857"] = "Neutral",
-			["86C"] = "Neutral",	-- TODO: Determine faction
-			["86D"] = "Neutral",	-- TODO: Determine faction
-			["86E"] = "Neutral",	-- TODO: Determine faction
-			["86F"] = "Neutral",	-- TODO: Determine faction
-			["870"] = "Neutral",	-- TODO: Determine faction
-			["871"] = "Neutral",	-- TODO: Determine faction
-			["872"] = "Neutral",	-- TODO: Determine faction
-			["873"] = "Neutral",	-- TODO: Determine faction
-			["874"] = "Neutral",	-- TODO: Determine faction
+			["86C"] = "Horde",
+			["86D"] = "Horde",
+			["86E"] = "Horde",
+			["86F"] = "Alliance",
+			["870"] = "Alliance",
+			["871"] = "Alliance",
+			["872"] = "Alliance",
+			["873"] = "Neutral",
+			["874"] = "Neutral",
 			["875"] = "Neutral",
 			["87A"] = "Neutral",
-			["8B9"] = "Neutral",	-- TODO: Determine faction
-			["8D8"] = "Neutral",	-- TODO: Determine faction
-			["8D9"] = "Neutral",	-- TODO: Determine faction
+			["8B9"] = "Horde",
+			["8D8"] = "Alliance",
+			["8D9"] = "Alliance",
 			["943"] = "Alliance",	-- 2371
 			["944"] = "Horde",	-- 2372
 			["945"] = "Horde",	-- 2373
@@ -4301,123 +4533,123 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			["94E"] = "Horde",	-- 2382
 			["94F"] = "Alliance",	-- 2383
 			["950"] = "Alliance",	-- 2384
-			["951"] = "Neutral",	-- 2385	-- TODO: Determine faction
-			["952"] = "Neutral",	-- 2386	-- TODO: Determine faction
+			["951"] = "Horde",	-- 2385
+			["952"] = "Neutral",	-- 2386
 			["953"] = "Neutral",	-- 2387
 			["954"] = "Horde",	-- 2388
 			["955"] = "Horde",	-- 2389
 			["956"] = "Horde",	-- 2390
 			["957"] = "Neutral",	-- 2391
 			["958"] = "Neutral",	-- 2392
-			["95B"] = "Neutral",	-- 2395	-- TODO: Determine faction
-			["95C"] = "Neutral",	-- 2396	-- TODO: Determine faction
-			["95D"] = "Neutral",	-- 2397	-- TODO: Determine faction
-			["95E"] = "Neutral",	-- 2398	-- TODO: Determine faction
+			["95B"] = "Alliance",	-- 2395
+			["95C"] = "Neutral",	-- 2396
+			["95D"] = "Neutral",	-- 2397
+			["95E"] = "Neutral",	-- 2398
 			["960"] = "Alliance",	-- 2400
 			["961"] = "Alliance",	-- 2401
-			["967"] = "Neutral", -- 2407	-- TODO: Determine faction
-			["96A"] = "Neutral", -- 2410	-- TODO: Determine faction
-			["96D"] = "Neutral", -- 2413	-- TODO: Determine faction
-			["96F"] = "Neutral", -- 2415	-- TODO: Determine faction
-			["971"] = "Neutral", -- 2417	-- TODO: Determine faction
---			["976"] = "Neutral", -- 2422	-- TODO: Determine faction
-			["97B"] = "Neutral", -- 2427	-- TODO: Determine faction
-			["980"] = "Neutral", -- 2432	-- TODO: Determine faction
-			["987"] = "Neutral", -- 2439	-- TODO: Determine faction
-			["98D"] = "Neutral", -- 2445	-- TODO: Determine faction
-			["98E"] = "Neutral", -- 2446	-- TODO: Determine faction
-			["98F"] = "Neutral", -- 2447	-- TODO: Determine faction
-			["990"] = "Neutral", -- 2448	-- TODO: Determine faction
-			["991"] = "Neutral", -- 2449	-- TODO: Determine faction
-			["992"] = "Neutral", -- 2450	-- TODO: Determine faction
-			["993"] = "Neutral", -- 2451	-- TODO: Determine faction
-			["994"] = "Neutral", -- 2452	-- TODO: Determine faction
-			["995"] = "Neutral", -- 2453	-- TODO: Determine faction
-			["996"] = "Neutral", -- 2454	-- TODO: Determine faction
-			["997"] = "Neutral", -- 2455	-- TODO: Determine faction
-			["998"] = "Neutral", -- 2456	-- TODO: Determine faction
-			["999"] = "Neutral", -- 2457	-- TODO: Determine faction
-			["99A"] = "Neutral", -- 2458	-- TODO: Determine faction
-			["99B"] = "Neutral", -- 2459	-- TODO: Determine faction
-			["99C"] = "Neutral", -- 2460	-- TODO: Determine faction
-			["99D"] = "Neutral", -- 2461	-- TODO: Determine faction
-			["99E"] = "Neutral", -- 2462	-- TODO: Determine faction
-			["99F"] = "Neutral", -- 2463	-- TODO: Determine faction
-			["9A0"] = "Neutral", -- 2464	-- TODO: Determine faction
-			["9A1"] = "Neutral", -- 2465	-- TODO: Determine faction
-            ["9A5"] = "Neutral", -- 2469    -- TODO: Determine faction
-			["9A6"] = "Neutral", -- 2470	-- TODO: Determine faction
-			["9A8"] = "Neutral", -- 2472	-- TODO: Determine faction
-            ["9AE"] = "Neutral", -- 2478    -- TODO: Determine faction
-            ["9C7"] = "Neutral", -- 2503    -- TODO: Determine faction
-            ["9CB"] = "Neutral", -- 2507    -- TODO: Determine faction
-            ["9CD"] = "Neutral", -- 2509    -- TODO: Determine faction
-            ["9CE"] = "Neutral", -- 2510    -- TODO: Determine faction
-            ["9CF"] = "Neutral", -- 2511    -- TODO: Determine faction
-            ["9D0"] = "Neutral", -- 2512    -- TODO: Determine faction
-            ["9D1"] = "Neutral", -- 2513    -- TODO: Determine faction
-            ["9D5"] = "Neutral", -- 2517    -- TODO: Determine faction
-            ["9D6"] = "Neutral", -- 2518    -- TODO: Determine faction
-            ["9D8"] = "Neutral", -- 2520    -- TODO: Determine faction
-            ["9DA"] = "Neutral", -- 2522    -- TODO: Determine faction
+			["967"] = "Neutral", -- 2407
+			["96A"] = "Neutral", -- 2410
+			["96D"] = "Neutral", -- 2413
+			["96F"] = "Neutral", -- 2415
+			["971"] = "Neutral", -- 2417
+--			["976"] = "Neutral", -- 2422
+			["97B"] = "Neutral", -- 2427
+			["980"] = "Neutral", -- 2432
+			["987"] = "Neutral", -- 2439
+			["98D"] = "Neutral", -- 2445
+			["98E"] = "Neutral", -- 2446
+			["98F"] = "Neutral", -- 2447
+			["990"] = "Neutral", -- 2448
+			["991"] = "Neutral", -- 2449
+			["992"] = "Neutral", -- 2450
+			["993"] = "Neutral", -- 2451
+			["994"] = "Neutral", -- 2452
+			["995"] = "Neutral", -- 2453
+			["996"] = "Neutral", -- 2454
+			["997"] = "Neutral", -- 2455
+			["998"] = "Neutral", -- 2456
+			["999"] = "Neutral", -- 2457
+			["99A"] = "Neutral", -- 2458
+			["99B"] = "Neutral", -- 2459
+			["99C"] = "Neutral", -- 2460
+			["99D"] = "Neutral", -- 2461
+			["99E"] = "Neutral", -- 2462
+			["99F"] = "Neutral", -- 2463
+			["9A0"] = "Neutral", -- 2464
+			["9A1"] = "Neutral", -- 2465
+            ["9A5"] = "Neutral", -- 2469
+			["9A6"] = "Neutral", -- 2470
+			["9A8"] = "Neutral", -- 2472
+            ["9AE"] = "Neutral", -- 2478
+            ["9C7"] = "Neutral", -- 2503
+            ["9CB"] = "Neutral", -- 2507
+            ["9CD"] = "Neutral", -- 2509
+            ["9CE"] = "Neutral", -- 2510
+            ["9CF"] = "Neutral", -- 2511
+            ["9D0"] = "Neutral", -- 2512
+            ["9D1"] = "Neutral", -- 2513
+            ["9D5"] = "Neutral", -- 2517
+            ["9D6"] = "Neutral", -- 2518
+            ["9D8"] = "Neutral", -- 2520
+            ["9DA"] = "Neutral", -- 2522
             ["9DB"] = "Horde", -- 2523
             ["9DC"] = "Alliance", -- 2524
             ["9DE"] = "Neutral", -- 2526
-            ["9EE"] = "Neutral", -- 2542    -- TODO: Determine faction
-            ["9F0"] = "Neutral", -- 2544    -- TODO: Determine faction
-            ["9F6"] = "Neutral", -- 2550    -- TODO: Determine faction
-            ["9F9"] = "Neutral", -- 2553    -- TODO: Determine faction
-            ["9FA"] = "Neutral", -- 2554    -- TODO: Determine faction
-            ["9FB"] = "Neutral", -- 2555    -- TODO: Determine faction
-            ["9FD"] = "Neutral", -- 2555    -- TODO: Determine faction
-            ["A04"] = "Neutral", -- 2564    -- TODO: Determine faction
-            ["A08"] = "Neutral", -- 2568    -- TODO: Determine faction
-            ["A09"] = "Neutral", -- 2569    -- TODO: Determine faction
-            ["A0A"] = "Neutral", -- 2570    -- TODO: Determine faction
-            ["A0E"] = "Neutral", -- 2574    -- TODO: Determine faction
-            ["A1E"] = "Neutral", -- 2590    -- TODO: Determine faction
-            ["A21"] = "Neutral", -- 2593    -- TODO: Determine faction
-            ["A22"] = "Neutral", -- 2594    -- TODO: Determine faction
-            ["A28"] = "Neutral", -- 2600    -- TODO: Determine faction
-            ["A29"] = "Neutral", -- 2601    -- TODO: Determine faction
-            ["A2D"] = "Neutral", -- 2605    -- TODO: Determine faction
-            ["A2F"] = "Neutral", -- 2607    -- TODO: Determine faction
-            ["A37"] = "Neutral", -- 2615    -- TODO: Determine faction
-            ["A50"] = "Neutral", -- 2640    -- TODO: Determine faction
-            ["A54"] = "Neutral", -- 2644    -- TODO: Determine faction
-            ["A55"] = "Neutral", -- 2645    -- TODO: Determine faction
-            ["A5D"] = "Neutral", -- 2653    -- TODO: Determine faction
-            ["A62"] = "Neutral", -- 2658    -- TODO: Determine faction
-            ["A67"] = "Neutral", -- 2663    -- TODO: Determine faction
-            ["A68"] = "Neutral", -- 2664    -- TODO: Determine faction
-            ["A69"] = "Neutral", -- 2665    -- TODO: Determine faction
-            ["A6A"] = "Neutral", -- 2666    -- TODO: Determine faction
-            ["A6D"] = "Neutral", -- 2669    -- TODO: Determine faction
-            ["A6F"] = "Neutral", -- 2671    -- TODO: Determine faction
-            ["A71"] = "Neutral", -- 2673    -- TODO: Determine faction
-            ["A73"] = "Neutral", -- 2675    -- TODO: Determine faction
-            ["A75"] = "Neutral", -- 2677    -- TODO: Determine faction
-            ["A7B"] = "Neutral", -- 2683    -- TODO: Determine faction
-            ["A80"] = "Neutral", -- 2688    -- TODO: Determine faction
-            ["A85"] = "Neutral", -- 2693    -- TODO: Determine faction
-            ["A88"] = "Neutral", -- 2696    -- TODO: Determine faction
-            ["A8A"] = "Neutral", -- 2698    -- TODO: Determine faction
-            ["A8B"] = "Neutral", -- 2699    -- TODO: Determine faction
-            ["A90"] = "Neutral", -- 2704    -- TODO: Determine faction
-            ["A96"] = "Neutral", -- 2710    -- TODO: Determine faction
-            ["A97"] = "Neutral", -- 2711    -- TODO: Determine faction
-            ["A98"] = "Neutral", -- 2712    -- TODO: Determine faction
-            ["A99"] = "Neutral", -- 2713    -- TODO: Determine faction
-            ["A9A"] = "Neutral", -- 2714    -- TODO: Determine faction
-            ["AA2"] = "Neutral", -- 2722    -- TODO: Determine faction
-            ["AB0"] = "Neutral", -- 2736    -- TODO: Determine faction
-            ["AB3"] = "Neutral", -- 2739    -- TODO: Determine faction
-            ["AB6"] = "Neutral", -- 2742    -- TODO: Determine faction
-            ["AB8"] = "Neutral", -- 2744    -- TODO: Determine faction
-            ["ACC"] = "Neutral", -- 2764    -- TODO: Determine faction
-            ["ACE"] = "Neutral", -- 2766    -- TODO: Determine faction
-            ["ACF"] = "Neutral", -- 2767    -- TODO: Determine faction
-            ["AD2"] = "Neutral", -- 2770    -- TODO: Determine faction
+            ["9EE"] = "Neutral", -- 2542
+            ["9F0"] = "Neutral", -- 2544
+            ["9F6"] = "Neutral", -- 2550
+            ["9F9"] = "Neutral", -- 2553
+            ["9FA"] = "Neutral", -- 2554
+            ["9FB"] = "Neutral", -- 2555
+            ["9FD"] = "Neutral", -- 2555
+            ["A04"] = "Neutral", -- 2564
+            ["A08"] = "Neutral", -- 2568
+            ["A09"] = "Neutral", -- 2569
+            ["A0A"] = "Neutral", -- 2570
+            ["A0E"] = "Neutral", -- 2574
+            ["A1E"] = "Neutral", -- 2590
+            ["A21"] = "Neutral", -- 2593
+            ["A22"] = "Neutral", -- 2594
+            ["A28"] = "Neutral", -- 2600
+            ["A29"] = "Neutral", -- 2601
+            ["A2D"] = "Neutral", -- 2605
+            ["A2F"] = "Neutral", -- 2607
+            ["A37"] = "Neutral", -- 2615
+            ["A50"] = "Neutral", -- 2640
+            ["A54"] = "Neutral", -- 2644
+            ["A55"] = "Neutral", -- 2645
+            ["A5D"] = "Neutral", -- 2653
+            ["A62"] = "Neutral", -- 2658
+            ["A67"] = "Neutral", -- 2663
+            ["A68"] = "Neutral", -- 2664
+            ["A69"] = "Neutral", -- 2665
+            ["A6A"] = "Neutral", -- 2666
+            ["A6D"] = "Neutral", -- 2669
+            ["A6F"] = "Neutral", -- 2671
+            ["A71"] = "Neutral", -- 2673
+            ["A73"] = "Neutral", -- 2675
+            ["A75"] = "Neutral", -- 2677
+            ["A7B"] = "Neutral", -- 2683
+            ["A80"] = "Neutral", -- 2688
+            ["A85"] = "Neutral", -- 2693
+            ["A88"] = "Neutral", -- 2696
+            ["A8A"] = "Neutral", -- 2698
+            ["A8B"] = "Neutral", -- 2699
+            ["A90"] = "Neutral", -- 2704
+            ["A96"] = "Neutral", -- 2710
+            ["A97"] = "Neutral", -- 2711
+            ["A98"] = "Neutral", -- 2712
+            ["A99"] = "Neutral", -- 2713
+            ["A9A"] = "Neutral", -- 2714
+            ["AA2"] = "Neutral", -- 2722
+            ["AB0"] = "Neutral", -- 2736
+            ["AB3"] = "Neutral", -- 2739
+            ["AB6"] = "Neutral", -- 2742
+            ["AB8"] = "Neutral", -- 2744
+            ["ACC"] = "Neutral", -- 2764
+            ["ACE"] = "Neutral", -- 2766
+            ["ACF"] = "Neutral", -- 2767
+            ["AD2"] = "Neutral", -- 2770
 			},
 
 		slashCommandOptions = {},
@@ -4610,15 +4842,15 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					if nil == self:_ExpansionName(expansionIndex) then
 						break
 					end
-					if self.GDE and self.GDE.debug then
-						print("ExpansionIndex:", expansionIndex, "ExpansionName: ", self:_ExpansionName(expansionIndex))
-					end
+--					if self.GDE and self.GDE.debug then
+--						print("ExpansionIndex:", expansionIndex, "ExpansionName: ", self:_ExpansionName(expansionIndex))
+--					end
 					retval = expansionIndex
 				end
 			end
 			return retval
 		end,
-		
+
 		_ExpansionName = function(self, expansionIndex)
 			return _G["EXPANSION_NAME"..expansionIndex]
 		end,
@@ -4627,7 +4859,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			--	Attempt to get all the Continents by starting wherever you are and getting the Cosmic
 			--	map and then asking it for all the Continents that are children of it, hoping the API
 			--	will bypass the intervening World maps.
-			local currentMapId, TOP_MOST, ALL_DESCENDANTS = Grail.GetCurrentMapAreaID(), true, true
+			local currentMapId, TOP_MOST, ALL_DESCENDANTS = self.GetCurrentMapAreaID(), true, true
 			-- For Exile's Reach (Shadowlands) there is no parent map, so we are not going to be able to get continents from it.  Default to normal Cosmic of 946
 			if currentMapId == 1409 then
 				currentMapId = nil
@@ -4676,7 +4908,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		_AddMapId = function(self, zoneTable, zoneName, mapId, continentMapId)
 			-- If we have processed this mapId already we do not need to do so again
 			if self.mapToContinentMapping[mapId] then return end
-			
+
 			-- If this map is part of a group there is a good chance that zoneName is going to exist more than
 			-- once and therefore we will add the specific "floor" name to the zone name.
 			local mapGroupId = C_Map.GetMapGroupID(mapId)
@@ -4801,7 +5033,10 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --					tinsert(q, questId)
 --				end
 --				self:_StatusCodeInvalidate(q)
-				self:_StatusCodeInvalidate(self.questsToInvalidate)
+				-- C_Timer always runs tainted. _StatusCodeInvalidate only sets questStatuses
+				-- entries to nil (removing them), so it does not store tainted values.  Wrap
+				-- anyway to keep this callback entirely clean for future-proofing.
+				securecallfunction(function() self:_StatusCodeInvalidate(self.questsToInvalidate) end)
 				end)
 		end,
 
@@ -4831,7 +5066,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				end
 			end
 --			self.availableWorldQuests = newTable
-			C_Timer.After((smallestMinutes + 1) * 60, function() self:_ResetWorldQuests() end)
+			C_Timer.After((smallestMinutes + 1) * 60, function() securecallfunction(function() self:_ResetWorldQuests() end) end)
 		end,
 
 		_worldQuestSelfNPCs = {},	-- key is the mapId, value is a table that contains as keys the x/y coords, and values as the npcId
@@ -5008,7 +5243,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						if nil == v.questId then
 							v.questId = v.questID
 						end
-						if nil ~= v.questId then 
+						if nil ~= v.questId then
 							self:_LearnWorldQuest(v.questId, v.mapID, v.x, v.y, v.isDaily)
 	--						self.availableWorldQuests[v.questId] = true
 							tinsert(self.invalidateControl[self.invalidateGroupCurrentWorldQuests], v.questId)
@@ -5017,7 +5252,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					end
 				end
 			end
-			C_Timer.After(2, function() Grail:_AddWorldQuestsUpdateTimes() end)
+			C_Timer.After(2, function() securecallfunction(function() Grail:_AddWorldQuestsUpdateTimes() end) end)
 		end,
 
 		_LearnedWorldQuestProfessionMapping = { [116] = 'B', [117] = 'L', [118] = 'A', [119] = 'H', [120]= 'M', [121] = 'T', [122] = 'N', [123] = 'E', [124] = 'S', [125] = 'J', [126] = 'I', [130] = 'F', [131] = 'C', },
@@ -5028,9 +5263,9 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			questId = tonumber(questId)
 			if nil == questId then return end
 			local kCodeToAdd, pCodeToAdd = 'K2097152', 'P:^'..questId
-			
+
 			self:_LearnKCode(questId, kCodeToAdd)
-			
+
 			if nil == strfind(self.questPrerequisites[questId] or '', strsub(pCodeToAdd, 3), 1, true) then
 				self:_LearnQuestCode(questId, pCodeToAdd)
 				local codeToAdd = strsub(pCodeToAdd, 3)
@@ -5046,9 +5281,9 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			questId = tonumber(questId)
 			if nil == questId then return end
 			local kCodeToAdd, pCodeToAdd = 'K1048576', 'P:b'..questId
-			
+
 			self:_LearnKCode(questId, kCodeToAdd)
-			
+
 			if nil == strfind(self.questPrerequisites[questId] or '', strsub(pCodeToAdd, 3), 1, true) then
 				self:_LearnQuestCode(questId, pCodeToAdd)
 				local codeToAdd = strsub(pCodeToAdd, 3)
@@ -5093,7 +5328,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					self.bitMaskQuestTreasure +
 					self.bitMaskQuestBiweekly
 					)
-			
+
 			if self:IsRepeatableQuestBlizzardAPI(questId) then
 				code = bitbor(code, self.bitMaskQuestRepeatable)
 			end
@@ -5295,7 +5530,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						baseStatusCode = bitbor(baseStatusCode, bitband(failure, Grail.bitMaskQuestFailureWithAncestor - Grail.bitMaskQuestFailure))
 					end
 				end
-				
+
 			end
 
 			return baseStatusCode
@@ -5639,7 +5874,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			end
 			return retval
 		end,
-	
+
 		---
 		--	Determines whether the soughtHolidayName is currently being celebrated.
 		--	@param soughtHolidayName The localized name of a holiday, like Brewfest or Darkmoon Faire.
@@ -5763,7 +5998,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		--		P	fails (prerequisites)
 		--		R	repeatable
 		--		U	unknown
-		--		W	low-level	
+		--		W	low-level
 		--		Y	legendary
 		ClassificationOfQuestCode = function(self, questCode, shouldDisplayHolidays, buggedQuestsUnobtainable)
 			local retval = 'U'
@@ -7395,15 +7630,15 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 --									local possibleTypeValue = tonumber(strsub(c, 5))
 --									if possibleTypeValue then typeValue = typeValue + possibleTypeValue end
 --								end
-							
+
 							elseif 'K' == code then
 								typeValue = typeValue + (tonumber(strsub(c, 2)) or 0)
-							
+
 							elseif 'L' == code then
 --								levelValue = levelValue + (tonumber(strsub(c, 2)) or 0)
 								local questLevel, questRequiredLevel, questMaximumScalingLevel = self:QuestLevelsFromString(strsub(c, 2))
 								levelValue = levelValue + questLevel * self.bitMaskQuestLevelOffset + questRequiredLevel * self.bitMaskQuestMinLevelOffset + questMaximumScalingLevel * self.bitMaskQuestVariableLevelOffset
-							
+
 --							elseif 'l' == code then
 --								-- lLLLNNNKKK+
 --								local codeLength = strlen(c)
@@ -7786,7 +8021,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					-- Note numeric and subcode are reverse from traditional codes
 					numeric = tonumber(strsub(questCode, 2, 4))
 					subcode = tonumber(strsub(questCode, 5))
-				
+
 				-- Csn+ (s must be a number)
 				elseif '$' == code or '*' == code then
 					subcode = tonumber(strsub(questCode, 2, 2))
@@ -8028,7 +8263,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				if bitband(self:CodeType(questId), self.bitMaskQuestDaily) > 0 then
 					self:AddQuestToMapArea(questId, self.mapAreaBaseDaily, DAILY)
 				end
-				
+
 				--	Add this quest to reputation quests
 				if nil ~= self.questReputationRequirements[questId] then
 					local reputationCodes = self.questReputationRequirements[questId]
@@ -8070,7 +8305,12 @@ end
 			self.timings.CreateIndexedQuestListLocations = totalLocationsTime
 			self.timings.QuestLocationsAcceptTime = self.totalQuestLocationsAcceptTime
 			self.timings.RawNPCLocationsTime = self.totalRawNPCLocations
-			if self.GDE.debug then print("Done creating indexed quest list with elapsed milliseconds:", self.timings.CreateIndexedQuestList) end
+			-- Timing value is inherently tainted (computed in tainted context);
+			-- securePrint with a literal also taints when called from this tainted
+			-- function.  Only print when acceptsTaint is enabled; otherwise skip.
+			if self.GDE.debug and self.GDE.acceptsTaint then
+				print("|cFF00FF00Grail|r: Done creating indexed quest list with elapsed milliseconds:", self.timings.CreateIndexedQuestList)
+			end
 		end,
 
 		---
@@ -8202,7 +8442,7 @@ end
 
 				-- Now to figure out what needs to be checked based on the code
 				if code == ' ' then
-					-- We do nothing since we are using this to indicate 
+					-- We do nothing since we are using this to indicate
 				elseif code == 'A' then	shouldCheckTurnin = true
 				elseif code == 'a' then checkWorldQuestAvailable = true
 				elseif code == 'b' then checkThreatQuestAvailable = true
@@ -8779,7 +9019,7 @@ end
 					info.iconID,
 					info.itemIndexOffset,
 					info.numSpellBookItems,
-					info,isGuild,
+					info.isGuild,
 					-- shouldHide
 					-- specID
 					info.offSpecID
@@ -8957,33 +9197,19 @@ end
 			return retval
 		end,
 
-		-- Code derived from elcius post in http://www.wowinterface.com/forums/showthread.php?t=56290
-		GetPlayerMapPositionMapRects = {},
-		GetPlayerMapPositionTempVec2D = CreateVector2D(0,0),
+		-- C_Map.GetPlayerMapPosition is the proper Blizzard API for this since BfA.
+		-- It returns a fresh C-created Vector2D each call with x/y set from C code —
+		-- always clean, never touched by any Lua taint chain.
+		-- The previous math-based implementation used GetWorldPosFromMapPos to populate
+		-- a per-map rect cache, but that API maintains its own per-map Lua cache of output
+		-- Vector2Ds that other addons can permanently taint at session start; securecallfunction
+		-- cannot cure a value whose fields are already tainted.
 		GetPlayerMapPosition = function(unitName, optionalMapId)
 			local MapID = optionalMapId or C_Map.GetBestMapForUnit(unitName)
 			if not MapID or MapID < 1 then return 0, 0 end
-			local R,P,_ = Grail.GetPlayerMapPositionMapRects[MapID], Grail.GetPlayerMapPositionTempVec2D
-			if not R then
-				R = {}
-				local test
-				test, R[1] = C_Map.GetWorldPosFromMapPos(MapID, CreateVector2D(0,0))
-				if nil == test then return 0, 0 end
-				_, R[2] = C_Map.GetWorldPosFromMapPos(MapID, CreateVector2D(1,1))
-				R[2]:Subtract(R[1])
-				Grail.GetPlayerMapPositionMapRects[MapID] = R
-			end
-			local x, y = UnitPosition(unitName)
-			if nil == x or nil == y then return nil, nil end
-			P.x = x or 0
-			P.y = y or 0
-			P:Subtract(R[1])
-			return (1/R[2].y)*P.y, (1/R[2].x)*P.x
---	It turns out that using this code results in a memory increase because of the table returned
---	which means we cannot really use this to update a position of the player every second.  This
---	is why the code from elcius above is used instead, as there is really no memory increase.
---			local results = C_Map.GetPlayerMapPosition(C_Map.GetBestMapForUnit(unitName), unitName)
---			return results.x, results.y
+			local pos = C_Map.GetPlayerMapPosition and C_Map.GetPlayerMapPosition(MapID, unitName)
+			if pos then return pos.x, pos.y end
+			return 0, 0
 		end,
 
 		GetQuestGreenRange = function(self)
@@ -9358,24 +9584,33 @@ end
 		end,
 
 		_HandleEventLootClosed = function(self)
-			-- Since querying the server is a little noisy we force it to be less so, reseting values later
 			local silentValue, manualValue = self.GDE.silent, self.manuallyExecutingServerQuery
 			self.GDE.silent, self.manuallyExecutingServerQuery = true, false
--- The old way of doing this was to query all the quests that were completed and see how they differ from the currently completed
--- list and then assume the newly completed one(s) are associated with the treasure.  However, that is a little expensive.  Thus,
--- only the treasure quests associated with the current zone are queried to see if there is any change in their status.
+
+			-- Treasure quests can only be completed by looting GameObjects (chests, nodes),
+			-- never by looting Creatures (regular mob kills).  Check the GUID type first so
+			-- we can skip the per-quest IsQuestFlaggedCompleted loop entirely for mob loot,
+			-- which is the common case and was causing lag in every treasure-tracked zone.
+			local guidParts = { strsplit('-', self.lootingGUID or "") }
+			local isGameObject = false
+			pcall(function() isGameObject = (guidParts[1] == "GameObject") end)
+			if not isGameObject and not Grail.GDE.treasures and not Grail.GDE.debug then
+				self.GDE.silent, self.manuallyExecutingServerQuery = silentValue, manualValue
+				return
+			end
+
+			-- GDE.treasures uses the old full-server-query path (expensive but easier for
+			-- initial treasure population).  The default path only checks treasure quests
+			-- for the current zone.
 			local newlyCompleted = {}
-			-- We now support a value that controls using the old code versus the new because getting the initial treasure values
-			-- is a lot easier with the old code.
 			if Grail.GDE.treasures then
 				QueryQuestsCompleted()
 				self:_ProcessServerCompare(newlyCompleted)
 			else
--- This is the new code that handles only checking specific values...
 				local mapId = Grail.GetCurrentMapAreaID()
 				local listOfTreasureQuestsInThisMap = self.mapAreasWithTreasures[mapId]
-				if nil ~= listOfTreasureQuestsInThisMap then
-					for k,v in pairs(listOfTreasureQuestsInThisMap) do
+				if listOfTreasureQuestsInThisMap then
+					for _, v in pairs(listOfTreasureQuestsInThisMap) do
 						-- the first is server call, and the second is Grail database
 						if self:IsQuestFlaggedCompleted(v) and not self:IsQuestCompleted(v) then
 							tinsert(newlyCompleted, v)
@@ -9383,35 +9618,32 @@ end
 					end
 				end
 			end
--- And back to the original code...
 			if #newlyCompleted > 0 or Grail.GDE.debug then
 				local lootingNameToUse = self.lootingName or "NO LOOTING OBJECT"
-				-- print() and _AddTrackingMessage must happen BEFORE the pcall that
-				-- compares guidParts[1] against "GameObject".  WoW's taint system leaves
-				-- the execution context tainted after a pcall catches a secret-value
-				-- comparison error, so any write to shared Blizzard state (ChatFrame)
-				-- that occurs after the pcall would propagate taint even if the value
-				-- being written is itself clean.
+				-- print() and _AddTrackingMessage must happen BEFORE the pcall below.
+				-- WoW's taint system leaves the execution context tainted after a pcall
+				-- catches a secret-value comparison error, so any write to shared Blizzard
+				-- state (ChatFrame) that follows would propagate taint.
 				local safeMessage = "Looting locale: " .. self.playerLocale .. " name: " .. lootingNameToUse .. " Coords: " .. Grail:Coordinates()
 				local message = "Looting from " .. (self.lootingGUID or "NO LOOTING GUID") .. " " .. safeMessage
 				if self.GDE.debug then
-					print(safeMessage)	-- no secret GUID; before pcall taint; safe for ChatFrame
+					-- Deferred via C_Timer so it runs outside Grail's tainted event-handler
+					-- context.  C_Timer callbacks always run from tainted execution, so
+					-- wrap print() in securecallfunction to keep ChatFrame entries clean.
+					C_Timer.After(0, function() securecallfunction(print, safeMessage) end)
 				end
 				self:_AddTrackingMessage(message)
-				-- guidParts comparison: execution context is tainted after this pcall
-				-- returns (WoW does not reset taint context on pcall exit).  No writes
-				-- to shared Blizzard state may follow.
-				local guidParts = { strsplit('-', self.lootingGUID or "") }
-				local okIsGameObj, isGameObj = pcall(function()
-					return nil ~= guidParts and guidParts[1] == "GameObject" and self.lootingName ~= self.defaultUnfoundLootingName
-				end)
-				if okIsGameObj and isGameObj then
-					local internalName = self:ObjectName(guidParts[6])
-					local okDiffers, namesDiffer = pcall(function() return self.lootingName ~= internalName end)
-					if okDiffers and namesDiffer then
-						self:_LearnObjectName(guidParts[6], lootingNameToUse)
+				-- guidParts was split and isGameObject determined above.
+				-- This pcall taints the execution context; no writes to shared Blizzard
+				-- state may follow.
+				pcall(function()
+					if isGameObject and self.lootingName ~= self.defaultUnfoundLootingName then
+						local internalName = self:ObjectName(guidParts[6])
+						if self.lootingName ~= internalName then
+							self:_LearnObjectName(guidParts[6], lootingNameToUse)
+						end
 					end
-				end
+				end)
 			end
 			for _, questId in pairs(newlyCompleted) do
 				self:_MarkQuestComplete(questId, true)
@@ -10014,7 +10246,7 @@ end
 				return false
 			end
 		end,
-		
+
 		IsAccountQuestBlizzardAPI = function(self, questId)
 			if C_QuestLog.IsAccountQuest then
 				return C_QuestLog.IsAccountQuest(questId)
@@ -10022,7 +10254,7 @@ end
 				return false
 			end
 		end,
-		
+
 		IsLegendaryQuestBlizzardAPI = function(self, questId)
 			if C_QuestLog.IsLegendaryQuest then
 				return C_QuestLog.IsLegendaryQuest(questId)
@@ -10030,7 +10262,7 @@ end
 				return false
 			end
 		end,
-		
+
 		IsMetaQuestBlizzardAPI = function(self, questId)
 			if C_QuestLog.IsMetaQuest then
 				return C_QuestLog.IsMetaQuest(questId)
@@ -10038,7 +10270,7 @@ end
 				return false
 			end
 		end,
-		
+
 		IsOnQuestBlizzardAPI = function(self, questId)
 			if C_QuestLog.IsOnQuest then
 				return C_QuestLog.IsOnQuest(questId)
@@ -10046,7 +10278,7 @@ end
 				return false
 			end
 		end,
-		
+
 		IsPushableQuestBlizzardAPI = function(self, questId)
 			-- can be shared with other players
 			if C_QuestLog.IsPushableQuest then
@@ -10057,7 +10289,7 @@ end
 				return false
 			end
 		end,
-		
+
 		IsQuestBountyBlizzardAPI = function(self, questId)
 			if C_QuestLog.IsQuestBounty then
 				return C_QuestLog.IsQuestBounty(questId)
@@ -10065,7 +10297,7 @@ end
 				return false
 			end
 		end,
-		
+
 		IsQuestCallingBlizzardAPI = function(self, questId)
 			if C_QuestLog.IsQuestCalling then
 				return C_QuestLog.IsQuestCalling(questId)
@@ -10073,7 +10305,7 @@ end
 				return false
 			end
 		end,
-		
+
 		IsQuestInvasionBlizzardAPI = function(self, questId)
 			if C_QuestLog.IsQuestInvasion then
 				return C_QuestLog.IsQuestInvasion(questId)
@@ -10081,7 +10313,7 @@ end
 				return false
 			end
 		end,
-		
+
 		IsQuestTaskBlizzardAPI = function(self, questId)	-- bonus objectives
 			if C_QuestLog.IsQuestTask then
 				return C_QuestLog.IsQuestTask(questId)
@@ -10091,7 +10323,7 @@ end
 				return false
 			end
 		end,
-		
+
 		IsQuestTrivialBlizzardAPI = function(self, questId)
 			if C_QuestLog.IsQuestTrivial then
 				return C_QuestLog.IsQuestTrivial(questId)
@@ -10099,7 +10331,7 @@ end
 				return false
 			end
 		end,
-		
+
 		IsThreatQuestBlizzardAPI = function(self, questId)
 			if C_QuestLog.IsThreatQuest then
 				return C_QuestLog.IsThreatQuest(questId)
@@ -10107,7 +10339,7 @@ end
 				return false
 			end
 		end,
-		
+
 		IsWorldQuestBlizzardAPI = function(self, questId)
 			if C_QuestLog.IsWorldQuest then
 				return C_QuestLog.IsWorldQuest(questId)
@@ -10126,7 +10358,7 @@ end
 				return IsQuestFlaggedCompleted(questId)
 			end
 		end,
-		
+
 		---
 		--	Returns whether the quest is in the quest log.
 		--	@param questId The standard numeric questId representing a quest.
@@ -10999,7 +11231,7 @@ end
 --			-- TODO: If none exists return true
 --			-- TODO: Otherwise determine covenant and needed level and return results of _CovenantRenownMeetsOrExceeds call
 --		end,
-		
+
 		--	Returns a boolean indicating whether the player's renown level with the specified covenant meets or exceeds the desired level.
 		--	1=Bastion, 2=Venthyr, 3=Night Fae, 4=Necrolord
 		_CovenantRenownMeetsOrExceeds = function(self, covenant, desiredLevel)
@@ -11676,9 +11908,7 @@ end
 --	which can get quite interesting.
 		_ProcessForFlagQuests = function(self, preqsString, controlTable)
 			local controlTable = controlTable or { preq = {}, something = "", func = self._ProcessForFlagQuestsSupport }
-print("Processing for flags:", strgsub(preqsString, "|", "*"))
 			self._ProcessCodeTable(preqsString, controlTable)
-print("end:", strgsub(controlTable.something, "|", "*"))
 			return controlTable.something
 		end,
 
@@ -11708,7 +11938,7 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			local debugStartTime = debugprofilestop()
 			local N = self.npc
 			if nil == self.npcs then
-				print("|cFFFF0000Grail|r: abandoned NPC processing because none loaded")
+				securePrint("|cFFFF0000Grail|r: abandoned NPC processing because none loaded")
 				return
 			end
 			N.rawLocations = {}
@@ -11975,7 +12205,7 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 				GrailDatabasePlayer["backupCompletedQuests"][i] = v
 			end
 			if not quiet then
-				print("|cFFFFFF00Grail|r: A backup of the completed quests has been made")
+				securePrint("|cFFFFFF00Grail|r: A backup of the completed quests has been made")
 			end
 		end,
 
@@ -11987,8 +12217,8 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 		_ProcessServerCompare = function(self, newlyCompletedTable, newlyLostTable)
 			local quiet = (newlyCompletedTable ~= nil or newlyLostTable ~= nil)
 			local db = GrailDatabasePlayer
-			if nil == db["backupCompletedQuests"] then print("|cFFFF0000Grail|r: Please do |cFF00FF00/grail backup|r first") return
-			else if not quiet then print("|cFF00FF00Grail|r: Starting quest comparison between completed quests and backup") end end
+			if nil == db["backupCompletedQuests"] then securePrint("|cFFFF0000Grail|r: Please do |cFF00FF00/grail backup|r first") return
+			else if not quiet then securePrint("|cFF00FF00Grail|r: Starting quest comparison between completed quests and backup") end end
 			local indexesToCheck = {}
 			for index, value in pairs(db["completedQuests"]) do
 				if not tContains(indexesToCheck, index) then tinsert(indexesToCheck, index) end
@@ -12026,14 +12256,14 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 				end
 			end
 			if not quiet then
-				print("|cFFFF0000Grail|r: End quest comparison")
+				securePrint("|cFFFF0000Grail|r: End quest comparison")
 			end
 		end,
 
 		_ProcessServerQuests = function(self)
 			local debugStartTime = debugprofilestop()
 			if not self.GDE.silent or self.manuallyExecutingServerQuery then
-				print("|cFF00FF00Grail|r: starting to process completed query results")
+				securePrint("|cFF00FF00Grail|r: starting to process completed query results")
 			end
 
 			local db = GrailDatabasePlayer
@@ -12166,7 +12396,7 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			wipe(temporaryBackupQuests)
 
 			if not self.GDE.silent or self.manuallyExecutingServerQuery then
-				print("|cFFFF0000Grail|r: finished processing completed query results")
+				securePrint("|cFFFF0000Grail|r: finished processing completed query results")
 			end
 			self.manuallyExecutingServerQuery = false
 			self.timings.ProcessServerQuests = debugprofilestop() - debugStartTime
@@ -12684,7 +12914,7 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 			end
 			return retval
 		end,
-		
+
 		--- The suggestedLevel is found from Blizzard API, though if the quest is variable is influenced by
 		--- the current level of the player.  This attempts to determine what should be done when presented
 		--- with a suggestedLevel (which is the required level of the quest).
@@ -13049,7 +13279,7 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 			end
             return nil
 		end,
-        
+
         ---
 		--	Returns all questIds for quests with the specified name.
 		--	@param soughtName The localized name of the quest.
@@ -13203,7 +13433,7 @@ if self.GDE.debug then print("Marking OEC quest complete", oecCodes[i]) end
 
 		--	This routine will update the per-player saved information about group quests
 		--	that are currently considered accepted on a specific "daily" day.  It erases
-		--	any previous information if the "daily" day changes.  It returns the count 
+		--	any previous information if the "daily" day changes.  It returns the count
 		_RecordGroupValueChange = function(self, group, isAdding, isRemoving, questId, isWeekly)
 			local dayName = isWeekly and self:_GetWeeklyDay() or self:_GetDailyDay()
 			local categoryName = isWeekly and "weeklyGroups" or "dailyGroups"
@@ -13393,7 +13623,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			end
 			return retval, actualRenownLevel
 		end,
-		
+
 		POIPresent = function(self, mapId, poiId)
 			local retval = false
 			mapId = tonumber(mapId)
@@ -13403,7 +13633,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			end
 			return retval
 		end,
-		
+
 		_FriendshipReputationExceeds = function(self, reputationName, reputationValue)
 			local retval = false
 			local actualEarnedValue = nil
@@ -13750,9 +13980,9 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 			end
 			if not executed then
 				self.manuallyExecutingServerQuery = true
-				print("|cFFFFFF00Grail|r initiating server database query")
+				securePrint("|cFFFFFF00Grail|r initiating server database query")
 				QueryQuestsCompleted()
-			end			
+			end
 		end,
 
 		SpellPresent = function(self, soughtSpellId)
@@ -13887,7 +14117,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 		end,
 
 		_NPCLocationInvalidate = function(self, tableOfQuestIds)
-			
+
 		end,
 
 		_InvalidateStatusForQuestsWithTalentPrerequisites = function(self)
@@ -13895,7 +14125,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 		end,
 
 		---
-		--	
+		--
 		_StatusCodeInvalidate = function(self, tableOfQuestIds, delay)
 			if nil ~= tableOfQuestIds then
 				for _, questId in pairs(tableOfQuestIds) do
@@ -14135,19 +14365,19 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 				self.quest.name[questId] = questTitle
 				self:_LearnQuestName(questId, questTitle)
 			end
-			
+
 			if 'A' == npcCode and not self:_GoodNPCAccept(questId, npcId) then
 				self:_LearnQuestCode(questId, 'A:' .. npcId)
 			end
-			
+
 			if 'T' == npcCode and not self:_GoodNPCTurnin(questId, npcId) then
 				self:_LearnQuestCode(questId, 'T:' .. npcId)
 			end
-			
+
 			if kCode then
 				self:_LearnKCode(questId, kCode)
 			end
-			
+
 			if lCode then
 				local questLevel, questLevelRequired = self:QuestLevelsFromString(strsub(lCode, 2))
 				if questLevel ~= 0 then
@@ -14179,7 +14409,7 @@ if not self.existsClassic then
 			local seconds = GetQuestResetTime()
 			if seconds > self.questResetTime then
 				if not self.GDE.silent then
-					print("|cFFFF0000Grail|r automatically initializing a server query for completed quests")
+					securePrint("|cFFFF0000Grail|r automatically initializing a server query for completed quests")
 				end
 				QueryQuestsCompleted()
 			end
@@ -14725,7 +14955,7 @@ elseif locale == "zhTW" then
 elseif locale == "enUS" or locale == "enGB" then
 	-- do nothing as the default values are already in English
 else
-	print("Grail does not have any knowledge of the localization", locale)
+	securePrint("Grail does not have any knowledge of the localization", locale)
 end
 
 --	Grail.notificationFrame is a hidden frame with the sole function of receiving
@@ -14742,7 +14972,7 @@ end
 		Blizzard provides API that details all the quests that their servers record a player as having completed.  However,
 		this information does not show the entire picture, and could be misleading.  Therefore, Grail attempts to provide the
 		user with a better picture of reality by adjusting and accounting for the Blizzard results.
-		
+
 			* Blizzard can record multiple quests as turned in, when one is turned in.  Sometimes this includes quests
 				the player could never have completed (because they are class-specific, or from a different faction).
 			* There are a class of quests that Blizzard never records as being completed (like truly repeatable ones).
