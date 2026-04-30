@@ -2422,4 +2422,13 @@ G[1617375]='Murloc-Skewered Lynxfish'
 G[1619616]='Thorncap'
 end
 
+if release >= 67235 then
+G[1516293]='Bloodweed Shrub'
+G[1539208]="Healing Waters of Ahl'ua"
+G[1554628]='Forgotten Staff'
+G[1584525]="Sporeglider's Tail Spore"
+G[1602759]="Ka'dani Spear"
+G[1614503]='Crab Trap'
+end
+
 --	End of localized NPC names

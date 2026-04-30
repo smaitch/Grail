@@ -764,6 +764,74 @@ G[1376034]='Schlag des Windlords'
 G[1381672]='Anfrage des Archivars'
 end
 
+if release >= 58533 then
+G[1182115]='Steckbrief'
+G[1430581]='Eierkorb'
+G[1439890]='Ablagestelle für Grabbeigaben'
+end
+
+if release >= 58773 then
+G[1208550]='Voodoohaufen'
+end
+
+if release >= 60257 then
+G[1207303]='Abenteuertafel'
+G[1239120]='Bündel von Okuna Langhauer'
+G[1239328]='Schließkiste des Kapitäns'
+G[1244708]='Tagebuch des Beobachters'
+G[1250536]='Intaktes Großhirschgeweih'
+G[1250612]='Schnackis Notiz'
+G[1251425]='Feuchter Graukamm'
+G[1251991]='Die Aegis von Aggramar'
+G[1251992]='Die Aegis von Aggramar'
+G[1290322]='Stein der Inneren Bindung'
+end
+
+if release >= 60428 then
+G[1246154]='Kaputte Spielzeugkiste'
+G[1246250]='Brief von Jabrul'
+G[1248534]='Tränen von Elune'
+end
+
+if release >= 60490 then
+G[1245688]='Zerbrochene Graburne'
+G[1246463]="Hammer von Khaz'goroth"
+G[1246884]='Portalaktivierungsaltar'
+G[1246885]='Portalaktivierungsaltar'
+G[1250383]='Mondschattenrelikt'
+G[1250548]="Hammer von Khaz'goroth"
+G[1251032]='Schrank'
+G[1251870]='Truhe mit dem wertvollsten Raubgut der Sechszünders'
+G[1252107]='Inaktiver telemantischer Signalgeber'
+G[1252258]='Leylinienzuleitung'
+G[1252259]='Leylinienzuleitung'
+G[1252260]='Leylinienzuleitung'
+G[1252261]='Leylinienzuleitung'
+G[1252262]='Leylinienzuleitung'
+G[1252263]='Leylinienzuleitung'
+G[1252264]='Leylinienzuleitung'
+G[1252814]='Inaktiver telemantischer Signalgeber'
+G[1252816]='Inaktiver telemantischer Signalgeber'
+G[1252817]='Inaktiver telemantischer Signalgeber'
+G[1258979]='Teufelsversehrter Foliant'
+G[1265435]='Uralter Saatbehälter'
+end
+
+if release >= 60568 then
+G[1245793]='Zerfleddertes Tagebuch'
+G[1246465]='Golganneths Gezeitenstein'
+G[1265532]='Telemantischer Signalgeber'
+G[1271124]='Unbekannt'
+end
+
+if release >= 60822 then
+G[1245328]='Verzauberte Schriftrolle'
+G[1246713]='Telemantischer Ortssignalgeber'
+G[1247694]="Kel'danaths Rucksack"
+G[1265435]='Unbekannt'
+G[1271103]='Gebetsbildnis'
+end
+
 if release >= 65893 then
 G[1564925]='Shokku die Träumerin'
 end

@@ -7,11 +7,11 @@ if not Grail.usesClassicQuests then return end
 
 if GetLocale() ~= "ptBR" then return end
 local G = Grail.quest.name
-local _, release, _, interface = GetBuildInfo()
+local _, release = GetBuildInfo()
 release = tonumber(release)
-interface = tonumber(interface)
 
-if release >= 0 then
+if Grail.expansion < 0 then return end
+
 G[1]='A missão do rango'
 G[2]='Garra de Garraguda'
 G[5]='A barriga roncante de Medrisco'
@@ -3812,6 +3812,4 @@ G[9481]='<UNUSED>Light Consumable'
 G[9482]='<UNUSED>Nature Resist Potion'
 G[9664]='Novos postos avançados'
 G[9665]='Reforçando nossas defesas'
-end
 
---	End of localized quest names

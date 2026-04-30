@@ -7,11 +7,11 @@ if not Grail.usesClassicQuests then return end
 
 if GetLocale() ~= "ruRU" then return end
 local G = Grail.quest.name
-local _, release, _, interface = GetBuildInfo()
+local _, release = GetBuildInfo()
 release = tonumber(release)
-interface = tonumber(interface)
 
-if release >= 0 then
+if Grail.expansion < 0 then return end
+
 G[1]='The "Chow" Quest (123)aa'
 G[2]='Коготь гиппогрифа Острокогтя'
 G[5]='Урчащий живот Трясунчика'
@@ -3815,6 +3815,4 @@ G[9481]='<UNUSED>Light Consumable'
 G[9482]='<UNUSED>Nature Resist Potion'
 G[9664]='Новые форпосты'
 G[9665]='Укрепим оборону'
-end
 
---	End of localized quest names

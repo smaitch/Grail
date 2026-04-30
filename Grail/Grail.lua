@@ -9130,15 +9130,14 @@ end
 				if nil ~= targetName then break end
 			end
 			if nil ~= targetName then
-				-- UnitGUID returns a secret string on dead bodies; pcall guards against taint errors
-				local ok, gid = pcall(UnitGUID, used)
-				if not ok then gid = nil end
-				if nil ~= gid then
-					local targetType = nil
-					--	Blizzard has changed the separator from : to - but we will try both if needed
-					--	strsplit on a secret string (dead body GUID) is blocked by WoW taint;
-					--	pcall prevents taint from escaping into the caller's execution context
-					pcall(function()
+				-- Dead units return a secret GUID that taints execution even inside pcall;
+				-- skip GUID processing entirely for dead units since they cannot give quests.
+				if not UnitIsDead(used) then
+					local ok, gid = pcall(UnitGUID, used)
+					if not ok then gid = nil end
+					if nil ~= gid then
+						local targetType = nil
+						--	Blizzard has changed the separator from : to - but we will try both if needed
 						local npcBits = { strsplit("-", gid) }
 						if #npcBits == 1 then
 							npcBits = { strsplit(":", gid) }
@@ -9152,7 +9151,7 @@ end
 							targetType = (npcBits[1] == "GameObject") and 1 or nil
 						end
 						if 1 == targetType then npcId = npcId + 1000000 end		-- our representation of a world object
-					end)
+					end
 				end
 			end
 			return npcId, targetName
@@ -9161,25 +9160,28 @@ end
 		GetNPCInformation = function(self, npcType)
 			local npcId = nil
 			local name = UnitName(npcType)
-			-- UnitGUID returns a secret string on dead bodies; pcall guards against taint errors
-			local ok, gid = pcall(UnitGUID, npcType)
-			if not ok then gid = nil end
-			if nil ~= gid then
-				local targetType = nil
-				--	Blizzard has changed the separator from : to - but we will try both if needed
-				local npcBits = { strsplit("-", gid) }
-				if #npcBits == 1 then
-					npcBits = { strsplit(":", gid) }
+			-- Dead units return a secret GUID that taints execution even inside pcall;
+			-- skip GUID processing entirely for dead units since they cannot give quests.
+			if not UnitIsDead(npcType) then
+				local ok, gid = pcall(UnitGUID, npcType)
+				if not ok then gid = nil end
+				if nil ~= gid then
+					local targetType = nil
+					--	Blizzard has changed the separator from : to - but we will try both if needed
+					local npcBits = { strsplit("-", gid) }
+					if #npcBits == 1 then
+						npcBits = { strsplit(":", gid) }
+					end
+					if #npcBits == 3 and npcBits[1] == "Player" then
+						npcId = Grail.GetCurrentMapAreaID() * -1
+						name = "Player: " .. name
+					end
+					if #npcBits > 5 then
+						npcId = npcBits[6]
+						targetType = (npcBits[1] == "GameObject") and 1 or nil
+					end
+					if 1 == targetType then npcId = npcId + 1000000 end		-- our representation of a world object
 				end
-				if #npcBits == 3 and npcBits[1] == "Player" then
-					npcId = Grail.GetCurrentMapAreaID() * -1
-					name = "Player: " .. name
-				end
-				if #npcBits > 5 then
-					npcId = npcBits[6]
-					targetType = (npcBits[1] == "GameObject") and 1 or nil
-				end
-				if 1 == targetType then npcId = npcId + 1000000 end		-- our representation of a world object
 			end
 			return npcId, name
 		end,
@@ -9626,7 +9628,11 @@ end
 				-- state (ChatFrame) that follows would propagate taint.
 				local safeMessage = "Looting locale: " .. self.playerLocale .. " name: " .. lootingNameToUse .. " Coords: " .. Grail:Coordinates()
 				local message = "Looting from " .. (self.lootingGUID or "NO LOOTING GUID") .. " " .. safeMessage
-				if self.GDE.debug then
+				-- WoW fires LOOT_CLOSED twice for gathering nodes; suppress the duplicate
+				-- debug print by tracking the last GUID we already printed.
+				local currentGUID = self.lootingGUID
+				if self.GDE.debug and currentGUID ~= self.lastDebugLootGUID then
+					self.lastDebugLootGUID = currentGUID
 					-- Deferred via C_Timer so it runs outside Grail's tainted event-handler
 					-- context.  C_Timer callbacks always run from tainted execution, so
 					-- wrap print() in securecallfunction to keep ChatFrame entries clean.

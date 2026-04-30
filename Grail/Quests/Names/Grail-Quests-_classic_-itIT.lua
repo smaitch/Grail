@@ -7,11 +7,6 @@ if not Grail.usesClassicQuests then return end
 
 if GetLocale() ~= "itIT" then return end
 local G = Grail.quest.name
-local _, release, _, interface = GetBuildInfo()
+local _, release = GetBuildInfo()
 release = tonumber(release)
-interface = tonumber(interface)
 
-if release >= 0 then
-end
-
---	End of localized quest names
