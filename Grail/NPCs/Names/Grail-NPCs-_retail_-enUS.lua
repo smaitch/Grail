@@ -2426,9 +2426,19 @@ if release >= 67235 then
 G[1516293]='Bloodweed Shrub'
 G[1539208]="Healing Waters of Ahl'ua"
 G[1554628]='Forgotten Staff'
+G[1574126]='Leaf-Wrapped Package'
 G[1584525]="Sporeglider's Tail Spore"
 G[1602759]="Ka'dani Spear"
 G[1614503]='Crab Trap'
+end
+
+if release >= 67314 then
+G[1529370]='Stray Skyshards'
+G[1548700]='Well-Worn Ladle'
+G[1548703]='Pilfered Crafting Drill'
+G[1550008]='Splattered Scroll'
+G[1550011]='Paint-Speckled Gourd'
+G[1557986]='Petalwing Plume'
 end
 
 --	End of localized NPC names
