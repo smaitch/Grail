@@ -2979,7 +2979,12 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				if self.zonesForLootingTreasure[currentMapAreaId] then
 					self.lootingGUID = GetLootSourceInfo(1)
 					local text = GameTooltipTextLeft1
-					self.lootingName = text and text:GetText() or self.defaultUnfoundLootingName
+					-- GetText() on a protected tooltip frame returns a secret value; force string
+					-- conversion inside a pcall so we get a safe regular string or nil.
+					local rawName
+					pcall(function() local t = text and text:GetText() if t then rawName = t .. "" end end)
+					self.lootingName = rawName or self.defaultUnfoundLootingName
+					self.lootingNameIsReal = rawName ~= nil
 					if not self.doneProcessingBackup then
 						self:_ProcessServerBackup(true)
 						self.doneProcessingBackup = true
@@ -3008,7 +3013,12 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				if self.zonesForLootingTreasure[currentMapAreaId] then
 					self.lootingGUID = GetLootSourceInfo(1)
 					local text = GameTooltipTextLeft1
-					self.lootingName = text and text:GetText() or self.defaultUnfoundLootingName
+					-- GetText() on a protected tooltip frame returns a secret value; force string
+					-- conversion inside a pcall so we get a safe regular string or nil.
+					local rawName
+					pcall(function() local t = text and text:GetText() if t then rawName = t .. "" end end)
+					self.lootingName = rawName or self.defaultUnfoundLootingName
+					self.lootingNameIsReal = rawName ~= nil
 					if not self.doneProcessingBackup then
 						self:_ProcessServerBackup(true)
 						self.doneProcessingBackup = true
@@ -9622,34 +9632,30 @@ end
 			end
 			if #newlyCompleted > 0 or Grail.GDE.debug then
 				local lootingNameToUse = self.lootingName or "NO LOOTING OBJECT"
-				-- print() and _AddTrackingMessage must happen BEFORE the pcall below.
-				-- WoW's taint system leaves the execution context tainted after a pcall
-				-- catches a secret-value comparison error, so any write to shared Blizzard
-				-- state (ChatFrame) that follows would propagate taint.
 				local safeMessage = "Looting locale: " .. self.playerLocale .. " name: " .. lootingNameToUse .. " Coords: " .. Grail:Coordinates()
 				local message = "Looting from " .. (self.lootingGUID or "NO LOOTING GUID") .. " " .. safeMessage
 				-- WoW fires LOOT_CLOSED twice for gathering nodes; suppress the duplicate
-				-- debug print by tracking the last GUID we already printed.
+				-- for both the debug print and the saved-variables tracking entry.
 				local currentGUID = self.lootingGUID
-				if self.GDE.debug and currentGUID ~= self.lastDebugLootGUID then
-					self.lastDebugLootGUID = currentGUID
-					-- Deferred via C_Timer so it runs outside Grail's tainted event-handler
-					-- context.  C_Timer callbacks always run from tainted execution, so
-					-- wrap print() in securecallfunction to keep ChatFrame entries clean.
-					C_Timer.After(0, function() securecallfunction(print, safeMessage) end)
-				end
-				self:_AddTrackingMessage(message)
-				-- guidParts was split and isGameObject determined above.
-				-- This pcall taints the execution context; no writes to shared Blizzard
-				-- state may follow.
-				pcall(function()
-					if isGameObject and self.lootingName ~= self.defaultUnfoundLootingName then
-						local internalName = self:ObjectName(guidParts[6])
-						if self.lootingName ~= internalName then
-							self:_LearnObjectName(guidParts[6], lootingNameToUse)
-						end
+				local isNewLootEvent = currentGUID ~= self.lastLootGUID
+				if isNewLootEvent then
+					self.lastLootGUID = currentGUID
+					if self.GDE.debug then
+						-- Deferred via C_Timer so it runs outside Grail's tainted event-handler
+						-- context.  C_Timer callbacks always run from tainted execution, so
+						-- wrap print() in securecallfunction to keep ChatFrame entries clean.
+						C_Timer.After(0, function() securecallfunction(print, safeMessage) end)
 					end
-				end)
+					self:_AddTrackingMessage(message)
+				end
+				-- lootingName is always a safe regular string (secret values were caught at store
+				-- time); use lootingNameIsReal instead of comparing lootingName to the default.
+				if isGameObject and self.lootingNameIsReal then
+					local internalName = self:ObjectName(guidParts[6])
+					if self.lootingName ~= internalName then
+						self:_LearnObjectName(guidParts[6], self.lootingName)
+					end
+				end
 			end
 			for _, questId in pairs(newlyCompleted) do
 				self:_MarkQuestComplete(questId, true)
