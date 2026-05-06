@@ -2471,12 +2471,18 @@ G[1571271]='Glowing Moth'
 G[1571272]='Glowing Moth'
 G[1571273]='Glowing Moth'
 G[1571283]='Glowing Moth'
+G[1571718]="Selune's Stormarion Cores"
 G[1573747]='Mature Blood Petal'
 G[1573841]='Fungalcap Crock'
 G[1574619]='Rich Loamy Soil'
 G[1578030]='Hoarding Klaxid'
+G[1580092]='Brimming Void Canister'
+G[1587194]='Knight Anais'
 G[1587238]='Stashed Singularity Supplies'
 G[1589095]="Scavenger's Hoard"
+G[1605169]='Trigore Denguard'
+G[1609910]='Depleted Void Canister'
+G[1613324]='Knight Anais'
 end
 
 --	End of localized NPC names

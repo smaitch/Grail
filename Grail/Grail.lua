@@ -595,6 +595,9 @@
 --		126	Updates some Quest/NPC information.
 --			Corrects some issues that would cause taint.
 --			Disables some message printing unless the acceptstaint toggle is set using /grail acceptstaint
+--			Corrects GetNPCId and GetNPCInformation to skip GUID processing for dead units, preventing secret string taint.
+--			Corrects looting name detection to use UnitName() instead of tooltip text, preventing secret string comparisons.
+--			Corrects duplicate looting entries appearing in the saved variables tracking file.
 --
 --	Known Issues
 --
@@ -2978,11 +2981,9 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local currentMapAreaId = Grail.GetCurrentMapAreaID()
 				if self.zonesForLootingTreasure[currentMapAreaId] then
 					self.lootingGUID = GetLootSourceInfo(1)
-					local text = GameTooltipTextLeft1
-					-- GetText() on a protected tooltip frame returns a secret value; force string
-					-- conversion inside a pcall so we get a safe regular string or nil.
-					local rawName
-					pcall(function() local t = text and text:GetText() if t then rawName = t .. "" end end)
+					-- UnitName() returns a regular (non-secret) string; avoids the secret-string
+					-- taint from GameTooltipTextLeft1:GetText() which is populated by protected code.
+					local rawName = UnitName("mouseover") or UnitName("npc") or UnitName("target")
 					self.lootingName = rawName or self.defaultUnfoundLootingName
 					self.lootingNameIsReal = rawName ~= nil
 					if not self.doneProcessingBackup then
@@ -3012,11 +3013,9 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				local currentMapAreaId = Grail.GetCurrentMapAreaID()
 				if self.zonesForLootingTreasure[currentMapAreaId] then
 					self.lootingGUID = GetLootSourceInfo(1)
-					local text = GameTooltipTextLeft1
-					-- GetText() on a protected tooltip frame returns a secret value; force string
-					-- conversion inside a pcall so we get a safe regular string or nil.
-					local rawName
-					pcall(function() local t = text and text:GetText() if t then rawName = t .. "" end end)
+					-- UnitName() returns a regular (non-secret) string; avoids the secret-string
+					-- taint from GameTooltipTextLeft1:GetText() which is populated by protected code.
+					local rawName = UnitName("mouseover") or UnitName("npc") or UnitName("target")
 					self.lootingName = rawName or self.defaultUnfoundLootingName
 					self.lootingNameIsReal = rawName ~= nil
 					if not self.doneProcessingBackup then
