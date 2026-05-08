@@ -598,6 +598,8 @@
 --			Corrects GetNPCId and GetNPCInformation to skip GUID processing for dead units, preventing secret string taint.
 --			Corrects looting name detection to use UnitName() instead of tooltip text, preventing secret string comparisons.
 --			Corrects duplicate looting entries appearing in the saved variables tracking file.
+--		127 Updates some Quest/NPC information.
+--			Adds the /grail trace slash command that shows why a quest cannot be obtained.
 --
 --	Known Issues
 --
@@ -815,6 +817,123 @@ if nil == Grail or Grail.versionNumber < Grail_File_Version then
 	--	indicate that it is currently not completed (because it has been reset)).
 	--	There are four possible tables of interest:  NewNPCs, NewQuests, SpecialQuests and BadQuestData.
 	--	These tables could be used to provide feedback which can be used to update the internal database to provide more accurate quest information.
+
+	-- Helper functions for /grail trace.  Defined at file scope so their closure objects are
+	-- clean when referenced as upvalues from the slash-command lambda registered below.
+
+	-- Returns a color-coded human-readable string summarising a StatusCode bit mask.
+	local function _GrailTraceStatusStr(status)
+		local G = Grail
+		local reasons = {}
+		if bitband(status, G.bitMaskCompleted)     > 0 then tinsert(reasons, "completed") end
+		if bitband(status, G.bitMaskInLog)         > 0 then tinsert(reasons, "in log") end
+		if bitband(status, G.bitMaskClass)         > 0 then tinsert(reasons, "class restriction") end
+		if bitband(status, G.bitMaskRace)          > 0 then tinsert(reasons, "race restriction") end
+		if bitband(status, G.bitMaskGender)        > 0 then tinsert(reasons, "gender restriction") end
+		if bitband(status, G.bitMaskFaction)       > 0 then tinsert(reasons, "faction restriction") end
+		if bitband(status, G.bitMaskLevelTooLow)   > 0 then tinsert(reasons, "level too low") end
+		if bitband(status, G.bitMaskLevelTooHigh)  > 0 then tinsert(reasons, "level too high") end
+		if bitband(status, G.bitMaskProfession)    > 0 then tinsert(reasons, "profession required") end
+		if bitband(status, G.bitMaskReputation)    > 0 then tinsert(reasons, "reputation required") end
+		if bitband(status, G.bitMaskHoliday)       > 0 then tinsert(reasons, "holiday only") end
+		if bitband(status, G.bitMaskPrerequisites) > 0 then tinsert(reasons, "prerequisites") end
+		if bitband(status, G.bitMaskInvalidated)   > 0 then tinsert(reasons, "invalidated") end
+		if bitband(status, G.bitMaskBugged)        > 0 then tinsert(reasons, "bugged") end
+		if bitband(status, G.bitMaskNonexistent)   > 0 then tinsert(reasons, "does not exist") end
+		if #reasons == 0 then
+			return status == 0 and "|cFF00FF00OK|r"
+			                    or strformat("|cFF808080unknown (0x%x)|r", status)
+		end
+		local s = "|cFFFF4444"
+		for i, r in ipairs(reasons) do
+			if i > 1 then s = s .. ", " end
+			s = s .. r
+		end
+		return s .. "|r"
+	end
+
+	-- Evaluates a single condition entry from a _FromPattern result.
+	-- cond is a number (plain quest ID), string (coded like "X12345"), or table (sub-OR group).
+	-- Returns: satisfied (bool), questId (number or nil), negated (bool).
+	local function _GrailTraceCondCheck(cond)
+		if type(cond) == "number" then
+			return Grail:IsQuestCompleted(cond), cond, false
+		elseif type(cond) == "string" then
+			local code, _, numeric = Grail:CodeParts(cond)
+			if code == "" and numeric then
+				return Grail:IsQuestCompleted(numeric), numeric, false
+			elseif code == "X" and numeric then
+				return not Grail:IsQuestCompleted(numeric), numeric, true
+			else
+				-- Non-quest condition (class, reputation, etc.) — cannot trivially evaluate
+				return false, nil, false
+			end
+		elseif type(cond) == "table" then
+			-- Sub-OR group (from | separator within an AND block): any member satisfies
+			for _, v in ipairs(cond) do
+				local sat = _GrailTraceCondCheck(v)
+				if sat then return true, nil, false end
+			end
+			return false, nil, false
+		end
+		return false, nil, false
+	end
+
+	-- Forward-declared so the function body can call itself recursively.
+	local _GrailTraceWalk
+
+	_GrailTraceWalk = function(questId, depth, visited)
+		if depth > 10 then
+			securePrint(string.rep("  ", depth) .. "|cFF808080[max depth reached]|r")
+			return
+		end
+		if visited[questId] then
+			securePrint(string.rep("  ", depth) .. strformat("|cFF808080[see above: Q%d]|r", questId))
+			return
+		end
+		visited[questId] = true
+
+		local indent = string.rep("  ", depth)
+		local name   = Grail:QuestName(questId) or "?"
+		local status = Grail:StatusCode(questId)
+		securePrint(strformat("%s|cFFFF8C00Q%d|r %s — %s", indent, questId, name, _GrailTraceStatusStr(status)))
+
+		-- Only dig into prerequisites when that is causing the block
+		local hasPrereqBlock = bitband(status, Grail.bitMaskPrerequisites) > 0
+		                    or bitband(status, Grail.bitMaskInvalidated)   > 0
+		if not hasPrereqBlock then return end
+
+		local prereqs = Grail:QuestPrerequisites(questId)
+		if not prereqs then return end
+
+		-- prereqs is a table of OR options from _FromPattern.
+		-- The quest is blocked because no OR option is fully satisfied.
+		-- Walk each option and surface failing conditions; recurse into incomplete quest prereqs.
+		for _, option in ipairs(prereqs) do
+			local conditions = type(option) == "table" and option or {option}
+			for _, cond in ipairs(conditions) do
+				local sat, prereqId, negated = _GrailTraceCondCheck(cond)
+				if not sat then
+					if prereqId then
+						if negated then
+							local pname = Grail:QuestName(prereqId) or "?"
+							securePrint(strformat("%s  |cFFFF4444Q%d|r %s — |cFFFF4444must NOT be completed (it is)|r", indent, prereqId, pname))
+						else
+							_GrailTraceWalk(prereqId, depth + 1, visited)
+						end
+					else
+						securePrint(strformat("%s  |cFFFF4444condition not met:|r %s", indent, tostring(cond)))
+					end
+				else
+					-- Show satisfied quest prereqs in green so the user sees the full picture
+					if prereqId and not negated then
+						local pname = Grail:QuestName(prereqId) or "?"
+						securePrint(strformat("%s  |cFF00FF00Q%d|r %s — |cFF00FF00completed|r", indent, prereqId, pname))
+					end
+				end
+			end
+		end
+	end
 
 	-- Registers all built-in /grail slash commands.  Defined at file scope (before Grail = {}) so
 	-- the closure object is CLEAN.  Called via securecallfunction from the PLAYER_LOGIN handler —
@@ -1087,6 +1206,23 @@ if nil == Grail or Grail.versionNumber < Grail_File_Version then
 			wipe(Grail.questStatuses)
 			Grail.questStatuses = {}
 			Grail:_CoalesceDelayedNotification("Status", 0)
+		end)
+		Grail:RegisterSlashOption("trace ", "|cFF00FF00trace|r |cFFFF8C00questId|r => traces the prerequisite chain backwards to find the root cause of why a quest is blocked", function(msg)
+			local questId = tonumber(strtrim(strsub(msg, 7)))
+			if not questId then
+				securePrint("|cFFFF0000Grail|r usage: /grail trace <questId>")
+				return
+			end
+			local status = Grail:StatusCode(questId)
+			local hasPrereqBlock = bitband(status, Grail.bitMaskPrerequisites) > 0
+			                    or bitband(status, Grail.bitMaskInvalidated)   > 0
+			if not hasPrereqBlock then
+				securePrint(strformat("|cFFFF0000Grail|r |cFFFF8C00Q%d|r is not blocked by prerequisites (%s)",
+				                      questId, _GrailTraceStatusStr(status)))
+				return
+			end
+			securePrint(strformat("|cFFFF0000Grail|r tracing prerequisites for |cFFFF8C00Q%d|r:", questId))
+			_GrailTraceWalk(questId, 0, {})
 		end)
 	end
 
