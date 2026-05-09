@@ -1162,7 +1162,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							local _vigCoords = (self._recentlyAppearedVignettes[vigEntry.spawnUID] and self._recentlyAppearedVignettes[vigEntry.spawnUID].coords)
 								or tostring(self:Coordinates())
 							local _src = strformat('rep=%s | coords=%s', repStr, _vigCoords)
-							if self:_IsNewVignetteLink(vigEntry.guid, _src) then
+							if self:_IsNewVignetteLink(vigEntry.guid, _src, vigEntry.name) then
 								local msg = strformat('VIGNETTE_REP_LINK (rep before vig): vignette=%s name=%s | %s', vigEntry.guid, tostring(vigEntry.name), _src)
 								print(msg)
 								self:_AddTrackingMessage(msg)
@@ -1226,7 +1226,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							local _vcoords = (self._recentlyDisappearedVignettes[vigEntry.spawnUID] and self._recentlyDisappearedVignettes[vigEntry.spawnUID].coords)
 								or tostring(self:Coordinates())
 							local _src = strformat('quests=%s | coords=%s', questStr, _vcoords)
-							if self:_IsNewVignetteLink(vigEntry.guid, _src) then
+							if self:_IsNewVignetteLink(vigEntry.guid, _src, vigEntry.name) then
 								local msg = strformat('VIGNETTE_QUEST_LINK (no loot): vignette=%s name=%s | %s', vigEntry.guid, tostring(vigEntry.name), _src)
 								print(msg)
 								self:_AddTrackingMessage(msg)
@@ -1250,6 +1250,23 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					self:_VignetteCompareAndLog(self._persistentVigSnapshot or {}, _vigNow, _ctx)
 				end
 				self._persistentVigSnapshot = _vigNow
+				-- Auto-update names for vignette links that have true instead of name
+				local db = GrailDatabase
+				if db.vignetteLinks then
+					for k, v in pairs(db.vignetteLinks) do
+						if v == true then
+							local g = strmatch(k, '^([^|]+)')
+							if g and strsub(g, 1, 9) == 'Vignette-' then
+								local info = C_VignetteInfo.GetVignetteInfo(g)
+								if info and info.name then
+									db.vignetteLinks[k] = info.name
+									if db.vignetteGuidIndex then db.vignetteGuidIndex[g] = k end
+									print(strformat('|cFFFFFF00Grail|r: vignette named: |cFF00FF00%s|r', info.name))
+								end
+							end
+						end
+					end
+				end
 			end,
 			-- >>>VIGNETTE_DEBUG_END
 
@@ -1453,6 +1470,45 @@ experimental = false,	-- currently this implementation does not reduce memory si
 
 					-- We have loaded GrailDatabase at this point, but we need to ensure the structure is set up for first-time players as we rely on at least an empty structure existing
 					GrailDatabasePlayer = GrailDatabasePlayer or {}
+					-- Purge invalid vignette entries (no valid GUID starting with 'Vignette-')
+					do
+						local purgeCount = 0
+						-- Purge from Tracking log
+						if GrailDatabasePlayer.Tracking then
+							for i = #GrailDatabasePlayer.Tracking, 1, -1 do
+								local entry = GrailDatabasePlayer.Tracking[i]
+								if strfind(entry, 'VIGNETTE_', 1, true) then
+									local g = strmatch(entry, 'vignette=(%S+)')
+									if g and strsub(g, 1, 9) ~= 'Vignette-' then
+										table.remove(GrailDatabasePlayer.Tracking, i)
+										purgeCount = purgeCount + 1
+									end
+								end
+							end
+						end
+						-- Purge from vignetteLinks
+						if GrailDatabase.vignetteLinks then
+							for k in pairs(GrailDatabase.vignetteLinks) do
+								local g = strmatch(k, '^([^|]+)')
+								if g and strsub(g, 1, 9) ~= 'Vignette-' then
+									GrailDatabase.vignetteLinks[k] = nil
+									purgeCount = purgeCount + 1
+								end
+							end
+						end
+						-- Purge from vignetteGuidIndex
+						if GrailDatabase.vignetteGuidIndex then
+							for g in pairs(GrailDatabase.vignetteGuidIndex) do
+								if strsub(g, 1, 9) ~= 'Vignette-' then
+									GrailDatabase.vignetteGuidIndex[g] = nil
+									purgeCount = purgeCount + 1
+								end
+							end
+						end
+						if purgeCount > 0 then
+							print(strformat('|cFFFFFF00Grail|r: purged %d invalid vignette entries', purgeCount))
+						end
+					end
 
 					self.quest.name[600000]=Grail:_GetMapNameByID(19)..' '..REQUIREMENTS
 					self.quest.name[600001]=Grail:_GetMapNameByID(19)..' '..FACTION_ALLIANCE..' '..REQUIREMENTS
@@ -1870,10 +1926,69 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					GrailDatabasePlayer.spellsCast = GrailDatabasePlayer.spellsCast or {}
 					GrailDatabasePlayer.buffsExperienced = GrailDatabasePlayer.buffsExperienced or {}
 					GrailDatabasePlayer.dailyGroups = GrailDatabasePlayer.dailyGroups or {}
-					GrailDatabasePlayer.vignetteLinks      = GrailDatabasePlayer.vignetteLinks or {}
-					GrailDatabasePlayer.vignetteGuidIndex  = GrailDatabasePlayer.vignetteGuidIndex or {}
-					GrailDatabasePlayer.questPinEvents     = GrailDatabasePlayer.questPinEvents or {}
-					GrailDatabasePlayer.questPinEventIndex = GrailDatabasePlayer.questPinEventIndex or {}
+					GrailDatabase.vignetteLinks      = GrailDatabase.vignetteLinks or {}
+					GrailDatabase.gossipQuestLinks   = GrailDatabase.gossipQuestLinks or {}
+					GrailDatabase.vignetteGuidIndex  = GrailDatabase.vignetteGuidIndex or {}
+					GrailDatabase.questPinEvents     = GrailDatabase.questPinEvents or {}
+					GrailDatabase.questPinEventIndex = GrailDatabase.questPinEventIndex or {}
+					GrailDatabase.questPinLinks      = GrailDatabase.questPinLinks or {}
+					GrailDatabase.questPinGuidIndex  = GrailDatabase.questPinGuidIndex or {}
+					-- Migrate questPinEventIndex from character to account level
+					if GrailDatabasePlayer.questPinEventIndex and next(GrailDatabasePlayer.questPinEventIndex) then
+						if not next(GrailDatabase.questPinEventIndex or {}) then
+							GrailDatabase.questPinEventIndex = GrailDatabasePlayer.questPinEventIndex
+							print(strformat('|cFFFFFF00Grail|r: migrated questPinEventIndex to account level'))
+						end
+						GrailDatabasePlayer.questPinEventIndex = nil
+					end
+					-- Migrate questPinGuidIndex from character to account level
+					if GrailDatabasePlayer.questPinGuidIndex and next(GrailDatabasePlayer.questPinGuidIndex) then
+						if not next(GrailDatabase.questPinGuidIndex or {}) then
+							GrailDatabase.questPinGuidIndex = GrailDatabasePlayer.questPinGuidIndex
+							print(strformat('|cFFFFFF00Grail|r: migrated questPinGuidIndex to account level'))
+						end
+						GrailDatabasePlayer.questPinGuidIndex = nil
+					end
+					-- Migrate gossipQuestLinks from character to account level
+					if GrailDatabasePlayer.gossipQuestLinks and next(GrailDatabasePlayer.gossipQuestLinks) then
+						if not next(GrailDatabase.gossipQuestLinks or {}) then
+							GrailDatabase.gossipQuestLinks = GrailDatabasePlayer.gossipQuestLinks
+							print(strformat('|cFFFFFF00Grail|r: migrated gossipQuestLinks to account level'))
+						end
+						GrailDatabasePlayer.gossipQuestLinks = nil
+					end
+					-- Migrate questPinLinks from character to account level
+					if GrailDatabasePlayer.questPinLinks and next(GrailDatabasePlayer.questPinLinks) then
+						if not next(GrailDatabase.questPinLinks or {}) then
+							GrailDatabase.questPinLinks = GrailDatabasePlayer.questPinLinks
+							print(strformat('|cFFFFFF00Grail|r: migrated questPinLinks to account level'))
+						end
+						GrailDatabasePlayer.questPinLinks = nil
+					end
+					-- Migrate vignetteLinks from character to account level
+					if GrailDatabasePlayer.vignetteLinks and next(GrailDatabasePlayer.vignetteLinks) then
+						if not next(GrailDatabase.vignetteLinks or {}) then
+							GrailDatabase.vignetteLinks = GrailDatabasePlayer.vignetteLinks
+							print(strformat('|cFFFFFF00Grail|r: migrated vignetteLinks to account level'))
+						end
+						GrailDatabasePlayer.vignetteLinks = nil
+					end
+					-- Migrate questPinEvents from character to account level
+					if GrailDatabasePlayer.questPinEvents and next(GrailDatabasePlayer.questPinEvents) then
+						if not next(GrailDatabase.questPinEvents or {}) then
+							GrailDatabase.questPinEvents = GrailDatabasePlayer.questPinEvents
+							print(strformat('|cFFFFFF00Grail|r: migrated questPinEvents to account level'))
+						end
+						GrailDatabasePlayer.questPinEvents = nil
+					end
+					-- Migrate vignetteGuidIndex from character to account level
+					if GrailDatabasePlayer.vignetteGuidIndex and next(GrailDatabasePlayer.vignetteGuidIndex) then
+						if not next(GrailDatabase.vignetteGuidIndex or {}) then
+							GrailDatabase.vignetteGuidIndex = GrailDatabasePlayer.vignetteGuidIndex
+							print(strformat('|cFFFFFF00Grail|r: migrated vignetteGuidIndex to account level'))
+						end
+						GrailDatabasePlayer.vignetteGuidIndex = nil
+					end
 
 					-- See if we can load LibArtifactData
 --					local LibStub = _G["LibStub"]
@@ -2004,6 +2119,14 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					--	if we are to do anything.  GOSSIP_SHOW will record the NPC and GOSSIP_CLOSED will reset it.
 					if nil ~= SelectGossipOption then -- workaround for Shadowlands
 					hooksecurefunc("SelectGossipOption", function(index, text, confirm)
+						-- >>>QUESTPIN_DEBUG: capture pool snapshot before gossip quest completes
+						if not self._questPinSnapshotBefore then
+							-- Use persistent snapshot as before-state: pool pin may be gone already
+							self._questPinSnapshotBefore = self._persistentPinSnapshot or self:_QuestPinPoolSnapshot()
+							self._questPinTrigger       = 'GOSSIP_COMPLETE'
+							self._questPinTriggerDetail = strformat('gossipIndex=%d', index)
+						end
+						-- >>>QUESTPIN_DEBUG_END
 						local questToComplete = nil
 						local gossipTable = self.currentGossipNPCId and self.gossipNPCs[self.currentGossipNPCId] or nil
 						if gossipTable then
@@ -2017,12 +2140,36 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							end
 						end
 						-- >>>GOSSIP_DEBUG
+						-- Store selected option on context for CLOSED_COMPLETE
+						if self._gossipDebugContext then
+							if C_GossipInfo and C_GossipInfo.GetOptions then
+								local _opts = C_GossipInfo.GetOptions()
+								if _opts and _opts[index] then
+									self._gossipDebugContext.lastOptionName = _opts[index].name
+									self._gossipDebugContext.lastOptionID   = _opts[index].gossipOptionID
+								end
+							end
+						end
+						-- Capture the gossip option text for this index
+						local _optionName = nil
+						local _optionID   = nil
+						if C_GossipInfo and C_GossipInfo.GetOptions then
+							local opts = C_GossipInfo.GetOptions()
+							if opts and opts[index] then
+								_optionName = opts[index].name
+								_optionID   = opts[index].gossipOptionID
+							end
+						end
 						if nil ~= questToComplete then
 							local ctx = self._gossipDebugContext
-							local msg = strformat('GOSSIP_DEBUG QUEST_COMPLETE: quest=%d npc=%s(%s) coords=%s',
-								questToComplete, tostring(ctx and ctx.targetName), tostring(ctx and ctx.npcId), tostring(ctx and ctx.coordinates))
+							local msg = strformat('GOSSIP_DEBUG QUEST_COMPLETE: quest=%d npc=%s(%s) option=%s(id=%s) coords=%s',
+								questToComplete, tostring(ctx and ctx.targetName), tostring(ctx and ctx.npcId),
+								tostring(_optionName), tostring(_optionID), tostring(ctx and ctx.coordinates))
 							print(msg)
 							self:_AddTrackingMessage(msg)
+							self:_RecordGossipQuestLink(questToComplete,
+								ctx and ctx.npcId, ctx and ctx.targetName,
+								_optionName, _optionID, ctx and ctx.coordinates)
 						end
 						-- >>>GOSSIP_DEBUG_END
 						if nil ~= questToComplete then
@@ -2038,10 +2185,14 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							for _, qId in pairs(_nc) do
 								if qId ~= questToComplete then self:_MarkQuestComplete(qId, true) end
 								local ctx = self._gossipDebugContext
-								local msg = strformat('GOSSIP_DEBUG SELECT_COMPLETE: quest=%d npc=%s(%s) coords=%s',
-									qId, tostring(ctx and ctx.targetName), tostring(ctx and ctx.npcId), tostring(ctx and ctx.coordinates))
+								local msg = strformat('GOSSIP_DEBUG SELECT_COMPLETE: quest=%d npc=%s(%s) option=%s(id=%s) coords=%s',
+									qId, tostring(ctx and ctx.targetName), tostring(ctx and ctx.npcId),
+									tostring(_optionName), tostring(_optionID), tostring(ctx and ctx.coordinates))
 								print(msg)
 								self:_AddTrackingMessage(msg)
+								self:_RecordGossipQuestLink(qId,
+									ctx and ctx.npcId, ctx and ctx.targetName,
+									_optionName, _optionID, ctx and ctx.coordinates)
 							end
 							self.GDE.silent, self.manuallyExecutingServerQuery = _sv, _mv
 						end
@@ -2417,6 +2568,387 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						self:_CoalesceDelayedNotification("Status", 0)
 					end)
 					-- >>>VIGNETTE_DEBUG
+					-- >>>QUESTPIN_DEBUG
+					self:RegisterSlashOption("vignames db", "|cFF00FF00vignames db|r => fills in vignette names from built-in DB (English fallback)", function()
+						local t = {[4]="Vignette Test Kill",[5]="Vignette Test Loot",[9]="Vignette Test Event",[10]="Sternenbrecher Roghash",[11]="Schatzträger der Fara",[12]="Gefangener Draenei",[13]="Der Leerenseher",[14]="Uraka",[15]="Synodicus",[16]="Verteidigungskristall von Embaari",[17]="Mysteriöse Leere",[18]="Der Vernichter",[19]="Prophezeiung von Jerrikar",[20]="Prophezeiung von Kraator",[21]="Prophezeiung des Sphärenwächters",[22]="Konstruktion des Vernichters",[23]="Blattleser Kurri",[24]="Eisenkettenschatz",[25]="Hygrocybe",[26]="Felshuf",[27]="Talby",[28]="Schattenbergschatz",[29]="Bergzoid",[30]="Yggdrel",[33]="Blutspitz",[34]="Knackzahn",[35]="Zangenkiefer",[36]="Kwall",[37]="Aetha",[38]="Geist von Lao-Fe",[39]="Bai-Jin der Schlächter",[40]="Gochao die Eisenfaust",[41]="Gaohun der Seelenschnitter",[42]="General Temuja",[43]="Schattenmeister Sydow",[44]="Wulon",[45]="Huo-Shuang",[46]="Baolai der Verbrenner",[47]="Vyraxxis",[48]="Kri'chon",[49]="Richtig ranziges Bier",[50]="Zesqua",[51]="Versunkener Schatz",[52]="Bis auf die Knochen",[53]="Kranichknirscher",[54]="Schwarzwaches Strandgut",[55]="Kukurus Schatzkammer",[56]="Verschnürte Schatztruhe",[57]="Funkelnde Schatztruhe",[58]="Funkelnder Schatzbeutel",[59]="Chelon",[60]="Karkanos",[61]="Schlacht um die Seepocke",[62]="Jeremy's Test Vignette",[63]="Mondfang",[64]="Einsturzstelle",[65]="Eisenfellstahlhorn",[66]="Blattheiler",[67]="Großschildkröte Zornpanzer",[68]="Smaragdkranich",[69]="Gu'chi der Schwarmbringer",[70]="Jadefeuergeist",[71]="Klapperknochen",[72]="Whizzig",[73]="Zhu-Gon der Saure",[74]="Spelurk",[75]="Garnia",[76]="Steinmoos",[77]="Glutfall",[78]="Tsavo'ka",[79]="Huolon",[80]="Monströse Dornzange",[81]="Bufo",[82]="Schreckensschiff Vazuvius",[83]="Golganarr",[84]="Kaiserpython",[85]="Tiefenschlund",[86]="Archiereus der Flamme",[87]="Behüter Osu",[88]="Urdur der Kauterisierer",[89]="Jakur von Ordos",[90]="Funkenlord Gairan",[91]="Champion der Schwarzen Flamme",[92]="Glitzernde Kranichstatue",[93]="Uralte Salzschnappschildkröte",[94]="Sooty",[95]="Stinkezopf",[96]="Ra'sha",[97]="Willi Wilder",[98]="Kriegsspäher der Zandalari",[99]="Muerta",[100]="Kar Kriegstreiber",[101]="Ubunti der Schatten",[102]="Disha Furchtwächter",[103]="Dalan Nachtbrecher",[104]="Mavis Harms",[105]="Ferdinand",[106]="Schwarzhuf",[107]="Major Affentanz",[108]="Ik-Ik der Flinke",[109]="Der Jauler",[110]="Kritscher",[111]="Spriggin",[112]="Bonobos",[113]="Das Tier",[114]="Ai-Ran die flüchtige Wolke",[115]="Ai-Li Himmelsspiegel",[116]="Yul Wildpfote",[117]="Ahone die Wanderin",[118]="Ruun Geisterpranke",[119]="Nasra Fleckpelz",[120]="Urobi der Wanderer",[121]="Moldo Einauge",[122]="Omnis Feixmaul",[123]="Siltriss der Schärfer",[124]="Nessos das Orakel",[125]="Arness die Schuppe",[126]="Kriegsspäher von Salyis",[127]="Sarnak",[128]="Sahn Gezeitenjäger",[129]="Nalash Verdantis",[130]="Eshelon",[131]="Zai der Verstoßene",[132]="Cournith Wasserläufer",[133]="Sele'na",[134]="Aethis",[135]="Kal'tik der Veröder",[136]="Gar'lok",[137]="Lith'ik der Pirscher",[138]="Ski'thik",[139]="Torik-Ethis",[140]="Nal'lak der Reißer",[141]="Krax'ik",[142]="Urgolax",[143]="Krol die Klinge",[144]="Kah'tir",[145]="Havak",[146]="Qu'nas",[147]="Jonn-Dar",[148]="Morgrinn Bersthauer",[149]="Kang der Seelendieb",[150]="Karr der Verdunkler",[151]="Norlaxx",[152]="Borginn Dunkelfaust",[153]="Gaarn der Giftige",[154]="Sulik'shor",[155]="Kor'nas Nachtgrauen",[156]="Yorik Scharfauge",[157]="Dak der Brecher",[158]="Lon der Bulle",[159]="Korda Torros",[160]="Go-Kan",[161]="Doktor Theolen Krastinov",[162]="Mumta",[163]="Kriegshetzer der Zandalari",[164]="Kriegsgott Dokah",[165]="Progenitus",[166]="Ku'lai die Himmelsklaue",[167]="Goda",[168]="Gottkoloss Ramuk",[169]="Al'tabim der Allsehende",[170]="Rückenbrecher Uru",[171]="Lu-Ban",[172]="Molthor",[173]="Krakkanon",[180]="Kannibaleneichhörnchen",[194]="Riesentöter Kul",[195]="Schluchteismutter",[196]="Donnerfürstentruhe",[197]="Glutrachen",[198]="Zeitverzerrter Turm",[199]="Ergrauter Veteran der Frostwölfe",[200]="Feuerzornstein",[201]="Feuerzornriese",[202]="Borrok der Verschlinger",[203]="Gorg'ak der Lavaschlinger",[204]="Magenstein des Verschlingers",[205]="Veloss",[207]="Giftschatten",[211]="Verstaubte Kiste",[212]="Klingenmeister Zaruk",[213]="Future Vignette Placeholder",[214]="Primalist Mur'og",[215]="Dunkle Manifestation",[216]="Faulatem",[217]="Todesschlund",[218]="Amaukwa",[219]="Karawane der Eisernen Horde",[220]="Eisenflegel",[221]="Schattenruferin Anga",[222]="Felshuf",[223]="Aruumels Streitkolben",[224]="Riesige Flusspferdmutter",[225]="Froststampf der Trauernde",[226]="Riesenjägertrupp",[227]="Frosthauer",[228]="Späher Blutsucher",[229]="Der Prügler",[230]="Yazheera die Verbrennerin",[231]="Dr. Depression",[232]="Kal'rak der Trunkenbold",[233]="Vipernhieb",[234]="Nixxie der Goblin",[235]="Riesiges Insekt",[236]="Rasender Golem",[237]="Cro Fleischfetzer",[238]="Hennenmutter Hami",[239]="Sturmwelle",[240]="Larvra",[241]="Aarko",[242]="Hammerzahn",[243]="Glimmerflügel",[244]="Eiserner Schütze",[245]="Ra'kahn",[246]="Blutblüte der Koloss",[247]="Roardan",[248]="Die Anachoretenrast retten",[249]="Wandernder Verteidiger",[250]="Lo'marg Kieferbrecher",[251]="Echo von Murmur",[252]="Riesenschlange",[253]="Eiserner Jäger",[254]="Der Knochenkriecher",[255]="Brutmutter Reeg'ak",[256]="Großhexenmeisterin Duress",[257]="Knarlkiefer",[258]="Schleimkönig",[259]="Fahler Fischfänger",[260]="Eingefrorener Schatz",[261]="Zyklonzorn",[262]="Kharazos der Siegestrunkene",[263]="Galzomar",[264]="Azika die Frosthexe",[265]="Caldera Makrah",[266]="Champion Logor",[267]="Scharfschütze Kizi",[268]="Erdmeister Rogok",[269]="Elementaristin Utrah",[270]="Schmiedeoberin Targa",[271]="Kalgor Feindestöter",[272]="Frontbrecher Drugg",[273]="Lorgrun Eisenfaust",[274]="Magmos der Bergbrecher",[275]="Kriegsmatrone Okrilla",[276]="Pfadpirscherin Draga",[277]="Flammenzauberin Zindra",[278]="Kragor die Narbenhaut",[279]="Spähmeister Hasark",[280]="Grun der Schädelspalter",[281]="Steinmatrone Shula",[282]="Schlachtzauberer Bargol",[283]="Worgmeister Rakan",[284]="Gebäude wird angegriffen",[285]="Atemlos",[286]="Klikixx",[287]="Eisengebundene Lawine",[288]="Eisengebundenes Inferno",[289]="Kriegsmaschine der Eisernen Horde",[290]="Zuchtmeisterin Mugrah",[291]="Bonusziel: Der Verbotene Gletscher",[292]="Gefrorene Axt",[293]="Gorum",[294]="Bonusziel: Blutdornhöhle",[295]="Krummzahnschlund",[296]="Vorarbeiter Fallow",[297]="Verhängnisreißer",[298]="Riesengroßer Eisschnabel",[299]="Marok Verdammnishand",[300]="Brotoculus",[301]="Bonusziel: Frostbrandhöhle",[302]="Bonusziel: Grimmfrostberg",[303]="Bonusziel: Steinzornklippen",[304]="Ug'lok der Frostige",[305]="Brotoculus",[306]="Yaga die Vernarbte",[308]="Bonusziel: Zerfleischt sie",[309]="Bonusziel: Aruunas Verheerung",[310]="Kriegsmeister Blugthol",[311]="Bombe zum Explodieren gebracht",[312]="Bonusziel: Zorkras Sturz",[313]="Krallenpriesterin Zorkra",[314]="Shirzir",[315]="Bonusziel: Rodung von Mor'gran",[316]="Bonusziel: Hof der Seelen",[317]="Jehil der Kletterer",[318]="Kapitän Eisenbart",[319]="Bonusziel: Der Schimmerhain",[320]="Torvaths Kristallklinge",[321]="Torvaths Kristallklinge",[322]="Hierhin reisen",[323]="Eindringling",[324]="Bonusziel: Die Begräbnisfelder",[325]="Bonusziel: Eisenfausthafen",[326]="Donnerfürstenboss",[327]="Gruuk",[328]="Gurun",[329]="Saboteur",[330]="Frostfang",[331]="No'losh",[332]="Entzündet die Kohlenpfannen",[333]="Bonusziel: Orunaiküste",[334]="Grutush der Plünderer",[335]="Gennadian",[336]="Mutter Araneae",[337]="Unterseher Blutmähne",[338]="Doug Test - Vignette",[339]="Gaz'orda",[340]="Sulfuror",[341]="Teufelsborke",[342]="Gefährdetes Gebäude",[343]="Fungusprätorianer",[344]="Waffenträger",[345]="Goren",[346]="Sikthiss die Kriegsfurie",[347]="Der Hüter",[348]="Skagg",[349]="Dornkönig Fili",[350]="Bahamai",[351]="Auferstandene Geister",[354]="Varashas Ei",[355]="Bashiok",[356]="Varashas Ei",[357]="Vignette Placeholder",[358]="Dunkelmeister Go'vid",[359]="Nizzix' Truhe",[360]="An Land gespülte Rettungskapsel",[361]="Char der Brennende",[362]="Morva Seelenzerstörer",[363]="Verwundete Verteidigerin",[364]="Rai'vosh",[365]="Dunkelkralle",[366]="Seelenschänder Torek",[367]="Kronus",[368]="Fangraal",[369]="Klingentänzer Aeryx",[370]="Forscher Nozzand",[371]="Moltnoma",[372]="Seelenschänderportal",[373]="Schmatzschlund",[374]="Wuchthauer",[375]="Tor'goroth der Seelenverschlinger",[376]="Sohn von Goramal",[377]="Schatz der Blutschläger",[378]="Enavra",[379]="Vielfraß",[380]="Mutierter Verteidiger",[381]="Rotklaue der Wilde",[382]="Großfeder",[383]="Gar'lua die Wolfsmutter",[384]="Knorrhuf der Tollwütige",[385]="Feenglanz",[386]="Ba'ruun",[387]="Shinri",[388]="Verängstiger Peon",[389]="Zünder für Goblinsprengstoff",[390]="Furchterregender Gronnling",[391]="Schwert des Klingenmeisters",[392]="Grauschlund",[393]="Bonusziel: Hemets Schlaraffenland",[394]="Leerenseher Kalurg",[395]="Liegen gelassene Angelrute",[396]="Netherbrut",[397]="Ophiis",[398]="Windrufer Korast",[399]="Mutter Om'ra",[400]="Bonusziel: Ruinenräuber",[401]="Flinthaut",[402]="Makellose Lilie",[403]="Sicherer Ort",[404]="Ru'klaa",[405]="Wahnsinniger \"\"König\"\" Sporeon",[406]="Schwarmkönigin Skrikka",[407]="Insha'tar",[408]="Zurückgelassene Truhe",[409]="Stampfer Kreego",[410]="Tura'aka",[411]="Jäger Schwarzzahn",[412]="Späher Pokhar",[413]="Malroc Steinmahler",[414]="Vorhut Duretha",[415]="Tiefenwurz",[416]="Aufgeladenes Erz einsammeln",[417]="Aufgeladenes Erz einsammeln",[418]="Stadionrennen",[420]="Goldzehs Plündergut",[421]="Windfeuer der Donnerfürsten",[422]="Korthall Seelenschlinger",[423]="Eingesponnene Spinne",[424]="Seelenfang",[425]="Nas Dunberlinn",[426]="Tötet Schotterzahns Goren",[427]="Mandragoraster",[428]="Mandrakor",[429]="Greldrok",[430]="Springschlinger",[431]="Hexenmeisterportal",[432]="Portal zum Sturmschild",[433]="Sonnenverstärker",[434]="Schlinger",[435]="Hexenmeisterportal",[436]="Portal zum Kriegsspeer",[437]="Dr. Zwicky sen.",[438]="Wegelagerer",[439]="Titarus",[440]="Gefangener Steinformer der Gor'vosh",[441]="Tesska der Zerbrochene",[442]="Steingrimm",[443]="Durkath Stahlrachen",[444]="Kalos der Blutgetränkte",[445]="Protzki",[446]="Brut von Sethe",[447]="Klauenbrecher",[448]="Giftmeister Keilzahn",[449]="Fäulglimmer",[450]="Schlüpfriger Schleim",[451]="Oskiira",[452]="Betti Bummbatz",[453]="Eiterblüte",[454]="Uraltes Inferno",[455]="Gorenspießer",[456]="Oraggro",[457]="Stachelschwanznest",[458]="Brennende Macht",[459]="Augenloser",[460]="Kugel der Macht!",[461]="Gochar",[462]="Schlingflosse",[463]="Jiasska der Sporenschlinger",[464]="Sonnenweiser Valarik",[465]="Phylarch der Immergrüne",[466]="Verschollenes Urtum",[467]="Greisholz der Versteinerte",[468]="Gelgor aus der blauen Flamme",[469]="Rolkor",[470]="Kuruk der Uralte",[471]="Autuk der Uralte",[472]="Loruk der Uralte",[473]="Hanuk der Uralter",[474]="Mutafen",[475]="Hauptfeldwebel Milgra",[476]="Rüstmeister Hershak",[477]="Herrin Temptessa",[478]="Demidos",[479]="Schattensprecher Niir",[480]="Horde hier entdeckt!",[481]="Allianz hier entdeckt!",[482]="Hypnoquak",[483]="Schwarmblatt",[484]="Schattenborke",[485]="Nachtschlund",[486]="Panthora",[487]="Alexi Barov",[488]="Weldon Barov",[489]="Verfluchte Kreatur",[490]="Ältester Dunkelwirker Kath",[491]="Beschwörer",[492]="Malgosh Schattenhüter",[493]="Formloser Alptraum",[494]="Leerenhetzerin Urnae",[495]="Kenos' schwarzer Altar",[496]="Ogerfeuer",[497]="Berthora die Flussbestie",[498]="Riptar",[499]="Sonnenklaue",[500]="Aqualir",[502]="Gorianischer Legionär",[503]="Gorianischer Elementarist",[504]="Blutrünstiger Haudrauf",[505]="Gorianischer Arkanist",[506]="Gorianischer Zenturio",[507]="Gorianischer Magierlord",[508]="Gorianischer Wächter",[509]="Soldat der Gefallenen",[510]="Sylldross",[511]="Stampfalupagus",[512]="Stahlhauer",[513]="Deserteur Dazgo",[514]="Maroder Madgard",[515]="Morgo Kain",[516]="Horgg",[517]="Durp der Verhasste",[518]="Erfinderin Rumskugel",[519]="Klingenmeister Ro'gor",[520]="Begleiter",[521]="Schniefel",[522]="Terokkschrein",[523]="Terokkschrein",[524]="Terokkschrein",[525]="Terokkschrein",[526]="Terokkschrein",[527]="Terokkschrein",[528]="Blassfell der Einsiedler",[529]="Eindringling",[530]="Aaswurm",[531]="Verräterischer Plünderer",[532]="Opportunist der Horde",[533]="Erzknirscher",[543]="Raureif",[544]="Gomtar der Gewandte",[545]="Mutter der Goren",[546]="Gibblett der Feigling",[547]="Vrok der Urzeitliche",[548]="Valkor",[549]="Karosh Schwarzwind",[550]="Brutag Grimmklinge",[551]="Krahl Todeswind",[552]="Gortag Stahlgriff",[553]="Kriegstrupp von Mok'gol",[554]="Bombardier Gu'gok",[558]="Knochenbrecher",[559]="Grubenschlächter",[560]="Durg Rückenzermalmer",[561]="Avatar von Socrethar",[562]="Haakun der Allesverschlingende",[563]="Gug'tol",[564]="Teufelsfeuerbuhle",[565]="Kriegsrat der Sargerei",[566]="Verwandeltes Wesen",[567]="Gefräßiger Riese",[568]="Mechaplünderer",[569]="Gigabewacher",[570]="Schattenkoloss",[571]="Lord Korinak",[572]="Orumo der Beobachter",[573]="Matrone der Sünde",[574]="Kurlosh Verdammnisbiss",[575]="Herrin Demlash",[576]="Schattenflammenschreiter",[579]="Scherbenschlund",[580]="Nagidna",[581]="Lawine",[582]="Krud der Ausweider",[583]="Grubenbestie",[586]="Beschützer des Hains",[587]="Scharfseher Weißauge",[588]="Wachsamer Paarthos",[589]="Xothear der Zerstörer",[590]="Vorhut der Legion",[591]="Echidna",[592]="Typhon",[593]="Keravnos",[594]="Lernaea",[595]="Schneller Onyxschinder",[596]="Venolasix",[597]="Hainwächter Yal",[598]="Feuerteufel Grash",[599]="Kaga der Eisenbieger",[600]="Erderschütterer Holar",[601]="Jaluk der Pazifist",[602]="Faulhut",[603]="Böser Blick",[604]="Ragore Schneejäger",[605]="Ogom der Zerfleischer",[606]="Verwaltungsassistent Spez",[607]="Riesiger Gorgrondsandjäger",[608]="Goblinarbeiter",[609]="Shirrak der Totenwächter",[610]="Jägerin Bal'ra",[611]="Großmarschall Tremblade",[612]="Oberster Kriegsfürst Volrath",[613]="Mogamago",[614]="Alkali",[616]="Gorok",[617]="Schlickhaut",[618]="Nakk der Donnerer",[619]="Rammfaust",[620]="Luk'hok",[621]="Pfadläufer",[622]="Kenos der Zerreißer",[623]="Opportunist der Allianz",[624]="Gorivax",[626]="Bergruu",[627]="Dekorhan",[628]="Gagrog der Metzler",[629]="Thek'talon",[630]="Mu'gra",[631]="Aogexon",[632]="Terrorhuf",[633]="Xelganak",[634]="Gräuelklaue",[635]="Ak'ox die Schlächterin",[636]="Ravyn-Drath",[637]="Garnisonslager",[638]="Verängstiger Arbeiter",[639]="Flammenpanzer",[640]="Rylai Jammerthal",[641]="Jeron Funkendrift",[642]="Fledermausreiter des Teufelsfeuers",[643]="Kor'lok",[644]="Angreifende Ranke",[645]="Eindringling",[646]="Leerenverzerrer des Schattenmondklans",[647]="Wildfeuerelementar",[648]="Erdbrechergronn",[649]="Gorenbau",[650]="Urzeitlicher Schrecken",[651]="Zeitbomben",[652]="Todesrufer des Schattenmondklans",[653]="Reißdorn",[654]="Sangrikass",[655]="Gorianischer Kriegsrufer",[656]="Leerenportal",[657]="Galzomar",[658]="Wütender Erdstampfer",[659]="Opfergaben für die Riesen",[660]="Gorianischer Kampfmagier",[661]="Wandernder Verteidiger",[662]="Gorianischer Zauberbinder",[663]="Auftragsmörder der Zerschmetterten Hand",[664]="Nachtflügelaasfresser",[665]="Eisschlundaasfresser",[666]="Eisschlundaasfresser",[667]="Furchterregender Gronnling",[668]="Konkubine der Sünde",[669]="Teufelslegionär",[670]="Ruchlose Buhle",[671]="Scharfschütze der Grom'kar",[672]="Bannerträger der Horde",[673]="Bannerträger der Allianz",[674]="Verheererschwarm",[676]="Wyrmzungenhorter",[677]="Valiyaka die Sturmbringerin",[678]="Horn der Sirene",[679]="Hauptmann Volo'ren",[680]="Das Orakel",[681]="Mrrgrl der Gezeitenhäscher",[682]="Flog der Kapitänenfresser",[683]="Vignette Placeholder",[684]="Yaeger-367",[685]="Kristallbart",[686]="Dolchschnabel",[687]="Hafenmeister Korak",[688]="Zoug der Klotz",[690]="Eiserner Hauptmann Argha",[691]="Inquisitor Ernstenbok",[692]="Such- & Zerstörungstrupp",[693]="Normantis der Entthronte",[694]="Entfesselter Riss",[695]="Varyx der Verdammte",[696]="Unteroffizier Mor'grak",[697]="Syphonus & Leodrath",[698]="Cindral",[699]="Cindral",[700]="Wichtelmeisterin Valessa",[701]="Hohepriester Ikzan",[702]="Lady Oran",[703]="Hundemeister Jax'zor",[704]="Ceraxas",[705]="Herrin Thavra",[706]="Rasthe",[707]="Höllenbestienvorrat",[708]="Invasionsort",[709]="Kleiner Invasionsort",[710]="Großer Invasionsort",[711]="Dimensionsanker",[712]="Lord Jaraxxus",[715]="Schatzgoblin",[716]="Rudelführer Miaul",[717]="Zeter'el",[718]="Dornenwüter",[719]="Teufelsfunke",[720]="Marius & Tehd",[721]="Gezeitenungetüm",[723]="Sandros",[724]="Scheinbar unbehüteter Schatzhaufen",[725]="Bilkor der Werfer",[726]="Rogond der Fährtenleser",[727]="Drivnul",[728]="Dorg der Blutige",[729]="Blutjäger Zulk",[730]="Überrest des Blutmonds",[731]="Cailyn Bleichbann",[732]="Kraw der Mystiker",[734]="Schotenfürst Wakkawumm",[735]="Glimar Eisenfaust",[736]="Verborgener Dämon",[737]="Marius & Tehd",[738]="Verborgener Dämon",[739]="Schwelende Schmiede",[740]="Kleine Schatztruhe",[741]="Schatztruhe",[742]="Schatztruhe",[743]="Schatztruhe",[744]="Schatztruhe",[745]="Schatztruhe",[746]="Glitzernde Schatztruhe",[747]="Kleine Schatztruhe",[748]="Schatztruhe",[749]="Schatztruhe",[750]="Schatztruhe",[751]="Schatztruhe",[752]="Schatztruhe",[753]="Patt der Gilblin",[754]="Glitzernde Schatztruhe",[755]="Schatztruhe",[756]="Wespenkönigin Zsala",[757]="Helyas Kraken",[758]="Großhexenmeister Nethekurse",[759]="Exekutor Riloth",[760]="Schatztruhe",[761]="Schatztruhe",[762]="Die Pestrufer",[763]="Matriarchin der Sturmschwingen",[764]="Methalle des Thans",[765]="Fathnyr",[768]="Argosh der Zerstörer",[769]="Klingenbö",[770]="Geir Bauchschlitzer",[771]="Verborgener Dämon",[772]="Putre'thar",[773]="Fenri",[774]="Shyama die Gefürchtete",[775]="Unbewachter Distelblattschatz",[776]="Blutschnabel",[777]="Wilde Mandragora",[778]="Elunes Kuss",[779]="Weißwassertaifun",[780]="Kleine Schatztruhe",[781]="Kleine Schatztruhe",[782]="Schatztruhe",[783]="Kleine Schatztruhe",[784]="Sehsei",[785]="Kleine Schatztruhe",[786]="Schatztruhe",[787]="Kleine Schatztruhe",[788]="Schatztruhe",[789]="Schatztruhe",[790]="Schatztruhe",[791]="Kleine Schatztruhe",[792]="Kleine Schatztruhe",[793]="Kleine Schatztruhe",[794]="Schatztruhe",[795]="Infizierter Pilz",[796]="Glitzernde Schatztruhe",[797]="Glitzernde Schatztruhe",[798]="Meisterspäher Relgor",[799]="Schatztruhe",[800]="Kleine Schatztruhe",[801]="Kleine Schatztruhe",[802]="Schrein der Bärenzwillinge",[803]="Gunst der Bärenzwillinge",[804]="Kleine Schatztruhe",[805]="Schatztruhe",[806]="Eichblatts Alptraum",[807]="Kleine Schatztruhe",[808]="Borstenknolls Versteck",[809]="Taylas Rettung",[810]="Schatztruhe",[811]="Brimbil's Reward [PH]",[812]="Brimbils Reise",[813]="Invasionspunkt: Verwüstung",[814]="Schmerzmeisterin Selora",[815]="Xanzith der Unvergängliche",[816]="Oberanführer Ma'gruth",[817]="Brutwächter Ixkor",[818]="Der Schwarzfang",[819]="Seelenschlitzer",[820]="Finsterkralle",[821]="Krell der Gleichmütige",[822]="Belgork",[823]="Thromma der Bauchschlitzer",[824]="Haken & Versenker",[825]="Worgrudel",[826]="Worgenpirscher",[827]="Sylissa",[828]="Todesschwadron der Verlassenen",[829]="Rendrak",[830]="Der Nachtschatten",[831]="Teufelsschmiedin Damorka",[832]="Kleine Schatztruhe",[833]="Räuber des Höllenschlunds",[834]="Die Schlitzklaue",[835]="Blutgeweihs Sohn",[836]="Kleine Schatztruhe",[837]="Schatztruhe",[838]="Kleine Schatztruhe",[839]="Schatztruhe",[840]="Der Namenlose König",[841]="Schrecken des Blutenden Auges",[842]="Stahlschnauze",[843]="Questgeber der Herausforderung",[844]="Interaktive Objektsprechblase",[845]="Schreckensrufer Rek'zolar",[846]="Gorabosh",[847]="Hundemeister Ely",[848]="Iroxus",[849]="Legionszitadelle",[850]="Magwia",[851]="[PH] Farm Defense",[852]="[PH] Banshee Queen",[853]="Driss Aasflinte",[854]="Schatztruhe",[855]="Kleine Schatztruhe",[856]="Kommandant Krag'goth",[857]="Tho'gar Blutfaust",[858]="Kommandant Org'mok",[859]="Grannok",[860]="Der Eiserne Hundemeister",[861]="Szirek der Entstellte",[862]="Kapitän Eisenbart",[863]="Titan Vault",[864]="Matschflutalpha",[865]="Grauschatten",[866]="Theryssia",[867]="Verirrter Ettin",[868]="Teufelsfräser",[869]="Thondrax",[870]="Glitzernde Schatztruhe",[871]="Schatztruhe",[872]="Kleine Schatztruhe",[873]="Schattendrescher",[874]="Hauptmann Grok'mar",[875]="Kris'kar der Verschmähte",[876]="Schreckenslord Seelenfessler",[877]="Mordvigbjorn",[878]="Wütender Erddiener",[879]="Urgev der Schinder",[880]="Kommandant Kar'threk",[881]="Schreckenslord Verakaz",[882]="Kleine Schatztruhe",[883]="Kleine Schatztruhe",[884]="Ur'lux",[885]="Invasionspunkt",[886]="Zitterndes Aschenmauljunges",[887]="Elindya Fiederlicht",[888]="Kommandant Zarthak",[889]="Kleine Schatztruhe",[890]="Schatztruhe",[891]="Antydas Nachtrufers Versteck",[892]="Glitzernde Blüte",[893]="Interaktive NSC-Sprechblase",[894]="Bewusstloser Haudrauf",[895]="Abyssalmonstrosität",[896]="Legionsreliktjäger",[897]="Elfenbeinbehüterin",[898]="Legionskommandant Arifex",[899]="Reliktverschlingerin Siniara",[900]="Pionier Vorick",[901]="Geistbeuger Alazor",[902]="Kleine Schatztruhe",[903]="Kleine Schatztruhe",[904]="Schatztruhe",[905]="Kleine Schatztruhe",[906]="Kleine Schatztruhe",[907]="Schatztruhe",[908]="Kleine Schatztruhe",[909]="Kleine Schatztruhe",[910]="Kleine Schatztruhe",[911]="Schatztruhe",[912]="Kleine Schatztruhe",[913]="Schatztruhe",[914]="Kleine Schatztruhe",[915]="Glitzernde Schatztruhe",[916]="Kleine Schatztruhe",[917]="Schatztruhe",[918]="Glitzernde Schatztruhe",[919]="Kleine Schatztruhe",[920]="Kleine Schatztruhe",[921]="Kleine Schatztruhe",[922]="Schatztruhe",[923]="Kleine Schatztruhe",[924]="Unterwerfer Deth'ryzak",[925]="Kleine Schatztruhe",[926]="Kleine Schatztruhe",[927]="Kleine Schatztruhe",[928]="Schatztruhe",[929]="Kleine Schatztruhe",[930]="Kleine Schatztruhe",[931]="Kleine Schatztruhe",[932]="Kleine Schatztruhe",[933]="Schatztruhe",[934]="Schatztruhe",[935]="Glitzernde Schatztruhe",[936]="Kleine Schatztruhe",[937]="Kleine Schatztruhe",[938]="Kleine Schatztruhe",[939]="Schatztruhe",[940]="Isel der Hammer",[941]="Spukhaus",[942]="Ix'Gur der Infizierte",[943]="Lager der Illidari",[944]="Den Fluss läutern",[945]="Netherflamme",[946]="Schreckensritter",[947]="Teufelshäscher",[948]="Die Wildnis erhebt sich",[949]="Stadtbewohner retten",[950]="Loherus",[952]="Orramis der Himmelssenger",[953]="Hundemeister Vorix",[954]="Brogrul der Mächtige",[955]="Kleine Schatztruhe",[956]="Terrorfaust",[957]="Verdammniswalze",[958]="Rache",[959]="Todeskralle",[960]="Gurgstok",[961]="Rekonstruierter Feindschnitter 5000",[962]="Kriegshetzer Shri'valox",[963]="Kleine Schatztruhe",[964]="Schatztruhe",[965]="Der Blutmond",[966]="Syndrelle",[967]="Alte Bärenfalle",[968]="Sammelt Apexismale",[970]="Oubdob der Knaller",[971]="Schatztruhe",[972]="Wurmple",[973]="Zuchtmeister der Himmelsschnauzer",[974]="Schatztruhe",[975]="Zaubersauger",[976]="Glitzernde Schatztruhe",[977]="Schatztruhe",[978]="Kleine Schatztruhe",[979]="Schatztruhe",[980]="Schatztruhe",[981]="Schatztruhe",[982]="Schatztruhe",[983]="Zaldrok",[984]="Eine dampfende Kiste",[985]="Koppklopperarena",[986]="Auferstandene Geister",[987]="Sammelt Apexismale",[988]="Ogerfeuer",[989]="Aufgeladenes Erz einsammeln",[990]="Stadionrennen",[991]="Sammelt Apexismale",[992]="Sammelt Apexismale",[993]="Perrexx der Verderber",[994]="Herz des Hains",[995]="Majestätisches Urhorn",[998]="Schatztruhe",[999]="Shara Teufelshauch",[1000]="Vollkommen sichere Schatztruhe",[1001]="Der verbannte Schamane",[1002]="Eraakis",[1003]="Bestienmeister Pao'lek",[1004]="Hartli die Wegfängerin",[1006]="Krähenschropf der Hungrige",[1007]="Der Schneebringer",[1008]="Schatztruhe",[1009]="Schatztruhe",[1010]="Schatztruhe",[1011]="Schatztruhe",[1012]="Schatztruhe",[1013]="Schatztruhe",[1014]="Schatztruhe",[1015]="Schatztruhe",[1016]="Schatztruhe",[1017]="Arachnis",[1018]="Schatztruhe",[1019]="Schatztruhe",[1020]="Schatztruhe",[1021]="Schatztruhe",[1022]="Schatztruhe",[1023]="Schatztruhe",[1024]="Schatztruhe",[1025]="Schatztruhe",[1026]="Schatztruhe",[1027]="Phantomkralle",[1028]="Terrormoor",[1031]="Pfadfinder Hastfuß",[1032]="Faules Ei",[1033]="Wahnsinniger Magier",[1034]="Manasicker",[1035]="Skriek",[1036]="Segacedi",[1037]="Diebisches Gesindel",[1038]="Splint",[1039]="Xullorax",[1040]="Hort der Schattenseite",[1041]="Seelenlechzer",[1042]="Jägerin Ellandryn",[1043]="Der Bestienboxer",[1044]="Qualtotem",[1045]="Alptraumwurzeln",[1046]="Alptraumwurzeln",[1047]="Liegen gelassene Angelrute",[1048]="Schatztruhe",[1049]="Schatztruhe",[1050]="Schatztruhe",[1051]="Schatztruhe",[1052]="Schatztruhe",[1053]="Arkuthaz",[1054]="Garthulak der Zermalmer",[1055]="Schatztruhe",[1056]="Grmlrml der Krabbenreiter",[1057]="Schatztruhe",[1058]="Schatztruhe",[1059]="Schatztruhe",[1060]="Schatztruhe",[1061]="Schatztruhe",[1062]="Schatztruhe",[1063]="Kleine Schatztruhe",[1064]="Earlnoc der Bestienbrecher",[1065]="Egyl der Ausdauernde",[1066]="Pugg",[1067]="Guk",[1068]="Rukdug",[1069]="Lyrath Mondfeder",[1070]="Eisenast",[1071]="Tarben",[1072]="Kleine Schatztruhe",[1073]="Bodash der Hamsterer",[1074]="Schatztruhe",[1075]="Schatztruhe",[1076]="Schatztruhe",[1077]="Schatztruhe",[1078]="Schatztruhe",[1079]="Schatztruhe",[1080]="Schatztruhe",[1081]="Kleine Schatztruhe",[1082]="Kleine Schatztruhe",[1083]="Schatztruhe",[1084]="Gefangener Überlebender",[1085]="Sonnenbriser",[1086]="Schatztruhe",[1087]="Eileen die Krähe",[1088]="Zaggund Hopp",[1089]="Gondar",[1090]="Drakum",[1091]="Teufelsaufseher Lehmklump",[1092]="Glitzernde Schatztruhe",[1093]="Kottr Vondyr",[1094]="Korazoth",[1095]="Grrvrgull der Eroberer",[1096]="Schatztruhe",[1097]="Schatztruhe",[1098]="Schatztruhe",[1099]="Grelda die Hexe",[1100]="Aufseher Th'talak",[1103]="Schatztruhe",[1104]="Schatztruhe",[1105]="Schatztruhe",[1106]="Schlummernder Bär",[1107]="Der Hof der Brutkönigin: Graf Nefarious",[1108]="Der Hof der Brutkönigin: König Voras",[1109]="Der Hof der Brutkönigin: Aufseher Brutarg",[1110]="Der Hof der Brutkönigin: General Volroth",[1111]="Mellok",[1112]="Kethrazor",[1113]="Urg'thal",[1114]="Thaz'gul",[1115]="Schatztruhe",[1116]="Schatztruhe",[1117]="Schatztruhe",[1118]="Erdu'un",[1119]="Zornfürst Lekos",[1122]="Vedra die Geistbeugerin",[1123]="Schatztruhe",[1124]="Schatztruhe",[1125]="Glitzernde Schatztruhe",[1126]="Gurbog der Klopper",[1127]="Schätze der Valarjar",[1138]="Teufelsbrenner",[1143]="Vor'zathul",[1144]="Ri'sich",[1145]="Alptraum des Matrosen",[1146]="Ruheloser Meeresgeist",[1147]="Luggut der Eierfresser",[1148]="Borstenschlund",[1150]="Freizeitjäger",[1151]="Honigstock",[1152]="Kleine Schatztruhe",[1153]="Kleine Schatztruhe",[1154]="Kleine Schatztruhe",[1155]="Kleine Schatztruhe",[1156]="Kleine Schatztruhe",[1157]="Schatztruhe",[1158]="Ethisch fragwürdige Abenteurer",[1159]="Kleine Schatztruhe",[1160]="Kleine Schatztruhe",[1161]="Kleine Schatztruhe",[1162]="Glitzernde Schatztruhe",[1163]="Kleine Schatztruhe",[1164]="Schatztruhe",[1165]="Kleine Schatztruhe",[1166]="Kleine Schatztruhe",[1167]="Kleine Schatztruhe",[1168]="Schatztruhe",[1169]="Schatztruhe",[1170]="Schatztruhe",[1171]="Schatztruhe",[1172]="Schatztruhe",[1173]="Schatztruhe",[1174]="Schatztruhe",[1175]="Schatztruhe",[1176]="Schatztruhe",[1177]="Schatztruhe",[1178]="Schatztruhe",[1179]="Schatztruhe",[1180]="Schatztruhe",[1181]="Kleine Schatztruhe",[1182]="Schatztruhe",[1183]="Schatztruhe",[1184]="Kleine Schatztruhe",[1185]="Schatztruhe",[1186]="Kleine Schatztruhe",[1187]="Schatztruhe",[1188]="Schatztruhe",[1189]="Kleine Schatztruhe",[1190]="Kleine Schatztruhe",[1191]="Schatztruhe",[1192]="Schatztruhe",[1193]="Kleine Schatztruhe",[1194]="Schatztruhe",[1195]="Schatztruhe",[1196]="Kleine Schatztruhe",[1197]="Schatztruhe",[1198]="Schatztruhe",[1199]="Schatztruhe",[1200]="Kleine Schatztruhe",[1201]="Kleine Schatztruhe",[1202]="Kleine Schatztruhe",[1203]="Schatztruhe",[1204]="Schatztruhe",[1205]="Kleine Schatztruhe",[1206]="Schatztruhe",[1207]="Kleine Schatztruhe",[1208]="Kleine Schatztruhe",[1209]="Kleine Schatztruhe",[1210]="Schatztruhe",[1211]="Kleine Schatztruhe",[1212]="Kleine Schatztruhe",[1213]="Kleine Schatztruhe",[1214]="Schatztruhe",[1215]="Kleine Schatztruhe",[1216]="Kleine Schatztruhe",[1217]="Schatztruhe",[1218]="Verschlingende Finsternis",[1219]="Kleine Schatztruhe",[1220]="Rok'nash",[1221]="Sekhan",[1222]="Warpspeicher",[1226]="Schatztruhe",[1227]="Schatztruhe",[1228]="Gom Krabbar",[1229]="Panzermaul",[1230]="Jaggen-Ra",[1231]="Kleine Schatztruhe",[1232]="Kleine Schatztruhe",[1233]="Kohlfeder",[1234]="Staubige Truhe",[1236]="Garvrulg",[1237]="Algal Blütenquell",[1238]="Kleine Schatztruhe",[1239]="Leutnant Strathmar",[1240]="Meistermümmler",[1241]="Rek'zelok",[1242]="Mythana",[1243]="Zornfäule",[1244]="Kudzilla",[1245]="Treibgut",[1246]="Ragoul",[1247]="Arthfael",[1248]="Strandgut",[1249]="Cora'kar",[1250]="Har'kess der Unersättliche",[1251]="Hertha Grimmdottir",[1252]="Kraxa",[1253]="Ultanok",[1258]="Kommandant Vorlax",[1259]="Rifflord Raj'his",[1260]="Lady Aga'thar",[1261]="Gezeitenjäger Mela'kar",[1263]="Elfenbann",[1271]="Invasionsort",[1272]="Portal",[1273]="Großes Portal",[1274]="Legionsgebäude",[1275]="Ra'thuzek",[1276]="Tel'thuzek",[1277]="Unterwerfer Val'rek",[1278]="Shel'zuul",[1279]="Nekrolord Mordrathel",[1280]="Fäulnisbringer Karthex",[1281]="König der Meeresriesen",[1285]="Großes Gebäude",[1287]="Legionsbasis",[1291]="Bärenjunges",[1295]="Vis'ileth",[1296]="Xal'drunoth",[1297]="Garn",[1298]="Verezoth",[1299]="Marius & Tehd",[1300]="Flammenbringer Zol'drathul",[1301]="Ko'razz",[1302]="Feuerrufer Rok'duun",[1303]="Vel'thrak der Bestrafer",[1304]="Kriegsrufer Gorax",[1305]="Unterwerfer Doth'razel",[1306]="Balnazoth",[1307]="Zar'vok",[1308]="Teufelslord Kaz'ral",[1309]="Meisterhafte Handwerkskunst",[1310]="Geschichte in Euren Händen",[1311]="Teufelsflammenoberdämon",[1312]="Gargorok",[1313]="Knochenzermalmer Korgolath",[1314]="Zargrom",[1315]="Flammen vergangener Zeitalter",[1316]="Mazgoroth",[1318]="Bolzathar",[1319]="Roth'kar",[1322]="Erzmagus Zyrel",[1323]="Erzmagus Velysra",[1324]="Dunkelmagus Falo'reth",[1325]="Dunkelmagus Drazzok",[1326]="Häuptling Bittergischt",[1328]="Kleine Schatztruhe",[1329]="Kleine Schatztruhe",[1330]="Kleine Schatztruhe",[1331]="Flammenbringer Az'rothel",[1332]="Baldrazar",[1333]="Malphazel der Gesichtslose",[1334]="Verdammnisbringer Valus",[1335]="Vogrethar der Entweihte",[1337]="Vorthax",[1338]="Flammenruferin Vezrah",[1339]="Azbaleth",[1341]="Kleine Schatztruhe",[1342]="Kazruul",[1343]="Gorgoloth",[1344]="Herold Drel'nathar",[1345]="Herold Faraleth",[1346]="Kleine Schatztruhe",[1347]="Kleine Schatztruhe",[1348]="Raufgoth",[1349]="Kleine Schatztruhe",[1350]="Kleine Schatztruhe",[1351]="Hundemeister Stroxis",[1352]="Kleine Schatztruhe",[1353]="Kleine Schatztruhe",[1354]="Schatztruhe",[1355]="Kleine Schatztruhe",[1356]="Kleine Schatztruhe",[1357]="Schatztruhe",[1358]="Kleine Schatztruhe",[1359]="Kleine Schatztruhe",[1360]="Kleine Schatztruhe",[1361]="Glitzernde Schatztruhe",[1362]="Kleine Schatztruhe",[1363]="Schatztruhe",[1364]="Dargrol",[1365]="Argothel",[1366]="Mal'serus",[1367]="Inquisitor Tivos",[1368]="Ox'iloth",[1369]="Instabiles Fass",[1370]="Gallhirn",[1371]="Sternbock",[1372]="Teufelskommandant Urgoz",[1373]="Abyssischer Erschütterer",[1374]="Wahl des Meuchelmörders",[1375]="Wahl des Giftmörders",[1376]="Der Geschmack von Königsblut",[1378]="Arkanist Shal'iman",[1379]="Ein Liebhaber des Liquidierens",[1380]="Dul'thar",[1381]="Mordrethal",[1382]="Ur'goth",[1383]="Gor'threzal",[1384]="Magdrezoth",[1386]="Maglothar",[1387]="Schrein der Erde",[1388]="Schrein der Erde",[1389]="Schrein der Erde",[1390]="Schrein der Erde",[1391]="Schrein der Erde",[1392]="Schrein der Erde",[1393]="Schrein der Erde",[1394]="Schrein der Erde",[1395]="Schrein des Windes",[1396]="Schrein des Windes",[1397]="Schrein des Windes",[1398]="Schrein des Windes",[1399]="Schrein des Windes",[1400]="Hannval der Schlächter",[1401]="Agmozuul",[1402]="Ruheloser Meeresgeist",[1404]="Kleine Schatztruhe",[1405]="Schatztruhe",[1406]="Kleine Schatztruhe",[1407]="Teufelsflammeneruptor",[1408]="Gigantische Höllenbestie",[1409]="Selia",[1410]="Coura",[1411]="Quin'el",[1412]="Ruhelose Meister",[1413]="Die Schätze Todesschwinges",[1414]="Thogrum",[1420]="Gloth",[1421]="Gelthrak",[1422]="Eine Frage des Willens",[1423]="Das unendliche Dunkel",[1424]="Allkönigsbogen",[1425]="Die zahllosen Toten",[1426]="Unused",[1427]="Idra'zuul",[1428]="Gelgothar",[1429]="Orgrokk",[1430]="Nez'val",[1431]="Akzorek",[1432]="Dal'grozz",[1433]="Zok'verel",[1436]="Teufelskommandant Vorgroth",[1438]="Kur'zok",[1439]="Shel'drozul",[1442]="Shal'an",[1443]="Kleine Schatztruhe",[1444]="Schreckenskommandant Il'tholzul",[1445]="Druug",[1446]="Grarm",[1447]="Balzorok",[1448]="Warden Dungeon - Adventure - Dog Tags",[1449]="Unterwerfer Vuur",[1450]="Schatztruhe",[1451]="Schatztruhe",[1452]="Schatztruhe",[1453]="Untergrellangriff",[1454]="Kleine Schatztruhe",[1455]="Kleine Schatztruhe",[1456]="Glitzernde Schatztruhe",[1457]="Kleine Schatztruhe",[1458]="Kleine Schatztruhe",[1459]="Kleine Schatztruhe",[1460]="Schatztruhe",[1461]="Schatztruhe",[1462]="Kleine Schatztruhe",[1463]="Kleine Schatztruhe",[1464]="Schatztruhe",[1465]="Schatztruhe",[1466]="Schatztruhe",[1467]="Schatztruhe",[1468]="Schatztruhe",[1469]="Schatztruhe",[1470]="Schatztruhe",[1471]="Schatztruhe",[1472]="Schatztruhe",[1473]="Glitzernde Schatztruhe",[1474]="Glitzernde Schatztruhe",[1475]="Glitzernde Schatztruhe",[1476]="Glitzernde Schatztruhe",[1477]="Glitzernde Schatztruhe",[1478]="Glitzernde Schatztruhe",[1479]="Kleine Schatztruhe",[1480]="Kleine Schatztruhe",[1481]="Kleine Schatztruhe",[1482]="Kleine Schatztruhe",[1483]="Kleine Schatztruhe",[1484]="Schatztruhe",[1485]="Schatztruhe",[1486]="Kleine Schatztruhe",[1487]="Kleine Schatztruhe",[1488]="Kleine Schatztruhe",[1489]="Kleine Schatztruhe",[1490]="Kleine Schatztruhe",[1491]="Schatztruhe",[1492]="Glitzernde Schatztruhe",[1493]="Thel'draz",[1494]="Invasionspunkt",[1495]="Faulauge",[1496]="Schreckensreiter Cortis",[1497]="Magister Phaedris",[1498]="Mal'Dreth der Verderber",[1499]="Myonix",[1500]="Belagerungsmeister Aedrin",[1501]="Zar'teth",[1502]="Az'odrel",[1503]="Fäulnisbringer Velthux",[1504]="Bahagar",[1505]="Oreth der Grässliche",[1506]="Huk'roth der Hundemeister",[1507]="Arkanistin Lylandre",[1508]="Rauren",[1509]="Cadraeus",[1510]="Gezeitenklaue",[1511]="Apotheker Faldren",[1513]="Verderbter Knochenbrecher",[1515]="Wächter Thor'el",[1517]="Randril",[1518]="Randril",[1519]="Ix'dreloth",[1520]="Vel'karozz",[1521]="Schlickfratze",[1522]="Silberschlange",[1523]="Der Rattenkönig",[1524]="Tagerma die Seelensüchtige",[1525]="Seuchenschlund",[1526]="Hüllensucher",[1527]="Schreckenskapitän Thedon",[1528]="Ataxius",[1529]="Velimar",[1530]="Arkanistin Malrodi",[1531]="Lagertha",[1532]="Aegir Wellenschmetterer",[1533]="Runenseher Sigvid",[1534]="Rulf Knochenknacker",[1535]="Seelenbinderin Halldora",[1536]="Jägerin Estrid",[1537]="Felssturz der Zerfressene",[1538]="Kapitän Dargun",[1539]="Höhlenmutter Ylva",[1540]="Halfdan",[1541]="Anax",[1542]="Rasender Animus",[1543]="Dunkler Jäger",[1544]="Energietransfer",[1545]="Maugroth",[1546]="Thar'gokk",[1547]="Konstrukteur Lothaire",[1548]="Matrone Hagatha",[1549]="Gol'drazel",[1550]="Zaar'koz",[1551]="Dro'zek",[1552]="Schimmernde uralte Manazusammenballung",[1553]="Schimmernde uralte Manazusammenballung",[1554]="Schimmernde uralte Manazusammenballung",[1555]="Schimmernde uralte Manazusammenballung",[1556]="Schimmernde uralte Manazusammenballung",[1557]="Schimmernde uralte Manazusammenballung",[1558]="Adliger Klingenmeister",[1559]="Miasu",[1560]="Botschafter D'vwinn",[1561]="Karthax",[1562]="Kleine Schatztruhe",[1563]="Kleine Schatztruhe",[1564]="Kleine Schatztruhe",[1565]="Schatztruhe",[1566]="Kleine Schatztruhe",[1567]="Kleine Schatztruhe",[1568]="Kleine Schatztruhe",[1569]="Schatztruhe",[1570]="Kleine Schatztruhe",[1571]="Kleine Schatztruhe",[1572]="Schatztruhe",[1573]="Kleine Schatztruhe",[1574]="Kleine Schatztruhe",[1575]="Kleine Schatztruhe",[1576]="Schatztruhe",[1577]="Glitzernde Schatztruhe",[1578]="Schatztruhe",[1579]="Kleine Schatztruhe",[1580]="Kleine Schatztruhe",[1581]="Kleine Schatztruhe",[1582]="Glitzernde Schatztruhe",[1583]="Kleine Schatztruhe",[1584]="Schatztruhe",[1585]="Kleine Schatztruhe",[1586]="Kleine Schatztruhe",[1587]="Kleine Schatztruhe",[1588]="Schatztruhe",[1589]="Schatztruhe",[1590]="Kleine Schatztruhe",[1591]="Kleine Schatztruhe",[1592]="Kleine Schatztruhe",[1593]="Schatztruhe",[1594]="Schatztruhe",[1595]="Kleine Schatztruhe",[1596]="Kleine Schatztruhe",[1597]="Kleine Schatztruhe",[1598]="Schatztruhe",[1599]="Schatztruhe",[1600]="Schatztruhe",[1601]="Schatztruhe",[1602]="Glitzernde Schatztruhe",[1603]="Thal'goroth",[1604]="Lysanis Schattenseele",[1605]="Jade Dunkelhafen",[1606]="Glutschwinge",[1607]="Bestrix",[1608]="Zwickzange",[1609]="Gorgroth",[1610]="Schattenfeder",[1611]="Xel'varek",[1612]="Schreckenskommandant Nath'razel",[1613]="Torrentius",[1614]="Meereskönig Tidross",[1615]="Marius & Tehd",[1616]="Born der Weisheit",[1617]="Maia der Weiße",[1618]="Teufelskommandant Maz'golar",[1619]="Valazar der Verderber",[1620]="Baalstrog",[1621]="Smoth",[1622]="Wilder Worgen",[1623]="Verräterische Hengste",[1624]="Schatulle des Hauses Rabenkrone",[1625]="Schatztruhe",[1626]="Alptraumbeute",[1627]="Kästchen mit Kleinodien",[1628]="Verkrustete Kvaldirtruhe",[1629]="Gestohlene Waren der Himmelshörner",[1630]="Deplatzierte Kiste",[1631]="Truhe der Legion",[1632]="Kleine Schatztruhe",[1633]="Kleine Schatztruhe",[1634]="Kleine Schatztruhe",[1635]="Kleine Schatztruhe",[1636]="Zornschlund",[1637]="Genn",[1639]="Jaina",[1640]="Varian",[1641]="Gelbin",[1642]="Mar'tura",[1643]="Wilder Worgen",[1644]="Wilder Worgen",[1645]="Wilder Worgen",[1646]="Wilder Worgen",[1647]="Wilder Worgen",[1648]="Kleine Schatztruhe",[1649]="Kleine Schatztruhe",[1650]="Schatztruhe",[1651]="Kleine Schatztruhe",[1652]="Baine",[1653]="Sylvanas",[1654]="Thrall",[1655]="Vol'jin",[1656]="Sel'farius",[1657]="Drel'vareus",[1658]="Erzmagierin Nielthende",[1659]="Arkanistin Halice",[1660]="Erzmagier Kesalon",[1661]="Mal'drovas",[1662]="Val'rothar",[1663]="Vol'zeth",[1664]="Sath'razel",[1665]="Volynd Sturmbringer",[1666]="Uralte Witwe",[1667]="General Tel'arn",[1668]="Braxas der Fleischschnitzer",[1669]="Erzmagier Galeorn",[1670]="Kelorn Nachtklinge",[1671]="Kleine Schatztruhe",[1672]="Kleine Schatztruhe",[1673]="Frostsplitter",[1674]="Schatztruhe",[1675]="Schatztruhe",[1676]="Schatztruhe",[1677]="Sal'thezrus",[1678]="Schatztruhe",[1679]="Kleine Schatztruhe",[1680]="Mondwachenportal",[1681]="Dämonenversklavter Vollstrecker",[1682]="Mondwachenportal",[1683]="Portal nach Nihilam",[1684]="Leutnant Strathmar",[1685]="Inquisitor Volitix",[1686]="Flammenwirker Verathix",[1687]="Boshafter Walhai",[1688]="Brutmutter Lizax",[1689]="Der Muskel",[1690]="Kommandant Soraax",[1691]="Lady Rivantas",[1692]="Llorian",[1693]="Glitzernde Schatztruhe",[1694]="Kozrum",[1695]="Degrazol der Nötigende",[1697]="Invasionsort",[1698]="Schatztruhe",[1699]="Invasionspunkt",[1701]="Angriffspunkt",[1702]="Azrok der Folterer",[1720]="Verdammnisgeißel",[1721]="Ariadne",[1722]="Schatzgoblin",[1724]="Schatztruhe",[1725]="Schatztruhe",[1726]="Schatztruhe",[1727]="Schatztruhe",[1728]="Schatztruhe",[1729]="Schatztruhe",[1730]="Schatztruhe",[1731]="Schatztruhe",[1732]="Schatztruhe",[1733]="Schatztruhe",[1734]="Schatztruhe",[1735]="Schatztruhe",[1736]="Schatztruhe",[1737]="Schatztruhe",[1738]="Schatztruhe",[1739]="Schatztruhe",[1740]="Schatztruhe",[1741]="Schatztruhe",[1742]="Schatztruhe",[1743]="Schatztruhe",[1744]="Schatztruhe",[1745]="Schatztruhe",[1746]="Schatztruhe",[1747]="Schatztruhe",[1748]="Schatztruhe",[1749]="Schatztruhe",[1750]="Schatztruhe",[1751]="Schatztruhe",[1752]="Schatztruhe",[1753]="Überladener Seelensplitter",[1754]="Schatztruhe",[1755]="Schatztruhe",[1756]="Schatztruhe",[1757]="Schatztruhe",[1758]="Schatztruhe",[1759]="Schatztruhe",[1760]="Schatztruhe",[1761]="Schatztruhe",[1762]="Schatztruhe",[1763]="Schatztruhe",[1764]="Schatztruhe",[1765]="Schatztruhe",[1766]="Schatztruhe",[1767]="Schatztruhe",[1768]="Schatztruhe",[1769]="Schatztruhe",[1770]="Schatztruhe",[1771]="Schatztruhe",[1772]="Schatztruhe",[1773]="Schatztruhe",[1774]="Schatztruhe",[1775]="Schatztruhe",[1776]="Schatztruhe",[1777]="Schatztruhe",[1778]="Schatztruhe",[1779]="Schatztruhe",[1780]="Schatztruhe",[1781]="Schatztruhe",[1782]="Schatztruhe",[1783]="Schatztruhe",[1784]="Schatztruhe",[1785]="Schatztruhe",[1786]="Zirux",[1787]="Schläger der Mo'arg",[1788]="Schatz eines Meeresriesen",[1789]="Erzürnter Meeresriese",[1790]="Schatz eines Meeresriesen",[1791]="Teufelssplitter",[1797]="Horde von Höllenbestien",[1798]="Asgrims Grabgesang",[1800]="Vergoldeter Wächter",[1801]="Torm der Schläger",[1802]="Az'jatar",[1803]="Volshax der Willensbrecher",[1804]="Auditor Esiel",[1805]="Magistrix Vilessa",[1806]="Sorallus",[1807]="Achronos",[1808]="Kosumoth der Hungernde",[1809]="Ealdis",[1810]="Herold der Schreie",[1811]="Aodh Welkblüte",[1812]="Rabxach",[1813]="Nylaathria die Vergessene",[1814]="Tiefenschere",[1815]="Lytheron",[1816]="Hauptschatzmeister Jabril",[1817]="Marblub der Massive",[1818]="Hexendoktor Grgl-Brgl",[1819]="Arkanor Prime",[1820]="Feurio",[1821]="Die Flüsterin",[1822]="Sturmfeder",[1823]="Fjordun",[1824]="Shalas'aman",[1825]="Malisandra",[1826]="Selenyi",[1827]="Colerian",[1828]="Alteria",[1829]="Sichelmeister Cil'raman",[1830]="Oglok der Rasende",[1831]="Fjorlag der Grabeshauch",[1833]="Xavrix",[1834]="Ormagrogg",[1835]="Olokk der Schiffszerstörer",[1836]="Mawat'aki",[1837]="Defilia",[1838]="Ala'washte",[1839]="Valakar der Durstige",[1840]="Mortiferus",[1841]="Salzbart der Auferstandene",[1842]="Malfarius",[1843]="Gorgamaul",[1844]="Magdromath",[1845]="Kleine Schatztruhe",[1846]="Teufelsruferin Zelthae",[1847]="Teufelsbeschwörer Xar'thok",[1848]="Glutfeuer",[1849]="Inquisitor Eisbann",[1850]="Xorogun der Flammenschnitzer",[1851]="Glutbiest der Teufelsrachen",[1852]="Schreckensklingenvernichter",[1853]="Trankmeister Glug",[1854]="Verdammnisbringer Zar'thoz",[1855]="Salethan der Brutwandler",[1856]="Malgrazoth",[1857]="Kar'zun",[1858]="Flugmeister Volnath",[1860]="Altvater Winter",[1861]="Knochenzermalmer Korgolath",[1862]="Gargorok",[1863]="Zar'vok",[1864]="Thol'drel",[1865]="Thal'xur",[1866]="Zar'teth",[1867]="Za'kaar",[1868]="Aldrugoth",[1869]="Dral'zeth",[1870]="Zagmothar",[1871]="Larthogg",[1872]="Il'drethal",[1873]="Draz'guul",[1874]="Schlachtbrett der Verheerten Küste",[1881]="Balnazoth",[1882]="Gelthrog",[1883]="Malorus der Seelenwärter",[1884]="Teufelsruferin Thalezra",[1885]="Schreckensauge",[1886]="Artefaktforschung",[1887]="Lord Hel'nurath",[1888]="Wichtelmutter Bruva",[1894]="Malgrazoth",[1897]="Kleine Schatztruhe",[1898]="Kleine Schatztruhe",[1899]="Larithia",[1900]="Wa'glur",[1901]="Raga'yut",[1902]="Schreckenssprecher Serilis",[1903]="Herrin Dominix",[1904]="Jorvild der Vertraute",[1905]="Flllurlokkr",[1906]="Verderbter Knochenbrecher",[1907]="Aqueux",[1908]="Kleine Schatztruhe",[1909]="Kleine Schatztruhe",[1910]="Kleine Schatztruhe",[1911]="Kleine Schatztruhe",[1912]="Kleine Schatztruhe",[1913]="Kleine Schatztruhe",[1914]="Kleine Schatztruhe",[1915]="Kleine Schatztruhe",[1916]="Kleine Schatztruhe",[1917]="Brutmutter Nix",[1918]="Kleine Schatztruhe",[1919]="Kleine Schatztruhe",[1920]="Kleine Schatztruhe",[1921]="Kleine Schatztruhe",[1922]="Kleine Schatztruhe",[1923]="Kleine Schatztruhe",[1924]="Kleine Schatztruhe",[1925]="Kleine Schatztruhe",[1926]="Kleine Schatztruhe",[1927]="Kleine Schatztruhe",[1928]="Kleine Schatztruhe",[1929]="Kleine Schatztruhe",[1930]="Kleine Schatztruhe",[1931]="Kleine Schatztruhe",[1932]="Kleine Schatztruhe",[1933]="Kleine Schatztruhe",[1934]="Kleine Schatztruhe",[1935]="Kleine Schatztruhe",[1936]="Kleine Schatztruhe",[1937]="Kleine Schatztruhe",[1938]="Kleine Schatztruhe",[1939]="Kleine Schatztruhe",[1940]="Kleine Schatztruhe",[1941]="Kleine Schatztruhe",[1942]="Kleine Schatztruhe",[1943]="Kleine Schatztruhe",[1944]="Kleine Schatztruhe",[1945]="Kleine Schatztruhe",[1946]="Kleine Schatztruhe",[1947]="Grossir",[1948]="Bruder Badatin",[1949]="Tangfaust",[1950]="Dresanoth",[1951]="Erdu'val",[1952]="Tiefenmaul",[1953]="Instabiles Netherportal",[1954]="Lady Eldrathe",[1955]="Dämmerfinsternis",[1956]="Ryul der Schwindende",[1957]="Der Schreckenspirscher",[1958]="Kriegsfürst Darjah",[1959]="Unheilvoller Kürassier",[1960]="Verzerrter Leerenfürst",[1961]="Missgestaltete Terrorwache",[1962]="Wahnsinniger Sukkubus",[1963]="Verrückte Shivarra",[1964]="Zermürbender Oberdämon",[1965]="Anomaler Aufseher",[1966]="Instabiler Wichtel",[1967]="Flimmernder Teufelsjäger",[1968]="Instabiler Abyssal",[1969]="Herzog Sithizi",[1970]="Auge von Gurgh",[1971]="Naisha",[1972]="Dresanoth",[1973]="Liquidator der Legion",[1974]="Ardaan der Ehrwürdige",[1975]="Tercin Shivenllher",[1976]="Die alte Rotana",[1977]="Schatztruhe",[1978]="Allianzkonvoi",[1979]="Hordenereignis",[1980]="Die Feste Nordwacht",[1983]="Nordwachtstraße",[1984]="Grabenlager",[1985]="Der Gefechtsstand",[1986]="Der Gefechtsstand",[1987]="Grabenlager",[1988]="Wird angegriffen",[1996]="Belagerungsmeister Voraan",[1998]="Umbra'jin",[1999]="Horde",[2000]="Blutsichel",[2001]="Schatztruhe",[2002]="Schatztruhe",[2003]="Death-Metal-Ritter",[2004]="Golrakahn",[2007]="X'ue",[2008]="Knochenhüter Makiri",[2009]="Vollgefressener Saurolisk",[2010]="Kal'draxa",[2012]="Invasionspunkt",[2013]="Befallenes Terrorhorn",[2014]="Herrenloser Schatz",[2015]="Betti",[2016]="Großer Invasionspunkt",[2017]="Werkstatt",[2018]="Ställe",[2019]="Schmied",[2020]="Kaserne",[2021]="Gebäude der Horde",[2022]="Verbündete verfügbar",[2024]="Schatztruhe",[2025]="Schatztruhe",[2026]="Schatztruhe",[2027]="Truhe voller Gold",[2028]="Krubbs",[2029]="Die verfluchte Truhe",[2030]="Verfluchte Truhe",[2031]="Uralter Kieferknirscher",[2032]="Kriegshetzer Kro'goth",[2033]="Aufseher Krix",[2034]="Doug Test - Frostfire Gronnling",[2035]="Stachelrattenmatriarchin",[2038]="Kul'krazahn",[2039]="Schatztruhe",[2040]="Schatztruhe",[2041]="Schatztruhe",[2042]="Schatztruhe",[2043]="Schatztruhe",[2044]="Schatztruhe",[2045]="Schatztruhe",[2046]="Schatztruhe",[2047]="Schatztruhe",[2048]="Schatztruhe",[2049]="Schatztruhe",[2050]="Schatztruhe",[2051]="Schatztruhe",[2052]="Schatztruhe",[2053]="Schatztruhe",[2054]="Schatztruhe",[2055]="Obsidiantodeswärter",[2056]="Schatztruhe",[2057]="Schatztruhe",[2058]="Schatztruhe",[2059]="Schatztruhe",[2060]="Schatztruhe",[2061]="Schatztruhe",[2062]="Schatztruhe",[2063]="Schatztruhe",[2064]="Schatztruhe",[2065]="Schatztruhe",[2066]="Schatztruhe",[2067]="Überfüttertes Rachenscheusal",[2068]="Totemmacherin Jash'ga",[2069]="Schatztruhe",[2070]="Schatztruhe",[2071]="Schatztruhe",[2072]="Schatztruhe",[2073]="Schatztruhe",[2074]="Schatztruhe",[2075]="Schatztruhe",[2076]="Schatztruhe",[2077]="Schatztruhe",[2078]="Schatztruhe",[2079]="Schatztruhe",[2081]="Schatztruhe",[2082]="Schatztruhe",[2083]="Schatztruhe",[2084]="Schatztruhe",[2085]="Schatztruhe",[2086]="Schatztruhe",[2087]="Schatztruhe",[2088]="Schatztruhe",[2089]="Schatztruhe",[2090]="Schatztruhe",[2091]="Schatztruhe",[2092]="Schatztruhe",[2093]="Schatztruhe",[2094]="Schatztruhe",[2095]="Schatztruhe",[2096]="Schatztruhe",[2097]="Schatztruhe",[2098]="Schatztruhe",[2099]="Schatztruhe",[2100]="Schatztruhe",[2101]="Schatztruhe",[2102]="Schatztruhe",[2103]="Schatztruhe",[2104]="Schatztruhe",[2105]="Schatztruhe",[2106]="Schatztruhe",[2107]="Schatztruhe",[2108]="Schatztruhe",[2109]="Schatztruhe",[2110]="Schatztruhe",[2111]="Schatztruhe",[2112]="Schatztruhe",[2113]="Schatztruhe",[2114]="Schatztruhe",[2115]="Schatztruhe",[2116]="Schatztruhe",[2117]="Schatztruhe",[2118]="Schatztruhe",[2119]="Schatztruhe",[2120]="Bajiatha",[2121]="Schatztruhe",[2122]="Schatztruhe",[2123]="Schatztruhe",[2124]="Schatztruhe",[2125]="Schatztruhe",[2126]="Schatztruhe",[2127]="Schatztruhe",[2128]="Schatztruhe",[2129]="Schatztruhe",[2130]="Leichenbringerin Yal'kar",[2137]="Schatztruhe",[2138]="Schatztruhe",[2139]="Schatztruhe",[2140]="Schatztruhe",[2141]="Schatztruhe",[2142]="Schatztruhe",[2143]="Schatztruhe",[2144]="Schatztruhe",[2145]="Schatztruhe",[2146]="Schatztruhe",[2147]="Schatztruhe",[2148]="Schatztruhe",[2149]="Schatztruhe",[2150]="Schatztruhe",[2151]="Schatztruhe",[2152]="Schatztruhe",[2153]="Schatztruhe",[2154]="Schatztruhe",[2155]="Schatztruhe",[2156]="Schatztruhe",[2157]="Schatztruhe",[2158]="Schatztruhe",[2159]="Schatztruhe",[2160]="Schatztruhe",[2161]="Schatztruhe",[2162]="Schatztruhe",[2163]="Schatztruhe",[2164]="Schatztruhe",[2165]="Schatztruhe",[2166]="Schatztruhe",[2167]="Schatztruhe",[2168]="Schatztruhe",[2169]="Schatztruhe",[2170]="Schatztruhe",[2171]="Schatztruhe",[2172]="Schatztruhe",[2173]="Schatztruhe",[2174]="Schatztruhe",[2175]="Schatztruhe",[2176]="Schatztruhe",[2177]="Schatztruhe",[2178]="Schatztruhe",[2179]="Schatztruhe",[2180]="Schatztruhe",[2181]="Schatztruhe",[2182]="Schatztruhe",[2183]="Schatztruhe",[2184]="Schatztruhe",[2185]="Schatztruhe",[2186]="Schatztruhe",[2187]="Schatztruhe",[2190]="Kommandant Reinholz",[2191]="Verteidiger Hakbi",[2192]="Besudelter Wächter",[2194]="Za'amar",[2195]="Blutpriesterin Xak'lar",[2196]="Kandak",[2197]="Khazaduum",[2198]="Kommandant Sathrenael",[2199]="Kommandantin Vecaya",[2200]="Kommandant Endaxis",[2201]="Schwester Subversia",[2202]="Schatztruhe",[2203]="Kleine Schatztruhe",[2204]="Kleine Schatztruhe",[2205]="Kleine Schatztruhe",[2206]="Kleine Schatztruhe",[2207]="Kleine Schatztruhe",[2208]="Kleine Schatztruhe",[2209]="Verbündete verfügbar",[2210]="Kleine Schatztruhe",[2211]="Kleine Schatztruhe",[2212]="Kleine Schatztruhe",[2213]="Kleine Schatztruhe",[2214]="Kleine Schatztruhe",[2215]="Kleine Schatztruhe",[2216]="Kleine Schatztruhe",[2217]="Kleine Schatztruhe",[2218]="Kleine Schatztruhe",[2219]="Kriegstrommlerin Zurula",[2220]="Ahalt'cob",[2221]="Giftkiefer",[2222]="Talestra die Grässliche",[2223]="Vagath der Verratene",[2224]="Gwugnug der Verfluchte",[2225]="Tereck der Ausleser",[2226]="Meuterer Kabwalla",[2227]="Teerspucker",[2228]="Wichtelmutter Laglath",[2229]="Naroua",[2230]="Schattenzauberer Voruun",[2231]="Treiber Kravos",[2232]="Seelenverzerrte Monstrosität",[2233]="Kaara die Bleiche",[2234]="Baruut der Blutrünstige",[2235]="Fiesel der Muffindieb",[2236]="Wache Thanos",[2237]="Wache Kuro",[2238]="Giftschwanzhimmelsflosse",[2239]="Turek der Wache",[2240]="Hauptmann Faruq",[2241]="Umbraliss",[2242]="Ataxon",[2243]="Sorolis der Unglückselige",[2244]="Vorbote des Chaos",[2245]="Jed'hinchampion Vorusk",[2246]="Aufseherin Y'Beda",[2247]="Aufseherin Y'Sorna",[2248]="Aufseherin Y'Morna",[2249]="Lehrmeisterin Tarahna",[2250]="Zul'tan der Zahllose",[2251]="Kommandant Xethgar",[2252]="Skreeg der Verschlinger",[2253]="Sabuul",[2254]="Schatztruhe der Eredar",[2255]="Kiste mit Diebesgut",[2256]="Streitiger Studentenschatz",[2257]="Leerenberührte Truhe",[2258]="Geheimversteck der Augari",[2259]="Truhe des verzweifelten Eredar",[2260]="Zerschmetterte Haustruhe",[2261]="Schatz des Verdammnissuchers",[2263]="Sauroliskenzähmer Mugg",[2265]="Puscilla",[2266]="Ven'orn",[2267]="Vrax'thul",[2268]="Varga",[2269]="Leutnant Xakaar",[2270]="Zornfürst Yarez",[2271]="Inquisitor Vethroz",[2272]="Kommandant Texlaz",[2273]="Admiral Rel'var",[2274]="Allseher Xanarian",[2276]="Weltenspalter Skuul",[2277]="Hundemeister Kerrax",[2278]="Beobachter Aival",[2279]="Leerenwächterin Valsuran",[2280]="Dornstachelkönigin",[2281]="Oberster Alchemist Munculus",[2282]="Die Paraxis",[2283]="Occularus",[2284]="Matrone Folnuna",[2285]="Sotanathor",[2286]="Inquisitor Meto",[2287]="Herrin Alluradel",[2288]="Grubenlord Vilemus",[2289]="Verlorene Krokultruhe",[2290]="Turmkiste der Legion",[2291]="Notfallkiste der Krokul",[2292]="Knochenbildnis",[2293]="Vernachlässigte Angelrute",[2294]="Slithon die Letzte",[2295]="Opfergaben der Auserwählten",[2296]="Innenhof",[2297]="Innenhof",[2298]="Dornrückenbrutmutter",[2299]="Sauroliskenmatriarchin",[2300]="Der Vielgesichtige Verschlinger",[2301]="Schwadronskommandant Vishax",[2302]="Verdammniswirker Suprax",[2303]="Seelenhüter Videx",[2304]="Mutter Rosula",[2305]="Rezira der Seher",[2306]="Späher Skrasniss",[2307]="Kriegsmatrone Zug",[2308]="Knochenschwall",[2309]="Gefräßiger Yeti",[2310]="Schmarotzerpatriarch",[2311]="Langzahn und Wellenbruch",[2313]="Vizz der Sammler",[2314]="Torraske der Ewige",[2315]="Vergessene Vorräte der Legion",[2316]="Uralte Kriegstruhe der Legion",[2317]="Teufelsgebundene Truhe",[2318]="Schatz der Legion",[2319]="Verwitterte Teufelstruhe",[2320]="Augarirunentruhe",[2321]="Uralter Sarkophag",[2322]="Kleine Schatztruhe",[2323]="Geheime Augaritruhe",[2324]="Augaribesitztümer",[2325]="Verschollener Augarischatz",[2326]="Wertvolle Augariandenken",[2327]="Vermisste Augaritruhe",[2328]="Blasenmaul",[2329]="Kleine Schatztruhe",[2330]="Kleine Schatztruhe",[2331]="Schatztruhe",[2332]="Abscheulicher Ritualschädel",[2333]="Kleine Schatztruhe",[2334]="Kleine Schatztruhe",[2335]="Kleine Schatztruhe",[2336]="Kleine Schatztruhe",[2337]="Fleischfetz der Hungrige",[2338]="Leerenklinge Zedaat",[2339]="Zwielichtbote Tharuul",[2340]="Rufer der Dunkelheit",[2341]="Leerenschlund",[2344]="Gar'zoth",[2345]="Herrin Il'thendra",[2346]="Kleine Schatztruhe",[2348]="Kleine Schatztruhe",[2349]="Kleine Schatztruhe",[2350]="Die einsame Krona",[2351]="Bajiani die Aalglatte",[2352]="Azer'tor",[2353]="Kleine Schatztruhe",[2354]="Kleine Schatztruhe",[2355]="Kleine Schatztruhe",[2356]="Kleine Schatztruhe",[2357]="Schatz des Kriegsherrn",[2358]="Schatztruhe",[2359]="Blutwulst",[2360]="Frostfels",[2361]="Schlitz-Ritz der Fresser",[2363]="Verfluchte Truhe der Nazmani",[2364]="Kleine Schatztruhe",[2365]="Kleine Schatztruhe",[2366]="Kleine Schatztruhe",[2367]="Kleine Schatztruhe",[2368]="Kleine Schatztruhe",[2369]="Kleine Schatztruhe",[2370]="Kleine Schatztruhe",[2371]="Unkontrolliert",[2372]="Kleine Schatztruhe",[2373]="Kleine Schatztruhe",[2374]="Kleine Schatztruhe",[2375]="Kleine Schatztruhe",[2376]="Uroku der Gebundene",[2377]="Kleine Schatztruhe",[2378]="Kleine Schatztruhe",[2379]="Kleine Schatztruhe",[2380]="Raunz der Übellaunige",[2381]="Königin Tzxi'kik",[2382]="Wunjas Schatz",[2383]="König Kooba",[2384]="Brodelnde Truhe",[2385]="Kleine Schatztruhe",[2386]="Kleine Schatztruhe",[2387]="Herold von Thun'ka",[2388]="Kleine Schatztruhe",[2389]="Kleine Schatztruhe",[2390]="Belagerungsmaschine",[2391]="Kriegshetzer Hozzik",[2392]="Brücke",[2393]="Hügelkuppe",[2394]="Ost",[2395]="Sägewerk",[2396]="Schlachtfeld",[2397]="Brücke",[2398]="Hügelkuppe",[2399]="Ost",[2400]="Sägewerk",[2401]="Schlachtfeld",[2402]="West",[2403]="West",[2404]="Grozgor",[2405]="Azerit",[2406]="Riesiger Sandschnapper",[2407]="Avatar von Xolotal",[2408]="Azeritgeysir",[2409]="Kleine Schatztruhe",[2410]="Zunashi der Verbannte",[2411]="Aufgeblähter Krolusk",[2412]="Verstoßener Ra-Ra",[2413]="Schrein von Thun'ka",[2419]="Blutgeweih",[2420]="Offensichtlich sichere Truhe",[2421]="Kleine Schatztruhe",[2422]="Angeschwemmte Truhe",[2423]="Opfergabe für Bwonsamdi",[2424]="Kleine Schatztruhe",[2425]="Kleine Schatztruhe",[2426]="Kleine Schatztruhe",[2427]="Kleine Schatztruhe",[2428]="Kleine Schatztruhe",[2429]="Kleine Schatztruhe",[2430]="Kleine Schatztruhe",[2431]="Vinyeti",[2433]="Legionsinvasion",[2434]="Kralle",[2435]="Emely Maidorf",[2436]="Mine",[2439]="Test Vignette Glow (msc)",[2440]="Nimmermehr",[2441]="Unheilsdorn",[2443]="Kleine Schatztruhe",[2444]="Anthemusa",[2445]="Vathikur",[2446]="Aschmähne",[2447]="Schwarmmutter Kraxi",[2448]="Kleine Schatztruhe",[2449]="Kleine Schatztruhe",[2450]="Kleine Schatztruhe",[2451]="Kleine Schatztruhe",[2452]="Kleine Schatztruhe",[2453]="Kleine Schatztruhe",[2457]="Kleine Schatztruhe",[2458]="Kleine Schatztruhe",[2459]="Kleine Schatztruhe",[2460]="Kleine Schatztruhe",[2466]="Schmugglervorrat",[2467]="Glückstruhe von Horace dem Glückspilz",[2468]="Holzfäller",[2469]="Schatztruhe",[2470]="Kleine Schatztruhe",[2471]="Genial\"\" getarnte Truhe",[2472]="Truppen ausbilden",[2473]="Giftsiegeltruhe",[2474]="Kleine Schatztruhe",[2475]="Kleine Schatztruhe",[2476]="Kleine Schatztruhe",[2477]="Schatztruhe",[2478]="Kleine Schatztruhe",[2479]="Forschung",[2480]="Fahrzeugproduktion",[2481]="Kleine Schatztruhe",[2482]="Schatztruhe",[2483]="Kleine Schatztruhe",[2484]="Schatztruhe",[2485]="Kleine Schatztruhe",[2486]="Kleine Schatztruhe",[2487]="Schatztruhe",[2488]="Schatztruhe",[2489]="Kleine Schatztruhe",[2490]="Schatztruhe",[2491]="Merianae",[2492]="Rudelführer Asenya",[2493]="Schatztruhe",[2494]="Schatztruhe",[2495]="Kleine Schatztruhe",[2496]="Lei-zhi",[2498]="Kleine Schatztruhe",[2499]="Bluthexe Ysinna",[2500]="Schätze Pandarias",[2501]="Teres",[2502]="Vorarbeiter Zettel",[2504]="Kleine Schatztruhe",[2505]="Kleine Schatztruhe",[2507]="Kleine Schatztruhe",[2508]="Kleine Schatztruhe",[2509]="Kleine Schatztruhe",[2510]="Kleine Schatztruhe",[2511]="Wächter der Quelle",[2512]="Schatztruhe",[2513]="Zayoos",[2514]="Kleine Schatztruhe",[2515]="Kleine Schatztruhe",[2517]="Kleine Schatztruhe",[2518]="Kulett die Störrische",[2519]="Kleine Schatztruhe",[2520]="Kleine Schatztruhe",[2521]="Kleine Schatztruhe",[2522]="Brutmutter Razora",[2523]="Kleine Schatztruhe",[2524]="Tambano",[2525]="Puschel",[2526]="Zayolin",[2527]="Dornenschwinge",[2528]="Kleine Schatztruhe",[2529]="Mala'kili und Rohnkor",[2530]="Rohn'kor",[2531]="Verschluckte Truhe",[2533]="Halb verdauter Schatz",[2534]="Kleine Schatztruhe",[2535]="Doppelherzkonstrukt",[2536]="Orkansturm",[2537]="Alte eisenbeschlagene Truhe",[2538]="Brück'ntroll",[2539]="Baschmu",[2540]="Gärtner",[2541]="Der schwarzäugige Bartholomäus",[2542]="Schmugglerversteck",[2543]="Verwüster",[2544]="Himmelsschrecken der Fuchsbauwaldung",[2545]="Tosender Strom",[2546]="Schmuddelschnabel",[2547]="Auditor Dolp",[2548]="Kiboku",[2549]="Krächz",[2550]="Held",[2551]="Gallenzahnmutter",[2552]="Eisenvorkommen",[2553]="Kleine Schatztruhe",[2554]="Kleine Schatztruhe",[2555]="Hauptmann Klingenstachel",[2560]="Leon der Todesbote",[2561]="Leon der tote Bote",[2562]="Leyjäger Gaston",[2563]="Zan'ya Teufelsmaske",[2564]="Elementarist Zapi'boi",[2565]="Qroshekx",[2566]="Ssinkrix",[2567]="Xaarshej",[2570]="Ogmot der Verrückte",[2571]="Der Goblintrupp",[2572]="Kneipenwirt Willy",[2573]="Aschenwindschätze",[2574]="Grollender Goliath",[2575]="Fozruk",[2576]="Zweigfürst Aldrus",[2577]="Champions der Allianz",[2578]="Champions der Allianz",[2579]="Die Großfuhre",[2580]="Schatz des Hexendoktors",[2581]="G'Naat",[2582]="Kleine Schatztruhe",[2583]="Brutmutter Chimal",[2584]="Tia'Kawan",[2585]="Flusszahn",[2586]="Xu'e",[2587]="Dolchzahn",[2588]="Gotaka der Atal'zul",[2589]="Mordschnabel",[2590]="Kleine Schatztruhe",[2591]="Verdächtiger Fleischhaufen",[2592]="Hügelbrutmutter",[2593]="Jax'teb der Wiederbelebte",[2594]="Janis Schatz",[2595]="Kleine Schatztruhe",[2596]="Kleine Schatztruhe",[2597]="Verderbter Spross von Rezan",[2598]="Aiji der Verfluchte",[2599]="Juba der Vernarbte",[2600]="Xu'ba der Knochensammler",[2601]="Lo'kuno",[2602]="Vorratsabwurf",[2603]="Glompschlund",[2604]="Golanar",[2605]="Vugthuth",[2606]="Azerit an der Absturzstelle",[2607]="Azerit am Wasserfall",[2608]="Azerit bei den Ruinen",[2609]="Azerit bei der Warte",[2610]="Azerit am Sturz",[2611]="Azerit am Turm",[2612]="Azerit am Gezeitenbecken",[2613]="Azerit beim Tempel",[2614]="Azerit beim Schiffswrack",[2615]="Azerit beim Kamm",[2616]="Azerit bei den Teergruben",[2617]="Azerit am Feuer",[2618]="Azerit an der Absturzstelle",[2619]="Azerit am Wasserfall",[2620]="Azerit bei den Ruinen",[2621]="Azerit bei der Warte",[2622]="Azerit am Sturz",[2623]="Azerit am Turm",[2624]="Azerit am Gezeitenbecken",[2625]="Azerit beim Tempel",[2626]="Azerit beim Schiffswrack",[2627]="Azerit beim Kamm",[2628]="Azerit bei den Teergruben",[2629]="Azerit am Feuer",[2630]="Zanxib der Aufgedunsene",[2631]="Janis Schatz",[2632]="Janis Schatz",[2633]="Große Schatztruhe",[2634]="Große Schatztruhe",[2635]="Schlachtkriecher Karkithiss",[2636]="Gahz'ralka",[2637]="Große Schatztruhe",[2638]="Schatztruhe der Schwertwasserkorsaren",[2639]="Kriegsfürst Sreptik",[2640]="Zujothgul",[2641]="Klingenschlund",[2642]="Shul-Nagruth",[2643]="Drukengu",[2644]="A'yame",[2647]="Perle der Gefahr!",[2648]="Unterfürst Xerxiz",[2649]="Vukuba",[2650]="Seltsames Ei",[2651]="Ködereimer",[2652]="Tyrannenechse von Xibala",[2653]="Greifholzwächter",[2654]="Frostige Schatztruhe",[2655]="Kamid der Fallensteller",[2656]="Biengetüm",[2657]="Scharfrichter Schwartz",[2658]="Azeritdurchströmte Schlacke",[2659]="Verlorene Schriftrolle",[2660]="Chags Herausforderung",[2661]="Azeritdurchströmter Elementar",[2662]="Honigbär",[2663]="Kleine Schatztruhe",[2664]="Kleine Schatztruhe",[2665]="Geschenk der gebrochenen Herzen",[2666]="Holzhaufen",[2667]="Kleine Schatztruhe",[2668]="Himmelsrufer Teskris",[2669]="Schatztruhe",[2672]="Gefangene Kriegsmatrone",[2673]="Kopfjägerin Lee'za",[2674]="Kriegsfürst Zothix",[2675]="Brgl-Lrgl der Schläger",[2676]="Hexendoktor Habra'du",[2677]="Mor'fani der Verbannte",[2678]="Todeskappe",[2679]="Lady Seirine",[2680]="Umbra'rix",[2681]="Erntezeit",[2682]="Hakbi der Auferstandene",[2683]="Himmelsschnitzer Krakit",[2684]="Hyo'gi",[2685]="Dunkelsprecher Jo'la",[2691]="Dazars vergessene Truhe",[2692]="Schatztruhe",[2693]="Schatztruhe",[2694]="Schatztruhe",[2695]="Schatztruhe",[2696]="Gruppe F: Schatztruhe",[2697]="Schatztruhe",[2698]="Schatztruhe",[2699]="Schatztruhe",[2700]="Schatztruhe",[2701]="Schatztruhe",[2702]="Schatztruhe",[2703]="Schatztruhe",[2704]="Schatztruhe",[2705]="Ragna",[2706]="Schatztruhe",[2707]="Schatztruhe",[2708]="Schatztruhe",[2709]="Schatztruhe",[2710]="Dagrus der Verachtete",[2711]="Die Großfuhre",[2770]="Kampf gegen Windmühlen",[2771]="Kua'fon",[2772]="Kua'fon",[2773]="Kua'fon",[2774]="Kua'fon",[2775]="Kaserne",[2776]="Haupthaus",[2777]="Altar der Stürme",[2778]="Werkstatt",[2779]="Arsenal",[2780]="Wagga Knurrzahn",[2781]="Kua'fon",[2782]="Kua'fon",[2783]="Kua'fon",[2784]="R'gal der Alte",[2785]="Kua'fon",[2786]="Kua'fon",[2787]="Janis Schatz",[2788]="Urne von Agussu",[2789]="Janis Schatz",[2790]="Janis Schatz",[2791]="Schatztruhe",[2792]="Schatztruhe",[2793]="Schatztruhe",[2794]="Schatztruhe",[2795]="Nez'ara",[2796]="Aiji der Verfluchte",[2797]="Kommodore Kalhaun",[2812]="Schatztruhe",[2813]="Schatztruhe",[2814]="Schatztruhe",[2815]="Schatztruhe",[2816]="Schatztruhe",[2817]="Schatztruhe",[2818]="Schatztruhe",[2819]="Schatztruhe",[2820]="Schatztruhe",[2821]="Schatztruhe",[2822]="Schatztruhe",[2823]="Schatztruhe",[2824]="Schatztruhe",[2825]="Schatztruhe",[2826]="Severus der Ausgestoßene",[2827]="Riesiger Papierdrachen",[2828]="Versteckte Truhe eines Gelehrten",[2829]="Versunkene Schließkassette",[2831]="Käpt'n Bleifaust",[2833]="Die Haibraut",[2834]="Klage des Verbannten",[2836]="Kleine Schatztruhe",[2837]="Rankensprecherin Ratha",[2838]="Merkwürdiger Pilzring",[2839]="Fluggenieur Krazzel",[2884]="Der Pilzkönig",[2885]="Ak'tar",[2886]="Sängerin Najeen",[2887]="Giftzahnrufer Xorreth",[2888]="Verstärkung aus Eisenschmiede",[2889]="Stef \"\"Bis aufs Mark\"\" Quin",[2890]="Dschungelnetzjäger",[2891]="Sirokar",[2892]="Skorpox",[2893]="Wütender Krolusk",[2894]="Knochenpicker der Blutflügel",[2895]="Tehd & Marius",[2897]="Dunkler Chronist",[2898]="Grayals letzte Opfergabe",[2899]="Reliktjäger Hazaak",[2900]="Beute des verschollenen Entdeckers",[2901]="Allianzattentäter",[2902]="Sandwütervorrat",[2903]="Gestrandeter Schatz",[2904]="Gier des Ausgräbers",[2905]="Zem'lans vergrabener Schatz",[2928]="Kua'fon",[2929]="Kua'fon",[2933]="Portal",[2934]="Kleine Schatztruhe",[2935]="Tiefzahn",[2937]="Ankermaul",[2938]="Späherkarte",[2939]="Brutmutter",[2940]="Champion",[2941]="Muradin Bronzebart",[2942]="Händler in Gefahr",[2943]="Hochexarch Turalyon",[2944]="Danath Trollbann",[2945]="Truhe der Geheimnisse",[2946]="Angriffswelle der Allianz",[2947]="Schatztruhe",[2948]="Gruppe R: Schatztruhe",[2949]="Gruppe S: Schatztruhe",[2950]="Allianz",[2951]="Angriffswelle der Allianz",[2952]="Mächtiger Gegner",[2953]="Arvon der Verratene",[2954]="König Zwickizwack",[2955]="Angreifer der Bleichborken",[2956]="Angreifer der Felsfäuste",[2957]="Verwitterte Schatztruhe",[2958]="Verstärkung aus Eisenschmiede",[2959]="Verstärkung aus Arathor",[2960]="Bogenlicht",[2961]="Schneesturz",[2962]="Champion von Neuhof",[2963]="Champion des Zirkels der Elemente",[2964]="Gestohlene Truhe",[2965]="Hordeattentäter",[2966]="Questboss",[2967]="Kiste mit Kriegsvorräten",[2968]="Reichtümer von Tor'nowa",[2969]="Schatztruhe",[2970]="Azeriterz",[2971]="Angriffswelle der Allianz",[2972]="Durchgebrannter Golem",[2974]="Vollgefressener Eber",[2975]="Angriffswelle der Horde",[2976]="Angriffswelle der Horde",[2977]="Angriffswelle der Horde",[2978]="Schwester Martha",[2979]="Fungustrio",[2980]="Seebrecher Skoloth",[2981]="Nestmutter Acada",[2982]="Squirgel aus der Tiefe",[2983]="Schwarzstich",[2984]="Carla Schmunzel",[2985]="P4-N73R4",[2986]="Gulliver",[2987]="Krötenkiefer",[2988]="Kleine Schatztruhe",[2989]="Ranja",[2990]="Sythian der Flinke",[2991]="Kleine Schatztruhe",[2992]="Schauderschuppe der Giftige",[2993]="Sägezahn",[2994]="Kleine Schatztruhe",[2995]="Tentulos der Schwebende",[2996]="Maison der Tragbare",[2997]="Kleine Schatztruhe",[2998]="Kleine Schatztruhe",[2999]="Nad el Kissen",[3000]="Kleine Schatztruhe",[3001]="Kleine Schatztruhe",[3002]="Kleine Schatztruhe",[3003]="Kleine Schatztruhe",[3004]="Kleine Schatztruhe",[3005]="Kleine Schatztruhe",[3006]="Kleine Schatztruhe",[3007]="Kleine Schatztruhe",[3008]="Kleine Schatztruhe",[3009]="Aufgewühltes Öl",[3010]="Molluskelprotz",[3011]="Hordeschiff",[3012]="Allianzschiff",[3013]="Braedan Weißwall",[3014]="Whitney \"\"Stahlklaue\"\" Ramsay",[3015]="Kleine Schatztruhe",[3016]="Kleine Schatztruhe",[3017]="Kleine Schatztruhe",[3018]="Kleine Schatztruhe",[3019]="Kleine Schatztruhe",[3020]="Kleine Schatztruhe",[3021]="Kleine Schatztruhe",[3022]="Kleine Schatztruhe",[3023]="Kleine Schatztruhe",[3024]="Kleine Schatztruhe",[3025]="Kleine Schatztruhe",[3026]="Kleine Schatztruhe",[3027]="Ruinierte Hochzeitstorte",[3028]="Säbeltron",[3029]="Schlickpest",[3030]="Truhe der Großfuhre",[3031]="Entdecktes Azerit",[3032]="Entdecktes Azerit",[3033]="Auge von Sethraliss",[3034]="Steingolem",[3035]="Matrone Morana",[3036]="Verseuchte Monstrosität",[3037]="Seelengoliath",[3038]="Späherkarte",[3039]="Seeglas",[3040]="Schädlingsbekämpfer MK. II",[3041]="Verderbte Schule",[3042]="Taja der Gezeitenheuler",[3043]="Sandzahn",[3044]="Altar der Könige",[3045]="Schmiede",[3046]="Kaserne",[3047]="Werkstatt",[3048]="Moderschlund",[3049]="Ruheloser Schrecken",[3050]="Champion des Zirkels der Elemente",[3051]="Champion von Neuhof",[3052]="Peitschenstengel",[3053]="Quako",[3054]="Treter",[3055]="Dok Maartens",[3056]="Jakala die Grausame",[3057]="Eissichel",[3058]="Zorngroll der Mümmlermalmer",[3059]="Sturmbö",[3060]="Zurückgelassene Vesperdose",[3061]="Geschnitzte Holztruhe",[3062]="Schwester Absinthia",[3063]="Herrin der Gesänge Dadalea",[3064]="Wirbelschwinge",[3065]="Haegol der Hammer",[3066]="Käpt'n Mu'kala",[3067]="Oska der Blutige",[3068]="Verstärkter Kielbrecher",[3069]="Wilderer Jannes",[3070]="UNUSED",[3164]="Lehrling Karyn",[3167]="Vergrabene Schatzkiste",[3169]="Vergrabene Schatzkiste",[3170]="Vergrabene Schatzkiste",[3171]="Vergrabene Schatzkiste",[3172]="Schlammschnauze von Mildenhall",[3173]="Heikle Schatztruhe",[3174]="Vergessene Schatztruhe",[3175]="Vorrat der Knochenritzer",[3176]="Sandmalmer",[3177]="Vorratstruhe der Venture Co.",[3178]="Vergessene Truhe",[3179]="Kleine Schatztruhe",[3180]="Verlorene Opfergaben von Kimbul",[3181]="Totholztruhe",[3182]="Im Sand versunkener Schatz",[3183]="Donnernder Goliath",[3184]="Überschäumender Goliath",[3185]="Seuchenfeder",[3186]="Zornschnabel",[3187]="Schädelreißer",[3188]="Venomarus",[3189]="Yogursa",[3190]="Zweigfürst Aldrus",[3191]="Aufseher Krix",[3192]="Yogursa",[3193]="Zornschnabel",[3194]="Brennender Goliath",[3195]="Überschäumender Goliath",[3196]="Fozruk",[3197]="Seuchenfeder",[3198]="Grollender Goliath",[3199]="Schädelreißer",[3200]="Donnernder Goliath",[3201]="Venomarus",[3202]="Molok der Zermalmer",[3203]="Kor'gresh Frostzorn",[3204]="Echo von Myzrael",[3205]="Geomant Flintdolch",[3206]="Kriegstrike",[3207]="Bestienreiter Kama",[3208]="Darbel Montrose",[3209]="Verdammnisreiter Helgrim",[3210]="Faulbauch",[3211]="Schreckliche Erscheinung",[3212]="Kürassier Aldrin",[3213]="Kovork",[3214]="Menschenjäger Rog",[3215]="Nimar der Töter",[3216]="Ruul Zweistein",[3217]="Sängerin",[3218]="Zalas Bleichborke",[3219]="Geisel",[3220]="Gestohlene Beute",[3221]="Sammler Kojo",[3222]="Toki",[3223]="Lady Liadrin",[3224]="Rokhan",[3225]="Etrigg",[3226]="Gespinstbedeckte Schatztruhe",[3227]="Schatztruhe des Kaufmanns",[3228]="Grayson Bell",[3229]="Runengebundene Truhe",[3230]="Runengebundene Kiste",[3231]="Runengebundene Lade",[3232]="Holzhaufen",[3233]="Hochburg",[3234]="Festung",[3235]="Arsenal",[3236]="Rathaus",[3237]="Burg",[3238]="Schloss",[3239]="Zwiestrump",[3240]="Frankie Zuckauge",[3241]="Gimzy Tröpfelstad",[3242]="Twitti Leuchtritzel",[3243]="Zinno",[3244]="Royston P. Crutchley III.",[3245]="Löffler der Tunichtgut",[3246]="Aerin Himmelshammer",[3247]="Brunold",[3248]="Langkralle",[3249]="Yuke",[3250]="Der alte Li",[3251]="Gregg",[3252]="Vizio der Kartograf",[3253]="Gurgel",[3254]="Flackerkerz",[3255]="Wassersprecher Deshi",[3256]="Sylvester",[3257]="Schmuddelbart",[3258]="Arwan Bestienherz",[3259]="Manape",[3260]="Taz'anga",[3261]="Nizhoni",[3262]="Kaserne",[3263]="Arsenal",[3264]="Altar der Stürme",[3265]="Werkstatt",[3266]="Altar der Könige",[3267]="Arsenal",[3268]="Kaserne",[3269]="Rathaus",[3270]="Werkstatt",[3271]="Himmelskönigin",[3272]="Schriftrollengelehrte Nola",[3273]="Zeritarj",[3274]="Sammler Kojo",[3275]="Sammler Kojo",[3276]="Sammler Kojo",[3277]="Sammler Kojo",[3278]="Sammler Kojo",[3279]="Toki",[3280]="Toki",[3281]="Toki",[3282]="Schriftrollengelehrte Nola",[3283]="Schriftrollengelehrte Nola",[3284]="Schriftrollengelehrte Nola",[3285]="Schriftrollengelehrte Nola",[3286]="Schriftrollengelehrte Nola",[3287]="Vergessene Schatztruhe",[3288]="Vorrat der Knochenritzer",[3289]="Kaserne",[3290]="Kaserne",[3291]="Altar der Stürme",[3292]="Arsenal",[3293]="Werkstatt",[3294]="Hochburg",[3295]="Festung",[3296]="Arsenal",[3297]="Altar der Könige",[3298]="Werkstatt",[3299]="Schloss",[3300]="Burg",[3301]="Haupthaus",[3302]="Seltsamer Getreidesack",[3303]="Säbeltron",[3304]="Quellenwächter",[3305]="Seltsamer Getreidesack",[3307]="Nestmutter Acada",[3308]="Altar der Alten",[3309]="Altar der Alten",[3310]="Altar der Alten",[3311]="Jägerhalle",[3312]="Jägerhalle",[3313]="Jägerhalle",[3314]="Urtum des Krieges",[3315]="Urtum des Krieges",[3316]="Urtum des Krieges",[3317]="Baum des Lebens",[3319]="Baum des Alters",[3320]="Baum des Alters",[3321]="Baum der Ewigkeit",[3322]="Baum der Ewigkeit",[3323]="Werkstatt",[3324]="Werkstatt",[3325]="Werkstatt",[3326]="Schuppenscheusal",[3327]="Wahnfeder",[3328]="Schattenklaue",[3329]="Schimmerpanzer",[3330]="Grimmhorn",[3331]="Schwarzpranke",[3332]="<Hippogryphenmeister>",[3333]="Seuchenkatapult der Verlassenen",[3334]="Glevenschleuder",[3335]="Baum des Lebens",[3336]="Holzhaufen",[3337]="Eisenlore",[3338]="Erzkiste",[3339]="Angriffswelle der Naga",[3340]="Haupthaus",[3341]="Durchnässte Truhe",[3342]="Maiev Schattensang",[3343]="Sira Mondhüter",[3346]="Wächterinnengleve",[3350]="Gnollschlemmer",[3351]="Hydrath",[3352]="Cyclarus",[3353]="Conflagros",[3354]="Granokk",[3355]="Steinbinderin Ssra'vess",[3356]="Azeritextraktor der Horde",[3357]="Azeritextraktor der Allianz",[3358]="Zerstörter Azeritextraktor",[3359]="Einsatzbereiter Azeritextraktor",[3360]="Thelar Mondstreich",[3361]="Klopfer der Shed-Ling",[3362]="Klopfer der Shed-Ling",[3363]="Zim'kaga",[3364]="Moxo der Köpfer",[3365]="Athrikus Narassin",[3366]="Azeritbruch",[3367]="Glrglrr",[3368]="Trümmerstück",[3369]="Onu",[3372]="Kommandant Drald",[3373]="Soggoth der Glitschige",[3374]="Aschenwindschätze",[3375]="Zwielichtprophet Graeme",[3376]="Aman",[3377]="Mrggr'marr",[3378]="Kommandant Ral'esh",[3379]="Gren Fetzfell",[3380]="Athil Tauglanz",[3381]="Pionierin Odette",[3382]="Croz Blutzorn",[3383]="Orwell Stevenson",[3384]="Lorna Crowley",[3385]="Agathe Wyrmholz",[3386]="Holz",[3387]="Eisen",[3388]="Beute des Spinnenbots",[3389]="Beute des Gorillabots",[3390]="Maiev",[3391]="Sira",[3392]="Alash'anir",[3393]="Altar der Stürme",[3394]="Altar der Stürme",[3395]="Altar der Stürme",[3396]="Arsenal",[3397]="Arsenal",[3398]="Arsenal",[3399]="Kaserne",[3400]="Kaserne",[3401]="Kaserne",[3402]="Haupthaus",[3403]="Hochburg",[3404]="Hochburg",[3405]="Festung",[3406]="Festung",[3407]="Seuchenwerk",[3408]="Seuchenwerk",[3409]="Seuchenwerk",[3410]="Botschafter Gaines",[3411]="Katrianna",[3412]="Artilleriemeister Siegesfroh",[3413]="Kapitänin Grünsegel",[3414]="Hartford Strengbach",[3415]="Nebelwirkerin Nian",[3416]="Jörn Starkarm",[3417]="Zagg Blindauge",[3418]="Togoth Grobfaust",[3419]="Belagerungsingenieur Krachbumm",[3420]="Grubb",[3421]="Brugg",[3422]="Rottenmeisterin Stahlzahn",[3423]="Erster Maat Malle",[3424]="Motega Blutschild",[3425]="Zunjo von Sen'jin",[3426]="Alsian Vistreth",[3427]="Geheime Vorratstruhe",[3428]="Geheime Vorratstruhe",[3429]="Geheime Vorratstruhe",[3430]="Geheime Vorratstruhe",[3431]="Geheime Vorratstruhe",[3432]="Geheime Vorratstruhe",[3433]="Leerenmeister Schattenfall",[3434]="Gezeitenweise Clarissa",[3435]="Alkalinius",[3436]="Owynn Graddock",[3437]="Nalaess Federsucher",[3438]="Kürassier Josiph",[3439]="Bestienzähmer Watteck",[3440]="Schattenjägerin Mutumba",[3441]="Mörsermeister Zappfritz",[3442]="Gurin Steinbinder",[3443]="Dolizit",[3444]="Feuerwächter Viton Nachtfackel",[3445]="Dinomant Zakuru",[3446]="Käpt'n Gorok",[3447]="Zillie Wunderzange",[3448]="Magistrix Kristalynn",[3449]="Maddok der Scharfschütze",[3450]="Inquisitor Erik",[3451]="Doktor Lazane",[3452]="Karawanenkommandantin Veronica",[3453]="Zul'aki der Kopfjäger",[3454]="Rudelmeister Flinkpfeil",[3455]="Omgar Unheilsbogen",[3456]="Ingenieur Bolzenhalt",[3457]="Herzogin Todessang von Frost",[3458]="Muk'luk",[3459]="Apotheker Jerrod",[3460]="Portalhüter Romiir",[3461]="Jessibelle Mondschild",[3462]="Uralter Verteidiger",[3463]="Eric Leisefaust",[3464]="Dinojäger Wildbart",[3465]="Blinky Funkendings",[3466]="Karawanenmeister",[3467]="Gezeitenbinder Maka",[3468]="Belagerungsbrecher Vol'gar",[3469]="Späherhauptmann Quengelknopf",[3470]="Dinomant Dajingo",[3471]="Todeshauptmann Detheca",[3472]="Todeshauptmann Danielle",[3473]="Todeshauptmann Delilah",[3474]="Wolfsanführer Skraug",[3475]="Belager-o-matik 9000",[3476]="Jin'tago",[3477]="Abrichterin Drakara",[3478]="Sandbinder Sodir",[3479]="Drox'ar Morgar",[3480]="Evezon der Ewige",[3481]="Karawanenmeister",[3482]="Felsfuror",[3483]="Eisenschamane Grimmbart",[3484]="Großmarschall Furon",[3485]="Schattenjäger Vol'tris",[3486]="Karawanenmeister",[3487]="Überwuchertes Urtum",[3488]="Seuchenmeister Herbert",[3489]="Arkanist Quintril",[3490]="Braumeister Lin",[3491]="Ptin'go",[3492]="Sturmruferin Morka",[3493]="Lichtgeschmiedete Kriegspanzerung",[3494]="Himmelskapitän Thermofunk",[3495]="Thomas Vandergrief",[3496]="Belagertron",[3497]="Glevenwerk",[3498]="Glevenwerk",[3499]="Glevenwerk",[3501]="Maiev Schattensang",[3502]="Verlorenes Zandalarirelikt",[3503]="Abfackler Modell V",[3504]="N'chala der Eierdieb",[3505]="Xizz Dolchschlitz",[3506]="Gallenstampfer",[3507]="Reifer Kürbis",[3508]="Reife Rübe",[3509]="Reifer Speisekürbis",[3510]="Reife Karotte",[3511]="Yakfleisch",[3512]="Erzkiste",[3513]="Ormin Raketenklaps",[3514]="Dunkelküstenschatz",[3515]="Dunkelküstenschatz",[3516]="Dunkelküstenschatz",[3517]="Dunkelküstenschatz",[3518]="Dunkelküstenschatz",[3519]="Agathe Wyrmholz",[3520]="Schimmerpanzer",[3521]="Croz Blutzorn",[3522]="Wahnfeder",[3523]="Orwell Stevenson",[3524]="Schwarzpranke",[3525]="Grimmhorn",[3526]="Schattenklaue",[3527]="Schuppenscheusal",[3528]="Adhara Weiß",[3529]="Dunkelküstenschatz",[3530]="Dunkelküstenschatz",[3531]="Dunkelküstenschatz",[3532]="Dunkelküstenschatz",[3533]="Dunkelküstenschatz",[3534]="Azeritbruch",[3537]="Geläuterte Truhe",[3538]="Verstandswiederherstellung",[3540]="Geheime Vorratstruhe",[3541]="Geheime Vorratstruhe",[3542]="Geheime Vorratstruhe",[3543]="Geheime Vorratstruhe",[3544]="Geheime Vorratstruhe",[3545]="Geheime Vorratstruhe",[3546]="Mechagonischer Nullifizierer",[3547]="Vergrabener Schatz",[3549]="Gratis T-Shirts!",[3550]="Der Schrottkönig",[3551]="Der Schrottkönig",[3552]="Mecharantel",[3553]="Kieferbrecher",[3554]="Paol Teichwandler",[3555]="Rumpelfels",[3556]="Sonnenprophet Epaphos",[3557]="Leuchtfeuer des Sonnenkönigs",[3559]="Beobachter Rehu",[3560]="Lichte Leuchten",[3561]="Anaua",[3562]="Sonnenpriesterin Nubitt",[3563]="Schleimiger Kokon",[3564]="Schleimiger Kokon",[3565]="Schleimiger Kokon",[3566]="Schleimiger Kokon",[3567]="Das Wanderfest",[3568]="Senbu der Rudelvater",[3569]="Hik-ten der Zuchtmeister",[3570]="Arachnoider Ernter",[3571]="Tiefseeschlund",[3572]="Fungianischer Furor",[3573]="Üble Manifestation",[3574]="Todessäge",[3575]="Raketenhühnchenrandale",[3576]="Leerenwurzeln",[3577]="Spähmeister Moswen",[3578]="Menepthah der Kriegshetzer",[3579]="Ausbildungsgelände der Lichtklingen",[3580]="Ritual des Aufstiegs",[3581]="Knochenpicker",[3582]="Onkel T'Rogg",[3583]="Boggac Schädelrums",[3584]="Defekter Gorillabot",[3585]="Seespuck",[3586]="Tresorbot",[3587]="Mechanisierte Truhe",[3588]="Mechanisierte Truhe",[3589]="Mechanisierte Truhe",[3590]="Mechanisierte Truhe",[3591]="Mechanisierte Truhe",[3592]="Mechanisierte Truhe",[3593]="Mechanisierte Truhe",[3594]="Mechanisierte Truhe",[3595]="Mechanisierte Truhe",[3596]="Mechanisierte Truhe",[3597]="Avarius",[3598]="Fleischfressender Peitscher",[3599]="Vol'koth",[3600]="Leuchtfeuer des Sonnenkönigs",[3601]="Schriftrollengelehrte Nola",[3602]="Schriftrollengelehrte Nola",[3603]="Schriftrollengelehrte Nola",[3604]="Schriftrollengelehrte Nola",[3605]="Schriftrollengelehrte Nola",[3606]="Schriftrollengelehrte Nola",[3607]="Leuchtfeuer des Sonnenkönigs",[3608]="Leuchtfeuer des Sonnenkönigs",[3609]="Kaneb-ti",[3610]="Schrein der Stürme",[3611]="Schrein der Abendflut",[3612]="Schrein der Dämmerung",[3613]="Schrein der Natur",[3614]="Schrein der Sande",[3615]="Schrein der See",[3616]="Das entsiegelte Grab",[3617]="Vision von Sturmwind",[3618]="Zeitriss",[3619]="König Gakula",[3620]="Raubflotte der Amathet",[3621]="Tatt der Knochenkauer",[3622]="Nebet der Aufgestiegene",[3623]="Atekhramun",[3624]="Uat-ka der Sonnenzorn",[3625]="Funkenkönigin P'Emp",[3626]="Wahnsinniger Trogg",[3627]="Rostfeder",[3628]="Getriebeprüfer Radstern",[3629]="Alter Großhauer",[3630]="Stahlsängerin Freza",[3631]="Splitterzid",[3632]="Oxidierte Egelbestie",[3633]="Siedebrand",[3634]="Erdbrecher Gulroc",[3635]="Der Kleptoboss",[3636]="Herr Richter",[3637]="Säule der ertrunkenen Seelen",[3638]="Riesiger gehärteter Klingenpanzer",[3639]="Urzeitlicher Zitterstachelzermalmer",[3640]="Schreckensalpha der Schnappdrachen",[3641]="Riesiger Tiefennatterglitschkönig",[3642]="Gewaltige Höhlenschimmerschale",[3643]="Grabengleiterältester",[3644]="Invasiver Riffwanderer",[3645]="Monströser Großaal",[3647]="Ogeraufseher",[3648]="Heimir von der Schwarzen Faust",[3649]="Rythas das Orakel",[3650]="Oktel Drachenblut",[3651]="Grufthauchschrecken",[3652]="Leerenleitung",[3653]="Abyssisches Ritual",[3654]="Rachsüchtige Erde",[3655]="Zror'um der Unendliche",[3656]="Wertvoller Ogerschatz",[3657]="Geléeablagerung",[3658]="Das Gebräu beschützen",[3661]="Ludin der Abrichter",[3662]="Kwall",[3663]="Muradin",[3664]="Turalyon",[3665]="Danath Trollbann",[3666]="Etrigg",[3667]="Rokhan",[3668]="Lady Liadrin",[3669]="Grula die Bestienmutter",[3670]="Quell der Verderbnis",[3674]="Gezeitenherrin Leth'sindra",[3675]="Gezeitenlord Aquatus",[3676]="Gezeitenlord Dispersius",[3677]="Sslithara",[3678]="Gebundener Wächter",[3684]="Leerenleitung",[3685]="Leerenleitung",[3686]="Gebundener Wächter",[3687]="Der rostige Prinz",[3688]="Leerenhüter Malketh",[3689]="Kiste mit Kriegsvorräten",[3690]="Vollstrecker KX-T57",[3691]="Veskan der Gefallene",[3692]="Bruder Meller",[3693]="Häuptling Mek-mek",[3694]="Primalistin Thurloga",[3695]="Erzdruidin Renferal",[3696]="Anenga",[3697]="Atomik",[3698]="Rijz'x der Verschlinger",[3699]="Amethystspindelschnecke",[3700]="Blindlicht",[3701]="Schluchtschatten",[3702]="Dolchzahnschrecken",[3703]="Wille von N'Zoth",[3704]="Tiefengleiter",[3705]="Granatschuppe",[3706]="Schlammkriecher",[3707]="Nadelstachel",[3708]="Sandburg",[3709]="Sandscherensteinpanzer",[3710]="Toxigore der Alpha",[3711]="Alga der Augenlose",[3712]="Allseher Oma'kil",[3713]="Anemonar",[3714]="Fluchschuppe der Rudelvater",[3715]="Höhlendunkelschrecken",[3716]="Ältester Unu",[3717]="Brutälteste Nalaada",[3718]="Schillernde Schimmerschale",[3719]="Tangwurz",[3720]="Oronu",[3721]="Prinz Typhonus",[3722]="Prinz Vortran",[3723]="Felskrautschlurfer",[3724]="Schuppenma­t­ri­ar­chin Gratinax",[3725]="Schuppenma­t­ri­ar­chin Vynara",[3726]="Schuppenma­t­ri­ar­chin Zodia",[3727]="Shassera",[3728]="Shiz'narasz der Verschlinger",[3729]="Schlickpirsch die Rudelmutter",[3730]="Lautlos",[3731]="Urduu",[3732]="Stimme in den Tiefen",[3733]="Tiefenfürst Zrihj",[3734]="Teng der Erweckte",[3735]="Vollgefressener Ritzelknabberer",[3736]="Ätzender Mechaschleim",[3737]="Große Geléeablagerung",[3738]="Starrender Beobachter",[3739]="Brodelnder uralter Schrecken",[3740]="Eitriger uralter Schrecken",[3741]="Vog'reth der Unersättliche",[3742]="Verderbter Schatz",[3743]="Honigrückenernterin",[3744]="Üppiges Blumenbeet",[3745]="Die alte Nasha",[3746]="Honigrückenusurpatorin",[3747]="Gurg der Schwarmdieb",[3748]="Falltürbienenjäger",[3749]="Die Schwarmtöterin",[3750]="Yorag der Geléeschlemmer",[3751]="Obskuron",[3752]="Schätze der Stacheleber",[3753]="Gestohlener Schatz",[3756]="Schrottklaue",[3757]="Gerufen aus den Tiefen",[3758]="Gefangener Gräber",[3759]="Kommandantin Minzera",[3760]="Theurgin Nitara",[3761]="Kriegsfürst Zalzjar",[3762]="Schattenbinderin Athissa",[3763]="Inkantatrix Vazina",[3764]="Dominus",[3765]="Sanguifang",[3767]="Verstärkter Kriegswagen",[3768]="Mantisbrutstätte",[3769]="Die Front am Vir'naal",[3771]="Große Schatztruhe",[3772]="Truhe des Schwarzen Imperiums",[3773]="Truhe des Schwarzen Imperiums",[3774]="Maschine des Aufstiegs",[3775]="Ausgegrabener Hüter",[3776]="Ausgegrabener Hüter",[3777]="Ausgegrabener Hüter",[3778]="Ausgegrabener Hüter",[3779]="Wiederbelebungsstrahl",[3780]="Thrall",[3781]="Schatz der Weisheit",[3782]="Schatz der Demut",[3783]="Schatz des Mutes",[3784]="Schatz der Reinheit",[3785]="Sonnensammler",[3786]="Sonnensammler",[3787]="Pontifex Tratus",[3788]="Lehrmeister Brutus",[3789]="Dunkler Champion",[3790]="Rektorin Kalliope",[3791]="Sklavenlager der Amathet",[3792]="Reißzahnsammler Orsa",[3793]="Ishak von den Vier Winden",[3794]="Fäulnisverschlinger",[3795]="Ha-Li",[3796]="Muminah der Strahlende",[3797]="Hundmeister Ren",[3798]="Rei Lun",[3799]="Glocke der Demut",[3800]="Glocke des Mutes",[3801]="Glocke der Weisheit",[3802]="Glocke der Reinheit",[3803]="Zelot Tekem",[3804]="Champion Sen-mat",[3805]="Heixi der Steinfürst",[3806]="Akolyth Taspu",[3807]="Die Vergessenen",[3808]="Geronnene Anima",[3809]="Gruftwitwe",[3810]="Kilxl das Klaffende Maul",[3811]="Entflohene Mutation",[3812]="Sturmgeheul",[3813]="Auslöscher der Dokani",[3814]="Jadebeobachter",[3815]="Meisterspion Hul'ach",[3816]="Animasammler",[3817]="Xiln der Berg",[3819]="Anh-De der Loyale",[3820]="Tisiphon",[3821]="Mechanoidenwagen",[3822]="Horrende Heilung",[3823]="Verheererbau",[3824]="Chins Nudelwagen",[3825]="Schwarmrufer",[3826]="Datenanomalie",[3827]="Datenanomalie",[3828]="Datenanomalie",[3829]="Datenanomalie",[3830]="Borr-Geth",[3831]="Jagdgründe der Vil'thik",[3832]="Adjutant Dekaris",[3833]="Ritual des Erwachens",[3834]="Kriegsbanner der Vil'thik",[3835]="Eternas der Peiniger",[3836]="Dunkellord Taraxis",[3837]="Schwarmrufer",[3838]="Schwarmrufer",[3839]="Verstärkter Kriegswagen",[3840]="Kunchonginkubator",[3843]="Schwarmrufer",[3844]="Soul Well",[3845]="Mantisbrutstätte",[3846]="Blazing Pyrestone",[3847]="Neugeborener Verschlinger",[3848]="Treibender Kummer",[3849]="Seelenanker",[3850]="Seelenanker",[3851]="Kiste des Schwarzen Imperiums",[3852]="Schwarze Kiste",[3853]="Schwarze Kiste",[3854]="Schwarze Kiste",[3855]="Schwarze Kiste",[3856]="Truhe des Schwarzen Imperiums",[3857]="Truhe des Schwarzen Imperiums",[3858]="Truhe des Schwarzen Imperiums",[3859]="Truhe des Schwarzen Imperiums",[3860]="Truhe des Schwarzen Imperiums",[3861]="Truhe des Schwarzen Imperiums",[3862]="Üppiges Blumenbeet",[3863]="Verlies der Seelen",[3864]="Beschwertes Moguartefakt",[3865]="Konstruktionsritual",[3866]="Barukvernichter",[3867]="Schlangenkäfig der Zan-Tien",[3868]="Elektrische Ermächtigung",[3869]="Goldastwächter",[3870]="Arena der Sturmerwählten",[3871]="Blutgebundenes Abbild",[3872]="Falkner Amenophis",[3873]="Mysteriöser Sarkophag",[3874]="Schlangenbindung",[3875]="Oberster Wächter Reshef",[3876]="Verderbte Wache der Neferset",[3877]="Verderbter Verstandräuber",[3878]="Fleischverschmelzung",[3879]="Actiss der Betrüger",[3881]="Weltuntergangsverkünder Vathiris",[3882]="Gedankenräuber Vos",[3883]="Hochexekutor Yothrim",[3884]="Verderbtes Protoplasma",[3885]="Blick von N'Zoth",[3886]="R'khuzj der Unergründliche",[3887]="Yiphrim der Willensräuber",[3888]="Aphrom das Antlitz des Wahnsinns",[3889]="R'aas der Animaverschlinger",[3890]="Zoth'rum der Intellektplünderer",[3891]="Shugshul der Fleischschlinger",[3892]="R'oyolok der Realitätenverschlinger",[3893]="Der Großexekutor",[3894]="Shol'thoss der Untergangsverkünder",[3895]="Herkulon",[3896]="Truhe des Aspiranten",[3897]="Geronnene Verderbnis",[3898]="Leerenriss",[3899]="Beschwörungsportal",[3900]="Beschwörungsportal",[3901]="Beschwörungsportal",[3902]="Exekutor von N'Zoth",[3903]="Exekutor von N'Zoth",[3904]="Exekutor von N'Zoth",[3905]="Exekutor von N'Zoth",[3906]="Exekutor von N'Zoth",[3907]="Ruf der Leere",[3908]="Ruf der Leere",[3909]="Ruf der Leere",[3910]="Scheiterhaufen des Amalgamierten",[3911]="Geisttrinker",[3912]="Geisttrinker",[3913]="Geisttrinker",[3914]="Geisttrinker",[3915]="Geisttrinker",[3916]="Geisttrinker",[3917]="Geisttrinker",[3918]="Schwarzwächter Rhothkozz",[3919]="Mogubeute",[3920]="Mogubeute",[3921]="Mogubeute",[3922]="Mogubeute",[3923]="Mogubeute",[3924]="Mogubeute",[3925]="Schließkassette der Mogu",[3926]="Truhe der Amathet",[3927]="Truhe der Amathet",[3928]="Truhe der Amathet",[3929]="Truhe der Amathet",[3930]="Truhe der Amathet",[3931]="Truhe der Amathet",[3932]="Reliquiar der Amathet",[3933]="PH Rare - Needs Data",[3934]="Verderbter Knochenhäuter",[3935]="Vision von N'Zoth",[3936]="Honighauer",[3937]="Solarsphäre",[3938]="Schwester Chelicera",[3939]="Wespagantua",[3940]="Sammler Kash",[3941]="Gräss",[3943]="Manipulator Yggshoth",[3944]="Manipulator Shrog'lth",[3945]="Schattenwandler Yash'gth",[3946]="Dunkelsprecher Thul'grsh",[3947]="Dunkelsprecher Shath'gul",[3948]="Craggle Schlingerkreisel",[3949]="Zuchtmeister Xox",[3950]="Seelenpirscherin Doina",[3951]="Befallene Truhe",[3952]="Befallene Truhe",[3953]="Befallene Truhe",[3954]="Befallene Truhe",[3955]="Befallene Truhe",[3956]="Befallene Truhe",[3957]="Befallene Kiste",[3958]="Befallene Kiste",[3959]="Befallene Kiste",[3960]="Befallene Kiste",[3961]="Befallene Schließkassette",[3962]="Shoth der Verdunkelte",[3963]="Hungerndes Miasma",[3964]="Innervus",[3965]="Schreiberin Lenua",[3966]="Verschlingendes Maul",[3967]="Gefallene Akolythin Erisne",[3968]="Bernbesetzte Truhe",[3969]="Bernbesetzte Truhe",[3970]="Bernbesetzte Truhe",[3971]="Bernbesetzte Truhe",[3972]="Bernbesetzte Truhe",[3973]="Truhe des Schwarzen Imperiums",[3974]="Truhe des Schwarzen Imperiums",[3975]="Truhe des Schwarzen Imperiums",[3976]="Truhe des Schwarzen Imperiums",[3977]="Verschlingendes Maul",[3978]="Verschlingendes Maul",[3979]="Verschlingendes Maul",[3980]="Weltenrandfresser",[3981]="Blubbernder Blubberball",[3982]="Schleimige Schleimsphäre",[3983]="Graf Ladinas",[3984]="Nikara Schwarzherz",[3985]="Ritual der Leerenflamme",[3986]="Monströse Beschwörung",[3987]="Mar'at in Flammen",[3988]="Jadekoloss",[3989]="Herold Il'koxik",[3990]="Bernformer Esh'ri",[3991]="Stockwache Naz'ruzek",[3992]="Kzit'kovok",[3993]="Hetzer Nir'verash",[3994]="Zerstörer Krox'tazar",[3995]="Drohnenhüter Ak'thet",[3996]="Wütender Bernelementar",[3997]="Buh'gzaki der Blasphemiker",[3998]="Hauptmann Vor'lek",[3999]="Schlitzer",[4000]="Kal'tik der Veröder",[4001]="Nadler Zhesalla",[4002]="Durchströmter Bernschlamm",[4003]="Schriftrolle der Äonen",[4004]="Nikara die Wiedergeborene",[4005]="Sophias Gabe",[4006]="Sophias Glanz",[4007]="Vesperreparatur: Sophias Arie",[4008]="Unbezwingbarer Schmidt",[4009]="Schattenschlund",[4010]="Korzaran der Schlächter",[4011]="Nebelhauch in Flammen",[4012]="Leichenschneider Moroc",[4013]="Beschwertes Moguartefakt",[4014]="Verlies der Seelen",[4015]="Reine Arroganz",[4016]="Ermächtigter Verwüster",[4017]="Ermächtigter Verwüster",[4018]="Konstruktionsritual",[4019]="Herrenlose Schatztruhe",[4020]="Valioc",[4021]="Verderbnisriss",[4022]="Pulsierender Hügel",[4023]="Befallene Jadestatue",[4024]="Seelengefängnis",[4025]="Pyrestone",[4026]="Verschlingendes Maul",[4027]="Verschlingendes Maul",[4028]="Scharfrichterin Adrastia",[4029]="Manipulator Yar'shath",[4030]="Tiefenrufer Velshen",[4031]="Portalhüterin Jin'tashal",[4032]="Bestien der Bastion",[4033]="Debug",[4034]="Ausbilder Teshal",[4035]="Bestien der Bastion: Siegelrücken",[4036]="Bestien der Bastion: Aethon",[4037]="Bestien der Bastion: Nemaeus",[4038]="Bestien der Bastion: Wolkenschweif",[4039]="Antak'shal",[4040]="Brutale Spitze von Ny'alotha",[4041]="Verfluchte Spitze von Ny'alotha",[4042]="Entropische Spitze von Ny'alotha",[4043]="Besudelte Spitze von Ny'alotha",[4044]="Nirvaska der Beschwörer",[4045]="Lord Mortegore",[4046]="Ny'alothischer Riss",[4047]="Baedos' Fressattacke",[4048]="Grabende Schrecken",[4049]="Grabende Schrecken",[4050]="Grabende Schrecken",[4051]="Erste Glocke von Markos",[4052]="Zweite Glocke von Markos",[4053]="Dritte Glocke von Markos",[4054]="Obsidianextraktion",[4055]="Schlummernder Zerstörer",[4056]="Zwirnherrin Leeda",[4057]="Schlummernder Zerstörer",[4058]="Obsidianvernichter",[4059]="Vergessene Andenken",[4060]="Vestige of the Descended",[4061]="Katakombenschatz",[4062]="Smorgas der Schmauser",[4063]="Bernbesetzte Kiste",[4064]="Tahonta",[4065]="Sabriel die Knochenspalterin",[4066]="Schling'us",[4067]="Knorpelschnabel",[4068]="Nerissa Herzlos",[4069]="Todschickling",[4070]="Blubberblut",[4071]="Gieger",[4072]="Pestizid",[4073]="Tiefnarbe",[4074]="Allerias verderbte Truhe",[4075]="Kriegshetzer Mal'korak",[4076]="Leichenfresser",[4077]="Anq'uri der Titanische",[4078]="Schinder der Aqir",[4079]="Titanus der Aqir",[4080]="Schlachtzauberer der Aqir",[4081]="Hauptmann Dünenläufer",[4082]="Hohepriester Ytaessis",[4083]="Schlachtzauberer der Aqir",[4084]="Befallener Hauptmann der Wüstenwanderer",[4085]="Lord Aj'qirai",[4086]="Magus Rehleth",[4087]="Qho",[4088]="R'krox",[4089]="Skikx'traz",[4090]="Schlachtzauberer Xeshro",[4091]="Zuythiz",[4092]="Läuternde Flammen",[4093]="Überfallene Siedler",[4094]="Überfallene Siedler",[4095]="Verhärteter Bau",[4096]="Staubrauf",[4097]="Titanusei",[4098]="Entzündliche Kokons",[4099]="Junger Setzling",[4100]="Gormkeiler",[4104]="Buchhalter Mnemis",[4105]="Leerengeist",[4106]="Geist des dunklen Ritualisten Zakahn",[4107]="Geist Cyrus' des Schwarzen",[4108]="Fleischverschmelzung",[4109]="Sonnenkönig Nahkotep",[4110]="Armagürtlon",[4111]="Tashara",[4112]="Verschlingendes Maul",[4113]="Mysteriöser Pilzring",[4114]="Gormzähmer Tizo",[4115]="Zuckende Wurzel",[4116]="Deifir der Ungezähmte",[4117]="Alter Ardeit",[4119]="Skuld Vit",[4120]="Jägerin Vivanna",[4121]="Todesbinder Hroth",[4122]="Mystisches Regenbogenhorn",[4123]="Augentruhe",[4124]="Truhe mit Konstruktvorräten",[4125]="Preissack",[4126]="Vorräte des Klingenschwurs",[4127]="Ve'nari",[4128]="Zargox der Wiedergeborene",[4129]="Kunstvoller Knochenschild",[4130]="Seltsamer Auswuchs",[4131]="Mymaen",[4132]="Seelenschmied Yol-Mattar",[4133]="Entzogene Seele",[4134]="Endlauerer",[4135]="Lichtamalgam",[4136]="Zöllner Varaboss",[4137]="Ogerzuchtmeister",[4138]="Harika die Schreckliche",[4139]="Spektralschlüssel",[4140]="Spektralgebundene Truhe",[4141]="Runenverschlossener Tresor",[4142]="Mit Hebel verschlossene Truhe",[4143]="Seelenaschenreliquiar",[4144]="Nächster Stock",[4145]="Gallaths Glocke",[4146]="Phantoriax' Kriegsschwert",[4147]="Renavyths Medaillon",[4148]="Indris Flöte",[4149]="Die Schmiede braucht mehr Güldenit",[4150]="Amethia",[4151]="Penthia",[4152]="Varrik",[4153]="Knöpfchen",[4154]="Sumpfbestie",[4155]="Animazapfen",[4156]="Pylon",[4157]="Schmutzamalgam",[4158]="Famu der Unendliche",[4159]="Duellmeister Rowyn",[4160]="Truhe der neidischen Träume",[4161]="Diebestrophäe",[4162]="Zurückgelassene Beute eines Wanderers",[4163]="Remlates versteckter Schatz",[4164]="Azgar",[4165]="Schatztruhe",[4166]="Bündel der flüchtigen Seele",[4167]="Hoffnungsvernichter",[4168]="Kiste mit vergoldeter Pflaume",[4169]="Scharfrichter Aatron",[4170]="Jagdmeister Petrus' Freunde",[4171]="Gespinstbedeckte Schatztruhe",[4172]="Großarkanist Dimitri",[4173]="Geheimer Schatz",[4174]="Geheimer Schatz",[4175]="Geheimer Schatz",[4176]="Geheimer Schatz",[4177]="Geheimer Schatz",[4178]="Geheimer Schatz",[4179]="Geheimer Schatz",[4180]="Geheimer Schatz",[4181]="Geheimer Schatz",[4182]="Geheimer Schatz",[4183]="Fauldornboggart",[4184]="Skoldushalle",[4185]="Frakturkammern",[4186]="Die Seelenschmieden",[4187]="Mort'regar",[4188]="Die Oberen Ebenen",[4189]="Kaltherzinterstitia",[4190]="Die Gewundenen Korridore",[4191]="Unbewachte Gormeier",[4192]="Bizarres Blütenbündel",[4193]="Seltsame Wolke",[4194]="Feuer",[4195]="Nachtmähre",[4196]="Mehrzfresser",[4197]="Verlegte Vorräte",[4198]="Schwingenschinder der Grausame",[4199]="Schwarzhundtruhe",[4200]="Vesperglocke der Tugenden",[4201]="Augenlager",[4202]="Sprießender Auswuchs",[4203]="Grabsprenger",[4204]="Truhe",[4205]="Kyrianerleiche",[4206]="Truhe",[4207]="Truhe",[4208]="Truhe",[4210]="Gigantischer Sucher",[4211]="Knochengebundene Kiste",[4212]="Kahlholzkiste",[4213]="Verzauberte Truhe",[4214]="Vergoldete Truhe",[4215]="Konvokation der Trauer",[4216]="Obolos",[4217]="Verrottete Hülle",[4218]="Verrottete Hülle",[4219]="Verrottete Hülle",[4220]="Verrottete Hülle",[4221]="Verrottete Hülle",[4222]="Feenvorrat",[4223]="Feenvorrat",[4224]="Feenvorrat",[4225]="Feenvorrat",[4226]="Feenvorrat",[4227]="Manifestation des Zorns",[4228]="Halis' Henkelmann",[4229]="Verschlossener Werkzeugkasten",[4230]="Frontrationskiste",[4231]="Befreier Vlavios",[4232]="Konvokation des Verlusts",[4233]="Konvokation des Schmerzes",[4234]="Mondlichtkapsel",[4235]="Mondlichtkapsel",[4236]="Mondlichtkapsel",[4237]="Mondlichtkapsel",[4238]="Mondlichtkapsel",[4239]="Zerbrochene Glocke",[4240]="Zerbrochene Glocke",[4241]="Zerbrochene Glocke",[4242]="Himmelsglocke",[4243]="Himmelsglocke",[4244]="Wunschgrille",[4245]="Seelenschmied Rhovus",[4246]="Vesperglocke der Tugenden",[4247]="Sündenamalgam",[4248]="Sonnentänzer",[4249]="Baronin Vashj",[4250]="Polemarch Adrestes",[4251]="Choofa",[4252]="Grufthüter Kassir",[4253]="Klumplump",[4254]="Ritual der Absolution",[4255]="Ritual der Anklage",[4256]="Ein stiller Moment",[4257]="Teekränzchen",[4258]="Hochinquisitor Vetar",[4259]="Theotars Trinkspruch",[4260]="Tributtruhe",[4261]="Partyaufmerksamkeit",[4263]="Silberne Schließkassette",[4264]="Silberne Schließkassette",[4265]="Silberne Schließkassette",[4266]="Silberne Schließkassette",[4267]="Silberne Schließkassette",[4268]="Silberne Schließkassette",[4269]="Silberne Schließkassette",[4270]="Silberne Schließkassette",[4271]="Silberne Schließkassette",[4272]="Silberne Schließkassette",[4273]="Silberne Schließkassette",[4274]="Goldene Truhe des Provosten",[4275]="Himmelsglocke",[4276]="Versteckter Vorrat",[4277]="Versteckter Vorrat",[4278]="Versteckter Vorrat",[4279]="Versteckter Vorrat",[4280]="Versteckter Vorrat",[4281]="Versteckter Vorrat",[4282]="Tugend der Bußfertigkeit",[4283]="Dunkle Wächterin",[4284]="Schattenweber Zeris",[4285]="Auf Bestellung",[4286]="Prüfung der Reinheit",[4287]="Essensschlacht",[4288]="Prüfung der Demut",[4289]="Prüfung des Mutes",[4290]="Prüfung der Weisheit",[4291]="Prüfung der Loyalität",[4292]="Basilofos",[4293]="Krala",[4294]="Dolos",[4295]="Eurydos",[4296]="Thanassos",[4297]="Die Gewundenen Korridore",[4298]="Animaartefakt",[4299]="Eketra",[4300]="Akros der Brutale",[4301]="Pilzexperimente",[4302]="Senkt Eure Erwartungen",[4303]="Die Ernte",[4304]="Rückmeldung: Grufthüter Kassir",[4305]="Steingeborenensäckchen",[4306]="Rückmeldung: Steinkopf",[4307]="Steingeborenensäckchen",[4308]="Steingeborenensäckchen",[4309]="Steingeborenensäckchen",[4310]="Steingeborenensäckchen",[4311]="Steingeborenensäckchen",[4312]="Steingeborenensäckchen",[4313]="Rückmeldung: Die Gräfin",[4314]="Preis des Faustkämpfers",[4315]="Preis des Faustkämpfers",[4316]="Preis des Faustkämpfers",[4317]="Preis des Faustkämpfers",[4318]="Preis des Faustkämpfers",[4319]="Konzertbeginn",[4320]="Der Rat der Aufgestiegenen",[4321]="Rat der Aufgestiegenen",[4322]="Wolkenfederwächter",[4323]="Steingeborenensäckchen",[4324]="Steingeborenensäckchen",[4325]="Steingeborenensäckchen",[4326]="Steingeborenensäckchen",[4327]="Steingeborenensäckchen",[4328]="Steingeborenensäckchen",[4329]="Steingeborenensäckchen",[4330]="Steingeborenensäckchen",[4331]="Razkazzar",[4332]="Orrholyn",[4333]="Yol-Mattar",[4334]="Unphlaxx",[4335]="Dath Rezara",[4336]="Morguliax",[4337]="Tanz für die Liebe",[4338]="Instabile Erinnerung",[4339]="Vollstrecker Aegeon",[4340]="Fehlerhafte Klauenwache",[4341]="Demi die Relikthorterin",[4342]="Wachsender Riss",[4343]="Verkörperter Hunger",[4344]="Sammler Astorestes",[4345]="Verlassener Vorrat",[4346]="Gestohlene Ausrüstung",[4347]="Gierstein",[4348]="Belohnung der Gier",[4349]="Xixin der Räuberische",[4350]="Weltenschmauser Chronn",[4351]="Notizen des verlorenen Jüngers",[4352]="Harnisch des Larionbändigers",[4353]="Experimentelles Konstruktteil",[4354]="Werkzeuge des Windschmieds",[4355]="Reliktschatz",[4356]="Abstecher ins Abenteuer",[4357]="Gormkäfig",[4358]="Rückmeldung: Rendel und Knüppelfratze",[4359]="Aspirant Eolis",[4360]="Tierrettung",[4361]="Speer des Aspiranten",[4362]="Sprießender Auswuchs",[4363]="Sprießender Auswuchs",[4364]="Echo von Aella",[4365]="Rückmeldung: Großmeister Vole",[4366]="Schleimbedeckte Kiste",[4368]="Truhe der würdigen Aspirantin",[4369]="Rückmeldung: Seuchenerfinder Marileth",[4370]="Beschworener Tod",[4371]="Rückmeldung: Jagdhauptmann Korayn",[4372]="Pesthetzer",[4373]="Aufgeblähte Plünderfliege",[4374]="Runengebundene Lade",[4375]="Runengebundene Lade",[4376]="Zo'Sorg",[4377]="Rückmeldung: Polemarch Adrestes",[4378]="Labyrinthmischling",[4379]="Huwerath",[4380]="Seelenbrunnen",[4381]="Boshafte Stygia",[4382]="Wahnsinniger schlundgebundener Fessler",[4383]="Dartanos",[4384]="Verängstige Seele",[4385]="Rückmeldung: Dromanin Aliothe",[4386]="Agonix",[4387]="Rückmeldung: Choofa",[4388]="Sehr hohe Klippe",[4389]="Ausgetrocknete Motte",[4390]="Gedenkopfergaben",[4391]="Rückmeldung: Sika",[4392]="Drezgruda",[4393]="Schwappi",[4394]="Sündenfresser",[4395]="Kedu",[4396]="Rückmeldung: Mikanikos",[4397]="Rückmeldung: Baronin Vashj",[4398]="Seelenverzerrer Cero",[4399]="Vesperglocke des Silberwinds",[4400]="Faeschinder",[4401]="Astra",[4402]="Mi'kai",[4403]="Glimmerstaub",[4404]="Senthii",[4405]="Glimmerstaub",[4406]="Traumweber",[4407]="Niya",[4408]="Grubs Schaufel",[4409]="Steinschmeißers Sündenstein",[4411]="Thelas Gedächtnisstein",[4412]="Rückmeldung: Alexandros Mograine",[4413]="Die Gräfin",[4414]="Lady Mondbeere",[4415]="Mikanikos",[4416]="Alexandros Mograine",[4417]="Jagdhauptmann Korayn",[4418]="Rendel und Knüppelfratze",[4419]="Dromanin Aliothe",[4420]="Großmeister Vole",[4421]="Kleia und Pelagos",[4422]="Seuchenerfinder Marileth",[4423]="Sika",[4424]="Steinkopf",[4425]="Rückmeldung: Kleia und Pelagos",[4426]="Thelas Gedächtnisstein",[4427]="Cyrixia",[4428]="Halas Schwert",[4429]="Hofzermalmer",[4430]="Prinz Renathal",[4432]="Ispiron",[4433]="Ersatzteile",[4434]="Knickerbock",[4435]="Der Winterwolf",[4436]="Gluthof: Erinnerungen an die Sterblichkeit",[4437]="Blisswing Rescue NPC",[4438]="Venthyrprovokateur",[4439]="Brutale Blase",[4440]="Gluthimmelsschrecken",[4441]="Halas Schwert",[4442]="Karynmwylyanns Erinnerungskristall",[4443]="Thelas Gedächtnisstein",[4445]="Gluthof: Tubbins' Teekränzchen",[4446]="Gluthof: Traditionell",[4447]="Gluthof: Blick in die Wildnis",[4448]="Gefäß mit auffälligem Schleim",[4449]="Gestohlener Krug",[4450]="Das Necro-mjam-nicon",[4451]="Seuchensturztruhe",[4452]="Gluthof: Deliziöse Desserts",[4453]="Gluthof: Rituale der Buße",[4454]="Glutherns Vorrat",[4455]="Gluthof: Steingeborene Reservisten",[4456]="Schatz des Runensprechers",[4457]="Truhe des Ritualisten",[4458]="Gluthof: Freiwillige Venthyr",[4459]="Orophea",[4460]="Jagd: Schemenhunde",[4461]="Jagd: Seelenfresser",[4462]="Jagd: Todeselementare",[4463]="Zovak der Schinder",[4464]="Gluthof: Pilz Surprise",[4465]="Yero der Sprunghafte",[4466]="Venthyrverstärkungen verfügbar",[4467]="Nekrolordverstärkungen verfügbar",[4468]="Kyrianerverstärkungen verfügbar",[4469]="Nachtfaeverstärkungen verfügbar",[4470]="Gluthof: Armee von Maldraxxus",[4471]="Madalavs Hammer",[4472]="Schmiedemeister Madalav",[4473]="Valfir der Unerbittliche",[4474]="Funkelnder Animasamen",[4475]="Schmucktau",[4476]="Orstus und Sotiros",[4477]="Schwarze Glocke",[4478]="Letzter Faden",[4479]="Gluthof: Mysteriöse Spiegel",[4480]="Terrorschreckballiste",[4481]="Horn des Mutes",[4482]="Verlangen der Gier",[4483]="Großer Gierstein",[4484]="Runenlade der Auserwählten",[4485]="Bußfertigkeit der Reinheit",[4486]="Große Mondlichtkapsel",[4487]="Truhe des Wolkenwanderers",[4488]="Machtmissbrauch",[4489]="Unter die Gäste mischen",[4490]="Pulsierender Egel",[4491]="Verderbtes Sediment",[4492]="Violetter Fehler",[4493]="Gehlo",[4494]="Knochenschlürfer",[4495]="Brandblase",[4496]="Öliger Invertebrat",[4497]="Der Mord an Oberst Mort",[4498]="Steinernes Vermächtnis",[4499]="Modeverbrechen",[4500]="Einen Hauch komfortabler",[4501]="Partystörer",[4502]="Gestohlene Andenken",[4503]="Valis der Grausame",[4504]="Gluthof: Der Verschüttete Kelch",[4505]="Gluthof: Tubbins' Teekränzchen",[4506]="Verlassene Schätze",[4507]="Geschmuggelte Truhe",[4508]="Der Mord an Oberst Mort",[4509]="Verlorener Federkiel",[4510]="Schicker Sonnenschirm",[4511]="Der Zinnengraf",[4512]="Rapier der Furchtlosen",[4513]="Tote Graumähne",[4514]="Vyrthas Schreckensgleve",[4515]="Vergessene Angelrute",[4516]="Verbotene Kammer",[4517]="Behelfsmäßige Schlammlache",[4518]="Hundemeister Vasanok",[4519]="Sanngror der Folterer",[4520]="Huschende Brutmutter",[4521]="Steinfaust",[4522]="Altar der Sünde",[4523]="Verlorene Rüstung",[4524]="Halas Schwert",[4525]="Velkeins Schwert",[4526]="Rasselbeutel",[4527]="Exos",[4528]="Schatz des Zuchtmeisters",[4529]="Darithis der Düstere",[4530]="Urahne Nadox",[4531]="Prinz Taldaram",[4532]="Krik'thir der Torwächter",[4533]="Trollgrind",[4534]="Novos der Beschwörer",[4535]="Der Prophet Tharon'ja",[4536]="Falric",[4537]="Marwyn",[4538]="Schmiedemeister Garfrost",[4539]="Geißelfürst Tyrannus",[4540]="Bronjahm",[4541]="Der schwarze Ritter",[4542]="Prinz Keleseth",[4543]="Ingvar der Brandschatzer",[4544]="Skadi der Skrupellose",[4545]="Lady Todeswisper",[4546]="Professor Seuchenmord",[4547]="Blutkönigin Lana'thel",[4548]="Flickwerk",[4549]="Noth der Seuchenfürst",[4550]="Es regnet Anima",[4551]="Nekromantische Anomalie",[4552]="Gezähmter Lichtungsläufer",[4553]="Fallen gelassene Stygia",[4554]="Dunkelvorstoßvorräte",[4555]="Jagd: Todeselementare",[4556]="Truhe der Nacht",[4557]="Stygisches Reliquiar",[4558]="Schwer zu findende Feentruhe",[4559]="Verzauberter Traumfänger",[4560]="Traumsangherz",[4561]="Lebhafte Drachenfeder",[4562]="Harmonische Truhe",[4563]="Feenschatz",[4564]="Aufgequollener Animasamen",[4565]="Uraltes Wolkenfederei",[4566]="Verlorenes Säckchen",[4567]="Aerto",[4568]="Stygischer Einäscherer",[4569]="Torghast",[4570]="Argentumheiler",[4571]="Vesperreparatur: Sophias Ouvertüre",[4572]="Epischer Riesenschatz",[4573]="Odalrik",[4574]="Flucht aus der Dunkelheit",[4575]="Dionae",[4576]="Läuternder Trunk",[4577]="Silberne Schließkassette",[4578]="Tor zur Heldenrast",[4579]="Gefesselte Ausreißer",[4580]="Ikras der Verschlinger",[4581]="Kletterwuchs",[4582]="Reife Purianfrucht",[4583]="Tor zur Heldenrast",[4584]="Sündensteinfragmente",[4585]="Arglistiger Tod",[4586]="Vorräte",[4590]="Zo'Sorgs versteckter Schatz",[4591]="Rendel und Knüppelfratze",[4592]="Kleia und Pelagos",[4593]="Ritual der Absolution",[4594]="Ritual des Urteils",[4595]="Archivar Fane",[4596]="Archivar Fane",[4598]="Grufthüter Kassir",[4599]="Sühnengruftschlüssel",[4600]="Die Anklägerin",[4601]="Klagende Seele",[4602]="Ziellose Seele",[4603]="Rattenschwärmer",[4604]="Gebändigte Seele",[4605]="Arkobanhalle",[4606]="Jagd: Geflügelte Seelenfresser",[4607]="Verwundete Seele",[4608]="Geplünderte Seele",[4610]="Ausgelaugte Seele",[4612]="Zorn des Kerkermeisters",[4613]="Zorn des Kerkermeisters",[4614]="Zorn des Kerkermeisters",[4615]="Zorn des Kerkermeisters",[4616]="Rakul der Seelenverwüster",[4617]="Gefangene Seele",[4618]="Zorn des Kerkermeisters",[4619]="Gepeinigte Seele",[4625]="Endlauerer",[4626]="Famu der Unendliche",[4627]="Verbotene Kammer",[4628]="Alascene",[4629]="Fleddermausstatue",[4630]="Schlosssündenmähre",[4631]="Steinscheusalsschwarm",[4632]="Inaktiver Felskieferbeschützer",[4633]="Händler für durchflutete Rubine",[4634]="Chaotischer Rissstein",[4636]="Vergessene Truhe",[4637]="Vergessene Truhe",[4638]="Vergessene Truhe",[4639]="Vergessene Truhe",[4640]="Vergessene Truhe",[4641]="Vergessene Truhe",[4642]="Vergessene Truhe",[4643]="Vergessene Truhe",[4644]="Vergessene Truhe",[4645]="Vergessene Truhe",[4646]="Vergessene Truhe",[4647]="Vergessene Truhe",[4648]="Chaotischer Rissstein",[4650]="Animastromteleporter",[4651]="Schatz des Zuchtmeisters",[4652]="Inquisitor Sorin",[4653]="Inquisitor Petre",[4654]="Inquisitorin Otilia",[4655]="Inquisitor Traian",[4656]="Hochinquisitorin Gabi",[4657]="Hochinquisitorin Radu",[4658]="Hochinquisitorin Magda",[4659]="Hochinquisitor Dacian",[4660]="Großinquisitor Nicu",[4661]="Großinquisitorin Aurica",[4662]="Großzügiges Geschenk",[4663]="Frisierspiegel",[4664]="Arsenal der Verbündeten",[4665]="Die Wilde Trommel",[4666]="Trainingsattrappe",[4667]="Beschützende Kohlenpfannen",[4668]="Glitschi",[4669]="Altar der Errungenschaften",[4670]="Knochenknacker",[4671]="Animaversetztes Wasser",[4672]="Loderndes Feuer",[4673]="Beschützende Kohlenpfanne",[4674]="Sammelglocke",[4675]="Tubbins' Glücksteekanne",[4676]="Verzauberte Kommode",[4677]="Näherin Rogana",[4678]="Angereicherte Erde",[4679]="Glutmücke",[4680]="Hüter Ta'saran",[4681]="Verdächtiger Kellner",[4682]="Gestohlenes Andenken",[4683]="Festtagsgeschenk",[4684]="Theotars Liederbuch",[4685]="Ältester Naladu",[4686]="Theotars verlockende Düfte",[4687]="Zappelnder Barsch",[4688]="Sprungpilz",[4689]="Entkommener Gormling",[4690]="Verzauberte Kiste",[4691]="Baustelle der Tuskarr",[4692]="Adamantgewölbe",[4693]="Angelsteg",[4694]="Angelsteg",[4695]="Holzbündel",[4696]="Aufgerolltes Seil",[4697]="Angelausrüstung",[4705]="Gefangenenkäfige",[4706]="Stygiakonvergenz",[4707]="Verirrte Seele",[4708]="Zeitwanderungshändler",[4710]="Chaotischer Riss",[4711]="Seelenstahlamboss",[4712]="Theotars Ei",[4713]="Theotar",[4714]="Temels Ei",[4715]="Lord Garridans Ei",[4716]="Prinz Renathals Ei",[4717]="Temel",[4718]="Lord Garridan",[4719]="Theotars Eierjagd",[4720]="Peinigerleutnant",[4721]="Peiniger von Torghast",[4722]="Stygiarückstände",[4723]="Ereignis: Peiniger von Torghast",[4725]="Schlundgebundene Truhe",[4726]="Schlundgebundene Truhe",[4727]="Schlundgebundene Truhe",[4728]="Schlundgebundene Truhe",[4729]="Schlundgebundene Truhe",[4730]="Schlundgebundene Truhe",[4732]="Dominierter Beschützer",[4734]="Energieerfüllter Goliath",[4735]="Energieerfüllter Goliath",[4736]="Energieerfüllter Goliath",[4737]="Energieerfüllter Goliath",[4738]="Hadeon der Steinbrecher",[4739]="Mutter Phestis",[4740]="Schlemmerin",[4741]="Leutnant der Seelenschmiede",[4742]="Gefräßige Überwucherung",[4743]="Brennende Seele",[4744]="Ve'lors Paket",[4745]="Eisseele",[4746]="Gorkek",[4747]="Akkaris",[4748]="Peinigerin von Torghast",[4749]="Versteckte Risstruhe",[4750]="Peinigerin von Torghast",[4751]="Peiniger von Torghast",[4752]="Peiniger von Torghast",[4753]="Peinigerin von Torghast",[4754]="Peiniger von Torghast",[4755]="Peiniger von Torghast",[4756]="Peiniger von Torghast",[4757]="Peiniger von Torghast",[4758]="Peiniger von Torghast",[4759]="Versteckte Risstruhe",[4760]="Versteckte Risstruhe",[4761]="Versteckte Risstruhe",[4762]="Versteckte Risstruhe",[4763]="Versteckte Risstruhe",[4764]="Peiniger von Torghast",[4765]="Peiniger von Torghast",[4766]="Peiniger von Torghast",[4767]="Peiniger von Torghast",[4768]="Peiniger von Torghast",[4769]="Ätherwyrmkäfig",[4770]="Orixal",[4771]="Ereignis: Zorn des Kerkermeisters",[4772]="Ereignis: Zorn des Kerkermeisters",[4773]="Ereignis: Peiniger von Torghast",[4774]="Kroke der Gepeinigte",[4775]="Schlundgebundene Truhe",[4776]="Phantasmatisches Amalgam",[4777]="Ylva",[4778]="Gefallenes Streitross",[4779]="Schlundgebundene Truhe",[4780]="Signaturautorisierungsgerät",[4781]="Glitzerndes Nestmaterial",[4782]="Torglluun",[4783]="Malbog",[4784]="Vergessene Feder",[4785]="Verlorenes Andenken",[4786]="Seidenschreiterlarve",[4787]="Energiekern",[4788]="Amulett der Aspirantin",[4789]="Schankgriffels Tablett",[4790]="Heruntergefallenes Nest",[4791]="Lassiks Kissen",[4792]="Ryujas Rucksack",[4793]="Schlinger",[4794]="Animabeladenes Ei",[4795]="Kinessas Skelett",[4796]="Freund?",[4798]="Gewaltiger Exterminator",[4799]="Schlundgebundener Exterminator",[4800]="Konthrogz der Zerstörer",[4801]="Spektralgebundene Truhe",[4802]="Spektralgebundene Truhe",[4803]="Deomen der Vortex",[4804]="Versetztes Relikt",[4805]="Helgebundene Truhe",[4806]="Uralter Teleporter",[4808]="Verräter Balthier",[4809]="Juwelenbesetztes Herz",[4810]="Schreiender Schemen",[4811]="Befallener Überrest",[4812]="Opferkiste",[4813]="Verbrenner Arkolath",[4814]="Wache Orguluus",[4815]="Blendender Schatten",[4816]="Zovaals Tresor",[4817]="Uralter Teleporter",[4818]="Scharfrichter Varruth",[4819]="Schreiender Schemen",[4820]="Lautloser Seelenpirscher",[4821]="Lautloser Seelenpirscher",[4822]="Totenseelenbrüter",[4823]="Totenseelenbrüter",[4824]="Reliktbrecherin Krelva",[4825]="Relikttruhe",[4826]="Relikttruhe",[4827]="Knochenhaufen",[4828]="Splitterfellvorrat",[4829]="Knochenhaufen",[4830]="Kaputter Torbrecher",[4831]="Kaputter Torbrecher",[4832]="Stygischer Steinzermalmer",[4833]="Relikttruhe",[4834]="Verlockende Trommel",[4835]="Entkommener Wildling",[4836]="Reliktbrecherin Krelva",[4837]="Popoes Trankpatrouille",[4838]="Popoes Trankpatrouille",[4839]="Wilder Weltenknacker",[4840]="Leichenhaufen",[4841]="Fleischschwinge",[4842]="Invasiver Schlundpilz",[4843]="Invasiver Schlundpilz",[4844]="Invasiver Schlundpilz",[4845]="Invasiver Schlundpilz",[4846]="Invasiver Schlundpilz",[4847]="Nest aus ungewöhnlichen Materialien",[4848]="Nest aus ungewöhnlichen Materialien",[4849]="Nest aus ungewöhnlichen Materialien",[4850]="Nest aus ungewöhnlichen Materialien",[4851]="Nest aus ungewöhnlichen Materialien",[4852]="Schlundgebundene Truhe",[4853]="Schlundgebundene Truhe",[4854]="Leichenhaufen",[4855]="Bob der Schmied",[4857]="Angriffsversorgungskutsche",[4858]="Beobachter Yorik",[4859]="Uralter Teleporter",[4860]="Yarxhov der Plünderer",[4861]="Uralter Teleporter",[4862]="Xyraxz der Unbegreifliche",[4863]="Zelnithop",[4864]="Schlundberührte Klingenschwinge",[4865]="Rissgebundene Truhe",[4866]="Ve'rayn",[4867]="Rissgebundene Truhe",[4868]="Rissgebundene Truhe",[4869]="Rissgebundene Truhe",[4871]="Angriffsversorgungskutsche",[4872]="Soggodon der Brecher",[4873]="Oros Kaltherz",[4874]="Bubbins",[4875]="Feuer",[4876]="Vergessener Goliath",[4877]="Untergetauchte Truhe",[4878]="Theotars Verkoster",[4879]="Theotars bedenkliche Beschwörungen",[4880]="Visionen von Graf Denathrius",[4881]="Theotars immerwährendes Festmahl",[4882]="Kutschenzermalmer",[4883]="Zurückgelassener Schleierstab",[4884]="Unverderbtes Klingenschwingenei",[4885]="Verschlingender Spalt",[4886]="Schlundgebundenes Portal",[4887]="Verzaubertes Wellenreiterbrett",[4888]="Ruhelose Welle",[4889]="Versunkene Schatzkiste",[4890]="Beschützer der Ersten",[4891]="Beschädigter Behälter der Jiro",[4892]="Destabilisierter Kern",[4893]="Garudeon",[4894]="Reserve des Aufsehers",[4895]="Zelt des Obsidiankommandanten",[4896]="Obsidianbelagerungsschmiede",[4897]="Obsidianherausforderung",[4898]="Beschwörungsritual der Djaradin",[4899]="Kolossaler Aurelid",[4900]="Bergsteigerlager",[4902]="Teleportkette",[4903]="Tethos",[4904]="Sturmrücken",[4905]="Gesammelte Konkordanzen",[4906]="Schimmerschlund",[4907]="Verlorene Schriftrolle",[4908]="Unbeständiger Sand",[4909]="Generalin Zarathura",[4910]="Legionsinvasionssignal",[4913]="Spießrutenlauf des Kerkermeisters",[4915]="Narduke",[4916]="Annihilanhoffnungsbrecher",[4917]="Zurückgelassenes Automa",[4918]="Iska",[4919]="Phalangax",[4920]="Edra",[4923]="Bibliotheksarchiv",[4925]="Vorlagenarchiv",[4926]="Vergessenes Protoarchiv",[4928]="Provistruhe",[4929]="Entdeckung des Spürauges",[4931]="Die Matriarchin",[4933]="Der Umhüller",[4934]="Verdächtig wütender Tresor",[4936]="Vexis",[4937]="Sorranos",[4938]="Xy'rath der Begehrliche",[4939]="Otiosen",[4940]="Zatojin",[4941]="Otaris der Provozierte",[4942]="Symphonisches Archiv",[4943]="Tahkwitz",[4944]="OOX-Flinkfuß/MG",[4945]="Verderbter Architekt",[4946]="Uralter Translokator",[4947]="Seilrutschenlager",[4948]="Chitali der Älteste",[4949]="Zoridian",[4950]="Helmix",[4951]="Oberster Häscher Damaris",[4952]="Reanimatrox Marzan",[4953]="Rhuv",[4954]="Aufmerksamer Pocopoc",[4955]="Frostschwinges Schicksal",[4956]="Dämonenversklavter Vollstrecker",[4957]="Wilder Wasserwirbelwind",[4958]="Der heulende Vilomah",[4959]="Veränderlicher Sternfresser",[4960]="Fehlerhafter Architekt",[4961]="Euv'ouk",[4962]="Klauenverschrammte Tasche",[4963]="Protoformbauplan",[4964]="Schlundgebundene Truhe",[4965]="Gestohlenes Relikt",[4966]="Chiffrengebundene Truhe",[4967]="Vitiane",[4968]="Herrschaftstruhe",[4969]="Schlundgebundene Vorratstruhe",[4970]="Ornidennest",[4971]="Tarachnideneier",[4973]="Angenagter Handkoffer",[4974]="Weggeworfener Automaschrott",[4975]="Gefallenes Gewölbe",[4976]="Zerschmetterte Vorratskiste",[4977]="Sandmatriarchin Ilius",[4978]="Breibedecktes Relikt",[4979]="Geklautes Artefakt",[4980]="Reserve des Architekten",[4981]="Verwechseltes Ovoid",[4982]="Garudeon",[4983]="Vorräte des ertrunkenen Mittlers",[4984]="Hirukon",[4985]="Hirukon",[4986]="Überwucherte Protofrucht",[4987]="Opfergabe an die Ersten",[4988]="Beschützer der Ersten",[4989]="Verderbter Architekt",[4990]="Zatojin",[4991]="Bedarfsoriginator",[4992]="Protomineralienextraktor",[4993]="Stibitzte Kuriosität",[4994]="Gestohlene Schriftrolle",[4995]="Dankbares Geschenk",[4996]="Protofloraernter",[4997]="Vergessener Schatztresor",[4998]="Syntaktisches Gewölbe",[4999]="Protobirne",[5000]="Chiffrenkonsole",[5001]="Wogendes Blattwerk",[5002]="Ein Scheffel Progenitorerzeugnisse",[5003]="Rundtruhe",[5004]="Merl",[5005]="Klettererlager",[5006]="Sandgeschliffene Truhe",[5007]="Verstärkungskonsole",[5011]="Angelhütte",[5013]="Prototypbauplan",[5014]="Breibedecktes Relikt",[5015]="Breibedecktes Relikt",[5016]="Katalogisiererlager",[5018]="Untergetauchte Truhe",[5019]="Zerfleddertes Astraltuch",[5020]="Verstärkungskonsole",[5021]="Vorräte des ertrunkenen Mittlers",[5022]="Verschlossene Truhe",[5023]="Schatztruhe",[5024]="Firim im Exil",[5025]="Firim im Exil",[5026]="Firim im Exil",[5027]="Firim im Exil",[5028]="Firim im Exil",[5029]="Firim im Exil",[5030]="Firim im Exil",[5031]="Firim im Exil",[5032]="Geistwandlervision",[5033]="Geistwandlervision",[5034]="Vorratsdepot",[5035]="Käferkauer",[5036]="Dracthyrschatz",[5039]="Rußschuppe die Unbeugsame",[5040]="Portal",[5041]="Verdächtige Flasche",[5042]="Tasche voller verzauberter Winde",[5043]="Tripletath der Verlorene",[5044]="Harkyn Grymmstein",[5045]="Steinbrech",[5046]="Vorratskiste der Vollsegel",[5047]="Galgresh",[5048]="Verschlossene Bibliothek",[5049]="Gorbo der Thronräuber",[5050]="Kaskade",[5051]="Seine Fluffigkeit",[5052]="Schatztruhe",[5053]="Geheimer Perlmuttschatz der Gorloc",[5054]="Klettererlager",[5055]="Urscythidenkönigin",[5056]="Ga'ree",[5057]="Uralter Flunker",[5058]="Kleines verirrtes Entchen",[5062]="Kriegsmeisterin der Nokhud",[5063]="[PH] Gorloc Historian",[5066]="Säbelzahnmatrone",[5067]="Verschlossene Truhe",[5068]="Ravinni",[5069]="Anhydros der Gezeitenräuber",[5071]="Odd Mana Infused Crystal",[5073]="Alte Truhe",[5074]="Alte Truhe",[5075]="Seltener Mechanoid",[5076]="Seltene Ananaspizza",[5077]="Jäger der Tiefe",[5078]="Eisenbaum",[5079]="Verlorenes Kissen",[5080]="Testing Rare Vignette",[5081]="Nächster Kontrollpunkt",[5082]="Testing Treasure",[5084]="Erdschlund",[5085]="Instabile Fumarole",[5086]="Verstärkter Haken",[5087]="Zerimek",[5089]="Georteter Schatz 01",[5090]="Gebundene Truhe",[5092]="Ursturm",[5094]="Untersuchungsfernrohr",[5095]="Pirscher von Ausblick 01",[5096]="Grabwühler Khenbish",[5097]="Unterwasserknochen",[5099]="Tokker",[5100]="Uraltes Monument",[5103]="Jagdtrupp 001",[5104]="Bronzezeithüter",[5107]="Penumbrus",[5108]="Shas'ith",[5109]="Turboris",[5110]="Weltenschnitzer A'tir",[5111]="Ambossbrecher Azor",[5112]="Kampfhorn Pyrhus",[5113]="Schatten des Todes",[5114]="Kampfhorn Pyrhus",[5115]="Seng",[5116]="Magmaton",[5117]="Hessethiashs erbärmlich versteckter Schatz",[5118]="Tresor des Erdwächters",[5119]="Wiederhergestellter Morchock",[5120]="Pirschender Säbelzahn",[5121]="Hungriger Schluchtgeier",[5122]="Norbett",[5123]="Wütender Mammutbulle",[5124]="Uranto",[5125]="Der Große Flunk",[5126]="Drachenjäger Igordan",[5127]="Kluzicc der Aufgestiegene",[5128]="Zurückgelassener Waffenständer",[5129]="Todesriss",[5130]="Scytherin",[5131]="Ty'foon der Aufgestiegene",[5132]="Tazenrath",[5133]="Ketess der Plünderer",[5134]="Verlorenes drakonisches Stundenglas",[5135]="Schwefiron",[5136]="Porta der Überwucherte",[5137]="Ausgeweidetes Riesenwildschaf",[5138]="Adlermeisterin Niraak",[5139]="Versteckter Flunkerhort",[5140]="Windschuppe der Sturmgeborene",[5141]="Sturmritual",[5142]="Kriegsspeer der Nokhud",[5143]="Vaniik der Verderbte",[5144]="Quaker der Schreckliche",[5146]="Ursturm",[5147]="Ursturm",[5148]="Ursturm",[5149]="Elementarsturm",[5150]="Großes Entennest",[5152]="Lava Fish School FX",[5153]="Frostpfote",[5157]="Urelemente",[5158]="Diebische Gnolle",[5159]="Urelemente",[5160]="Proto-Drake Hangout (NAME WIP)",[5162]="Urelemente",[5163]="Gespinstkönigin Ashkaz",[5165]="Shezra",[5166]="Fliederfarbene Protomutter",[5167]="O'nank Strandsieb",[5168]="Dampfkieme",[5169]="Schmokflunk der Feuerspeier",[5170]="Sonnenschuppenungetüm",[5171]="Amethyzar der Glitzernde",[5172]="Azras preisgekrönte Pfingstrose",[5173]="Wütender Saphir",[5174]="Donnernde Matriarchin",[5175]="Riesige Magmakrabbe",[5176]="Wütender Dampffontänenelementar",[5177]="Wollfang",[5178]="Fetzsäge der Pirscher",[5179]="Territorialer Küstling",[5180]="Razk'vex der Ungezähmte",[5181]="Solethus' Grabstein",[5182]="Fulgurb",[5183]="Mikrin der tobenden Winde",[5184]="Seuchenfell",[5185]="Sandana der Sturm",[5186]="Trilvarus Lehrenweber",[5187]="Scav Ohneschweif",[5189]="Beogoka",[5190]="Schuppensucherin Mezeri",[5191]="Vergessene Schöpfung",[5192]="Pfliep",[5193]="Brutweberin Araznae",[5194]="Vakril",[5195]="Malsegan",[5196]="Henlare",[5197]="Gorjo der Krabbenfessler",[5198]="Eldoren der Wiedergeborene",[5199]="Oshigol",[5200]="Zaubergeschmiedeter Schneemann",[5201]="Flussläufer Tamopo",[5203]="Lord Epochenbrgl",[5204]="Matriarchin Remalla",[5205]="Ronsak der Dezimierer",[5206]="Schroffi",[5207]="Orkandrian",[5208]="Hanmuk",[5209]="Prunkvoller Schimmerflügel",[5210]="Grollrüssel",[5211]="Dracthyrgeheimnis",[5212]="Eisriss",[5213]="Beschworener Zerstörer",[5214]="Erdhaufen",[5215]="Melkhop",[5217]="Galzuda",[5218]="Angen",[5224]="Wilrive",[5225]="Brockon",[5226]="Kristallus",[5227]="Karantun",[5228]="Infernum",[5229]="Titanischer Reaktor",[5230]="Emblazion",[5231]="Grizzlefels",[5232]="Gaelzion",[5233]="Gravlion",[5234]="Frozion",[5235]="Verderbter Protodrache",[5236]="Urtumbeschützerin",[5237]="Aufgebrachter Elementar",[5238]="Rokmur",[5239]="Ausguck Mordren",[5240]="Prozela Windschuss",[5241]="Voraazka",[5242]="Kain Feuermal",[5243]="Eisklingentrio",[5244]="Zurgaz Kernbrecher",[5245]="Rouen Eiswind",[5246]="Pipfunke Donnerschnapp",[5247]="Neela Feuerfluch",[5248]="Phenran",[5249]="Jareeza",[5251]="Zerbrochene Angelrute",[5252]="Kaltpelzhöhlenmutter",[5253]="Honmor",[5254]="Tomnu",[5255]="Uurtus",[5256]="Stummel der Verstümmler",[5257]="Verlorene Obsidiantruhe",[5258]="Anomalie",[5259]="Galnmor",[5260]="Salkii",[5261]="Borzgas",[5262]="Kristallsammler",[5263]="Verdrängte Energie",[5264]="Muugurv",[5265]="Gamgus",[5266]="Degmakh",[5267]="Arkanverschlinger",[5268]="Arkaner Foliant",[5269]="Brackel",[5270]="Ergburk",[5271]="Khomuur",[5272]="Windflüsterin Navati",[5273]="Expeditionsversorgungspaket",[5274]="Rokzul",[5275]="Zagdech",[5276]="Kholdeg",[5277]="Zumakh",[5279]="Experimenteller Verderbniskessel",[5280]="Verzauberter Schlick",[5281]="Uurhilt",[5282]="Khuumog",[5283]="Tenmod",[5284]="Dunkle Schmiede",[5285]="Gebrochene Balken",[5289]="Schönes Juwel des Malers",[5290]="Vergessenes Schmuckkästchen",[5291]="Foliant des vergesslichen Lehrlings",[5292]="Verfallerfülltes Gerböl",[5293]="Interessanter blauer Stoffballen",[5294]="Tuskarrtrommel",[5295]="Harmonische Truhe",[5296]="Bummthyrrakete",[5297]="Frostgeschmiedeter Trank",[5300]="Kristalliner Überwuchs",[5302]="Feuriger Edelstein",[5303]="Lavaerfüllter Samen",[5304]="Erhabener Malygit",[5305]="Welplingzähmen leicht gemacht",[5306]="Ersatzwerkzeuge der Djaradin",[5307]="Modernde Brackenfelldecke",[5308]="Hervorgebrochene Alexstraszitansammlung",[5310]="Kiste mit behandelten Bälgen",[5311]="Miniaturbanner des bronzenen Drachenschwarms",[5312]="Frostgeschmiedeter Trank",[5314]="Streng bewachter Glitzerkram",[5315]="Sturmgebundenes Horn",[5316]="Mattes Pergament",[5317]="Angereicherter Erdsplitter",[5318]="Mysteriöse Kessel",[5319]="Beutel voller verrotteter Schuppen",[5320]="Kampfgestählter Zentaurenteppich",[5321]="Verlockender Barren",[5322]="Staubige Dunkelmondkarte",[5323]="Windgesegneter Balg",[5324]="Verbotenes Gemisch",[5325]="Mysteriöses Banner",[5326]="Überraschungsseidenraupe",[5327]="Angesengter Wanderstoff",[5328]="Frostgeschmiedeter Trank",[5329]="Referenzblatt für Gebärdensprache",[5330]="Bündel des Wilderers",[5331]="Kleiner Korb mit Feuerwasserpulver",[5332]="Waffendiagramm der Qalashi",[5333]="Drakonischer Flux",[5334]="Eigentümliche Barren",[5335]="Uralte Speersplitter",[5336]="Uralte Speersplitter",[5337]="Lanzenmeisterin der Nokhud",[5338]="Totem der Sturmwoge",[5339]="Schockgefrorene Schriftrolle",[5340]="Vergessener arkaner Foliant",[5341]="Blaufederbanner",[5342]="Gebrochene titanische Sphäre",[5343]="Katalogisiererlager",[5344]="Zeichnungen der Stulpen des Falkners",[5346]="Moskhoi",[5347]="Yaankhi",[5348]="Tor",[5349]="Uralter Drachenwebrahmen",[5350]="Tevgai",[5351]="Cinta der Vergessene",[5352]="Der fröhliche Riese",[5353]="Smaragdedelsteinklumpen",[5354]="Flinkschwingenmatriarchin",[5356]="Leuchtsignal der Allianz entdeckt",[5357]="Leuchtsignal der Horde entdeckt",[5358]="Bernsteinklumpen",[5359]="Yamakh",[5360]="Mantai",[5361]="Arkhuu",[5362]="Tsokorg",[5363]="Molkeej",[5364]="Diluu",[5365]="Makhra der Aschenberührte",[5367]="Goldener Drachenkelch",[5369]="Ausgelegtes Fischernetz",[5370]="Jagdausrüstung",[5371]="Sandhaufen",[5372]="Firava der Entzünder",[5373]="Vergessenes Schmuckkästchen",[5374]="Onyxedelsteinklumpen",[5375]="Saphiredelsteinklumpen",[5377]="Dreschflegel des Gnollunholds",[5378]="Forscherin Schleichflügel",[5379]="Gesprungenes Stundenglas",[5380]="Spritzbauch der Schnabelsenker",[5381]="Schattenschlitzer Trakken",[5382]="Enkine der Gefräßige",[5383]="Vergessener Greif",[5384]="Schlabbro",[5385]="Hauptmann Lancer",[5386]="Kriegstrupp der Qalashi",[5387]="Terillod der Andächtige",[5388]="Morchok",[5389]="Skaara",[5390]="Hoher Gipfel",[5391]="Hoher Gipfel",[5392]="Hoher Gipfel",[5393]="Hoher Gipfel",[5394]="Hoher Gipfel",[5395]="Hoher Gipfel",[5396]="Hoher Gipfel",[5397]="Blasentreiber",[5398]="Seelenernter Mandakh",[5399]="Seelenernterin Tumen",[5400]="Seelenernter Duuren",[5401]="Seelenernterin Galtmaa",[5402]="Grabesfürstin Monkh",[5403]="Maruuk",[5404]="Teera",[5405]="Bronzezeithüter",[5406]="Gefreite Shikzar",[5407]="Wassergebundene Truhe",[5408]="Winde der Inseln",[5409]="Hoher Gipfel",[5410]="Hoher Gipfel",[5411]="Hoher Gipfel",[5412]="Hoher Gipfel",[5413]="Nuschelknochen",[5414]="Blasenfell",[5415]="Knorren",[5416]="Hochschamanin Faulknöchel",[5417]="Hoher Gipfel",[5418]="Hoher Gipfel",[5419]="Hoher Gipfel",[5420]="Hoher Gipfel",[5421]="Hoher Gipfel",[5422]="Hoher Gipfel",[5423]="Hoher Gipfel",[5424]="Hoher Gipfel",[5425]="Hoher Gipfel",[5426]="Gefülltes Fischernetz",[5427]="Innovationsmaschine",[5428]="Elementargebundene Truhe",[5430]="Balgar",[5431]="Schatzbesessener Trambladd",[5432]="Sturmruferin Veldra",[5433]="Ritualstätte der Urschildkröten",[5434]="Celormu",[5435]="Angelausrüstungsherstellerin",[5436]="Acrosoth",[5437]="Liskron der Blendende",[5438]="Lohengebundener Zerstörer",[5439]="Der Große Panzerkhan",[5440]="Skag der Werfer",[5441]="Rubinedelsteinklumpen",[5442]="Podium der Transformation",[5443]="Die Abgewetzte Drachenschuppe",[5444]="Die Draufgängerische Drachenschuppe",[5445]="Blockierte Netzstelle",[5446]="Blockierte Netzstelle",[5447]="Fähre",[5448]="Fähre",[5449]="Fähre",[5450]="Fähre",[5451]="Verlorener Arvillo",[5452]="Instabiler Elementarsturm",[5453]="Karawane der Aylaag",[5454]="Instabiler Elementarsturm",[5455]="Instabiler Elementarsturm",[5456]="Instabiler Elementarsturm",[5457]="Bändigerin Rendra",[5458]="Der Zorn des Sturms",[5459]="Der Zorn des Sturms",[5460]="Monster der Primalisten",[5461]="Elementarportal",[5462]="Vinyeti",[5463]="Verbotener Schatz",[5465]="Rarbär",[5466]="Bewegte Erde",[5467]="Magiegebundene Truhe",[5468]="Expeditionsspäherpack",[5469]="Zarizz",[5470]="Katalogisiererin Jakes",[5471]="Murik",[5472]="Agari Dotur",[5473]="Unatos",[5474]="Weinumrankte Kiste",[5475]="Angler Tinnak",[5476]="Magiegebundene Truhe",[5477]="Junger Belvo",[5478]="Alte Beyfir",[5479]="Schönalpha",[5480]="Kesselträgerin Blakor",[5481]="Konvergierender Elementarsturm",[5483]="Fähre",[5484]="Scharfzahn",[5485]="Angelzubehör der Tuskarr",[5486]="Seismografische Untersuchungsstätte",[5488]="Gahz'raxes",[5489]="Ishyra",[5490]="Vraken der Jäger",[5491]="Reisa die Ertrunkene",[5492]="Duzalgor",[5493]="Tektonus",[5494]="Sir Zwickbald",[5495]="Manathema",[5496]="Schnarrfang",[5497]="Knochenstreuer Marwak",[5498]="Galakhad",[5499]="Gareed",[5500]="Grugoth der Schiffbrecher",[5501]="Faunos",[5502]="Gezeitenschmied Zarviss",[5503]="Arkantrix",[5504]="Kangalo",[5505]="Fimbol",[5506]="Agni Feuerhuf",[5507]="Luttrok",[5508]="Amephyst",[5510]="Warcraft Rumble-Münze",[5511]="Warcraft Rumble-Münze",[5512]="Rasnar der Kriegsender",[5513]="Rohzor Schmelzschlag",[5514]="Lady Shaz'ra",[5515]="Vulkanokk",[5516]="Mysteriöse Schriften",[5517]="Veltrax",[5518]="Wundersamer Fisch",[5519]="Uukbart",[5520]="Wächterin Entrix",[5521]="Pyrachniss",[5522]="Ordentlich zerkaute Truhe",[5523]="Lodernde Schattenflammentruhe",[5524]="Runenstein der Dracthyr",[5525]="Geist des Segens",[5526]="Wyrmtöter Angvardi",[5527]="Brodelnde Truhe",[5528]="Ritualopfergaben",[5529]="Ritualopfergaben",[5530]="Ritualopfergaben",[5531]="Ritualopfergaben",[5532]="Kristalliner König",[5533]="Hoher Gipfel",[5534]="Uralte Zaqalitruhe",[5535]="Hoher Gipfel",[5536]="Hoher Gipfel",[5537]="Hoher Gipfel",[5538]="Archivar der Zauberverschworenen",[5539]="Verkohltes Ei",[5540]="Warcraft Rumble-Münze",[5541]="Warcraft Rumble-Münze",[5542]="Warcraft Rumble-Folie",[5543]="Warcraft Rumble-Folie: Gold",[5544]="Irrblick Carrey",[5545]="Katzenminzenwedel",[5546]="Warcraft Rumble-Folie",[5547]="Warcraft Rumble-Folie",[5548]="Warcraft Rumble-Folie: Gold",[5549]="Warcraft Rumble-Folie: Gold",[5550]="Sturmgebundene Truhe",[5551]="Runenstein der Dracthyr",[5553]="Windsucher Avash",[5554]="Granitklaue",[5555]="Wassermassen",[5556]="Malgain Steinglock",[5557]="Shiobhan die Wassergeborene",[5558]="Instabiler Arkanogolem",[5559]="Antreiber Krathos",[5560]="Großkonstrukteurin Zeerak",[5561]="Srivantos",[5562]="Aufseherin Steinzunge",[5563]="Überladende Verteidigungsmatrix",[5564]="Morlash",[5565]="Tikarr Frostklaue",[5566]="Avalantus",[5567]="Splitterschwinge",[5568]="Formmeisterin Za'lani",[5569]="Groffnar",[5570]="Lurgan",[5571]="Sturmruferin Narkena",[5572]="Meisterjägerin Yrgena",[5573]="Blutschnabel der Gefräßige",[5574]="Elementarportal",[5575]="Elementarportal",[5576]="Gesicherte Lieferung",[5580]="Deaktiviertes Elementarportal",[5581]="Deaktiviertes Elementarportal",[5582]="Deaktiviertes Elementarportal",[5583]="Warcraft Rumble-Münze",[5584]="Warcraft Rumble-Münze",[5585]="Warcraft Rumble-Münze",[5586]="Warcraft Rumble-Münze",[5587]="Warcraft Rumble-Folie",[5588]="Warcraft Rumble-Folie",[5589]="Warcraft Rumble-Folie",[5590]="Warcraft Rumble-Folie",[5591]="Warcraft Rumble-Folie",[5592]="Durchnässtes Bündel",[5593]="Lang verlorene Truhe",[5594]="Vinyeti",[5595]="Elitebeute der Verbotenen Insel",[5596]="Katalogisiererin Daela - Gesandtenaufgabe ausstehend",[5597]="Instabile Kohlenpfanne",[5598]="Schrein der Weitenschuppen",[5599]="Ungewürzter Eintopf",[5600]="Buch der arkanen Wesen",[5601]="Beschädigte Brummsäule 505",[5602]="Leere Krabbenfalle",[5603]="Erweckter Boden",[5604]="Schutz der Zauberverschworenen",[5605]="Resonierender Kristall",[5606]="Gerbrahmen der Tuskarr",[5607]="Grollendes Vorkommen",[5608]="Unbehandelte Riesenwildschafpelze",[5609]="Tuskarrdrachenpfosten",[5610]="Anhänger von Fyrakk",[5611]="Fyrakks Schwarm",[5612]="Warcraft Rumble-Folie",[5613]="Warcraft Rumble-Folie",[5614]="Verbotener Schatz",[5615]="Verlegte Auslassblaupläne von Aberrus",[5616]="Unachtsam weggeworfene Bomben",[5617]="Fehlerhaftes Überlebenspaket",[5618]="Kaputter Wyrmlochgenerator",[5619]="Truhe der Schwärme",[5620]="Unauffälliger Datenschürfer",[5621]="Vogelfund",[5622]="Obsidiankiste",[5623]="Vorrat der Zauberverschworenen",[5624]="Knochenhaufen",[5625]="Truhe der Weitenschuppen",[5626]="Vorrat der Eisenfluträuber",[5627]="Sturmfresserhaufen",[5628]="Steinschuppenhaufen",[5629]="Feuerhaufen",[5630]="Frostherzhaufen",[5631]="Rationen von Morqut",[5632]="Gesandtensatzung",[5633]="Der größte Forscher aller Zeiten",[5634]="Objekt",[5635]="Beuteexperte",[5636]="Unidentifiziertes Objekt in der Nähe",[5637]="Blutige Leiche",[5638]="Kob'rok",[5639]="Kapraku",[5640]="Aquifon",[5641]="Schleimo",[5642]="Webmark",[5643]="Alcanon",[5644]="Professor Gastrinax",[5645]="Generalin Zskorro",[5646]="Tiefenlichtkönigin",[5647]="Gestohlenes Lager",[5648]="Gestohlenes Lager",[5649]="Hadexia",[5650]="Von Motten geplünderte Tasche",[5651]="Klakatak",[5652]="Brullo der Starke",[5653]="Karokta",[5654]="Invoq",[5655]="Lavermix",[5656]="Magtembo",[5657]="Kronkapace",[5658]="Von Motten geplünderte Tasche",[5659]="Skornak",[5660]="Dinn",[5661]="Fluffi",[5662]="Subterrax",[5663]="Glutnacht",[5664]="Viridiankönig",[5665]="Handhold Highlighted - 90",[5666]="Handhold Highlighted - 91",[5667]="Handhold Highlighted - 92",[5668]="Handhold Highlighted - 93",[5669]="Greifhakenziel",[5670]="Geschichtenwahrerin Ashekh",[5671]="Bolzen und Bronze",[5672]="Weggeworfener Drakothystbohrer",[5673]="Geschmolzener Späherbot",[5674]="Kolossian",[5675]="Invasion des Grimmigen Säufers",[5676]="Temporalinvesti-gator",[5677]="Geschichtenwahrerin Ashekh",[5678]="Flammenerfülltes Schuppenöl",[5679]="Lavageschmiedetes \"\"Ledermesser",[5680]="Schwefeldurchtränkte Häute",[5681]="Lavaübergossener Schattenkristall",[5682]="Schimmernde aquatische Kugel",[5683]="Resonierender Arkankristall",[5684]="Mimeep",[5685]="Belohnung der Treue",[5686]="Geschmolzener Schatz",[5687]="Alter Koffer",[5688]="Gesicherte Lieferung",[5689]="Zeitrone",[5690]="Kristallummantelte Truhe",[5692]="Unterernährte Exemplare",[5693]="Markgereifter Schleim",[5694]="Verdächtiger Schimmel",[5696]="Schroffe Schneckenhäuser",[5697]="Leicht durchgeschüttelte Juwelen",[5698]="Zerbrochener Tauschfelsbrocken",[5699]="Stressexpress",[5700]="Kristalline Untersuchung",[5701]="Panzerfeuer",[5702]="Räucherduftwerk",[5703]="Müffelnde Mixtur",[5704]="Glimmerfischer",[5705]="Herausforderung des Champions",[5706]="Ruf der Kaskaden",[5707]="Artilleriekrieg",[5708]="Verschwörung der Flammen",[5709]="Seismische Zeremonie",[5710]="Unausgewogenes Gleichgewicht",[5711]="Reliquiar von Nal ks'kol",[5712]="Belohnung des Träumers",[5713]="Myrrit",[5714]="Stinkender Müllhaufen",[5715]="Stinkende bewegte Erde",[5716]="Magmaklauenmatriarchin",[5717]="Wirbelnder Zephyr",[5718]="Hungrige",[5719]="Farbe bekennen",[5720]="Disharmonische Kristalle",[5721]="Monumentenpflege",[5724]="Monströse \"\"Baby\"\"-Magmaklaue",[5725]="Belebte Eindämmung",[5726]="Hüterin der Eingreiftruppe",[5727]="Kontaminierter Titanenhüter",[5728]="Hauptmann Reykal",[5729]="Alte Magmaschlange",[5730]="Höhlenschindermatriarchin",[5731]="Myrrit",[5732]="Schatzgoblin",[5733]="Abgenutzter Brennofen",[5734]="Schwefel-Rettungsring",[5735]="Ältestenspeer der Zaqali",[5736]="Zurückgelassener Reservefallschirm",[5737]="Medizinisches Verbandsset benutzen",[5738]="Fein besticktes Banner",[5739]="Aufwendige Zaqali-Runen",[5740]="Zischender Runenentwurf",[5741]="Uralte Forschung",[5742]="Winde der Inseln",[5743]="Zeitverschobener Kriegsfürst",[5744]="Chronotruhe mit Andenken",[5745]="Fyrakks Schwarm",[5746]="Fyrakks Schwarm",[5748]="Verhülltes Portal",[5749]="Brann Bronzebart",[5750]="Gelöst!",[5751]="Wachtraum",[5752]="Bronzezeithüterassistent",[5753]="Geschmolzener General",[5754]="Flammengebundener Leutnant",[5755]="Aschengebundener Hauptmann",[5759]="Amrymn",[5760]="Schreckloc",[5761]="Läuterungsschmiede",[5762]="Schleimpfütze aus Azmerloth",[5763]="Waffenständer der Bluthorde",[5764]="Waffenständer der großen",[5767]="Warcraft Rumble-Folie",[5768]="Warcraft Rumble-Folie",[5769]="Traumsaattruhe",[5770]="Warcraft Rumble-Folie",[5771]="Warcraft Rumble-Folie",[5772]="Traumsaattruhe",[5773]="Traumsaattruhe",[5774]="Traumsaattruhe",[5775]="Traumsaattruhe",[5776]="Traumsaattruhe",[5777]="Traumsaattruhe",[5778]="Traumsaattruhe",[5779]="Traumsaattruhe",[5780]="Traumsaattruhe",[5782]="Traumsaattruhe",[5783]="Traumsaattruhe",[5784]="Traumsaattruhe",[5785]="Nozdormu",[5786]="Nuoberon",[5787]="Traumsaattruhe",[5788]="Traumsaattruhe",[5789]="Traumsaattruhe",[5790]="Traumsaattruhe",[5791]="Traumsaattruhe",[5792]="Traumsaattruhe",[5793]="Traumsaattruhe",[5794]="Geheimer Schatz",[5795]="Ebenengeborener Vernichter",[5796]="Verbündeter Aschewüter",[5797]="Verlassener Stein der Wiederherstellung",[5798]="Flammenschwingenaszendent",[5799]="Riesige Traummotte",[5800]="Seltsam platzierte Statue",[5801]="Geisel",[5802]="Großer Schmiededämon",[5803]="Große Schmiedekiste",[5804]="Vorlage",[5805]="Obstgesicht",[5806]="Riffbrecher Moruud",[5807]="Gerinnende Träume",[5808]="Raszageths letzter Atemzug",[5809]="Krabbonkerus",[5810]="Splitterast",[5811]="Ignit der Gebrandmarkte",[5812]="Kleinschnappers Fundgrube",[5813]="Superblüte",[5814]="Riffbrecher Moruud",[5815]="Sturer Säbelzahn",[5816]="Gesandter des Winters",[5817]="Habgierige Gessie",[5818]="Lehrling der Schmelzbinderin",[5819]="Blutgestreifter Großrochen",[5820]="Henri Schnupperschweif",[5821]="Geschmolzener Bleistachel",[5822]="Mosa Umbramähne",[5823]="UNUSED_GREEDY GESSIE",[5824]="Isaqa",[5825]="Die Apostelin",[5826]="Verstecktes Mondkinlager",[5827]="Satte Schlummernuss",[5828]="Talthonei Aschengeflüster",[5829]="Talthonei Aschengeflüster",[5830]="Flammendruidenvorrat",[5831]="Magische Blüte",[5832]="Seltsame Knolle",[5833]="Kleine Schlummernuss",[5834]="Satte Schlummernuss",[5835]="Feuerbrand Fystia",[5836]="Königin des Berges",[5837]="Balboan",[5838]="Traumsaattruhe",[5839]="Traumsaattruhe",[5840]="Traumsaattruhe",[5841]="Traumsaattruhe",[5842]="Traumsaattruhe",[5843]="Traumsaattruhe",[5844]="Traumsaattruhe",[5845]="Traumsaattruhe",[5846]="Traumsaattruhe",[5847]="Traumsaattruhe",[5848]="Traumsaattruhe",[5849]="Traumsaattruhe",[5850]="Traumsaattruhe",[5851]="Traumsaattruhe",[5852]="Traumsaattruhe",[5853]="Traumsaattruhe",[5854]="Traumsaattruhe",[5855]="Traumsaattruhe",[5856]="Traumsaattruhe",[5857]="Traumsaattruhe",[5858]="Traumsaaterde",[5859]="Smaragdraserei",[5860]="Energiequelle",[5861]="Arkane Schmiede",[5862]="Traumsaattruhe",[5863]="Traumsaattruhe",[5864]="Traumsaattruhe",[5865]="Traumsaattruhe",[5866]="Traumsaattruhe",[5867]="Traumsaattruhe",[5868]="Traumsaattruhe",[5869]="Traumsaattruhe",[5870]="Statue des Bärenfürsten",[5871]="Ristar der Tollwütige",[5872]="Pinienmaushaufen",[5874]="[DNT] Scenario Sample",[5875]="Schattenflammenwissen anzeigen",[5876]="Traumsaattruhe",[5877]="Traumsaattruhe",[5878]="Traumsaattruhe",[5879]="Morlash",[5880]="Überladende Verteidigungsmatrix",[5881]="Aufseherin Steinzunge",[5882]="Massive Kraftquelle",[5883]="Großkonstrukteurin Zeerak",[5884]="Antreiber Krathos",[5885]="Srivantos",[5886]="Instabiler Arkanogolem",[5887]="Granitklaue",[5888]="Malgain Steinglock",[5889]="Shiobhan die Wassergeborene",[5890]="Wassermassen",[5891]="Blasenfell",[5892]="Knorren",[5893]="Hochschamanin Faulknöchel",[5894]="Nuschelknochen",[5895]="Blutschnabel der Gefräßige",[5896]="Groffnar",[5897]="Meisterjägerin Yrgena",[5898]="Lurgan",[5899]="Sturmruferin Narkena",[5900]="Kampfhorn Pyrhus",[5901]="Kesselträgerin Blakor",[5902]="Kohle",[5903]="Rohzor Schmelzschlag",[5904]="Rasnar der Kriegsender",[5905]="Turboris",[5906]="Funkenfeder",[5907]="Segen von Ursol",[5908]="Moragh die Faule",[5909]="Scharfsichtiger Cian",[5910]="Schlafwandler Ori",[5911]="Matriarchin Keevah",[5912]="Gieriger Mikanji",[5915]="Kerzenerhelltes Refugium",[5916]="Halbvoller Trank des traumlosen Schlafs",[5917]="Spritztrank der Narkolepsie",[5918]="Die Wurzel des Problems",[5919]="Experimenteller Traumfänger",[5920]="Schlaflositron",[5921]="Wachs",[5922]="Ungeschlüpfte Batterie",[5923]="Versteinerte Hoffnung",[5924]="Unpolierter Makel",[5925]="Verschmolzener Traumstein",[5926]="Magische Blüte",[5927]="Magische Blüte",[5928]="Brann Bronzebart (Bewusstlos)",[5929]="Büschel Traumsäblerfell",[5930]="Abgeworfene Feendrachenschuppen",[5931]="Traumkrallenklaue",[5932]="Reines Traumwasser",[5933]="Immerflammenkern",[5934]="Essenz der Träume",[5935]="Statue des Aschepanthers",[5936]="Statue der Himmelsherrin",[5937]="Statue des großen Wolfs",[5938]="Statue des weißen Hirsches",[5939]="Erinnerungen an Murlocs",[5940]="Unvergessener Ragnaros",[5941]="Erinnerungen an Mosh",[5942]="Rennring",[5943]="Winnies Notizen zu Flora und Fauna",[5944]="Säule des Hainhüters",[5945]="Schattenbindungsrune der Primalisten",[5946]="Enorm weicher Wildstoff",[5947]="Flauschiges Kissen",[5948]="Kuschelkumpel",[5949]="Schild der Verteidigerin von Amirdrassil",[5950]="Todespirscherchassis",[5951]="Flammengebundener Reißer",[5952]="Atrejo-Test",[5953]="Nie erwachendes Echo",[5954]="Nie erwachendes Echo",[5955]="Nie erwachendes Echo",[5956]="Nie erwachendes Echo",[5957]="Liebe liegt in der Luft",[5958]="Moth'ethk",[5959]="Rostul Titanenkappe",[5960]="Unvorstellbar seltene Eberleber von makelloser Perfektion",[5961]="Erinnerungen an Kleiner",[5962]="Vergiftete Kürbisse",[5963]="Erinnerungen an Hogger",[5964]="Erinnerungen an Hakkar",[5965]="Süderstade vs. Tarrens Mühle",[5967]="Kochend heißes Morgengebräu",[5968]="Auslöschung der Lepragnome",[5969]="Habgierige Gessie",[5970]="Zone der Grünen Hügel",[5971]="Smaragdfülle",[5973]="Ahg'zagall",[5974]="Kopftücher der Defias!",[5976]="Maybells Liebesbriefe!",[5977]="Goldstaub!",[5978]="Ixkreten die Unzerstörbare",[5979]="Unvergessener Exekutus",[5980]="Schmiedvignette",[5981]="Kristalline Leuchtblüte",[5982]="Seltene Vignettenkiste",[5983]="Vignette für glänzende Kristalle",[5984]="Strahlenverzerrtes Myzel",[5986]="Immerstrom",[5988]="Platschdreck",[5989]="Sporenbedeckte Truhe",[5990]="Seltener Elite der Neruber",[5991]="Einzigartiger Schatz",[5992]="Seltener Stufenaufstieg 1",[5993]="Riesenbohrer",[5994]="Eingesponnener Ranzen",[5995]="Lord Harlbrand",[5996]="Beschädigter Ernter",[5997]="Morkus Grimlock",[5998]="Narla Donnerhuf",[5999]="Rasende Eulenbestie",[6000]="Gorthak Grimmhauer",[6001]="Geronnene Erinnerungen",[6002]="Schlüsselflamme der Fungusfelder",[6003]="Schlüsselflamme von Blüte des Lichts",[6004]="Schlüsselflamme des Surrenden Felds",[6005]="Schlüsselflamme des Stillsteintümpels",[6006]="Schlüsselflamme der Fackelscheinmine",[6007]="Schlüsselflamme der Verblassten Küste",[6008]="Schlüsselflamme von Trübsand",[6009]="Schlüsselflamme des Dämmerhöhenackers",[6010]="Kaldoreitasche",[6011]="Kaldoreispeer",[6012]="Kaldoreischild",[6013]="Kaldoreitasche",[6014]="Kaldoreihorn",[6015]="Kaldoreirucksack",[6016]="Kaldoreischlafsack",[6017]="Kaldoreihorn",[6018]="Kaldoreidolch",[6019]="Kaldoreifernrohr",[6020]="Kaldoreimondbogen",[6021]="Vorräte der Forscherliga",[6024]="Ominöses Portal",[6025]="Schatzraumtür",[6026]="Sandres der Reliktträger",[6027]="Verzauberte Kerze",[6028]="Da'kash",[6029]="Verblasste Vorratstruhe",[6031]="Aufgewühlter Erdfresser",[6032]="Ixlorb die Weberin",[6033]="Der Aufgabenplaner",[6034]="Trübschatten",[6035]="Tiefenunhold Azellix",[6039]="Ewiger Basar",[6040]="Stücke Hass",[6043]="Quellblase",[6044]="Sphärenhorn",[6045]="Blutrachen",[6046]="Kaiser Grubenzahn",[6047]="Pesthart",[6048]="Gar'loc",[6049]="Entkommene Halsabschneiderin",[6050]="Sturmfürst Incarnus",[6051]="Kronolith",[6052]="Seichtpanzer der Klacker",[6053]="Doppelstecher der Jämmerliche",[6054]="Flammenhüter Graz",[6055]="Alunira",[6058]="Zovex",[6060]="Totes Besatzungsmitglied",[6061]="Vergessene Truhe",[6062]="Winde von Dorn",[6064]="Greifhakenziel",[6065]="Herrenlose Beute",[6066]="Kiste mit Kriegsvorräten",[6067]="Kiste mit Kriegsvorräten",[6068]="Kiste mit Kriegsvorräten",[6069]="Großes Entennest",[6070]="Großes Entennest",[6071]="Erntekiste",[6072]="Neruberballiste",[6073]="Beschädigte Spitze",[6074]="Vergessene Schätze",[6075]="Soleschlitzer",[6076]="Transportmittel",[6077]="Verlorene Truhe",[6078]="Todesblatt",[6079]="Zilthara",[6080]="Kerzenfliegerkapitän",[6081]="Schrecken der Schmiede",[6082]="Tiefenschinderbrutmutter",[6083]="Durchnässte Truhe",[6084]="Krötenstampfer",[6085]="Flossenklaue Blutstrom",[6086]="Anglervorratskiste",[6087]="Vergessenes Denkmal",[6088]="König Spritzer",[6089]="Aquellion",[6090]="Felsmund",[6091]="Fingerhuts Vorräte",[6092]="Landarbeitervorrat",[6093]="Kreaturenname",[6094]="[TEMPLATE] Creature Name",[6095]="[TEMPLATE] Creature Name",[6096]="Rettungspaket der Furchtloser Funke",[6097]="Vergessenes Denkmal",[6098]="Beleuchtete Schließkiste",[6099]="Tangmoor",[6100]="Launische Händlerin",[6101]="Geronnenes Monstrum",[6102]="Felsenhauer",[6103]="Tasche des Fischers",[6104]="Glutschürer",[6105]="Tobende Seuche",[6106]="Todesgebundene Hülle",[6107]="Vergessenes Denkmal",[6108]="Kapitänin Lancekats Mittel zur freien Verfügung",[6109]="Feuerpartikel",[6110]="Lauerer der Tiefen",[6111]="Der Landwart",[6112]="Tephratenne",[6113]="Süßfunke der Schleimreiche",[6114]="Matriarchin Kohlfuria",[6115]="Krallenbrecherin K'zithix",[6116]="Vorräte der Forscherliga",[6117]="Verschwind-o-Bot 7000",[6118]="Beledars Brut",[6119]="Hungerleider der Tiefen",[6120]="Durchgedrehter Kohlschläger",[6121]="Sporenerfüllte Schieferschwinge",[6122]="Dämmerschatten",[6123]="Düsterstachel",[6124]="Wüterich",[6125]="Quakit",[6126]="Trungal",[6127]="Ausgang",[6128]="Automaxor",[6129]="Abyssalverschlinger",[6130]="Späher der Feste",[6131]="XT-Minenzermalmer 8700",[6132]="Ekelschwinge",[6133]="Xishorr",[6134]="Seidenschlepper der Kaheti",[6135]="Netzsprecher Grik'ik",[6136]="Cha'tak",[6137]="Monströser Peitschiath",[6138]="Wahnsinniger Belagerungsbomber",[6139]="Robuste Gossenvisage",[6140]="[TEMPLATE] Creature Name",[6141]="Deviat Supremes",[6142]="Durchgebranntes Konstrukt der Sonnenhäscher",[6143]="Das Feuer wird Euch läutern!",[6144]="Prophet von Sseratus",[6145]="Lytfang der Verlorene",[6146]="Grimmschlitz",[6147]="Erinnerungen von König Gordok",[6148]="Erinnerungen von Gahz'rilla",[6149]="Unvergessene Onyxia",[6150]="Spinnenaugen von Sumpfauge",[6151]="Der Ansitzvater",[6152]="Horror des Flachwassers",[6153]="Stärke von Beledar",[6154]="Sir Alastair Reinfeuer",[6155]="Störende Stacheleber",[6156]="Todesflut",[6157]="Funglur",[6158]="Kristallkraft",[6159]="Stolz von Beledar",[6160]="Die Argentumprüfungen",[6161]="Faule Peons",[6162]="Ungebundene Beute",[6163]="In den Bergen...",[6164]="Zenns Aufträge",[6165]="Erste Klinge Grimskarn",[6166]="Exekutor Nizrek",[6167]="Talinhet",[6168]="Nablya",[6169]="Gong'tze der Flusshauer",[6170]="Zeeben und Zillix",[6171]="Seltsame Störung",[6172]="Ungebundene Beute",[6173]="Eine Klinge",[6174]="Juwel der Klippen",[6175]="Windgepeitschtes Säckchen",[6176]="Sir Finley Mrrgglton",[6177]="Verlorenes Andenken",[6178]="Hofsäckchen",[6179]="Vergessener Werkzeugkasten",[6181]="Versunkene Truhe",[6182]="Galans Edikt",[6183]="Jix'ak die Wahnsinnige",[6184]="Der Schleimkhan",[6185]="Ernter Qixt",[6186]="Umbraklauenmatra",[6187]="Titanenschalttafel",[6188]="Stein der Freien",[6189]="Wächter des Nordens",[6190]="Wächterin des Südens",[6191]="Ein Schädel auf einem Schild",[6192]="Achtung: Eingestürzter Tunnel",[6193]="Versunkenes Schild",[6194]="Wachsgetränktes Schild",[6195]="Abgenutztes Schild",[6196]="Letzter Flug der Zuverlässigkeit",[6197]="Ein zerlesenes Tagebuch",[6198]="Ein verwitterter Foliant",[6199]="Eine zerfledderte Notiz",[6200]="Ein Spähertagebuch",[6201]="Manische Neruberin",[6202]="Kah'teht",[6203]="Tiefenkriecher Tx'kesh",[6204]="Klingenwache der Kaheti",[6205]="Vergessener Schattenwerfer",[6206]="Verwitterter Schattenwerfer",[6207]="Vernachlässigter Schattenwerfer",[6208]="Erschöpfter Wasserelementar",[6209]="U'llort der freiwillige Exilant",[6210]="Irisierende Panzerkrabbe",[6211]="DEBUG Treasure Location",[6212]="Verlorene Mooswolle",[6214]="Aufgeblähter Schlucker",[6215]="Kereke",[6216]="Moderfaust",[6217]="Aqu'yinra",[6218]="Yoh'nath der Beender",[6219]="Yor'sith",[6220]="Bor'zal der Lauernde",[6221]="Aufgewühlte Erde",[6222]="Aszendent Vis'coxria",[6223]="Todeskreischerin Iken'tak",[6224]="Lionel",[6225]="Ankoanerchampion Utaari",[6226]="Utmoth der Gezeitendreher",[6227]="Gurl der Schmauser",[6228]="Hand von Azshara",[6229]="Zaniga der Fährtenleser",[6230]="Kiste der Irdenen",[6231]="Magische Schatztruhe",[6232]="Verfluchte Hacke",[6233]="Munderuts vergessener Vorrat",[6235]="Zurückgelassener Werkzeugkasten",[6236]="Einäugiger Thak",[6237]="Thaks Schatz",[6238]="Mooswollenblüte",[6239]="Rätselhafte Kugel",[6240]="Pilzkappe",[6241]="Kaja'Cola-Maschine",[6242]="Schatz des Hüters",[6243]="Elementargeode",[6244]="Kanalschildkröte von Dalaran",[6245]="Kanalschildkröte von Dalaran",[6246]="Kanalschildkröte von Dalaran",[6247]="Tor'go",[6248]="Nalo'xic",[6249]="Tengi die Kriegsmatrone",[6250]="Kiji der Stampfer",[6251]="Pterrordaxus",[6252]="Erdenwutfelsscher",[6253]="Erzmex Flammenbrecher",[6254]="Tiefenläuferhöhlenfürst",[6255]="Flammausweider Ignes",[6256]="Tiefenkern-Flammenhauer",[6257]="Mauernmalmer Min'cho",[6258]="Sturmlord Kao'dor",[6259]="Toaka der Entdecker",[6260]="Champion Or'sosh",[6261]="Kriegstreiberin Ogli",[6262]="Jadeperle",[6263]="Schatzhort der Arathi",[6264]="Ritualtruhe der Kobyss",[6265]="Tka'ktath",[6266]="Der Letzte",[6267]="Spiz'na die Verräterin",[6268]="Die rebellische Königin",[6269]="Vil'vim der Geistgräber",[6270]="Vin'ris der Verderber",[6271]="S'toth der Unersättliche",[6272]="Brann Bronzebarts Falle",[6273]="Koboldspitzhacke",[6274]="Schimmernde Opallilie",[6275]="Eingesponnener Schatz",[6276]="Spule des Schicksalswebers",[6277]="Unheimliche dunkle Truhe",[6278]="Sureki-Schließkassette",[6279]="Konzentrierte Schatten",[6280]="Gestörte Erde",[6281]="Nerubische Opfergaben",[6282]="Niffen-Schatz",[6283]="Bündel des vermissten Spähers",[6284]="Versperrter Zulauf",[6285]="Seidenumsponnene Vorräte",[6286]="Truhe des verstaubten Ausgrabungsleiters",[6287]="Erinnerungskiste",[6288]="Versteckte Schmuggelware",[6289]="Webereivorräte",[6290]="Eingeschlossener Schatz",[6291]="Nestei",[6292]="Erfülltes Glutbräu",[6293]="Eingesponnene Axt",[6294]="Haufen Abfall",[6295]="Gerüchtevermittler",[6296]="Gerüchtevermittler",[6297]="Informationsvermittler",[6298]="Unvergessener Lichkönig",[6299]="Gerüchtevermittler",[6300]="Gerüchtevermittler",[6301]="Gerüchtevermittler",[6302]="Gerüchtevermittler",[6303]="Gerüchtevermittler",[6304]="Gerüchtevermittler",[6305]="Gerüchtevermittler",[6306]="Gerüchtevermittler",[6307]="Gerüchtevermittler",[6308]="Gerüchtevermittler",[6309]="Oh neeiin! Die Kaulquappen!",[6310]="Ruf des Champions!",[6311]="Schaumblut und Seelenkocher",[6312]="Splitter von Gorribal",[6313]="Witwenkern",[6314]="Azeritmanifestation",[6315]="Herzsenger",[6316]="[TEMPLATE] SCHATZ",[6317]="Vergessenes Denkmal",[6318]="Vergessenes Denkmal",[6319]="Vergessenes Denkmal",[6320]="Vergessenes Denkmal",[6321]="Vergessenes Denkmal",[6322]="Vergessenes Denkmal",[6323]="Vergessenes Denkmal",[6324]="Vergessenes Denkmal",[6325]="Vergessenes Denkmal",[6326]="Kahetiausgrabung",[6327]="Kahetiausgrabung",[6328]="Kahetiausgrabung",[6329]="Kahetiausgrabung",[6330]="Kahetiausgrabung",[6331]="Kahetiausgrabung",[6332]="Kahetiausgrabung",[6333]="Kahetiausgrabung",[6334]="Kahetiausgrabung",[6335]="Kahetiausgrabung",[6336]="Kahetiausgrabung",[6337]="Kahetiausgrabung",[6338]="Weberattenschatz",[6339]="Weberattenschatz",[6340]="Weberattenschatz",[6341]="Weberattenschatz",[6342]="Weberattenschatz",[6343]="Weberattenschatz",[6344]="Weberattenschatz",[6345]="Weberattenschatz",[6346]="Weberattenschatz",[6347]="Weberattenschatz",[6348]="Weberattenschatz",[6349]="Weberattenschatz",[6350]="Eingesponnene Kreuzfahrer",[6351]="Verschmelzung der Schrecken",[6352]="Vesperdose des Hügelpinnenhofs",[6353]="Kleines Schweinchen",[6354]="Merkwürdiges Objekt",[6355]="Brandungsbrecher",[6356]="Durchnässter Unrat",[6357]="Verirrte Abgesandte",[6358]="Weltenseelenerinnerung",[6359]="Beledars Brut",[6360]="Anub'ikkaj",[6361]="Parasidius",[6362]="Aromawissenschaftlerin",[6363]="Reliquiar des Maschinenflüsterers",[6364]="In den Tiefen verlorenes Säckchen",[6366]="Gestörter Luchsschatz",[6367]="Caesper",[6368]="Caesper",[6369]="Luftreiniger",[6370]="Schmugglerschatz",[6371]="Dunkles Ritual",[6372]="Dunkles Ritual",[6373]="Meisterin der Lehren der Arathi",[6374]="Palawltars Kodex der dimensionalen Struktur",[6375]="Pflege und Ernährung des Kaiserluchses",[6376]="Richtlinien der Schattensperrstunde",[6377]="Beledar - Vision des Kaisers",[6378]="Das Lied von Renilash",[6379]="Das große Buch über die Idiome der Arathi",[6380]="Holzsammlung",[6381]="Verweilende Erinnerungen",[6382]="Versteckte Beute",[6383]="Umsponnene Kiste",[6385]="Aufgestellte Kampfvorräte",[6386]="Aufgestellter Windbändigerturm",[6387]="Aufgestelltes Fass der Erholung",[6388]="Weberattenschatz",[6389]="Weberattenschatz",[6390]="Weberattenschatz",[6391]="Weberattenschatz",[6392]="Weberattenschatz",[6393]="Weberattenschatz",[6394]="Weberattenschatz",[6395]="Weberattenschatz",[6396]="Weberattenschatz",[6397]="Weberattenschatz",[6398]="Weberattenschatz",[6399]="Weberattenschatz",[6400]="Vergessenes Denkmal",[6401]="Vergessenes Denkmal",[6402]="Vergessenes Denkmal",[6403]="Vergessenes Denkmal",[6404]="Vergessenes Denkmal",[6405]="Vergessenes Denkmal",[6406]="Vergessenes Denkmal",[6407]="Vergessenes Denkmal",[6408]="Vergessenes Denkmal",[6409]="Vergessenes Denkmal",[6410]="Vergessenes Denkmal",[6411]="Vergessenes Denkmal",[6413]="Kahetiausgrabung",[6414]="Kahetiausgrabung",[6415]="Kahetiausgrabung",[6416]="Kahetiausgrabung",[6417]="Kahetiausgrabung",[6418]="Kahetiausgrabung",[6419]="Kahetiausgrabung",[6420]="Kahetiausgrabung",[6421]="Kahetiausgrabung",[6422]="Kahetiausgrabung",[6423]="Kahetiausgrabung",[6424]="Kahetiausgrabung",[6425]="Eisenpulver der Irdenen",[6426]="Metallrahmen aus Dornogal",[6427]="Verstärkter Messbecher",[6428]="Gravierter Rührstab",[6429]="Geläutertes Wasser des Chemikers",[6430]="Geheiligter Mörser und Stößel",[6431]="Nerubisches Mischsalz",[6432]="Phiole der dunklen Apothekerin",[6433]="Uralter Amboss der Irdenen",[6434]="Hammer aus Dornogal",[6435]="Klemme des schallenden Hammers",[6436]="Meißel der Irdenen",[6437]="Schmiede der Heiligen Flamme",[6438]="Strahlende Zange",[6439]="Nerubische Schmiedeausrüstung",[6440]="Drahtbürste des Spinnlings",[6441]="Geschliffener Edelstein der Irdenen",[6442]="Silberrute aus Dornogal",[6443]="Rußbedeckte Kugel",[6444]="Belebter Verzauberungsstaub",[6445]="Essenz des Heiligen Feuers",[6446]="Verzauberte Arathischriftrolle",[6447]="Buch der dunklen Magie",[6448]="Leerensplitter",[6449]="Schraubenschlüssel des Felsingenieurs",[6450]="Brille aus Dornogal",[6451]="Inaktive Bergbaubombe",[6452]="Konstruktionspläne der Irdenen",[6453]="Heiliger Feuerwerksblindgänger",[6454]="Sicherheitshandschuhe der Arathi",[6455]="Verpuppte Mechanospinne",[6456]="Entleerter Giftbehälter",[6457]="Uralte Blume",[6458]="Gartensense aus Dornogal",[6459]="Grabgabel der Irdenen",[6460]="Messer des fungianischen Schlitzers",[6461]="Gartenschaufel der Arathi",[6462]="Kräuterschere der Arathi",[6463]="Gespinstumschlungener Lotus",[6464]="Schaufel des Tunnelgräbers",[6465]="Federkiel des Schreibers aus Dornogal",[6466]="Federhalter des Historikers",[6467]="Runische Schriftrolle",[6468]="Blaupigment der Irdenen",[6469]="Füllhalter des Informanten",[6470]="Gemeißelte Markierung des Kalligraphen",[6471]="Nerubische Texte",[6472]="Tintenfass des Giftmischers",[6473]="Behutsamer Juwelenhammer",[6474]="Edelsteinzange der Irdenen",[6475]="Gemeißelte Steinakte",[6476]="Feiner Bohrer des Juweliers",[6477]="Größenschablone der Arathi",[6478]="Vergrößerungsglas des Bibliothekars",[6479]="Kristall des Ritualzauberwirkers",[6480]="Bankblöcke der Neruber",[6481]="Verschnürungsgerät der Irdenen",[6482]="Flachmesser des Handwerkers aus Dornogal",[6483]="Unterirdische Abzieherverbindung",[6484]="Ahle der Irdenen",[6485]="Abkantersatz der Arathi",[6486]="Lederpolierer der Arathi",[6487]="Gerbhammer der Neruber",[6488]="Gekrümmtes Kürschnermesser der Neruber",[6489]="Hammer des irdenen Minenarbeiters",[6490]="Meißel aus Dornogal",[6491]="Schaufel des irdenen Ausgräbers",[6492]="Regenerierendes Erz",[6493]="Präzisionsbohrer der Arathi",[6494]="Ausgräber des frommen Archäologen",[6495]="Schwerer Spinnenquetscher",[6496]="Nerubische Minenlore",[6497]="Schnitzmesser aus Dornogal",[6498]="Balken des irdenen Arbeiters",[6499]="Abziehmesser des Kunsthandwerkers",[6500]="Ergiebiger Fungianergerbstoff",[6501]="Arathigerbstoff",[6502]="Schweifhobel des Arathihandwerkers",[6503]="Poliereisen der Neruber",[6504]="Panzerpolierer",[6505]="Trennmesser aus Dornogal",[6506]="Maßband der Irdenen",[6507]="Runenverzierte irdene Nadeln",[6508]="Schere des irdenen Nähers",[6509]="Rollschneider der Arathi",[6510]="Winkelmesser des königlichen Ausstatters",[6511]="Nerubische Steppdecke",[6512]="Nadelkissen der Neruber",[6513]="Verbreiterbrutstätte",[6516]="Schatzelementar",[6517]="Grabschlamm",[6518]="Archavon der Steinwächter",[6519]="Sha des Zorns",[6520]="Verdammniswandler",[6521]="Verweigerer von Mereldar",[6522]="Verweigerer von Mereldar",[6523]="Verweigerer von Mereldar",[6524]="Schlächterpanzer",[6525]="Ikir der Treibwoger",[6526]="Wrackwasser",[6527]="Gunnlod der Meeressäufer",[6528]="Splittsturm",[6529]="Grantmöwe",[6530]="Salzblut",[6531]="Geistmacher",[6532]="Toxischer Koloss",[6533]="Feldarbeitervorrat",[6534]="Alte verrottende Kiste",[6535]="Verlegte Vorräte",[6536]="Feldmesserkiste",[6537]="Krabbenfischervorräte",[6538]="Chromie",[6539]="Buddelstelle",[6540]="Dunkler Prophet Grshol",[6541]="Gerüchtevermittler",[6542]="Gerüchtevermittler",[6543]="Gerüchtevermittler",[6544]="Gerüchtevermittler",[6545]="Gerüchtevermittler",[6546]="Gerüchtevermittler",[6547]="Gerüchtevermittler",[6548]="Gerüchtevermittler",[6549]="Gerüchtevermittler",[6550]="Gerüchtevermittler",[6551]="Gerüchtevermittler",[6552]="Gerüchtevermittler",[6553]="Gerüchtevermittler",[6554]="Gerüchtevermittler",[6555]="Gerüchtevermittler",[6556]="Gerüchtevermittler",[6557]="Gerüchtevermittler",[6558]="Gerüchtevermittler",[6559]="Gerüchtevermittler",[6560]="Gerüchtevermittler",[6561]="Gerüchtevermittler",[6562]="Gerüchtevermittler",[6563]="Gerüchtevermittler",[6564]="Gerüchtevermittler",[6565]="Uhrwerkschrottsammler",[6566]="Schlüsselflamme von Blüte des Lichts",[6567]="Schlüsselflamme des Surrenden Felds",[6568]="Schlüsselflamme des Dämmerhöhenackers",[6569]="Schlüsselflamme des Stillsteintümpels",[6570]="Schlüsselflamme der Fackelscheinmine",[6571]="Schlüsselflamme der Verblassten Küste",[6572]="Schlüsselflamme von Trübsand",[6573]="Wiederbelebungsposition",[6574]="Wiederbelebungsposition",[6575]="Schlüsselflamme der Fungusfelder",[6576]="[TEMPLATE] Creature Name",[6577]="Plankenmeisterin Blaubauch",[6579]="Schildkrötendank",[6580]="Chefkoch Köderplatte",[6581]="Korallenweberin Calliso",[6582]="Siris Seeskorpion",[6583]="Die Morgenbringer",[6584]="Die Morgenbringer",[6585]="Ruhmreicher Rüstmeister",[6586]="Ruhmreicher Rüstmeister",[6587]="Ruhmreicher Rüstmeister",[6588]="Ruhmreicher Rüstmeister",[6589]="Ruhmreicher Rüstmeister",[6590]="Asbjörn der Blutgetränkte",[6591]="Rastloser Odek",[6592]="Kodexverzerrung",[6593]="Flüchtige Agentin Lathyd",[6594]="Die Müllwand",[6595]="Faulpelz der Schlaue",[6596]="Oberster Vorarbeiter Gutso",[6597]="Fliegerjunge Schnauzi",[6598]="Schrottschnabel",[6599]="Hof der Ratten",[6600]="Tally Doppelsprech",[6601]="V.V. Ganswerth",[6602]="Womp",[6603]="S.A.A.",[6604]="Nitro",[6605]="Lolli Händehoch",[6606]="Rußdocht",[6607]="Hais Hunger",[6608]="Verschlingerangriff: Die Oase",[6609]="Schlucks Weitsicht",[6610]="Stalagnarok",[6611]="Überquellender Müllcontainer",[6612]="Glänzende Mülltonne",[6613]="Fällmittel der Düsternisverschmolzenen",[6614]="Fällmittel der Düsternisverschmolzenen",[6615]="Gewitterkralle",[6616]="Salzstamm",[6617]="Zek'ul der Schiffszerstörer",[6618]="Nickelrücken",[6619]="Ksvir der Vergessene",[6620]="Bot",[6621]="Gurumurgel des Abgrunds",[6622]="Roboter (Bewusstlos)",[6624]="Muffs Selbstschließer",[6625]="Muffs Selbstschließer",[6626]="Muffs Selbstschließer",[6627]="Muffs Selbstschließer",[6628]="Muffs Selbstschließer",[6629]="Sha'ryth der Verfluchte",[6630]="Schlund der Sande",[6631]="Korgorath der Verheerer",[6632]="Mampfadar",[6633]="Morgil die Netherbrut",[6634]="Der Nachthäscher",[6635]="Orith der Schreckliche",[6636]="Ixthal der niemals Blinzelnde",[6637]="Schattengroll",[6638]="Prototyp Mk-V",[6639]="Klagegeist der Ödnis",[6640]="Ödnispirscher",[6641]="Urmag",[6642]="Xarran",[6643]="Zurückgelassene Werkzeugkiste",[6644]="Papas langverlorener Putter",[6645]="Nicht überwachte Entnahme",[6646]="Kräftige Komposition",[6648]="Der Abfluss",[6649]="Der Versunkene Hort",[6650]="Schauderhöhle",[6651]="Besonders hübsche Lampe",[6652]="Erzwungene \"\"Quest\"\"-Behandlung für Fundbürotruhe",[6653]="Verlassener Floßmingo",[6654]="Ungeöffnete Kaltgetränke",[6655]="Trickkartenset",[6656]="Haltegriff",[6657]="Nicht explodiertes Feuerwerk",[6658]="Inaktiver Zünder?",[6659]="Schatz des Seefahrers",[6660]="Azuregos",[6661]="Lord Kazzak",[6662]="Lethon",[6663]="Smariss",[6664]="Taerar",[6665]="Ysondre",[6666]="Splittersang",[6667]="Schrottmampfer",[6668]="Voltschlag der Geladene",[6669]="Runenverzierte Sturmtruhe",[6670]="Glyphe 'Hieb'",[6671]="Geschwärzter Würfel",[6672]="Explodierter Zünder",[6673]="Zurückgelassene Schließkassette",[6674]="Leicht verbeultes Gepäck",[6675]="Verlorenes Glockenspiel",[6676]="Sandgegerbter Kasten",[6677]="Feuerwerkhut",[6678]="Einsame Wanne",[6679]="Verdächtiges Buch",[6680]="Primula Kurbelwelle",[6681]="Geschenk der Brüder",[6682]="Flackernde Laterne",[6683]="Vorratstruhe der Bilgeratten",[6684]="Runenversiegelte Kassette",[6685]="Geplünderte Kiste der Irdenen",[6686]="Profitabler Standort",[6687]="S.C.H.R.O.T.T.-Haufen",[6689]="M.A.G.N.O.",[6690]="Hort des Ödnisbewohners",[6691]="Prüfer des Bilgewasserkartells",[6692]="Gestürztes Paket",[6693]="Gestürztes Paket",[6694]="Noggenfogger-Nervensäge",[6695]="Zertrümmerte Kristalle",[6696]="Steißknochen",[6697]="Grob genähter Beutel",[6698]="Profit!",[6699]="Verlegte Kuriosität",[6700]="Müll des Garbagio",[6701]="Vergrabenes Buch",[6702]="Uralter Kasten",[6703]="Verzauberter Besen",[6704]="Schmuddeliger Zeithüter",[6705]="Verschlingerangriff: Biokuppel: Primus",[6706]="Glas",[6707]="Verschlingerangriff: Das Atrium",[6708]="Verschlingerangriff: Tazavesh",[6709]="Postraumverteiler",[6710]="Noggenfogger-Nervensäge",[6711]="Magnoschrotter 9000",[6712]="Postraumverteiler",[6713]="Zusammengeknüllter Bauplan",[6714]="Massenvernichtungsprototyp",[6715]="Piet der Charmeur",[6716]="Vynnie Samophlangus",[6717]="Madame Colada",[6718]="Freg",[6719]="Tiefenkönig Grobrosh",[6720]="Roxarix der Tunnelbohrer",[6721]="Geomant Keeri",[6722]="Gewaltiger Kaja'mentar",[6723]="Zuchtmeister Zendu",[6724]="Ixthars Lieblingskristall",[6725]="Sthaarbs der Unaufgewühlte",[6726]="Phasenverlorener Schatz",[6727]="Phasendiebin Tezra",[6728]="Großschwert des Ödniswandlers",[6729]="Phasenverlorener Schatz",[6730]="Schatz des Seefahrers",[6731]="Piratenhändler",[6732]="Ein bedrohlicher Brief",[6733]="Verlegter Arbeitsauftrag",[6734]="Sicherheitsleitfaden für Extraktionsbohrer X-78",[6735]="Sicherheitshandbuch für Raketenbohrer",[6736]="Zweite Hälfte von Noggenfoggers Tagebuch",[6737]="Erste Hälfte von Noggenfoggers Tagebuch",[6738]="Gallywix' Notizen",[6739]="Skramasax des Steinmetzes",[6740]="Arbeitsstiefel nach Aschenwindauftrag",[6741]="Beil des Holzfällers aus Kul Tiras",[6742]="Eisenspitzhacke",[6743]="Pfrilles Lieblingsklinge",[6744]="Verbeulte Nagawaffe",[6745]="Zerrissene Bilgerattenkappe",[6746]="Blutbedeckte Waffe der Blutgischt",[6747]="Seepockenverkrustete Truhe",[6748]="Sprengstoff der Düsternisverschmolzenen",[6750]="Wache\"\" von Silbermond",[6751]="Leerensturmriss",[6752]="Schrottmampfer",[6753]="Voltschlag der Geladene",[6754]="Nerathor",[6755]="Berg die Zauberfaust",[6756]="Rätselhafte Kugel",[6757]="S.C.H.R.O.T.T.-Haufen",[6758]="Belath Dämmerklinge",[6759]="Verkäufer",[6760]="Schmuddeliger Zeithüter",[6761]="Corla",[6762]="Lehrensuche",[6763]="[TEMPLATE] [Object Name]",[6764]="Leerengesättigte Hydra",[6765]="Bösartiger Hasssplitter",[6766]="Astrales Taschenlager",[6767]="Mittlerkasse",[6768]="Phasenverlorenes Taschenlager",[6769]="Midsummer Bonfire Map POI Test - JZB",[6770]="Xy'vox der Verrenkte",[6771]="Splitterimpuls",[6772]="Xy'vox der Verrenkte",[6773]="Hohlfluch",[6774]="Schmuddler",[6777]="Test",[6778]="Auge der Gier",[6779]="Schreckenslord der verlorenen Legion",[6780]="Silbermondgast",[6781]="Silbermondgast",[6783]="Überfluss",[6784]="Phasenleiter",[6785]="Thalassisches Kürschnermesser",[6786]="Kürschnermesser der Amani",[6787]="Gerböl der Sin'dorei",[6788]="Gerböl der Amani",[6789]="Leerensturmlederprobe",[6790]="Urtümlicher Balg",[6791]="Kürschnermesser des Kaders",[6792]="Lichtblütenbefallener Balg",[6793]="Abdeckkamm des Kunsthandwerkers",[6794]="Besonders bezauberndes Tischtuch",[6795]="Satinzierkissen",[6796]="Buch der Sin'dorei-Nähkunst",[6797]="Hölzernes Webschwert",[6798]="Lineal des Sin'dorei-Ausstatters",[6799]="Ein richtig schöner Vorhang",[6800]="Ein Stofftier eines Kindes",[6801]="Ersatzexpeditionsfackel",[6802]="Sternenmetallvorkommen",[6803]="Meißel des Amaniexperten",[6804]="Schimmernde Leerenperle",[6805]="Bündel der Schmuckstücke des Gerbers",[6806]="Prestigevoll gegerbtes Leder",[6807]="Astrales Lederverarbeitungsmesser",[6808]="Amanilederwerkzeug",[6809]="Edelsteinschleifer der Sin'dorei",[6810]="Astrale Edelsteinzange",[6811]="Antiker Seelenedelstein",[6812]="Zerbrochenes Glas",[6813]="Markierung des unerschrockenen Entdeckers",[6814]="Ersatztinte",[6815]="Ledergebundene Techniken",[6816]="Leerenberührter Federkiel",[6817]="Praktischer Schraubenschlüssel",[6818]="Was tun",[6819]="Offline-Helferbot",[6820]="Astrale Sturmzwinge",[6821]="Flinker Pylon",[6822]="Handbuch der Fehler und Missgeschicke",[6823]="Miniaturisiertes Transportboot",[6824]="Des einen Ingenieurs Schrott",[6825]="Verzauberkunstrute der Sin'dorei",[6826]="Loageweihter Staub",[6827]="Urzeitliche Essenzkugel",[6828]="Entropischer Splitter",[6829]="Immerbrennender Sonnenpartikel",[6830]="Reiner Leerenkristall",[6831]="Verzauberte Sonnenfeuerseide",[6832]="Verzauberte Amanimaske",[6833]="Silbermondschmiedehammer",[6834]="Schmiedestreitkolben des Sin'dorei-Meisters",[6835]="Schwert des Rutaani-Florahüters",[6836]="Leerensturmverteidigungsspeer",[6837]="Spickzettel zu Metallarbeiten",[6838]="Sorgfältig gehämmerter Speer",[6839]="Silbermondschmiedeset",[6840]="Dekonstruierte Schmiedetechniken",[6841]="Fehlgeschlagenes Experiment",[6842]="Makelloser Trank",[6843]="Abgemessene Kelle",[6844]="Frisch gepflückte Friedensblume",[6845]="Phiole der Kuriositäten aus Zul'Aman",[6846]="Phiole der Kuriositäten der Wurzellande",[6847]="Phiole der Kuriositäten des Leerensturms",[6848]="Phiole der Kuriositäten des Immersangwalds",[6849]="Blühende Knospe",[6850]="Schwingende Sichel des Ernters",[6851]="Einfacher Blattschneider",[6852]="Lichtblütenwurzel",[6853]="Ein Spaten",[6854]="Sichel des Ernters",[6855]="Seltsamer Lotus",[6856]="Pflanzschaufel",[6857]="Massive Erzstanzer",[6858]="Verlorene Leerensturmsichel",[6859]="Glücksbringer des Höhlenforschers",[6860]="Bergmannsleitfaden für den Leerensturm",[6861]="Bedachter Auftrag des Kunsthandwerkers",[6862]="Lederverarbeitungsmesser der Haranir",[6863]="Lederverarbeitungsschlägel der Haranir",[6864]="Muster: Jenseits der Leere",[6865]="Schlecht gerundete Phiole",[6866]="Zweifachfunktionslupe",[6867]="Spekulativer Leerensturmkristall",[6868]="Meisterwerkmeißel der Sin'dorei",[6869]="Federkiel des Komponisten",[6870]="Stift des Komponisten",[6871]="Halbherzige Techniken",[6872]="Übriges Rotdornpigment",[6873]="Teleporter",[6874]="Phasenriss",[6875]="Dissident Glevenpelz",[6876]="Dissident Eidland",[6877]="Flüsterin Kampfeyd",[6878]="Flüsterin Hügelpinne",[6879]="Dissident Eifermacht",[6880]="Dissidentin Schweifpfad",[6881]="Flüsterer Tapferfeste",[6882]="Flüsterin Kriegidittel",[6883]="Dissidentin Burgzorn",[6884]="Dissident Truhsilber",[6885]="Flüsterer Belagerweise",[6886]="Flüsterin Kriegschaous",[6887]="[TEMPLATE] [Object Name]",[6888]="[TEMPLATE] [Object Name]",[6889]="Astraler leerengeschmiedeter Behälter",[6890]="Akil'zons Geschwindigkeit",[6891]="Lila Torf",[6892]="Geisterschlachttruhe",[6893]="Arkanahetzer So'zer",[6895]="Nekroverhexer Raz'ka",[6896]="Die Schnappgeißel",[6897]="Schädelmalmer Harak",[6898]="Ältester Eichenkralle",[6899]="Tiefengeborener Aalementar",[6900]="Lichtholzbohrer",[6902]="Entfesseltes Sturmgewitter",[6903]="Stachelkragen",[6904]="Oophaga",[6905]="Winziges Ungeziefer",[6906]="Leerenberührtes Krustentier",[6907]="Der verschlingende Invasor",[6909]="Waffenvorrat",[6910]="Bombenhaufen",[6911]="Spitzel von Silbermond",[6912]="Ereignis",[6913]="Arkanahetzer So'zer",[6914]="Schmuddler",[6915]="Hohlfluch",[6916]="Splitterimpuls",[6917]="Lila Torf",[6918]="Ruhmrüstmeister",[6919]="Lichtdurchströmtes Spaltbeil",[6920]="Speer der gefallenen Erinnerungen",[6921]="Efrats vergessenes Bollwerk",[6922]="Versteinerter Ast von Janaa",[6923]="Sufaadische Skifflaterne",[6924]="Manaschmiedentranslokator",[6925]="Talwar der Goldenen Wache",[6926]="Zermalmer der Schattenwache",[6927]="Korgoraths Kralle",[6928]="Salm der Flamme",[6929]="Lauer",[6930]="Nebelwinter",[6931]="Verlegter Foliant",[6932]="Leerenriss",[6933]="Türsteuerkonsole",[6934]="Ruz'avalts wertvoller Besitz",[6935]="[DEPRECATED]",[6936]="[Object Name]",[6937]="Schatz des wohlwollenden Kriegers",[6938]="Zurückgelassener Ritualschädel",[6939]="Köder und Angelzubehör",[6940]="Vergrabene Beute",[6941]="Mrruks miserabler Schatz",[6942]="Geheime Formel",[6943]="Verlassenes Nest",[6944]="Stumpfhauervorräte",[6945]="Vergessenes Leckereienglas",[6946]="Von Bären geplünderter Vorrat",[6947]="[DEPRECATED]",[6948]="Zurückgelassener Ritualschädel",[6949]="Sundereth der Rufer",[6950]="Magister Umbric",[6951]="Runenstein",[6952]="Domanaar",[6953]="Domanaar",[6954]="Runenstein",[6955]="Runenstein",[6957]="Leerenfass",[6958]="Abgabe bei der Allianz",[6959]="Runenstein",[6960]="Abgabe bei der Horde",[6961]="Territoriale Leerensense",[6962]="Tremora",[6963]="Eruundi",[6964]="Nachtbrut",[6965]="Kriegsgleve des verwegenen Jägers",[6966]="Prototyppaket und Portopresse des P.O.S.T.-Meisters",[6967]="Phasenklinge der Leerenmärsche",[6968]="Klingengewehr des uneingeschränkten Momentums",[6971]="Der verfaulende Diamantrücken",[6972]="Ash'an der Ermächtigte",[6973]="[DEPRECATED]",[6974]="Lachsteich",[6975]="Mittlerkasse",[6976]="Phasenverlorene Kasse",[6977]="Mrrlokk",[6978]="Ausgehöhltes Totem",[6979]="[DEPRECATED]",[6980]="Malek'ta",[6981]="Heka'tamos",[6982]="[TEMPLATE] [Object Name]",[6983]="Portal zur Madenstadt",[6984]="Portal zu den Eiskalten Frostlanden",[6985]="Portal zum Lavalabyrinth",[6986]="Portal zum Giftwald",[6987]="Portal zum Blutzirkus",[6988]="Leerenzelotin Devinda",[6989]="Violetter Rankenschnapper",[6990]="Irisrindenstampfer",[6991]="Efeudornenschwanz",[6992]="Wächter des Unkrauts",[6994]="Asira Dämmerschlächter",[6995]="Fäulnisstrahl",[6996]="Erzbischof Benedictus",[6997]="Ix der Blutgefallene",[6998]="Kommandant Ix'vaarha",[6999]="Leerenbesudelte Überreste",[7000]="Verlorene Schattenschrittvorräte",[7001]="Ez'Haadosh die Liminalität",[7002]="Gehetzter Falkenschreiter",[7003]="Saligrum der Beobachter",[7004]="Sharfadi",[7005]="Gustavan",[7006]="Spiegelzwicker",[7007]="Rotauge der Schädelbeißer",[7008]="Nedrand der Augenschlinger",[7009]="Leerenklaue Hexathor",[7010]="Truhe des Fachmanns",[7011]="Magister Sonnenbrecher",[7012]="Ziel 2",[7013]="Ziel 3",[7014]="Ziel 4",[7015]="Ziel 5",[7016]="Ziel 6",[7017]="Ziel 7",[7018]="Ziel 8",[7019]="Jo'zolo der Brecher",[7020]="Ziel 10",[7021]="Ziel 11",[7022]="Ziel 12",[7023]="Ziel 13",[7024]="Ziel 14",[7025]="Ziel 15",[7026]="Ziel 16",[7027]="Ziel 17",[7028]="Ziel 18",[7029]="Ziel 19",[7030]="Ziel 20",[7031]="Exekutor Kaenius",[7032]="Ziel 22",[7033]="Ziel 23",[7034]="Ziel 24",[7035]="Ziel 25",[7036]="Ziel 26",[7037]="Ziel 27",[7038]="Ziel 28",[7039]="Ziel 29",[7040]="Ziel 30",[7041]="Blubbernder Farbtopf",[7042]="Scharfrichterin Lynthelma",[7043]="T'aavihan der Ungebundene",[7044]="Vergessenes Versteck der Amani",[7045]="Graviertes Ruder",[7046]="Kriegsfürstin Hlaka",[7047]="Hexfürst O'tom",[7048]="Schattenjäger Jun'tilo",[7049]="Überfluss",[7050]="Ziel 2",[7051]="Ziel 3",[7052]="Ziel 4",[7053]="Ziel 5",[7054]="Ziel 6",[7055]="Ziel 7",[7056]="Ziel 8",[7057]="Jo'zolo der Brecher",[7058]="Ziel 10",[7059]="Ziel 11",[7060]="Ziel 12",[7061]="Ziel 13",[7062]="Ziel 14",[7063]="Ziel 15",[7064]="Ziel 16",[7065]="Ziel 17",[7066]="Ziel 18",[7067]="Ziel 19",[7068]="Ziel 20",[7069]="Exekutor Kaenius",[7070]="Ziel 22",[7071]="Ziel 23",[7072]="Ziel 24",[7073]="Ziel 25",[7074]="Ziel 26",[7075]="Ziel 27",[7076]="Ziel 28",[7077]="Ziel 29",[7078]="Ziel 30",[7079]="Magisterrenegat",[7080]="Magisterrenegat",[7081]="Ziel 2",[7082]="Ziel 3",[7083]="Ziel 4",[7084]="Ziel 5",[7085]="Ziel 6",[7086]="Ziel 7",[7087]="Ziel 8",[7088]="Jo'zolo der Brecher",[7089]="Ziel 10",[7090]="Ziel 11",[7091]="Ziel 12",[7092]="Ziel 13",[7093]="Ziel 14",[7094]="Ziel 15",[7095]="Ziel 16",[7096]="Ziel 17",[7097]="Ziel 18",[7098]="Ziel 19",[7099]="Ziel 20",[7100]="Exekutor Kaenius",[7101]="Ziel 22",[7102]="Ziel 23",[7103]="Ziel 24",[7104]="Ziel 25",[7105]="Ziel 26",[7106]="Ziel 27",[7107]="Ziel 28",[7108]="Ziel 29",[7109]="Ziel 30",[7110]="Überfluss",[7111]="Wahnsinniger Minenwall",[7112]="Erfüllter Minenschmetter",[7113]="Entfesselter Minenrohling",[7114]="Überfluss",[7115]="Portalstein",[7116]="Vorrat des Weisen",[7117]="Wilderer Rav'ik",[7118]="Ein Buch mit Eselsohren",[7119]="Mysteriöses Notizbuch",[7120]="Multiverselle Energiedynamik und das Schar-Paradoxon",[7121]="Ba'keys Rezepte für aromatische Mittlerkekse",[7122]="Von der Rache in die Leere",[7123]="Die Facetten von K'aresh",[7124]="Münzen: Ein Eid",[7125]="Ich bin die Leere selbst!",[7126]="Selenar Sonnenscheu",[7127]="Geologisches Feldtagebuch",[7128]="Kontrollliste für kleine Freuden",[7129]="Nullspirale",[7130]="Runenstein",[7131]="Antigravitationsbereich",[7132]="Ruhmrüstmeister",[7133]="Der oft Gebrochene",[7135]="Valeera Sanguinar",[7136]="Höllenbestie der verlorenen Legion",[7137]="Höllenbestie der Endzeit",[7138]="Abysschlick",[7139]="Rhazul",[7140]="Leerenseher Orivane",[7141]="Gedenkplakette",[7142]="Schwarzkern",[7143]="Aufsteigendes Tor",[7144]="Absteigendes Tor",[7145]="Absteigendes Tor",[7146]="Aufsteigendes Tor",[7147]="Sturmarionvorräte",[7148]="Sturmarionvorräte",[7149]="Astrales Werkzeugregal",[7152]="Apfelfass",[7153]="Nahrungsvorräte",[7154]="Beerenbusch",[7155]="Tropfender Schatten",[7156]="Chironex",[7157]="Ha'kalawe",[7158]="Weitkappe der Wahrheitssager",[7159]="Königin Peitschenzunge",[7160]="Interessantes Objekt",[7161]="Chlorokyll",[7162]="Stubbe",[7163]="Serrasa",[7164]="Gedankenfäule",[7165]="Dracaena",[7166]="Baumkrone",[7167]="Oro'ohna",[7168]="Petrosaurus",[7169]="Vidious",[7170]="Ziadan",[7171]="Ahl'ua'huhi",[7172]="Annulus der Weltenerschütterer",[7173]="Leuchtende Motte",[7174]="Angriff der Leere",[7175]="Leuchtende Motte",[7176]="Leuchtende Motte",[7177]="Leuchtende Motte",[7178]="Leuchtende Motte",[7179]="Leuchtende Motte",[7180]="Leuchtende Motte",[7181]="Leuchtende Motte",[7182]="Leuchtende Motte",[7183]="Leuchtende Motte",[7184]="Leuchtende Motte",[7185]="Leuchtende Motte",[7186]="Leuchtende Motte",[7187]="Leuchtende Motte",[7188]="Leuchtende Motte",[7189]="Leuchtende Motte",[7190]="Leuchtende Motte",[7191]="Leuchtende Motte",[7192]="Leuchtende Motte",[7193]="Leuchtende Motte",[7194]="Leuchtende Motte",[7195]="Leuchtende Motte",[7196]="Leuchtende Motte",[7197]="Leuchtende Motte",[7198]="Leuchtende Motte",[7199]="Leuchtende Motte",[7200]="Leuchtende Motte",[7201]="Leuchtende Motte",[7202]="Leuchtende Motte",[7203]="Leuchtende Motte",[7204]="Leuchtende Motte",[7205]="Leuchtende Motte",[7206]="Leuchtende Motte",[7207]="Leuchtende Motte",[7208]="Leuchtende Motte",[7209]="Leuchtende Motte",[7210]="Leuchtende Motte",[7211]="Leuchtende Motte",[7212]="Leuchtende Motte",[7213]="Leuchtende Motte",[7214]="Leuchtende Motte",[7215]="Leuchtende Motte",[7216]="Leuchtende Motte",[7217]="Leuchtende Motte",[7218]="Leuchtende Motte",[7219]="Leuchtende Motte",[7220]="Leuchtende Motte",[7221]="Leuchtende Motte",[7222]="Leuchtende Motte",[7223]="Leuchtende Motte",[7224]="Leuchtende Motte",[7225]="Leuchtende Motte",[7226]="Leuchtende Motte",[7227]="Leuchtende Motte",[7228]="Leuchtende Motte",[7229]="Leuchtende Motte",[7230]="Leuchtende Motte",[7231]="Leuchtende Motte",[7232]="Leuchtende Motte",[7233]="Leuchtende Motte",[7234]="Leuchtende Motte",[7235]="Leuchtende Motte",[7236]="Leuchtende Motte",[7237]="Leuchtende Motte",[7238]="Leuchtende Motte",[7239]="Leuchtende Motte",[7240]="Leuchtende Motte",[7241]="Leuchtende Motte",[7242]="Leuchtende Motte",[7243]="Leuchtende Motte",[7244]="Leuchtende Motte",[7245]="Leuchtende Motte",[7246]="Leuchtende Motte",[7247]="Leuchtende Motte",[7248]="Leuchtende Motte",[7249]="Leuchtende Motte",[7250]="Leuchtende Motte",[7251]="Leuchtende Motte",[7252]="Leuchtende Motte",[7253]="Leuchtende Motte",[7254]="Leuchtende Motte",[7255]="Leuchtende Motte",[7256]="Leuchtende Motte",[7257]="Leuchtende Motte",[7258]="Leuchtende Motte",[7259]="Leuchtende Motte",[7260]="Leuchtende Motte",[7261]="Leuchtende Motte",[7262]="Leuchtende Motte",[7263]="Leuchtende Motte",[7264]="Leuchtende Motte",[7265]="Leuchtende Motte",[7266]="Leuchtende Motte",[7267]="Leuchtende Motte",[7268]="Leuchtende Motte",[7269]="Leuchtende Motte",[7270]="Leuchtende Motte",[7271]="Leuchtende Motte",[7272]="Leuchtende Motte",[7273]="Leuchtende Motte",[7274]="Leuchtende Motte",[7275]="Leuchtende Motte",[7276]="Leuchtende Motte",[7277]="Leuchtende Motte",[7278]="Leuchtende Motte",[7279]="Leuchtende Motte",[7280]="Leuchtende Motte",[7281]="Leuchtende Motte",[7282]="Leuchtende Motte",[7283]="Leuchtende Motte",[7284]="Leuchtende Motte",[7285]="Leuchtende Motte",[7286]="Leuchtende Motte",[7287]="Leuchtende Motte",[7288]="Leuchtende Motte",[7289]="Leuchtende Motte",[7290]="Leuchtende Motte",[7291]="Leuchtende Motte",[7292]="Leuchtende Motte",[7293]="Leuchtende Motte",[7294]="Aufgeblähter Schnappdrache",[7295]="Schatzdundun",[7296]="Altar des Überflusses",[7297]="Regen des Überflusses",[7298]="Korallenreißer",[7299]="Cre'van",[7300]="Schlafende Lichtblütenhydra",[7301]="Lady Liminus",[7302]="Wellenzwick",[7303]="Verirrter Wächter",[7304]="Banuran",[7305]="Böser Zed",[7306]="Terrinor",[7307]="Ruhmrüstmeister",[7308]="Säckchen des abgestürzten Pilzspringers",[7309]="Brennender Zweig des Weltenbaumes",[7310]="Astrales Feuer",[7311]="Kampfpreis des Sporenherrschers",[7312]="Verlorener Malpinsel der Archäologischen Akademie",[7313]="Kemets köchelnder Kessel",[7314]="Angriff der Leere",[7315]="Hängender Kürbis",[7316]="Bemalte Flasche",[7317]="Fungushüllentontopf",[7318]="Knospendes Fass",[7319]="Dornenumwickelte Kiste",[7320]="Leaf-Wrapped Package",[7321]="Fungushüllentruhe",[7322]="Dornentruhe",[7323]="Blütendornentruhe",[7324]="Arkane Aufladung",[7325]="Tarhu die Plünderin",[7327]="Ve'nari",[7328]="Steinbruchlager",[7329]="Trainingslager",[7330]="Steinbruchlager",[7331]="Versunkener Schatz",[7333]="Verbündete Streitkräfte",[7335]="Gefunden!",[7336]="Säckchen der Geisterpfoten",[7337]="Zwielichtmunition",[7338]="Maisaraunheilsgefäß",[7339]="Reinsteinvorräte",[7340]="Stimme der Finsternis",[7341]="Gefangener Bleichborkentroll",[7342]="Versteckte Singularitätsvorräte",[7343]="Mysteriöses Gefäß der Domanaar",[7344]="Steinbottich",[7345]="Kernzugriffskonsole",[7346]="Manazitleitung",[7347]="Vantazitleitung",[7348]="Riesenwundertüte",[7349]="Schäbiger Vorrat",[7350]="Vorräte des Tiefenforschers",[7351]="Geschenk des Kreislaufs",[7352]="Verderbte Kreatur",[7353]="Dunkler Obelisk",[7354]="Leutnant der Domanaar",[7355]="Letztes Gelege von Predaxas",[7356]="Dämonisches Tor",[7357]="Abbild von Astalor Blutschwur",[7359]="Vergessene Oubliette",[7360]="Blutiger Sack",[7361]="Brutmutter Shu'malis",[7362]="Flaches Grab",[7363]="Wächter des Unkrauts",[7364]="Antiker Siegelring des Adligen",[7365]="Dreifach verriegelte Truhe",[7366]="Verlorener Köcher des Weltenwanderers",[7367]="Halbverdaute Eingeweide",[7368]="Köcher des erschlagenen Spähers",[7369]="Wey'nans Wehklagen: Ein Funke der Hoffnung",[7370]="Wey'nans Wehklagen: Die Jagd nach Sinn",[7371]="Wey'nans Wehklagen: Das kann nicht alles sein",[7372]="Echos unserer Vergangenheit: Schwindende Geschichte",[7373]="Echos unserer Vergangenheit: Alnstaub",[7374]="Echos unserer Vergangenheit: Gefährliche Erinnerungen",[7375]="Der Pfad des Suchers: Aln'haras Ruf",[7376]="Der Pfad des Suchers: Die Suche nach Frieden",[7377]="Der Pfad des Suchers: Mission ohne Ende",[7378]="Worte von Obayo: Die Flamme",[7379]="Worte von Obayo: Der Riss",[7380]="Worte von Obayo: Die Stille",[7381]="Im Dienst des Landes: Der Konflikt",[7382]="Im Dienst des Landes: Der Plan",[7383]="Im Dienst des Landes: Der Kreislauf",[7384]="Die Wege der Wurzeln: Dienen",[7385]="Die Wege der Wurzeln: Wachsen",[7386]="Die Wege der Wurzeln: Stutzen",[7387]="Awe'ohnas Pfad: Fragen",[7389]="Awe'ohnas Pfad: Antworten",[7390]="Awe'ohnas Pfad: Die Wiege",[7391]="Weggeworfener Energiespeer",[7392]="Exaliburn",[7393]="Zitterndes Ei",[7394]="Versiegelter Kürbis",[7395]="Geschenk des Phönix",[7396]="Dämmerbrand",[7397]="Steckender Speer",[7398]="Verblasstes Wandbild",[7399]="Fehlerhaftes Konstrukt",[7400]="Uralter Mondrunenstein",[7401]="Heruntergekommenes Wandbild",[7402]="Vergessenes Wandbild",[7403]="Eine zerfranste Schriftrolle",[7404]="Dame Blutfang",[7405]="Wie man Falkenschreiter hält: Ungekürzte Fassung",[7406]="Schrein von Dath'Remar",[7407]="Mirvedas Notizen",[7408]="Weltliche Forschung",[7409]="Unvollendetes Notenblatt",[7410]="Seltsamer Kessel",[7411]="Sporenbewachsene Truhe",[7416]="Seelenverbindung",[7418]="Heimtückische Truhe",[7419]="Versiegelte Beute der Zwielichtklinge",[7422]="Gallenschlund der Unersättliche",[7423]="Interessantes Objekt",[7424]="Vergessene Tinte und Feder",[7426]="Rabengerus",[7428]="Far'thana die Wahnsinnige",[7429]="Vergoldete Armillarsphäre",[7430]="Quallenkönigin",[7431]="Lirath",[7432]="Aeonelle Schwarzstern",[7433]="Verderben des Ekelbluts",[7434]="Lotus Dunkelblüte",[7435]="Rakshur der Knochenmahler",[7436]="Schreimaxa die Matriarchin",[7437]="Horsttruhe",[7438]="Toter Briefkasten",[7439]="Verschmolzenes Licht",[7440]="Vorrat des Waldläufers",[7441]="Stellarvorrat",[7442]="Hardin Stahllocke",[7443]="Geringe verdichtende Pein",[7444]="Große verdichtende Pein",[7445]="Gar'chak Schädelspalter",[7446]="Schützendes Räucherwerk",[7447]="Bündel des Spähers",[7448]="Leerenrüstung",[7449]="Uralte Schrifttafel",[7450]="Zurückgelassenes Teleskop",[7451]="Zerfledderte Seite",[7452]="Schattenjochharnisch",[7455]="Vergessene Truhe eines Forschers",[7456]="Interessantes Objekt",[7457]="Saroniterz",[7458]="Saroniterz",[7459]="Lagerfeuer der Ren'dorei",[7460]="Hoher Gipfel",[7461]="Hoher Gipfel",[7462]="Hoher Gipfel",[7463]="Hoher Gipfel",[7464]="Hoher Gipfel",[7465]="Hoher Gipfel",[7466]="Hoher Gipfel",[7467]="Hoher Gipfel",[7468]="Hoher Gipfel",[7469]="Hoher Gipfel",[7470]="Hoher Gipfel",[7471]="Hoher Gipfel",[7472]="Hoher Gipfel",[7473]="Hoher Gipfel",[7474]="Hoher Gipfel",[7475]="Hoher Gipfel",[7476]="Hoher Gipfel",[7477]="Hoher Gipfel",[7478]="Hoher Gipfel",[7479]="Hoher Gipfel",[7481]="Sturmarionnachschub",[7483]="Altar der Segnung",[7486]="Erfüllter Knochenhaufen",[7487]="Schrifttafel von Akil'zon",[7488]="Schrifttafel von Halazzi",[7489]="Schrifttafel von Jan'alai",[7490]="Schrifttafel von Nalorakk",[7491]="Schrifttafel der Herrscherfamilie",[7492]="Schrifttafel von Kulzi",[7493]="Schrifttafel von Filo",[7497]="Sturmariontruhe",[7498]="Leerengeschütztes Grab",[7499]="Unvollständiges Buch der Sonette",[7502]="Kurioser Obelisk",[7503]="Kurioser Obelisk",[7504]="Erfüllter Knochenhaufen",[7505]="Truhe des Fachmanns",[7506]="Truhe des Fachmanns",[7507]="Truhe des Fachmanns",[7508]="Truhe des Fachmanns",[7509]="Truhe des Fachmanns",[7510]="Truhe des Fachmanns",[7511]="Ruhmrüstmeister der Singularität",[7512]="Altvater Baum",[7513]="Rüstmeister",[7514]="Dekorationsexperte",[7515]="Dekorationsexperte der Hara'ti",[7516]="Ruhmrüstmeister",[7517]="Ruhmrüstmeister des Amanistamms",[7518]="Ruhmrüstmeister der Hara'ti",[7519]="Ruhmrüstmeister des Hofs in Silbermond",[7520]="Dekorationsexperte des Amanistamms",[7521]="Rüstmeister des Handwerkerkonsortiums",[7522]="Rüstmeister für Eroberungspunkte",[7523]="Rüstmeisterin für Kriegsmodus",[7525]="Sonnenläuferin Nadura",[7526]="Dekorationsexperte des Hofs in Silbermond",[7527]="Dekorationsexperte der Singularität",[7528]="Hassbrecherultradon",[7529]="Trauerknochenultradon",[7530]="Uraltes Relikt",[7531]="Nullaeus' Diener",[7533]="Mausoloamonolith",[7534]="Loagewirktes Mammut",[7535]="Loablümchenwuchs",[7536]="Loanitleere",[7537]="Türsteuerkonsole",[7538]="Ruhmrüstmeister der Singularität",[7544]="Speerwand",[7545]="Verschlossene Tür",[7546]="The Tauren Chieftains",[7549]="Ziel von Lindormis Rat",[7551]="Große Schließkassette",[7552]="Nyxovar",[7553]="Obliron",[7554]="Vexaroth",[7555]="Nullatros",[7556]="Schrein",[7558]="Eisbrutmutter",[7566]="Champion von Pahk",[7567]="Atem holen",[7568]="Atem holen",[7578]="Auf Patrouille",[7579]="Fragment der Macht",[7593]="Knochenhaufen",[7600]="Die erzürnten Gezeiten",[7601]="Managesättigter Großwyrm",[7602]="Giftschuppe Mar'grita",[7603]="Dämmerklaue",[7605]="Leerenerfüllter Graupelstein",[7606]="Atomus",[7611]="Ungebundener Rufer",[7612]="Agiles Gespenst",[7613]="Schwerfälliger Frevler",[7614]="Lehrling Thentor",[7615]="Lehrling Kurgsbann",[7616]="Lehrling Jezhren",[7617]="Verderbter Drachenfalke der Amani",[7618]="Eidbrecher Ger'lok",[7619]="Strömungsbrecher Garazyn",[7620]="Tiefenpirscher Szeirjal",[7621]="Abyssischer Vazir",[7622]="Leerenerfüllter Geistbeuger",[7623]="Selen'vjar",[7624]="Morastgebundenes Gespenst",[7625]="Durchnässter Leerenbinder",[7626]="Abgrundschlächter",[7628]="Leerenrufer Ozi'rug",[7631]="Kriegsfürstin Heth",[7632]="Aufgebrachter Schrecken",[7657]="Verurteiltes Tier",[7658]="Ellenlanger Uarn",[7659]="Broxion",[7660]="Flackernde Senkenschwinge",[7661]="Lomelith",[7662]="Obeliskenportal",[7663]="Soridormi",[7667]="Beutejagdfalle",[7668]="Auredar",[7669]="Unbezähmbarer Mk XII",[7670]="Xi'Grivr",[7671]="Slaipaan",[7674]="Versteckter",[7675]="Xirah",[7676]="Mercilus",[7677]="Krilkan",[7678]="Opprimius",[7679]="Nelgothar",[7680]="Das Grauen der Tiefe",[7684]="Eissturm",[7690]="Zerstörer der Schattenwache",[7693]="Truhe",[7698]="Dekorationsduellhändler",[7699]="Voidwarped Sporebat",[7706]="Hal'hadar Pocket-Storage",[7707]="Domanaar Storage Vessel",[7733]="Vanguard Kadoxe",[7734]="Starseeker Dreadus",[7735]="Reaper Gorzok",[7736]="Mender Amatory",[7737]="Techno-Medic Alazj",[7738]="Renegade Kulivero",[7739]="Spellslinger Rem'lazar",[7740]="Guardian Halazir"}
+						local db = GrailDatabase
+						if not db.vignetteLinks then print('vignames db: no vignetteLinks') return end
+						local updated, notfound = 0, 0
+						for k, v in pairs(db.vignetteLinks) do
+							if v == true then
+								local g = strmatch(k, '^([^|]+)')
+								if g and strsub(g, 1, 9) == 'Vignette-' then
+									local tid = tonumber((select(6, strsplit('-', g))))
+									local name = tid and t[tid]
+									if name then
+										db.vignetteLinks[k] = name
+										if db.vignetteGuidIndex then db.vignetteGuidIndex[g] = k end
+										print(strformat('|cFFFFFF00Grail|r: named (db): |cFF00FF00%s|r', name))
+										updated = updated + 1
+									else
+										notfound = notfound + 1
+									end
+								end
+							end
+						end
+						print(strformat('vignames db: updated=%d not_in_db=%d', updated, notfound))
+					end)
+					self:RegisterSlashOption("vignames", "|cFF00FF00vignames|r => updates known vignette links with names from currently visible vignettes", function()
+						local db = GrailDatabase
+						if not db.vignetteLinks then print('vignames: no vignetteLinks found') return end
+						local updated, skipped, missing = 0, 0, 0
+						for k, v in pairs(db.vignetteLinks) do
+							if v == true then
+								local g = strmatch(k, '^([^|]+)')
+								if g and strsub(g, 1, 9) == 'Vignette-' then
+									local info = C_VignetteInfo and C_VignetteInfo.GetVignetteInfo and C_VignetteInfo.GetVignetteInfo(g)
+									if info and info.name then
+										db.vignetteLinks[k] = info.name
+										if db.vignetteGuidIndex then db.vignetteGuidIndex[g] = k end
+										updated = updated + 1
+									else
+										missing = missing + 1
+									end
+								end
+							else
+								skipped = skipped + 1
+							end
+						end
+						print(strformat('vignames: updated=%d already_named=%d not_visible=%d', updated, skipped, missing))
+						-- List vignettes still needing names with their stored coords
+						if missing > 0 then
+							local tomtomAvail = TomTom and TomTom.AddWaypoint
+							if tomtomAvail then
+								print('vignames: adding TomTom waypoints for unnamed vignettes')
+							else
+								print('vignames: vignettes still needing names (TomTom not available):')
+							end
+							for k, v in pairs(db.vignetteLinks) do
+								if v == true then
+									local g = strmatch(k, '^([^|]+)')
+									local coordStr = strmatch(k, 'coords=([^|]+)')
+									if g and strsub(g, 1, 9) == 'Vignette-' then
+										print(strformat('  guid=%s coords=%s', g, tostring(coordStr)))
+										if tomtomAvail and coordStr then
+											local mapID, x, y = strmatch(coordStr, '(%d+):([%d%.]+),([%d%.]+)')
+											mapID = tonumber(mapID)
+											x = tonumber(x)
+											y = tonumber(y)
+											if mapID and x and y then
+												TomTom:AddWaypoint(mapID, x/100, y/100, { title = strformat('Grail: unnamed vignette %s', g) })
+											end
+										end
+									end
+								end
+							end
+						end
+					end)
+					self:RegisterSlashOption("questhub", "|cFF00FF00questhub|r => dumps QuestHub dataProvider.questHubs and questOffers", function()
+						local p = WorldMapFrame and WorldMapFrame.pinPools and WorldMapFrame.pinPools['QuestHubPinTemplate']
+						if not p then print('QuestHubPinTemplate pool not found') return end
+						local pins = {}
+						pcall(function() for pin in p:EnumerateActive() do table.insert(pins, pin) end end)
+						if #pins == 0 then print('No active QuestHub pins') return end
+						for i, pin in ipairs(pins) do
+							local dp = pin.dataProvider
+							local poiID = pin.poiInfo and pin.poiInfo.areaPoiID
+							local hubName = pin.name or (pin.poiInfo and pin.poiInfo.name)
+							print(strformat('HUB #%d: name=%s areaPoiID=%s mapID=%s',
+								i, tostring(hubName), tostring(poiID), tostring(pin.lastOwningMapID)))
+							-- Dump questHubs
+							if dp and dp.questHubs then
+								print(strformat('  questHubs:'))
+								for hk, hv in pairs(dp.questHubs) do
+									if type(hv) == 'table' then
+										print(strformat('    [%s]:', tostring(hk)))
+										for k2, v2 in pairs(hv) do
+											if type(v2) ~= 'function' and type(v2) ~= 'table' then
+												print(strformat('      %s = %s', tostring(k2), tostring(v2)))
+											end
+										end
+									else
+										print(strformat('    [%s] = %s', tostring(hk), tostring(hv)))
+									end
+								end
+							end
+							-- Dump questOffers
+							if dp and dp.questOffers then
+								print(strformat('  questOffers:'))
+								for ok2, ov in pairs(dp.questOffers) do
+									if type(ov) == 'table' then
+										print(strformat('    [%s]:', tostring(ok2)))
+										for k3, v3 in pairs(ov) do
+											if type(v3) ~= 'function' and type(v3) ~= 'table' then
+												print(strformat('      %s = %s', tostring(k3), tostring(v3)))
+											end
+										end
+									else
+										print(strformat('    [%s] = %s', tostring(ok2), tostring(ov)))
+									end
+								end
+							end
+							-- relatedQuests
+							if pin.relatedQuests and next(pin.relatedQuests) then
+								print('  relatedQuests:')
+								for rk, rv in pairs(pin.relatedQuests) do
+									print(strformat('    [%s] = %s', tostring(rk), tostring(rv)))
+								end
+							end
+						end
+					end)
+					-- >>>QUESTPIN_DEBUG_END
+					-- >>>QUESTPIN_DEBUG
+					self:RegisterSlashOption("taskquests", "|cFF00FF00taskquests|r => dumps C_TaskQuest data for current map", function()
+						local mapID = C_Map.GetBestMapForUnit('player')
+						local frame = ChatFrame1
+						local function p(s) frame:AddMessage(s) end
+						p(strformat('TASKQUEST_SCAN: mapID=%d', mapID))
+						-- C_TaskQuest.GetQuestsOnMap
+						if C_TaskQuest and C_TaskQuest.GetQuestsOnMap then
+							local tasks = C_TaskQuest.GetQuestsOnMap(mapID)
+							p(strformat('  GetQuestsOnMap: %d entries', tasks and #tasks or 0))
+							for _, q in ipairs(tasks or {}) do
+								p(strformat('  questID=%s x=%.2f y=%.2f inProgress=%s numObjectives=%s',
+									tostring(q.questID), (q.x or 0)*100, (q.y or 0)*100,
+									tostring(q.inProgress), tostring(q.numObjectives)))
+							end
+						end
+						-- C_TaskQuest.GetQuestsForPlayerByMapID
+						if C_TaskQuest and C_TaskQuest.GetQuestsForPlayerByMapID then
+							local tasks2 = C_TaskQuest.GetQuestsForPlayerByMapID(mapID)
+							p(strformat('  GetQuestsForPlayerByMapID: %d entries', tasks2 and #tasks2 or 0))
+							for _, q in ipairs(tasks2 or {}) do
+								p(strformat('  questID=%s x=%.2f y=%.2f inProgress=%s',
+									tostring(q.questID), (q.x or 0)*100, (q.y or 0)*100, tostring(q.inProgress)))
+							end
+						end
+						-- WorldMap pool: QuestBlobPinTemplate
+						if WorldMapFrame and WorldMapFrame.pinPools then
+							local pool = WorldMapFrame.pinPools['QuestBlobPinTemplate']
+							if pool then
+								local pins = {}
+								pcall(function() for pin in pool:EnumerateActive() do table.insert(pins, pin) end end)
+								if #pins == 0 and pool.activeObjects then
+									for pin in pairs(pool.activeObjects) do table.insert(pins, pin) end
+								end
+								p(strformat('  QuestBlobPinTemplate: %d active', #pins))
+								for _, pin in ipairs(pins) do
+									p(strformat('  pin: questID=%s', tostring(pin.questID)))
+									for k,v in pairs(pin) do
+										if type(v) ~= 'function' and type(v) ~= 'table' then
+											p(strformat('    %s=%s', tostring(k), tostring(v)))
+										end
+									end
+								end
+							end
+						end
+					end)
+					self:RegisterSlashOption("questpins", "|cFF00FF00questpins|r |cFFFF8C00[questID]|r => dumps all quest pins, or diagnoses a specific questID", function(msg)
+						local diagID = tonumber(strtrim(strsub(msg, 10)))
+						print(strformat('questpins: msg=%q diagID=%s', msg, tostring(diagID)))
+						if diagID then
+							-- Single quest diagnosis
+							print(strformat('QUESTPIN_DIAG: questID=%d', diagID))
+							print(strformat('  IsQuestFlaggedCompleted: %s', tostring(C_QuestLog.IsQuestFlaggedCompleted and C_QuestLog.IsQuestFlaggedCompleted(diagID))))
+							print(strformat('  IsOnQuest: %s', tostring(C_QuestLog.IsOnQuest and C_QuestLog.IsOnQuest(diagID))))
+							print(strformat('  IsComplete: %s', tostring(C_QuestLog.IsComplete and C_QuestLog.IsComplete(diagID))))
+							local info = C_QuestLog.GetQuestInfo and C_QuestLog.GetQuestInfo(diagID)
+							if info then
+								print(strformat('  GetQuestInfo: title=%s isCampaign=%s isHidden=%s',
+									tostring(info.title), tostring(info.isCampaign), tostring(info.isHidden)))
+							else print('  GetQuestInfo: nil') end
+							local details = C_QuestLog.GetQuestDetails and C_QuestLog.GetQuestDetails(diagID)
+							if details then
+								print(strformat('  GetQuestDetails: %s', tostring(details)))
+							else print('  GetQuestDetails: nil/not found') end
+							local mapID = C_Map.GetBestMapForUnit('player')
+							local waypointInfo = C_QuestLog.GetQuestObjectivesForPin and C_QuestLog.GetQuestObjectivesForPin(diagID, mapID)
+							if waypointInfo then
+								print(strformat('  GetQuestObjectivesForPin: %s', tostring(waypointInfo)))
+							else print('  GetQuestObjectivesForPin: nil') end
+							-- Check if visible in GetQuestsOnMap across map hierarchy
+							local mid = mapID
+							for d = 1, 5 do
+								if not mid then break end
+								local pins = C_QuestLog.GetQuestsOnMap and C_QuestLog.GetQuestsOnMap(mid)
+								if pins then
+									for _, p in ipairs(pins) do
+										if p.questID == diagID then
+											print(strformat('  FOUND in GetQuestsOnMap mapID=%d x=%.2f y=%.2f', mid, (p.x or 0)*100, (p.y or 0)*100))
+										end
+									end
+								end
+								local mi = C_Map.GetMapInfo(mid)
+								mid = mi and mi.parentMapID
+							end
+							-- Check C_QuestLine (campaign quest lines)
+							if C_QuestLine then
+								local _mid = C_Map.GetBestMapForUnit('player')
+								if C_QuestLine.GetQuestLineInfo then
+									local qli = C_QuestLine.GetQuestLineInfo(diagID, _mid)
+									print(strformat('  C_QuestLine.GetQuestLineInfo: %s', qli and strformat('questLineID=%s name=%s', tostring(qli.questLineID), tostring(qli.questLineName)) or 'nil'))
+								end
+								if C_QuestLine.GetAvailableQuestLines then
+									local qlines = C_QuestLine.GetAvailableQuestLines(_mid)
+									if qlines then
+										for _, ql in ipairs(qlines) do
+											print(strformat('  QuestLine: id=%s name=%s', tostring(ql.questLineID), tostring(ql.questLineName)))
+										end
+									else print('  GetAvailableQuestLines: nil') end
+								end
+							end
+							-- Check C_CampaignInfo
+							if C_CampaignInfo then
+								if C_CampaignInfo.GetCampaignInfo then
+									local ok, ci = pcall(C_CampaignInfo.GetCampaignInfo, diagID)
+									print(strformat('  C_CampaignInfo.GetCampaignInfo: %s', (ok and ci) and tostring(ci) or 'nil'))
+								end
+							end
+							-- Check C_QuestLog.GetAllCompletedQuestIDs nearby
+							if C_QuestLog.RequestLoadQuestByID then
+								C_QuestLog.RequestLoadQuestByID(diagID)
+								print(strformat('  RequestLoadQuestByID(%d): called (check QUEST_DATA_LOAD_RESULT)', diagID))
+							end
+							-- Check WorldMap pools - dump ALL active pins in ALL pools
+							local _ppos = C_Map.GetPlayerMapPosition(C_Map.GetBestMapForUnit('player'), 'player')
+							local _playerX = _ppos and _ppos.x*100 or 0
+							local _playerY = _ppos and _ppos.y*100 or 0
+							-- Check pools regardless of IsShown (addons may replace the map frame)
+							if WorldMapFrame and WorldMapFrame.pinPools then
+								print(strformat('  Player map pos: %.2f, %.2f isShown=%s', _playerX, _playerY, tostring(WorldMapFrame:IsShown())))
+								for poolKey, pool in pairs(WorldMapFrame.pinPools) do
+									-- Collect pins - try multiple pool iteration methods
+									local _pins = {}
+									if pool then
+										if pool.activeObjects then
+											for pin in pairs(pool.activeObjects) do table.insert(_pins, pin) end
+										elseif type(pool.EnumerateActive) == 'function' then
+											local ok2, err = pcall(function() for pin in pool:EnumerateActive() do table.insert(_pins, pin) end end)
+											if not ok2 then print(strformat('  pool=%s EnumerateActive err=%s', poolKey, tostring(err))) end
+										elseif type(pool.GetPins) == 'function' then
+											local ok, result = pcall(function() return pool:GetPins() end)
+											if ok and type(result) == 'table' then
+												for pin in pairs(result) do table.insert(_pins, pin) end
+											end
+										end
+									end
+									if #_pins > 0 then
+										print(strformat('  pool=%s count=%d', poolKey, #_pins))
+										for _, pin in ipairs(_pins) do
+											local qid = pin.questID or (pin.questInfo and pin.questInfo.questID)
+											local x, y
+											if pin.normalizedX then x=pin.normalizedX*100; y=pin.normalizedY*100
+											elseif pin.GetNormalizedPosition then local px,py=pin:GetNormalizedPosition(); x=px and px*100; y=py and py*100 end
+											if qid == diagID then
+												print(strformat('    MATCHED questID=%s x=%s y=%s', tostring(qid), tostring(x), tostring(y)))
+												for k,v in pairs(pin) do
+													if type(v) ~= 'function' and type(v) ~= 'table' then
+														print(strformat('      pin.%s=%s', tostring(k), tostring(v)))
+													end
+												end
+											else
+												print(strformat('    pin: questID=%s x=%s y=%s', tostring(qid), tostring(x), tostring(y)))
+											end
+										end
+									end
+								end
+								-- Also dump ALL AreaPOIs without atlas filter
+								local _mapID = C_Map.GetBestMapForUnit('player')
+								if C_AreaPoiInfo and C_AreaPoiInfo.GetAreaPOIForMap then
+									local pois = C_AreaPoiInfo.GetAreaPOIForMap(_mapID)
+									if pois then
+										print(strformat('  ALL AreaPOIs mapID=%d count=%d', _mapID, #pois))
+										for _, poiID in ipairs(pois) do
+											local info = C_AreaPoiInfo.GetAreaPOIInfo(_mapID, poiID)
+											print(strformat('    POI: id=%s name=%s atlas=%s',
+												tostring(poiID), tostring(info and info.name), tostring(info and info.atlasName)))
+										end
+									end
+								end
+							end
+							return
+						end
+						-- Full scan (no questID given)
+						local playerMapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit('player')
+						local snapSize = 0
+						if self._persistentPinSnapshot then for _ in pairs(self._persistentPinSnapshot) do snapSize=snapSize+1 end end
+						print(strformat('QUESTPIN_SCAN: player mapID=%s persistentSnapshot=%d entries', tostring(playerMapID), snapSize))
+						-- Recent completed quests
+						local recentList = {}
+						if self._recentlyCompletedQuestIds then
+							for q in pairs(self._recentlyCompletedQuestIds) do table.insert(recentList, tostring(q)) end
+						end
+						print(strformat('  recentlyCompleted: %s', #recentList>0 and table.concat(recentList,',') or 'none'))
+						-- Scan current map + parent maps
+						local totalOffer, totalHub = 0, 0
+						local mapID = playerMapID
+						for depth = 1, 5 do
+							if not mapID then break end
+							local mapInfo = C_Map.GetMapInfo(mapID)
+							local offerCount, hubCount = 0, 0
+							if C_QuestLog and C_QuestLog.GetQuestsOnMap then
+								local pins = C_QuestLog.GetQuestsOnMap(mapID)
+								if pins then
+									for _, pin in ipairs(pins) do
+										local pinKey = strformat('offer:%d', pin.questID or 0)
+										local inSnap  = self._persistentPinSnapshot and self._persistentPinSnapshot[pinKey] ~= nil
+										local inLinks = false
+										if GrailDatabase.questPinLinks then
+											for k in pairs(GrailDatabase.questPinLinks) do
+												if strfind(k, pinKey, 1, true) then inLinks=true break end
+											end
+										end
+										print(strformat('    OFFER: questID=%s x=%.2f y=%.2f inSnapshot=%s linked=%s',
+											tostring(pin.questID), (pin.x or 0)*100, (pin.y or 0)*100, tostring(inSnap), tostring(inLinks)))
+										offerCount=offerCount+1; totalOffer=totalOffer+1
+									end
+								end
+							end
+							if C_AreaPoiInfo and C_AreaPoiInfo.GetAreaPOIForMap then
+								local pois = C_AreaPoiInfo.GetAreaPOIForMap(mapID)
+								if pois then
+									for _, poiID in ipairs(pois) do
+										local info = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
+										if info and info.atlasName and strfind(strlower(info.atlasName), 'quest') then
+											local pinKey = strformat('hub:%d', poiID)
+											local inSnap  = self._persistentPinSnapshot and self._persistentPinSnapshot[pinKey] ~= nil
+											print(strformat('    HUB: poiID=%s name=%s atlas=%s inSnapshot=%s',
+												tostring(poiID), tostring(info.name), tostring(info.atlasName), tostring(inSnap)))
+											hubCount=hubCount+1; totalHub=totalHub+1
+										end
+									end
+								end
+							end
+							print(strformat('  mapID=%d name=%s: offer=%d hub=%d',
+								mapID, tostring(mapInfo and mapInfo.name), offerCount, hubCount))
+							mapID = mapInfo and mapInfo.parentMapID
+						end
+						print(strformat('QUESTPIN_SCAN: total offer=%d hub=%d', totalOffer, totalHub))
+						-- Active WorldMap pin pools (only if map open)
+						if WorldMapFrame and WorldMapFrame:IsShown() and WorldMapFrame.pinPools then
+							local targetPools = { QuestOfferPinTemplate='campaign_offer', QuestBlobPinTemplate='blob', QuestHubPinTemplate='hub', QuestPinTemplate='active' }
+							for poolKey, pinType in pairs(targetPools) do
+								local pool = WorldMapFrame.pinPools[poolKey]
+								if pool and pool.activeObjects then
+									for pin in pairs(pool.activeObjects) do
+										local qid = pin.questID or (pin.questInfo and pin.questInfo.questID)
+										local x, y
+										if pin.normalizedX then x=pin.normalizedX; y=pin.normalizedY
+										elseif pin.GetNormalizedPosition then x,y=pin:GetNormalizedPosition() end
+										local inSnap = self._persistentPinSnapshot and qid and self._persistentPinSnapshot[strformat('offer:%d',qid)] ~= nil
+										print(strformat('  POOL %s: questID=%s x=%s y=%s inSnapshot=%s',
+											pinType, tostring(qid),
+											x and strformat('%.2f',x*100) or '?',
+											y and strformat('%.2f',y*100) or '?',
+											tostring(inSnap)))
+									end
+								end
+							end
+						else
+							print('  WorldMap not open - open map and run /grail questpins for pool scan')
+						end
+					end)
+
 					self:RegisterSlashOption("vignettes", "|cFF00FF00vignettes|r => dumps all known vignettes on the current map with coordinates and distance to player", function()
 						local mapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit('player')
 						if not mapID then print('vignettes: no map') return end
@@ -2458,6 +2990,8 @@ experimental = false,	-- currently this implementation does not reduce memory si
 					-- Manual vignette link: /grail viglink <guid> <name> <rep> <coords>
 					-- Example: /grail viglink Vignette-0-2012-2694-261-7195-000069CAE1 "Leuchtende Motte" "Hara'ti+2500" 2413:50.83,53.30
 					self:RegisterSlashOption("viglink ", "|cFF00FF00viglink|r |cFFFF8C00guid name rep coords|r => manually records a vignette-rep or vignette-quest link", function(msg)
+						-- Skip if this is a 'viglink all' call
+						if strsub(msg, 1, 11) == 'viglink all' then return end
 						-- Parse: first token=guid, then quoted or unquoted name, then rep/quest, then coords
 						local guid, rest = strmatch(strsub(msg, 9), '^(%S+)%s+(.*)')
 						if not guid then
@@ -2482,11 +3016,11 @@ experimental = false,	-- currently this implementation does not reduce memory si
 						local msg
 						if questId then
 							local _src = strformat('quests=%s | coords=%s', source, coords)
-							msg = self:_IsNewVignetteLink(guid, _src)
+							msg = self:_IsNewVignetteLink(guid, _src, name)
 								and strformat('VIGNETTE_QUEST_LINK (manual): vignette=%s name=%s | %s', guid, name, _src) or nil
 						else
 							local _src = strformat('rep=%s | coords=%s', source, coords)
-							msg = self:_IsNewVignetteLink(guid, _src)
+							msg = self:_IsNewVignetteLink(guid, _src, name)
 								and strformat('VIGNETTE_REP_LINK (manual): vignette=%s name=%s | %s', guid, name, _src) or nil
 						end
 						if msg then
@@ -2517,7 +3051,7 @@ experimental = false,	-- currently this implementation does not reduce memory si
 							table.insert(questSources, questFilter)
 						else
 							for qId, qTime in pairs(self._recentlyCompletedUnlinkedQuests or {}) do
-								if (now - qTime) <= 120 then table.insert(questSources, tostring(qId)) end
+								if (now - qTime) <= 200 then table.insert(questSources, tostring(qId)) end
 							end
 						end
 						if repFilter then
@@ -2548,14 +3082,14 @@ experimental = false,	-- currently this implementation does not reduce memory si
 								end
 								for _, qId in ipairs(questSources) do
 									local _src = strformat('quests=%s | coords=%s', qId, coordStr)
-									if self:_IsNewVignetteLink(guid, _src) then
+									if self:_IsNewVignetteLink(guid, _src, name) then
 										local m = strformat('VIGNETTE_QUEST_LINK (manual): vignette=%s name=%s | %s', guid, name, _src)
 										print(m) self:_AddTrackingMessage(m) count = count + 1
 									end
 								end
 								for _, rep in ipairs(repSources) do
 									local _src = strformat('rep=%s | coords=%s', rep, coordStr)
-									if self:_IsNewVignetteLink(guid, _src) then
+									if self:_IsNewVignetteLink(guid, _src, name) then
 										local m = strformat('VIGNETTE_REP_LINK (manual): vignette=%s name=%s | %s', guid, name, _src)
 										print(m) self:_AddTrackingMessage(m) count = count + 1
 									end
@@ -2679,13 +3213,63 @@ frame:RegisterEvent("GOSSIP_ENTER_CODE")	-- gossipIndex
 					if C_QuestLog.GetQuestsOnMap then
 						WorldMapFrame:HookScript("OnShow", function()
 							local mapID = WorldMapFrame:GetMapID()
-							C_Timer.After(0.5, function()
+							C_Timer.After(2.0, function()
 								self:_ScanMapQuestPins(mapID)
+								-- >>>QUESTPIN_DEBUG: diff against persistent snapshot when map opens after quest turnin
+								if nil ~= self._recentlyCompletedQuestIds then
+									local now = GetTime()
+									local recentQuests = {}
+									for qId, qTime in pairs(self._recentlyCompletedQuestIds) do
+										if (now - qTime) <= 30 then table.insert(recentQuests, tostring(qId)) end
+									end
+									if #recentQuests > 0 then
+										local detail = strformat('quests=%s', table.concat(recentQuests, ','))
+										local _pinNow = self:_QuestPinPoolSnapshot()
+										local _poolNow = self:_QuestPinPoolSnapshot()
+										self:_QuestPinCompareAndRecord(self._persistentPinSnapshot or {}, _poolNow,
+											'WORLD_MAP_OPEN', detail)
+										self._persistentPinSnapshot = _poolNow
+										print(strformat('QUESTPIN_MAP_OPEN: scanned mapID=%d recent_quests=%s', mapID, table.concat(recentQuests, ',')))
+											-- Check recently accepted quests
+											if nil ~= self._recentlyAcceptedQuestIds then
+												local _nowAccept = GetTime()
+												local acceptList = {}
+												for qId, qTime in pairs(self._recentlyAcceptedQuestIds) do
+													if (_nowAccept - qTime) <= 30 then table.insert(acceptList, tostring(qId)) end
+												end
+												if #acceptList > 0 then
+													local _base2 = self._questPinAcceptSnapshotBefore or {}
+													local _poolNow2 = self:_QuestPinPoolSnapshot()
+													local detail2 = strformat('accept_quests=%s', table.concat(acceptList, ','))
+													self:_QuestPinCompareAndRecord(_base2, _poolNow2, 'WORLD_MAP_OPEN_ACCEPT', detail2)
+													print(strformat('QUESTPIN_MAP_OPEN: scanned mapID=%d recent_accepts=%s', mapID, table.concat(acceptList, ',')))
+												end
+											end
+									end
+								end
+								-- >>>QUESTPIN_DEBUG_END
 							end)
 						end)
 						hooksecurefunc(WorldMapFrame, "SetMapID", function(_, mapID)
-							C_Timer.After(0.5, function()
+							C_Timer.After(2.0, function()
 								self:_ScanMapQuestPins(mapID)
+								-- >>>QUESTPIN_DEBUG: diff on map navigation if recent quest turnin
+								if nil ~= self._recentlyCompletedQuestIds then
+									local now = GetTime()
+									local recentQuests = {}
+									for qId, qTime in pairs(self._recentlyCompletedQuestIds) do
+										if (now - qTime) <= 30 then table.insert(recentQuests, tostring(qId)) end
+									end
+									if #recentQuests > 0 then
+										local detail = strformat('quests=%s', table.concat(recentQuests, ','))
+										local _pinNow = self:_QuestPinPoolSnapshot()
+										local _poolNow2 = self:_QuestPinPoolSnapshot()
+										self:_QuestPinCompareAndRecord(self._persistentPinSnapshot or {}, _poolNow2,
+											'WORLD_MAP_SETMAPID', detail)
+										self._persistentPinSnapshot = _poolNow2
+									end
+								end
+								-- >>>QUESTPIN_DEBUG_END
 							end)
 						end)
 					end
@@ -2885,16 +3469,21 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					self:_ProcessServerCompare(newlyCompleted)
 					for _, qId in pairs(newlyCompleted) do
 						self:_MarkQuestComplete(qId, true)
-						local msg = strformat('GOSSIP_DEBUG CLOSED_COMPLETE: quest=%d npc=%s(%s) coords=%s',
-							qId, tostring(ctx.targetName), tostring(ctx.npcId), tostring(ctx.coordinates))
+						local msg = strformat('GOSSIP_DEBUG CLOSED_COMPLETE: quest=%d npc=%s(%s) option=%s(id=%s) coords=%s',
+							qId, tostring(ctx.targetName), tostring(ctx.npcId),
+							tostring(ctx.lastOptionName), tostring(ctx.lastOptionID), tostring(ctx.coordinates))
 						print(msg)
 						self:_AddTrackingMessage(msg)
+						self:_RecordGossipQuestLink(qId,
+							ctx.npcId, ctx.targetName,
+							ctx.lastOptionName, ctx.lastOptionID, ctx.coordinates)
 					end
 					if #newlyCompleted == 0 then
 					end
 					self:_ProcessServerBackup(true)
 					-- Keep context briefly for async quest completion detection
-					self._lastGossipContext = { targetName=ctx.targetName, npcId=ctx.npcId, coordinates=ctx.coordinates, time=GetTime() }
+					self._lastGossipContext = { targetName=ctx.targetName, npcId=ctx.npcId, coordinates=ctx.coordinates, time=GetTime(),
+						lastOptionName=ctx.lastOptionName, lastOptionID=ctx.lastOptionID }
 					self._gossipDebugContext = nil
 				end
 				-- >>>GOSSIP_DEBUG_END
@@ -3137,6 +3726,30 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				-- >>>WARBAND_DEBUG
 				self:_CheckWarbandQuestChanges('PLAYER_ENTERING_WORLD')
 				-- >>>WARBAND_DEBUG_END
+				-- >>>QUESTPIN_DEBUG: scan for new pins after zone change if quest was recently turned in
+				if nil ~= self._recentlyCompletedQuestIds then
+					local now = GetTime()
+					local recentQuests = {}
+					for qId, qTime in pairs(self._recentlyCompletedQuestIds) do
+						if (now - qTime) <= 200 then table.insert(recentQuests, tostring(qId)) end
+					end
+					if #recentQuests > 0 then
+						local _self = self
+						local detail = strformat('quests=%s', table.concat(recentQuests, ','))
+						for _, delay in ipairs({1.0, 3.0}) do
+							C_Timer.After(delay, function()
+								local _poolNow = _self:_QuestPinPoolSnapshot()
+								local cnt = _self:_QuestPinCompareAndRecord(_self._persistentPinSnapshot or {}, _poolNow,
+									'PLAYER_ENTERING_WORLD', detail)
+								if cnt > 0 then
+									print(strformat('QUESTPIN_ZONE_CHANGE: found=%d delay=%.1fs %s', cnt, delay, detail))
+								end
+								_self._persistentPinSnapshot = _poolNow
+						end)
+						end
+					end
+				end
+				-- >>>QUESTPIN_DEBUG_END
 			end,
 
 			-- Note that the new level is recorded here, because during processing of this event calls to UnitLevel('player')
@@ -3220,6 +3833,63 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				if self.GDE.debug then
 					self:_CoalesceDelayedNotification("QuestAcceptCheck", 1.0, theQuestId)
 				end
+				-- >>>QUESTPIN_DEBUG: track accepted quest for pin correlation
+				self._recentlyAcceptedQuestIds = self._recentlyAcceptedQuestIds or {}
+				self._recentlyAcceptedQuestIds[theQuestId] = GetTime()
+				-- Take pool snapshot before new pins appear
+				if not self._questPinAcceptSnapshotBefore then
+					self._questPinAcceptSnapshotBefore = self._persistentPinSnapshot or self:_QuestPinPoolSnapshot()
+				end
+				-- Delayed scans for pins that appear/disappear after quest accept
+				local _acceptedId = theQuestId
+				local _self = self
+				local _acceptBase = self._questPinAcceptSnapshotBefore
+				if C_Timer and C_Timer.After then
+					for _, delay in ipairs({1.0, 3.0, 7.0, 15.0}) do
+						C_Timer.After(delay, function()
+							local _pinNow = _self:_QuestPinPoolSnapshot()
+							local _found = 0
+							local detail = strformat('quest=%d delay=%.1fs', _acceptedId, delay)
+							-- Appeared pins
+							for key, info in pairs(_pinNow) do
+								if not _acceptBase[key] then
+									_found = _found + 1
+									_self:_QuestPinCompareAndRecord({}, { [key]=info },
+										'QUEST_ACCEPTED_DELAYED', detail)
+									_self:_RecordQuestPinLink(key, info.pinType, info.name,
+										strformat('accept:%d', _acceptedId), info.coords)
+									print(strformat('QUESTPIN_ACCEPT: appeared pin=%s name=%s after %.1fs (quest=%d)',
+										key, tostring(info.name), delay, _acceptedId))
+									_acceptBase[key] = info
+								end
+							end
+							-- Disappeared pins (only check at 1s)
+							if delay == 1.0 then
+								for key, info in pairs(_acceptBase) do
+									if not _pinNow[key] then
+										_self:_QuestPinCompareAndRecord({ [key]=info }, {},
+											'QUEST_ACCEPTED_DELAYED', detail)
+										_self:_RecordQuestPinLink(key, info.pinType, info.name,
+											strformat('accept:%d|disappeared', _acceptedId), info.coords)
+										print(strformat('QUESTPIN_ACCEPT: disappeared pin=%s after %.1fs (quest=%d)',
+											key, delay, _acceptedId))
+									end
+								end
+							end
+							local _nowSize, _baseSize = 0, 0
+							for _ in pairs(_pinNow) do _nowSize=_nowSize+1 end
+							for _ in pairs(_acceptBase) do _baseSize=_baseSize+1 end
+							print(strformat('QUESTPIN_ACCEPT_DELAYED: %.1fs quest=%d found=%d now=%d base=%d',
+								delay, _acceptedId, _found, _nowSize, _baseSize))
+							_self._persistentPinSnapshot = _pinNow
+						end)
+					end
+					-- Reset accept snapshot after last delay
+					C_Timer.After(16.0, function()
+						_self._questPinAcceptSnapshotBefore = nil
+					end)
+				end
+				-- >>>QUESTPIN_DEBUG_END
 
 			end,
 
@@ -3307,12 +3977,71 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				self._vignetteSnapshotLabel  = nil
 				-- >>>VIGNETTE_DEBUG_END
 				-- >>>QUESTPIN_DEBUG
-				if nil ~= self._questPinSnapshotBefore then
-					self:_QuestPinCompareAndRecord(self._questPinSnapshotBefore, self:_QuestPinSnapshot(),
-						self._questPinTrigger or 'QUEST_REMOVED', self._questPinTriggerDetail)
-					self._questPinSnapshotBefore, self._questPinTrigger, self._questPinTriggerDetail = nil, nil, nil
+				do
+					local _poolCurrent = self:_QuestPinPoolSnapshot()
+					do
+						local _bSize, _pSize = 0, 0
+						if self._questPinSnapshotBefore then for _ in pairs(self._questPinSnapshotBefore) do _bSize=_bSize+1 end end
+						for _ in pairs(_poolCurrent) do _pSize=_pSize+1 end
+						print(strformat('QUESTPIN_REMOVED_DEBUG: snapshotBefore=%s(%d) pool=%d trigger=%s',
+							tostring(self._questPinSnapshotBefore ~= nil), _bSize, _pSize, tostring(self._questPinTrigger)))
+					end
+					if nil ~= self._questPinSnapshotBefore then
+						self:_QuestPinCompareAndRecord(self._questPinSnapshotBefore, _poolCurrent,
+							self._questPinTrigger or 'QUEST_REMOVED', self._questPinTriggerDetail)
+						self._questPinSnapshotBefore, self._questPinTrigger, self._questPinTriggerDetail = nil, nil, nil
+					end
+					-- Update persistent snapshot (pool-only) so AREA_POIS_UPDATED can diff against it
+					self._persistentPinSnapshot = _poolCurrent
 				end
-				-- >>>QUESTPIN_DEBUG_END
+					-- >>>QUESTPIN_DEBUG: delayed scans to catch pins that appear after map opens
+					local _turnedInId = self.questTurningIn
+					-- Capture the before-snapshot once for all delays
+					local _delayedBase = self._persistentPinSnapshot or {}
+				local _self = self
+					if C_Timer and C_Timer.After then
+						for _, delay in ipairs({1.0, 3.0, 7.0, 15.0}) do
+							C_Timer.After(delay, function()
+								local _pinNow = _self:_QuestPinPoolSnapshot()
+								local _base   = _delayedBase
+								local _found  = 0
+								local _nowSize, _baseSize = 0, 0
+								for _ in pairs(_pinNow) do _nowSize=_nowSize+1 end
+								for _ in pairs(_base) do _baseSize=_baseSize+1 end
+								-- Check for appeared pins
+								for key, info in pairs(_pinNow) do
+									if not _base[key] then
+										_found = _found + 1
+										local detail = strformat('quest=%s delay=%.1fs', tostring(_turnedInId), delay)
+										local cnt = _self:_QuestPinCompareAndRecord({}, { [key]=info },
+											'QUEST_TURNED_IN_DELAYED', detail)
+										if cnt > 0 then
+											print(strformat('QUESTPIN_DELAYED: found pin=%s name=%s after %.1fs (quest=%s)',
+												key, tostring(info.name), delay, tostring(_turnedInId)))
+										end
+										_base[key] = info
+									end
+								end
+								-- Check for disappeared pins (pin was in persistent snapshot but gone now)
+								if delay == 1.0 then
+									local detail = strformat('quest=%s delay=%.1fs', tostring(_turnedInId), delay)
+									for key, info in pairs(_base) do
+										if not _pinNow[key] then
+											_self:_QuestPinCompareAndRecord({ [key]=info }, {},
+												'QUEST_TURNED_IN_DELAYED', detail)
+											print(strformat('QUESTPIN_DELAYED: disappeared pin=%s after %.1fs (quest=%s)',
+												key, delay, tostring(_turnedInId)))
+										end
+									end
+								end
+								print(strformat('QUESTPIN_DELAYED: %.1fs quest=%s found=%d now=%d base=%d',
+									delay, tostring(_turnedInId), _found, _nowSize, _baseSize))
+								-- Update persistent snapshot but not _delayedBase so later delays still catch new pins
+								_self._persistentPinSnapshot = _pinNow
+							end)
+						end
+					end
+					-- >>>QUESTPIN_DEBUG_END
 				self.questTurningIn = nil
 				self.pendingRepChanges = nil
 			end,
@@ -3333,9 +4062,13 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 				self._vignetteSnapshotLabel  = strformat('QUEST_TURNED_IN quest=%d', questId)
 				-- >>>VIGNETTE_DEBUG_END
 				-- >>>QUESTPIN_DEBUG
-				self._questPinSnapshotBefore = self:_QuestPinSnapshot()
+					-- Use persistent snapshot as before-state: pool pin is already gone when QUEST_TURNED_IN fires
+					self._questPinSnapshotBefore = self._persistentPinSnapshot or self:_QuestPinPoolSnapshot()
 				self._questPinTrigger        = 'QUEST_TURNED_IN'
 				self._questPinTriggerDetail  = strformat('quest=%d', questId)
+				-- Store pending quest for async pin→quest reverse lookup
+				self._recentlyCompletedQuestIds = self._recentlyCompletedQuestIds or {}
+				self._recentlyCompletedQuestIds[questId] = GetTime()
 				-- >>>QUESTPIN_DEBUG_END
 				-- Consume any rep changes buffered from CHAT_MSG_COMBAT_FACTION_CHANGE
 				-- (which fires before this event).
@@ -4799,6 +5532,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					Grail:_UpdateQuestDatabase(questId, questTitle, npcId, isDaily, 'A', nil, kCode, lCode)
 				end
 			end
+			Grail:_LearnKCodesForQuest(payload.questId or (payload.questIndex and Grail:GetQuestID(payload.questIndex)))
 			Grail:_AcceptQuestProcessingUpdateGroupCounts(payload.questId)
 			Grail:_AcceptQuestProcessingCompleteOnAccept(payload.questId)
 			Grail:_UpdateQuestResetTime()
@@ -9300,9 +10034,6 @@ end
 			end
 			self:_AddTrackingMessage(message)
 			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupMajorFactionQuests])
-			-- >>>QUESTPIN_DEBUG
-			local _pinBeforeUnlock = self:_QuestPinSnapshot()
-			-- >>>QUESTPIN_DEBUG_END
 			-- >>>VIGNETTE_DEBUG: use persistent snapshots; VIGNETTES_UPDATED may have already fired
 			local _label = strformat('MAJOR_FACTION_UNLOCKED faction=%s', tostring(factionId))
 			local _vigNow = self:_VignetteSnapshot()
@@ -9318,7 +10049,7 @@ end
 					if (_now - _vigInfo.time) <= 10 then
 						local _ucoords = _vigInfo.coords or tostring(self:Coordinates())
 						local _usrc = strformat('faction unlocked=%s | coords=%s', tostring(factionId), _ucoords)
-						if self:_IsNewVignetteLink(_vigInfo.guid, _usrc) then
+						if self:_IsNewVignetteLink(_vigInfo.guid, _usrc, _vigInfo.name) then
 							local _msg = strformat('VIGNETTE_REP_LINK (vig before unlock): vignette=%s name=%s | %s', _vigInfo.guid, tostring(_vigInfo.name), _usrc)
 							print(_msg)
 							self:_AddTrackingMessage(_msg)
@@ -9330,8 +10061,10 @@ end
 			end
 			-- >>>VIGNETTE_DEBUG_END
 			-- >>>QUESTPIN_DEBUG
-			self:_QuestPinCompareAndRecord(_pinBeforeUnlock, self:_QuestPinSnapshot(),
+			local _pinNow = self:_QuestPinPoolSnapshot()
+			self:_QuestPinCompareAndRecord(self._persistentPinSnapshot or {}, _pinNow,
 				'MAJOR_FACTION_UNLOCKED', strformat('faction=%s', tostring(factionId)))
+			self._persistentPinSnapshot = _pinNow
 			-- >>>QUESTPIN_DEBUG_END
 		end,
 
@@ -9342,9 +10075,6 @@ end
 			end
 			self:_AddTrackingMessage(message)
 			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupMajorFactionQuests])
-			-- >>>QUESTPIN_DEBUG
-			local _pinBeforeRenown = self:_QuestPinSnapshot()
-			-- >>>QUESTPIN_DEBUG_END
 			-- >>>VIGNETTE_DEBUG: use persistent snapshots; VIGNETTES_UPDATED may have already fired
 			local _label = strformat('MAJOR_FACTION_RENOWN_CHANGED faction=%s old=%s new=%s', tostring(factionId), tostring(oldRenownLevel), tostring(newRenownLevel))
 			local _vigNow = self:_VignetteSnapshot()
@@ -9360,7 +10090,7 @@ end
 					if (_now - _vigInfo.time) <= 10 then
 						local _rcoords = _vigInfo.coords or tostring(self:Coordinates())
 						local _rsrc = strformat('renown faction=%s level=%s | coords=%s', tostring(factionId), tostring(newRenownLevel), _rcoords)
-						if self:_IsNewVignetteLink(_vigInfo.guid, _rsrc) then
+						if self:_IsNewVignetteLink(_vigInfo.guid, _rsrc, _vigInfo.name) then
 							local _msg = strformat('VIGNETTE_REP_LINK (vig before renown): vignette=%s name=%s | %s', _vigInfo.guid, tostring(_vigInfo.name), _rsrc)
 							print(_msg)
 							self:_AddTrackingMessage(_msg)
@@ -9372,16 +10102,15 @@ end
 			end
 			-- >>>VIGNETTE_DEBUG_END
 			-- >>>QUESTPIN_DEBUG
-			self:_QuestPinCompareAndRecord(_pinBeforeRenown, self:_QuestPinSnapshot(),
+			local _pinNow = self:_QuestPinPoolSnapshot()
+			self:_QuestPinCompareAndRecord(self._persistentPinSnapshot or {}, _pinNow,
 				'MAJOR_FACTION_RENOWN_CHANGED', strformat('faction=%s old=%s new=%s',
 					tostring(factionId), tostring(oldRenownLevel), tostring(newRenownLevel)))
+			self._persistentPinSnapshot = _pinNow
 			-- >>>QUESTPIN_DEBUG_END
 		end,
 
 		_HandleEventAreaPOIsUpdated = function(self)
-			-- >>>QUESTPIN_DEBUG
-			local _pinBeforeAOI = self:_QuestPinSnapshot()
-			-- >>>QUESTPIN_DEBUG_END
 			self:_StatusCodeInvalidate(self.invalidateControl[self.invalidateGroupAreaPOIQuests])
 			-- >>>VIGNETTE_DEBUG
 			-- Use persistent snapshots: state has already changed when this fires
@@ -9389,9 +10118,34 @@ end
 			self:_VignetteCompareAndLog(self._persistentVigSnapshot or {}, _vigNow, 'AREA_POIS_UPDATED')
 			self._persistentVigSnapshot = _vigNow
 			-- >>>VIGNETTE_DEBUG_END
-			-- >>>QUESTPIN_DEBUG
-			self:_QuestPinCompareAndRecord(_pinBeforeAOI, self:_QuestPinSnapshot(),
-				'AREA_POIS_UPDATED', nil)
+			-- >>>QUESTPIN_DEBUG: use persistent snapshot so we catch pins that appeared before this event fired
+			local _pinNow = self:_QuestPinPoolSnapshot()
+			self:_QuestPinCompareAndRecord(self._persistentPinSnapshot or {}, _pinNow, 'AREA_POIS_UPDATED', nil)
+			self._persistentPinSnapshot = _pinNow
+			-- Delayed scans: pool may be populated after event fires
+			if C_Timer and C_Timer.After then
+				local _self = self
+				for _, delay in ipairs({1.0, 2.0}) do
+					C_Timer.After(delay, function()
+						local _nowPool = _self:_QuestPinPoolSnapshot()
+						local _recentQuests = {}
+						if _self._recentlyCompletedQuestIds then
+							for q, t in pairs(_self._recentlyCompletedQuestIds) do
+								if (GetTime() - t) <= 30 then table.insert(_recentQuests, tostring(q)) end
+							end
+						end
+						local detail = #_recentQuests > 0
+							and strformat('quests=%s delay=%.1fs', table.concat(_recentQuests,','), delay)
+							or strformat('delay=%.1fs', delay)
+						local cnt = _self:_QuestPinCompareAndRecord(_self._persistentPinSnapshot or {}, _nowPool,
+							'AREA_POIS_UPDATED_DELAYED', detail)
+						if cnt > 0 then
+							print(strformat('QUESTPIN_AOI_DELAYED: %.1fs found=%d %s', delay, cnt, detail))
+						end
+						_self._persistentPinSnapshot = _nowPool
+					end)
+				end
+			end
 			-- >>>QUESTPIN_DEBUG_END
 		end,
 
@@ -9403,18 +10157,43 @@ end
 		--	observation per quest is kept; later sightings overwrite earlier ones.
 		_ScanMapQuestPins = function(self, uiMapID)
 			if not uiMapID then return end
-			local pins = C_QuestLog.GetQuestsOnMap(uiMapID)
-			if not pins or #pins == 0 then return end
 			if nil == self.GDE.observedQuestLocations then
 				self.GDE.observedQuestLocations = {}
 			end
 			local locs = self.GDE.observedQuestLocations
-			for _, pin in ipairs(pins) do
-				local questID = tonumber(pin.questID)
-				if questID then
-					locs[questID] = {mapID = uiMapID, x = pin.x, y = pin.y}
+			-- Standard offer pins
+			local pins = C_QuestLog.GetQuestsOnMap(uiMapID)
+			if pins then
+				for _, pin in ipairs(pins) do
+					local questID = tonumber(pin.questID)
+					if questID then
+						locs[questID] = {mapID = uiMapID, x = pin.x, y = pin.y}
+						self:_LearnKCodesForQuest(questID)
+					end
 				end
 			end
+			-- Hub child quests (e.g. weekly quests inside QuestHub pins)
+			if WorldMapFrame and WorldMapFrame.pinPools then
+				local hubPool = WorldMapFrame.pinPools['QuestHubPinTemplate']
+				if hubPool then
+					local hubPins = {}
+					pcall(function() for pin in hubPool:EnumerateActive() do table.insert(hubPins, pin) end end)
+					for _, hpin in ipairs(hubPins) do
+						if hpin.dataProvider and hpin.dataProvider.questOffers then
+							for qid, qinfo in pairs(hpin.dataProvider.questOffers) do
+								local questID = tonumber(qid)
+								if questID then
+									locs[questID] = {mapID = uiMapID, x = qinfo.x, y = qinfo.y}
+									self:_LearnKCodesForQuest(questID)
+								end
+							end
+						end
+					end
+				end
+			end
+			-- >>>QUESTPIN_DEBUG: update persistent pin snapshot (pool-only) when map is scanned
+			self._persistentPinSnapshot = self:_QuestPinPoolSnapshot()
+			-- >>>QUESTPIN_DEBUG_END
 		end,
 
 		_HandleEventGarrisonBuildingActivated = function(self, buildingId)
@@ -9463,7 +10242,7 @@ end
 						if (now - vigInfo.time) <= 10 then
 							local _coords = vigInfo.coords or tostring(self:Coordinates())
 							local _src = strformat('rep=%s+%s | coords=%s', tostring(factionName), tostring(amount), _coords)
-							if self:_IsNewVignetteLink(vigInfo.guid, _src) then
+							if self:_IsNewVignetteLink(vigInfo.guid, _src, vigInfo.name) then
 								local msg = strformat('VIGNETTE_REP_LINK (vig before rep): vignette=%s name=%s | %s', vigInfo.guid, tostring(vigInfo.name), _src)
 								print(msg)
 								self:_AddTrackingMessage(msg)
@@ -9675,10 +10454,17 @@ end
 					for _, qId in pairs(newlyCompleted) do
 						table.insert(questList, tostring(qId))
 					end
+					-- Also include recently completed quests (may have been detected before loot)
+					if #questList == 0 and nil ~= self._recentlyCompletedQuestIds then
+						local now = GetTime()
+						for qId, qTime in pairs(self._recentlyCompletedQuestIds) do
+							if (now - qTime) <= 30 then table.insert(questList, tostring(qId)) end
+						end
+					end
 					local questStr = #questList > 0 and table.concat(questList, ',') or 'none'
 					local coords = Grail:Coordinates()
 					local _lootSrc = strformat('npcId=%s | quests=%s | coords=%s', tostring(lootNpcId), questStr, tostring(coords))
-					if self:_IsNewVignetteLink(vigInfo.guid, _lootSrc) then
+					if self:_IsNewVignetteLink(vigInfo.guid, _lootSrc, vigInfo.name) then
 						local msg = strformat(
 							'VIGNETTE_QUEST_LINK: vignette=%s name=%s | npcId=%s | quests=%s | coords=%s',
 							vigInfo.guid, tostring(vigInfo.name), tostring(lootNpcId), questStr, tostring(coords))
@@ -9687,6 +10473,21 @@ end
 					end
 					self._recentlyDisappearedVignettes[lootSpawnUID] = nil
 				end
+				-- No vignette match: log NPC+quest link directly from loot info
+				if nil == vigInfo and #newlyCompleted > 0 then
+					local questList = {}
+					for _, qId in pairs(newlyCompleted) do table.insert(questList, tostring(qId)) end
+					local coords = Grail:Coordinates()
+					local _src = strformat('npcId=%s | quests=%s | coords=%s',
+						tostring(lootNpcId), table.concat(questList, ','), tostring(coords))
+					local _syntheticGuid = strformat('Loot-%s', tostring(lootNpcId))
+					if self:_IsNewVignetteLink(_syntheticGuid, _src, self.lootingName) then
+						local msg = strformat('LOOT_QUEST_LINK: npcId=%s name=%s | quests=%s | coords=%s',
+							tostring(lootNpcId), tostring(self.lootingName), table.concat(questList, ','), tostring(coords))
+						print(msg)
+						self:_AddTrackingMessage(msg)
+					end
+				end
 			end
 			-- >>>VIGNETTE_DEBUG_END
 			self.GDE.silent, self.manuallyExecutingServerQuery = silentValue, manualValue
@@ -9694,7 +10495,7 @@ end
 
 		_HandleEventPlayerLevelUp = function(self)
 			-- >>>QUESTPIN_DEBUG
-			local _pinBefore = self:_QuestPinSnapshot()
+			local _pinBefore = self:_QuestPinPoolSnapshot()
 			-- >>>QUESTPIN_DEBUG_END
 			if nil ~= self.questStatusCache then
 				self:_StatusCodeInvalidate(self.questStatusCache["L"])
@@ -9706,7 +10507,7 @@ end
 				self:_PostDelayedNotification("PlayerLevelUp", self.levelingLevel, 1.0)
 			end
 			-- >>>QUESTPIN_DEBUG
-			self:_QuestPinCompareAndRecord(_pinBefore, self:_QuestPinSnapshot(),
+			self:_QuestPinCompareAndRecord(_pinBefore, self:_QuestPinPoolSnapshot(),
 				'PLAYER_LEVEL_UP', strformat('level=%s', tostring(self.levelingLevel)))
 			-- >>>QUESTPIN_DEBUG_END
 		end,
@@ -10916,6 +11717,7 @@ end
 				end
 				self:_UpdateQuestDatabase(questId, 'No Title Stored', npcId, false, 'T', version)
 				self:_RemoveWorldQuest(questId)
+				self:_LearnKCodesForQuest(questId)
 				-- >>>VIGNETTE_DEBUG: correlate with recently disappeared vignettes
 				do
 					local _now = GetTime()
@@ -10930,7 +11732,7 @@ end
 							if spawnUID ~= lootSpawnUID and (_now - vigInfo.time) <= 10 then
 								local _coords = vigInfo.coords or tostring(self:Coordinates())
 								local _src = strformat('quests=%s | coords=%s', tostring(v), _coords)
-								if self:_IsNewVignetteLink(vigInfo.guid, _src) then
+								if self:_IsNewVignetteLink(vigInfo.guid, _src, vigInfo.name) then
 									local msg = strformat('VIGNETTE_QUEST_LINK (no loot): vignette=%s name=%s | %s', vigInfo.guid, tostring(vigInfo.name), _src)
 									print(msg)
 									self:_AddTrackingMessage(msg)
@@ -10942,14 +11744,32 @@ end
 						if linked then self._recentlyCompletedUnlinkedQuests[v] = nil end
 					end
 				end
+				-- >>>QUESTPIN_DEBUG: reverse quest→pin lookup
+				self._recentlyCompletedQuestIds = self._recentlyCompletedQuestIds or {}
+				self._recentlyCompletedQuestIds[v] = GetTime()
+				-- Check if any pins appeared recently for this quest
+				if nil ~= self._recentlyAppearedPins then
+					local now = GetTime()
+					for pinKey, pinInfo in pairs(self._recentlyAppearedPins) do
+						if (now - pinInfo.time) <= 10 then
+							self:_RecordQuestPinLink(pinKey, pinInfo.pinType, pinInfo.name, tostring(v), pinInfo.coords)
+							self._recentlyAppearedPins[pinKey] = nil
+						end
+					end
+				end
+				-- >>>QUESTPIN_DEBUG_END
 				-- >>>GOSSIP_DEBUG: async gossip quest correlation
 				if nil ~= self._lastGossipContext and (GetTime() - self._lastGossipContext.time) <= 10 then
 					local gctx = self._lastGossipContext
-					local msg = strformat('GOSSIP_DEBUG CLOSED_COMPLETE (async): quest=%d npc=%s(%s) coords=%s',
-						v, tostring(gctx.targetName), tostring(gctx.npcId), tostring(gctx.coordinates))
+					local msg = strformat('GOSSIP_DEBUG CLOSED_COMPLETE (async): quest=%d npc=%s(%s) option=%s(id=%s) coords=%s',
+						v, tostring(gctx.targetName), tostring(gctx.npcId),
+						tostring(gctx.lastOptionName), tostring(gctx.lastOptionID), tostring(gctx.coordinates))
 					print(msg)
 					self:_AddTrackingMessage(msg)
-				end
+					self:_RecordGossipQuestLink(v,
+						gctx.npcId, gctx.targetName,
+						gctx.lastOptionName, gctx.lastOptionID, gctx.coordinates)
+					end
 				-- >>>GOSSIP_DEBUG_END
 				-- >>>VIGNETTE_DEBUG_END
 				self:_PostNotification("Complete", questId)
@@ -12256,6 +13076,8 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 		-- >>>WARBAND_DEBUG_BEGIN: detects account-wide quests completed while logged out
 		-- Remove entire block when no longer needed
 		_CheckWarbandQuestChanges = function(self, triggerEvent)
+			local _sv, _mv = self.GDE.silent, self.manuallyExecutingServerQuery
+			self.GDE.silent, self.manuallyExecutingServerQuery = true, false
 			QueryQuestsCompleted()
 			local db = GrailDatabasePlayer
 			local coords = tostring(self:Coordinates())
@@ -12307,36 +13129,232 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 		-- >>>WARBAND_DEBUG_END
 
 		-- >>>QUESTPIN_DEBUG_BEGIN: remove this entire block when no longer needed
-		_QuestPinSnapshot = function(self)
+		-- Pool-only snapshot: only includes pins currently visible in WorldMapFrame pools.
+		-- Use this for QUEST_PIN_LINK diffs to avoid false positives from GetQuestsOnMap.
+		_QuestPinPoolSnapshot = function(self)
 			local snapshot = {}
-			local mapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit('player')
-			if not mapID then return snapshot end
-			if C_QuestLog and C_QuestLog.GetQuestsOnMap then
-				local pins = C_QuestLog.GetQuestsOnMap(mapID)
-				if pins then
-					for _, pin in ipairs(pins) do
-						local qid = tonumber(pin.questID)
-						if qid then
-							snapshot[strformat('offer:%d', qid)] = {
-								questId = qid, pinType = 'offer',
-								coords  = strformat('%d:%.2f,%.2f', mapID, (pin.x or 0)*100, (pin.y or 0)*100),
-							}
+			local startMapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit('player')
+			if not startMapID then return snapshot end
+			-- Scan QuestHub dataProvider.questOffers
+			if WorldMapFrame and WorldMapFrame.pinPools then
+				local hubPool = WorldMapFrame.pinPools['QuestHubPinTemplate']
+				if hubPool then
+					local hubPins = {}
+					pcall(function() for pin in hubPool:EnumerateActive() do table.insert(hubPins, pin) end end)
+					for _, hpin in ipairs(hubPins) do
+						if hpin.dataProvider and hpin.dataProvider.questOffers then
+							for qid, qinfo in pairs(hpin.dataProvider.questOffers) do
+								qid = tonumber(qid)
+								if qid then
+									local key = strformat('offer:%d', qid)
+									if not snapshot[key] then
+										snapshot[key] = { questId=qid, pinType='hub_offer',
+											name=qinfo.questName,
+											hubPoiID=hpin.poiInfo and hpin.poiInfo.areaPoiID,
+											hubName=hpin.name or (hpin.poiInfo and hpin.poiInfo.name),
+											coords=strformat('%d:%.2f,%.2f', startMapID, (qinfo.x or 0)*100, (qinfo.y or 0)*100) }
+									end
+								end
+							end
+						end
+					end
+				end
+				-- Scan QuestOffer/QuestPin pools
+				local questPools = { QuestOfferPinTemplate=true, QuestPinTemplate=true }
+				for poolKey in pairs(questPools) do
+					local pool = WorldMapFrame.pinPools[poolKey]
+					if pool then
+						local _pins = {}
+						if pool.activeObjects then
+							for pin in pairs(pool.activeObjects) do table.insert(_pins, pin) end
+						elseif type(pool.EnumerateActive) == 'function' then
+							pcall(function() for pin in pool:EnumerateActive() do table.insert(_pins, pin) end end)
+						end
+						for _, pin in ipairs(_pins) do
+							local qid = pin.questID
+							if qid and qid > 0 then
+								local key = strformat('offer:%d', qid)
+								if not snapshot[key] then
+									snapshot[key] = { questId=qid,
+										pinType=pin.isCampaign and 'campaign_offer' or 'offer',
+										isCampaign=pin.isCampaign, questLineID=pin.questLineID,
+										questLineName=pin.questLineName, name=pin.questName,
+										coords=strformat('%d:%.2f,%.2f', startMapID,
+											(pin.normalizedX or 0)*100, (pin.normalizedY or 0)*100) }
+								end
+							end
 						end
 					end
 				end
 			end
-			if C_AreaPoiInfo and C_AreaPoiInfo.GetAreaPOIForMap then
-				local pois = C_AreaPoiInfo.GetAreaPOIForMap(mapID)
-				if pois then
-					for _, poiID in ipairs(pois) do
-						local info = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
-						if info and info.atlasName and strfind(info.atlasName, '[Qq]uest') then
-							snapshot[strformat('hub:%d', poiID)] = {
-								questId = poiID, pinType = 'hub', name = info.name, atlas = info.atlasName,
-								coords  = strformat('%d:%.2f,%.2f', mapID,
-									(info.position and info.position.x or 0)*100,
-									(info.position and info.position.y or 0)*100),
-							}
+			-- Scan C_TaskQuest.GetQuestsOnMap for Bonus Objectives / Task Quests
+			if C_TaskQuest and C_TaskQuest.GetQuestsOnMap then
+				local tasks = C_TaskQuest.GetQuestsOnMap(startMapID)
+				if tasks then
+					for _, task in ipairs(tasks) do
+						local qid = tonumber(task.questID)
+						if qid then
+							local key = strformat('task:%d', qid)
+							if not snapshot[key] then
+								snapshot[key] = {
+									questId    = qid,
+									pinType    = 'task',
+									inProgress = task.inProgress,
+									coords     = strformat('%d:%.2f,%.2f', startMapID,
+										(task.x or 0)*100, (task.y or 0)*100),
+								}
+							end
+						end
+					end
+				end
+			end
+			return snapshot
+		end,
+
+		_QuestPinSnapshot = function(self)
+			local snapshot = {}
+			local startMapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit('player')
+			if not startMapID then return snapshot end
+			-- Walk the full map hierarchy so parent-map pins are included
+			local mapID = startMapID
+			for depth = 1, 5 do
+				if not mapID then break end
+				if C_QuestLog and C_QuestLog.GetQuestsOnMap then
+					local pins = C_QuestLog.GetQuestsOnMap(mapID)
+					if pins then
+						for _, pin in ipairs(pins) do
+							local qid = tonumber(pin.questID)
+							if qid then
+								snapshot[strformat('offer:%d', qid)] = {
+									questId    = qid,
+									pinType    = pin.isCampaign and 'campaign_offer' or 'offer',
+									isCampaign = pin.isCampaign,
+									coords     = strformat('%d:%.2f,%.2f', mapID, (pin.x or 0)*100, (pin.y or 0)*100),
+								}
+							end
+						end
+					end
+				end
+				if C_AreaPoiInfo and C_AreaPoiInfo.GetAreaPOIForMap then
+					local pois = C_AreaPoiInfo.GetAreaPOIForMap(mapID)
+					if pois then
+						for _, poiID in ipairs(pois) do
+							local info = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
+							if info and info.atlasName and strfind(info.atlasName, '[Qq]uest') then
+								snapshot[strformat('hub:%d', poiID)] = {
+									questId = poiID, pinType = 'hub', name = info.name, atlas = info.atlasName,
+									coords  = strformat('%d:%.2f,%.2f', mapID,
+										(info.position and info.position.x or 0)*100,
+										(info.position and info.position.y or 0)*100),
+								}
+							end
+						end
+					end
+				end
+				local mapInfo = C_Map.GetMapInfo(mapID)
+				mapID = mapInfo and mapInfo.parentMapID
+			end
+			-- Scan QuestHub dataProvider.questOffers for hub-child quests (e.g. weekly quests)
+			if WorldMapFrame and WorldMapFrame.pinPools then
+				local hubPool = WorldMapFrame.pinPools['QuestHubPinTemplate']
+				if hubPool then
+					local hubPins = {}
+					pcall(function() for pin in hubPool:EnumerateActive() do table.insert(hubPins, pin) end end)
+					for _, hpin in ipairs(hubPins) do
+						local dp = hpin.dataProvider
+						if dp and dp.questOffers then
+							for qid, qinfo in pairs(dp.questOffers) do
+								qid = tonumber(qid)
+								if qid then
+									local key = strformat('offer:%d', qid)
+									if not snapshot[key] then
+										snapshot[key] = {
+											questId    = qid,
+											pinType    = 'hub_offer',
+											name       = qinfo.questName,
+											hubPoiID   = hpin.poiInfo and hpin.poiInfo.areaPoiID,
+											hubName    = hpin.name or (hpin.poiInfo and hpin.poiInfo.name),
+											coords     = strformat('%d:%.2f,%.2f', startMapID,
+												(qinfo.x or 0)*100, (qinfo.y or 0)*100),
+										}
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+			-- Scan active WorldMapFrame pools when map is open (captures campaign pins)
+			if WorldMapFrame and WorldMapFrame.pinPools then
+				local questPools = { QuestOfferPinTemplate=true, QuestHubPinTemplate=true, QuestPinTemplate=true }
+				for poolKey in pairs(questPools) do
+					local pool = WorldMapFrame.pinPools[poolKey]
+					if pool then
+						local _pins = {}
+						if pool.activeObjects then
+							for pin in pairs(pool.activeObjects) do table.insert(_pins, pin) end
+						elseif type(pool.EnumerateActive) == 'function' then
+							pcall(function() for pin in pool:EnumerateActive() do table.insert(_pins, pin) end end)
+						end
+						for _, pin in ipairs(_pins) do
+							local qid = pin.questID
+							if qid and qid > 0 then
+								local key = strformat('offer:%d', qid)
+								if not snapshot[key] then
+									snapshot[key] = {
+										questId       = qid,
+										pinType       = pin.isCampaign and 'campaign_offer' or 'offer',
+										isCampaign    = pin.isCampaign,
+										questLineID   = pin.questLineID,
+										questLineName = pin.questLineName,
+										name          = pin.questName,
+										coords        = strformat('%d:%.2f,%.2f', startMapID,
+											(pin.normalizedX or 0)*100, (pin.normalizedY or 0)*100),
+									}
+								end
+							end
+						end
+					end
+				end
+			end
+			-- Scan C_QuestLine for campaign quests not in GetQuestsOnMap
+			if C_QuestLine and C_QuestLine.GetAvailableQuestLines and C_QuestLine.GetQuestsForQuestLine then
+				local qlines = C_QuestLine.GetAvailableQuestLines(startMapID)
+				if qlines then
+					for _, ql in ipairs(qlines) do
+						local quests = C_QuestLine.GetQuestsForQuestLine(ql.questLineID, startMapID)
+						if quests then
+							for _, qinfo in ipairs(quests) do
+								local qid = qinfo.questID
+								if qid and not snapshot[strformat('offer:%d', qid)] then
+									snapshot[strformat('offer:%d', qid)] = {
+										questId      = qid,
+										pinType      = 'campaign_offer',
+										isCampaign   = true,
+										questLineID  = ql.questLineID,
+										questLineName= ql.questLineName,
+											name         = qinfo.questName or (C_QuestLog.GetTitleForQuestID and C_QuestLog.GetTitleForQuestID(qid)),
+										coords       = strformat('%d:%.2f,%.2f', startMapID,
+											(qinfo.x or 0)*100, (qinfo.y or 0)*100),
+									}
+								end
+							end
+						end
+					end
+				end
+			end
+			-- Scan C_TaskQuest.GetQuestsOnMap for Bonus Objectives / Task Quests
+			if C_TaskQuest and C_TaskQuest.GetQuestsOnMap then
+				local tasks = C_TaskQuest.GetQuestsOnMap(startMapID)
+				if tasks then
+					for _, task in ipairs(tasks) do
+						local qid = tonumber(task.questID)
+						if qid then
+							local key = strformat('task:%d', qid)
+							if not snapshot[key] then
+								snapshot[key] = { questId=qid, pinType='task', inProgress=task.inProgress,
+									coords=strformat('%d:%.2f,%.2f', startMapID, (task.x or 0)*100, (task.y or 0)*100) }
+							end
 						end
 					end
 				end
@@ -12345,12 +13363,13 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 		end,
 
 		_QuestPinCompareAndRecord = function(self, before, after, trigger, triggerDetail)
-			local db = GrailDatabasePlayer
+			local db = GrailDatabase
 			db.questPinEvents     = db.questPinEvents or {}
 			db.questPinEventIndex = db.questPinEventIndex or {}
 			local coords = tostring(self:Coordinates())
 			local now    = GetTime()
 			local count  = 0
+			local baseWasEmpty = (next(before) == nil)
 			for key, info in pairs(before) do
 				if not after[key] then
 					local idxKey = strformat('%s|disappeared|%s', key, trigger)
@@ -12364,6 +13383,17 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 							tostring(info.questId), tostring(info.pinType), trigger, tostring(triggerDetail), info.coords or coords)
 						print(msg)
 						self:_AddTrackingMessage(msg)
+						-- Link disappeared pin to the quest that triggered its removal
+						local pinQuestStr = 'none'
+						if nil ~= self._recentlyCompletedQuestIds then
+							local qList = {}
+							for qId, qTime in pairs(self._recentlyCompletedQuestIds) do
+								if (now - qTime) <= 10 then table.insert(qList, tostring(qId)) end
+							end
+							if #qList > 0 then pinQuestStr = table.concat(qList, ',') end
+						end
+						self:_RecordQuestPinLink(key, info.pinType, info.name,
+							strformat('%s|disappeared', pinQuestStr), info.coords or coords, baseWasEmpty)
 					end
 				end
 			end
@@ -12380,12 +13410,106 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 							tostring(info.questId), tostring(info.pinType), trigger, tostring(triggerDetail), info.coords or coords)
 						print(msg)
 						self:_AddTrackingMessage(msg)
+						-- Store for reverse quest→pin lookup in _MarkQuestComplete
+						self._recentlyAppearedPins = self._recentlyAppearedPins or {}
+						self._recentlyAppearedPins[key] = { pinType=info.pinType, name=info.name, coords=info.coords or coords, time=now }
+						-- Forward pin→quest link: check recent completed quests
+						local pinQuestStr = 'none'
+						if nil ~= self._recentlyCompletedQuestIds then
+							local qList = {}
+							for qId, qTime in pairs(self._recentlyCompletedQuestIds) do
+								if (now - qTime) <= 10 then table.insert(qList, tostring(qId)) end
+							end
+							if #qList > 0 then pinQuestStr = table.concat(qList, ',') end
+						end
+						self:_RecordQuestPinLink(key, info.pinType, info.name, pinQuestStr, info.coords or coords, baseWasEmpty)
 					end
 				end
 			end
 			return count
 		end,
+
+		_QuestPinLinkKey = function(self, pinKey, source)
+			return strformat('%s|%s', tostring(pinKey), tostring(source))
+		end,
+
+		_IsNewQuestPinLink = function(self, pinKey, source)
+			local db = GrailDatabase
+			if not self._questPinLinkIndexBuilt then
+				self._questPinLinkIndexBuilt = true
+				db.questPinLinks     = db.questPinLinks or {}
+				db.questPinGuidIndex = db.questPinGuidIndex or {}
+				if next(db.questPinLinks) == nil and db.Tracking then
+					for _, entry in ipairs(db.Tracking) do
+						local p, s = strmatch(entry, 'QUEST_PIN_LINK: pin=(%S+).-|%s*(%w[^|]+)%s*|%s*coords=')
+						if p and s then
+							local k = self:_QuestPinLinkKey(p, strtrim(s))
+							db.questPinLinks[k] = true
+							db.questPinGuidIndex[p] = k
+						end
+					end
+				end
+			end
+			local key = self:_QuestPinLinkKey(pinKey, source)
+			if db.questPinLinks[key] then return false end
+			-- Check for upgradeable entry (quests=none)
+			local existingKey = db.questPinGuidIndex and db.questPinGuidIndex[pinKey]
+			if existingKey and db.questPinLinks[existingKey] then
+				local incomplete = strfind(existingKey, 'quests=none', 1, true)
+				local hasQuest   = not strfind(source, 'quests=none', 1, true)
+				if incomplete and hasQuest then
+					db.questPinLinks[existingKey] = nil
+					db.questPinLinks[key] = true
+					db.questPinGuidIndex[pinKey] = key
+					if db.Tracking then
+						local oldPinPart = strformat('pin=%s', pinKey)
+						for i, entry in ipairs(db.Tracking) do
+							if strfind(entry, oldPinPart, 1, true) and strfind(entry, 'quests=none', 1, true) then
+								db.Tracking[i] = gsub(entry, 'quests=none', strformat('quests=%s [updated]', strmatch(source, 'quests=([^|]+)') or '?'))
+								print(strformat('QUEST_PIN_LINK_UPDATED: %s', db.Tracking[i]))
+								break
+							end
+						end
+					end
+					return true
+				end
+			end
+			db.questPinLinks[key] = true
+			db.questPinGuidIndex[pinKey] = key
+			return true
+		end,
+
+		-- Writes a QUEST_PIN_LINK entry if not already known.
+		_RecordQuestPinLink = function(self, pinKey, pinType, pinName, questStr, coords, baseWasEmpty)
+			-- Skip appeared pins with quests=none only when snapshot was empty (first map view)
+			if questStr == 'none' and baseWasEmpty and not strfind(tostring(pinKey), 'disappeared', 1, true) then return end
+			local source = strformat('quests=%s | coords=%s', questStr, tostring(coords))
+			if self:_IsNewQuestPinLink(pinKey, source) then
+				local msg = strformat('QUEST_PIN_LINK: pin=%s type=%s name=%s | %s',
+					tostring(pinKey), tostring(pinType), tostring(pinName), source)
+				print(msg)
+				self:_AddTrackingMessage(msg)
+			end
+		end,
+
 		-- >>>QUESTPIN_DEBUG_END
+
+		-- >>>GOSSIP_DEBUG
+		_RecordGossipQuestLink = function(self, questId, npcId, npcName, optionName, optionId, coords)
+			-- Skip if no gossip option was involved
+			if nil == optionId and nil == optionName then return end
+			local db = GrailDatabase
+			db.gossipQuestLinks = db.gossipQuestLinks or {}
+			local key = strformat('%d|%s|%s', questId, tostring(npcId), tostring(optionId))
+			if db.gossipQuestLinks[key] then return end
+			db.gossipQuestLinks[key] = true
+			local msg = strformat('GOSSIP_QUEST_LINK: quest=%d npc=%s(%s) option=%s(id=%s) coords=%s',
+				questId, tostring(npcName), tostring(npcId),
+				tostring(optionName), tostring(optionId), tostring(coords))
+			print(msg)
+			self:_AddTrackingMessage(msg)
+		end,
+		-- >>>GOSSIP_DEBUG_END
 
 		-- >>>VIGNETTE_DEBUG_BEGIN: remove this entire block when no longer needed
 		_VignetteSnapshot = function(self)
@@ -12438,42 +13562,7 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			end
 		end,
 
-		_VignetteCompareAndLog = function(self, before, after, label)
-			local disappeared, appeared = {}, {}
-			for guid, info in pairs(before) do
-				if not after[guid] then
-					table.insert(disappeared, strformat('GUID=%s name=%s type=%s', guid, tostring(info.name), tostring(info.vignetteType)))
-				end
-			end
-			for guid, info in pairs(after) do
-				if not before[guid] then
-					table.insert(appeared, strformat('GUID=%s name=%s type=%s', guid, tostring(info.name), tostring(info.vignetteType)))
-				end
-			end
-			-- Filter out known vignette types
-			local filteredGone, filteredNew = {}, {}
-			for _, s in ipairs(disappeared) do
-				local g = strmatch(s, 'GUID=(%S+)')
-				if not g or not self:_IsKnownVignetteType(g) then table.insert(filteredGone, s) end
-			end
-			for _, s in ipairs(appeared) do
-				local g = strmatch(s, 'GUID=(%S+)')
-				if not g or not self:_IsKnownVignetteType(g) then table.insert(filteredNew, s) end
-			end
-			if #filteredGone > 0 or #filteredNew > 0 then
-				local msg = strformat('VIGNETTE_DEBUG [%s]: disappeared=%d appeared=%d', label, #filteredGone, #filteredNew)
-				print(msg)
-				self:_AddTrackingMessage(msg)
-				for _, s in ipairs(filteredGone) do
-					print('  GONE: ' .. s)
-					self:_AddTrackingMessage('  GONE: ' .. s)
-				end
-				for _, s in ipairs(filteredNew) do
-					print('  NEW:  ' .. s)
-					self:_AddTrackingMessage('  NEW:  ' .. s)
-				end
-			end
-		end,
+		_VignetteCompareAndLog = function(self, before, after, label) end,
 		-- >>>VIGNETTE_DEBUG_END
 
 		-- >>>VIGNETTE_DEBUG_BEGIN
@@ -12490,7 +13579,7 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 		_IsKnownVignetteType = function(self, guid)
 			if not self._knownVignetteTypeIds then
 				self._knownVignetteTypeIds = {}
-				local db = GrailDatabasePlayer
+				local db = GrailDatabase
 				if db.vignetteLinks then
 					for key in pairs(db.vignetteLinks) do
 						local g = strmatch(key, '^([^|]+)')
@@ -12508,19 +13597,25 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 
 		-- Returns true if this vignette+source combo is new (and registers it).
 		-- On first call per session, rebuilds the index from GDE.Tracking.
-		_IsNewVignetteLink = function(self, guid, source)
-			local db = GrailDatabasePlayer
+		_IsNewVignetteLink = function(self, guid, source, name)
+			local db = GrailDatabase
+			-- vignetteLinks and vignetteGuidIndex are persistent in SavedVariables directly
+			db.vignetteLinks     = db.vignetteLinks or {}
+			db.vignetteGuidIndex = db.vignetteGuidIndex or {}
+			-- One-time migration: import vignette links from Tracking if not yet in vignetteLinks
 			if not self._vignetteLinkIndexBuilt then
 				self._vignetteLinkIndexBuilt = true
-				db.vignetteLinks     = db.vignetteLinks or {}
-				db.vignetteGuidIndex = db.vignetteGuidIndex or {}
-				if next(db.vignetteLinks) == nil and db.Tracking then
+				if db.Tracking then
 					for _, entry in ipairs(db.Tracking) do
-						local g, s = strmatch(entry, 'vignette=(%S+).-|%s*(%w[^|]+)%s*|%s*coords=')
-						if g and s then
-							local k = self:_VignetteLinkKey(g, strtrim(s))
-							db.vignetteLinks[k] = true
-							db.vignetteGuidIndex[g] = k
+						if strfind(entry, 'VIGNETTE_', 1, true) then
+							local g, s = strmatch(entry, 'vignette=(%S+).-|%s*(%w[^|]+)%s*|%s*coords=')
+							if g and s and strsub(g, 1, 9) == 'Vignette-' then
+								local k = self:_VignetteLinkKey(g, strtrim(s))
+								if not db.vignetteLinks[k] then
+									db.vignetteLinks[k] = true
+									db.vignetteGuidIndex[g] = db.vignetteGuidIndex[g] or k
+								end
+							end
 						end
 					end
 				end
@@ -12540,8 +13635,10 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 					self:_UpgradeVignetteLink(guid, existingKey, key)
 					return true
 				end
+					-- Valid complete entry exists for this GUID - skip
+					if not hasIncomplete then return false end
 			end
-			db.vignetteLinks[key] = true
+			db.vignetteLinks[key] = name or true
 			db.vignetteGuidIndex[guid] = key
 			if self._knownVignetteTypeIds then
 				local typeId = self:_VignetteTypeId(guid)
@@ -12552,9 +13649,10 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 
 		-- Replaces an incomplete vignette link with a better one in DB and Tracking log.
 		_UpgradeVignetteLink = function(self, guid, oldKey, newKey)
-			local db = GrailDatabasePlayer
+			local db = GrailDatabase
+			local oldName = db.vignetteLinks[oldKey]
 			db.vignetteLinks[oldKey] = nil
-			db.vignetteLinks[newKey] = true
+			db.vignetteLinks[newKey] = (type(oldName) == 'string' and oldName) or true
 			db.vignetteGuidIndex[guid] = newKey
 			-- Patch Tracking log: find old entry and replace with new message
 			if db.Tracking then
@@ -13000,6 +14098,7 @@ print("end:", strgsub(controlTable.something, "|", "*"))
 			else
 				self:UnregisterObserver("PlayerLevelUp")
 			end
+		self.GDE.silent, self.manuallyExecutingServerQuery = _sv, _mv
 		end,
 
 		_CloseTradeSkillUI = function(callbackType, questId)	-- these parameters are not used here
