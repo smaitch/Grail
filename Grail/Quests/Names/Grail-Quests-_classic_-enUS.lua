@@ -4192,7 +4192,6 @@ G[9026]='Tracing the Source'
 G[9027]='Tracing the Source'
 G[9028]='The Source Revealed'
 G[9029]='A Bubbling Cauldron'
-G[9030]="Anthion's Parting Words"
 G[9031]="<TXT>Anthion's Parting Words"
 G[9032]="Bodley's Unfortunate Fate"
 G[9033]='Echoes of War'
@@ -5297,6 +5296,7 @@ if Grail.expansion < 1 then return end
 
 G[7792]='A Donation of Wool'
 G[7798]='A Donation of Silk'
+G[9030]="Anthion's Parting Words"
 G[9278]='Welcome!'
 G[9279]='You Survived!'
 G[9280]='Replenishing the Healing Crystals'

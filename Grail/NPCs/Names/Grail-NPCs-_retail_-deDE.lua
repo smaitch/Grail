@@ -833,7 +833,7 @@ G[1271103]='Gebetsbildnis'
 end
 
 if release >= 65893 then
-G[1564925]='Shokku die Träumerin'
+G[1564925]='Überschüssiges Elementium'
 end
 
 if release >= 66044 then
@@ -847,6 +847,13 @@ end
 
 if release >= 66102 then
 G[1210005]='Waffenständer'
+end
+
+if release >= 66192 then
+G[1405593]='Archive von Azeroth!'
+G[1553558]='Kultistendolch'
+G[1570882]='Inaktiver Schattenkristall'
+G[1619217]='Überwältigter Leerenwirker'
 end
 
 if release >= 66198 then
@@ -1011,6 +1018,192 @@ G[1620318]='Ruias Lager'
 G[1620497]='Ruias Gedanken'
 G[1620498]='Ruias Gedanken'
 G[1629603]='Funkelnder Saatsack'
+end
+
+if release >= 66384 then
+G[1327407]='Wertvoller Ogerschatz'
+end
+
+if release >= 66741 then
+G[1113768]='Bunt gefärbtes Ei'
+G[1113769]='Bunt gefärbtes Ei'
+G[1273439]='Uralte Truhe der Eredar'
+G[1273833]="Herz von Nhal'athoth"
+G[1385958]='Rumble-Münzenbeutel'
+G[1387719]='Rumble-Folientasche'
+G[1433329]='Khadgars Portal'
+G[1444022]='Magische Schatztruhe'
+G[1444066]='Schatz des Hüters'
+G[1444894]='Schimmernde Opallilie'
+G[1508705]='Lenas Krug'
+G[1517146]='Fallen gelassene Notiz'
+G[1518640]='Speer der Lichtspitze'
+G[1519235]='Kunst und Architektur von Silbermond, Band 3'
+G[1519237]='Säckchen mit Kräutern'
+G[1519240]='Unscheinbare Flasche Wasser'
+G[1520354]='Versunkene Ladung'
+G[1523388]='Maraads Meditationskristall'
+G[1525898]='Abdeckkamm des Kunsthandwerkers'
+G[1525899]='Besonders bezauberndes Tischtuch'
+G[1525903]="Lineal des Sin'dorei-Ausstatters"
+G[1525904]='Ein richtig schöner Vorhang'
+G[1525946]="Verzauberkunstrute der Sin'dorei"
+G[1525947]='Loageweihter Staub'
+G[1525950]='Immerbrennender Sonnenpartikel'
+G[1525952]='Verzauberte Sonnenfeuerseide'
+G[1526810]='Verlorenes Tagebuch'
+G[1527218]='Erschöpfter Schutzbrecher'
+G[1527240]='Truhe des Magisters'
+G[1527363]='Korb voller Zauberreagenzien'
+G[1527364]='Pochender Anhänger'
+G[1527365]='Arkanes Schwert'
+G[1531508]='Aufgeladener Schutzbrecher'
+G[1539775]='Tundramammut des Reisenden'
+G[1547829]='Goldenes Sonnenblatt'
+G[1555178]='Truhe des Fachmanns'
+G[1555829]='Handbuch des Kräuterkundigen: Immersangheilkunde'
+G[1555830]='Rezeptverzeichnis des Waldläufertrupps, Band VII'
+G[1555832]='Lieder an die Silberbäche'
+G[1556758]='Abgefangene Lieferung'
+G[1556759]='Abgefangene Lieferung'
+G[1556760]='Abgefangene Lieferung'
+G[1556761]='Abgefangene Lieferung'
+G[1556762]='Abgefangene Lieferung'
+G[1566101]='Geöffnete Schließkassette'
+G[1568254]='Verstreute Vorräte'
+G[1568332]='BugSack'
+G[1568439]='Mysteriöse Blüte'
+G[1568515]='Mysteriöse Blüte'
+G[1571493]='Tintenschwarzer Trank'
+G[1577800]='Truhe des Fachmanns'
+G[1587443]='Schluri'
+G[1613252]='Dreifach verriegelte Truhe'
+G[1613267]='Verlorener Köcher des Weltenwanderers'
+G[1613269]='Lädierter Truhenschlüssel'
+G[1613271]='Abgenutzter Truhenschlüssel'
+G[1613272]='Befleckter Truhenschlüssel'
+G[1613697]='Geschenk des Phönix'
+G[1617237]='Versiegeltes Lager der Zwielichtklinge'
+G[1617375]='Tundramammut des Reisenden'
+G[1617881]='Horsttruhe'
+G[1619616]='Dornenkappe'
+G[1620206]='Truhenschlüssel des Horsts'
+G[1620533]='Verlorene Seite'
+G[1620537]='Verlorene Seite'
+G[1620538]='Verlorene Seite'
+end
+
+if release >= 67088 then
+G[1525374]='Ross des kopflosen Reiters'
+G[1525902]='Hölzernes Webschwert'
+G[1525905]='Ein Stofftier eines Kindes'
+G[1525948]='Urzeitliche Essenzkugel'
+G[1527670]='Holzschnitzer Azai'
+G[1528004]='Trauerkappen'
+G[1528034]='Chana'
+G[1529683]='Blasenhauttang'
+G[1548731]='Ross des kopflosen Reiters'
+G[1571128]='Leuchtende Motte'
+G[1571494]='Riesenwuchstrank'
+G[1571495]='Pikantes Deviat Supreme'
+G[1571496]='Pygmäenöl'
+G[1571555]='Riesenwuchstrank'
+G[1571556]='Tintenschwarzer Trank'
+G[1571557]='Tintenschwarzer Trank'
+G[1571558]='Pygmäenöl'
+G[1571560]='Reflektierendes Prisma'
+G[1571562]='Pikantes Deviat Supreme'
+G[1572498]='Klammernde Tiefenwurzel'
+G[1572806]='Fragment der Offenbarung'
+G[1583971]='Reinsteinvorräte'
+G[1584793]='Ritualvorräte'
+G[1611933]='Die Schattenenklave'
+G[1613392]='Undurchdringlich versiegelter Kürbis'
+G[1613438]='Schattenlilienbündel'
+G[1613827]='Heruntergekommenes Wandbild'
+G[1613828]='Vergessenes Wandbild'
+G[1614503]='Krabbenfalle'
+G[1615930]='Hängendes Fläschchen'
+G[1615936]='Baumelnder Krug'
+G[1615939]='Weggeworfene Flasche'
+end
+
+if release >= 67235 then
+G[1508411]='Erbstück der Haranir'
+G[1525374]='Aufgebrachter Eber'
+G[1525954]='Silbermondschmiedehammer'
+G[1525955]="Schmiedestreitkolben des Sin'dorei-Meisters"
+G[1525956]='Schwert des Rutaani-Florahüters'
+G[1525958]='Spickzettel zu Metallarbeiten'
+G[1525960]='Silbermondschmiedeset'
+G[1525961]='Dekonstruierte Schmiedetechniken'
+G[1525963]='Makelloser Trank'
+G[1525965]='Frisch gepflückte Friedensblume'
+G[1525966]="Phiole der Kuriositäten aus Zul'Aman"
+G[1525967]='Phiole der Kuriositäten der Wurzellande'
+G[1525969]='Phiole der Kuriositäten des Immersangwalds'
+G[1528310]='Mysteriöse Leiche'
+G[1529370]='Verstreute Himmelssplitter'
+G[1532495]='Heilsalbe'
+G[1539051]='Mrruks miserabler Schatz'
+G[1539052]='Geheime Formel'
+G[1539208]='Ross des kopflosen Reiters'
+G[1539728]='Kiste mit Teufelsartefakten'
+G[1539770]='Verstreute Fetzen'
+G[1539772]='"Leere" Weinflasche'
+G[1539773]='Versteckte Kiste'
+G[1539774]='Unscheinbares Buch'
+G[1539775]='Verlegte Tasche'
+G[1542854]='Ominöse Schließkassette'
+G[1553808]='Gomphustas Truhe'
+G[1555351]='Blubbernder Farbtopf'
+G[1557986]='Blütenblattschwingenfeder'
+G[1568332]='Gedeihende Grabesblüte'
+G[1571163]='Leuchtende Motte'
+G[1571168]='Leuchtende Motte'
+G[1571283]='Leuchtende Motte'
+G[1584752]='Verlegte Kuriosität'
+G[1587443]='Reife Trauben'
+G[1613242]='Antiker Siegelring des Adligen'
+G[1613847]='Mirvedas Notizen'
+G[1613850]='Wie man Falkenschreiter hält: Ungekürzte Fassung'
+G[1613887]='Unvollendetes Notenblatt'
+G[1617375]='Luchsfischspieß nach Murlocart'
+G[1617432]='Vergessene Tinte und Feder'
+G[1617534]='Vergoldete Armillarsphäre'
+G[1620314]="Schrifttafel von Akil'zon"
+G[1620321]='Schrifttafel von Halazzi'
+G[1620323]="Schrifttafel von Jan'alai"
+G[1620326]='Schrifttafel von Kulzi'
+end
+
+if release >= 67525 then
+G[1525307]='Lieferkiste'
+G[1525910]='Massive Erzstanzer'
+G[1525974]='Ein Spaten'
+G[1577797]='Truhe des Fachmanns'
+G[1613850]='Wie man Falkenschreiter hält: Ungekürzte Fassung'
+G[1621669]='Truhe des Fachmanns'
+end
+
+if release >= 67602 then
+G[1528034]="Iz'ken"
+G[1587576]='Ross des kopflosen Reiters'
+G[1613439]='Drachenfalkenfarn'
+G[1614503]='Leerenverrückter Krabbler'
+G[1620324]='Schrifttafel von Nalorakk'
+end
+
+if release >= 67669 then
+G[1516936]='Argentumblatt'
+G[1525912]='Glücksbringer des Höhlenforschers'
+G[1525971]='Schwingende Sichel des Ernters'
+G[1620314]="Schrifttafel von Akil'zon"
+G[1620326]='Schrifttafel von Kulzi'
+end
+
+if release >= 68629 then
+G[1620325]="Die Herrscher von Zul'Aman"
 end
 
 --	End of localized NPC names

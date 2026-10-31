@@ -3107,12 +3107,10 @@ G[7788]='Aniquile os invasores!'
 G[7789]='Domine os usurpadores da Asa de Prata'
 G[7790]='REUSE'
 G[7791]='Doação de lã'
-G[7792]='Uma doação de lã'
 G[7793]='Doação de seda'
 G[7794]='Doação de magitrama'
 G[7795]='Doação de runatrama'
 G[7796]='Runatrama nunca é demais'
-G[7798]='Uma doação de seda'
 G[7799]='Uma doação de magitrama'
 G[7800]='Uma doação de runatrama'
 G[7801]='Runatrama extra'
@@ -3812,4 +3810,9 @@ G[9481]='<UNUSED>Light Consumable'
 G[9482]='<UNUSED>Nature Resist Potion'
 G[9664]='Novos postos avançados'
 G[9665]='Reforçando nossas defesas'
+
+if Grail.expansion < 1 then return end
+
+G[7792]='Uma doação de lã'
+G[7798]='Uma doação de seda'
 

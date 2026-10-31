@@ -600,6 +600,7 @@
 --			Corrects duplicate looting entries appearing in the saved variables tracking file.
 --		127 Updates some Quest/NPC information.
 --			Adds the /grail trace slash command that shows why a quest cannot be obtained.
+--			Adds reputationMapping/reputationMappingFaction entries for Midnight factions Zul'jarra's Forces (2772) and Captain Tokka (2773).
 --
 --	Known Issues
 --
@@ -641,19 +642,48 @@ local floor, mod = math.floor, mod
 
 
 -- BEGIN Grail_SafeGetAuraDataByIndex wrapper
--- Calls GetAuraDataByIndex first; only checks the secrets API when data is actually
--- returned, avoiding a pcall on every out-of-range (nil) index.
+-- As of 12.1, GetAuraDataByIndex() itself raises "Auras cannot be accessed when secret
+-- while tainted by 'Grail'" for secret auras instead of just returning secret/odd data,
+-- so the call must be pcall-protected rather than checked for secrecy only afterward.
 local function Grail_SafeGetAuraDataByIndex(unit, index, filter)
     if not (C_UnitAuras and C_UnitAuras.GetAuraDataByIndex) then return nil end
-    local info = C_UnitAuras.GetAuraDataByIndex(unit, index, filter)
-    if info == nil then return nil end
+    local ok, info = pcall(C_UnitAuras.GetAuraDataByIndex, unit, index, filter)
+    if not ok or info == nil then return nil end
     if C_Secrets and C_Secrets.ShouldUnitAuraIndexBeSecret then
-        local ok, secret = pcall(C_Secrets.ShouldUnitAuraIndexBeSecret, unit, index, filter)
-        if not ok or secret then return nil end
+        local ok2, secret = pcall(C_Secrets.ShouldUnitAuraIndexBeSecret, unit, index, filter)
+        if not ok2 or secret then return nil end
     end
     return info
 end
 -- END Grail_SafeGetAuraDataByIndex wrapper
+
+-- Resolves a unit token's GUID into a Grail NPC ID and (possibly prefixed) name.
+-- Handles secret GUIDs from protected/instanced NPCs by wrapping all GUID operations
+-- in pcall.  Returns (npcId, name); npcId is nil when the GUID cannot be parsed.
+local function _ParseNPCGuid(unitToken, name)
+    local npcId = nil
+    local ok, gid = pcall(UnitGUID, unitToken)
+    if ok and gid then
+        pcall(function()
+            local targetType = nil
+            --	Blizzard has changed the separator from : to - but we will try both if needed
+            local npcBits = { strsplit("-", gid) }
+            if #npcBits == 1 then
+                npcBits = { strsplit(":", gid) }
+            end
+            if #npcBits == 3 and npcBits[1] == "Player" then
+                npcId = Grail.GetCurrentMapAreaID() * -1
+                name = "Player: " .. name
+            end
+            if #npcBits > 5 then
+                npcId = npcBits[6]
+                targetType = (npcBits[1] == "GameObject") and 1 or nil
+            end
+            if 1 == targetType then npcId = npcId + 1000000 end		-- our representation of a world object
+        end)
+    end
+    return npcId, name
+end
 
 -- Returns the first left-text line for a hyperlink, or nil.
 -- On retail/TWW uses C_TooltipInfo.GetHyperlink to avoid rendering a tooltip frame
@@ -676,6 +706,26 @@ local function _GetHyperlinkName(hyperlink, frame, globalTextName)
         if text then return text:GetText() end
     end
     return nil
+end
+
+-- Generic taint-safe call wrapper: runs fn(...) via pcall so that a Lua error raised by
+-- touching a "secret" value (comparison, arithmetic, formatting, or the call itself)
+-- degrades to a clean failure instead of crashing the caller.  Returns the same values
+-- as pcall: a success boolean followed by fn's return values (or the error message).
+-- Exposed on the Grail table as Grail._Safe (call with dot syntax, not colon syntax --
+-- fn is the first argument) so Wholly and other consumers share this primitive instead
+-- of hand-rolling pcall at each new taint-sensitive call site.
+local function _Safe(fn, ...)
+    return pcall(fn, ...)
+end
+
+-- Taint-safe equality check for two values that might be secret.  Returns false (not an
+-- error) if the comparison itself would raise a secret-value Lua error, since "could not
+-- safely determine equality" and "they are not equal" are both fine answers for a
+-- boolean guard.  Exposed on the Grail table as Grail._SafeEquals.
+local function _SafeEquals(a, b)
+    local ok, result = pcall(function() return a == b end)
+    return ok and result or false
 end
 
 
@@ -1445,6 +1495,8 @@ if nil == Grail or Grail.versionNumber < Grail_File_Version then
 	end
 
 	Grail = {
+_Safe = _Safe,			-- shared taint-safe pcall wrapper; see definition above.  Call as Grail._Safe(fn, ...), not Grail:_Safe(...)
+_SafeEquals = _SafeEquals,	-- shared taint-safe equality check; see definition above.  Call as Grail._SafeEquals(a, b)
 experimental = false,	-- currently this implementation does not reduce memory significantly [this is used to make the map area hold quests in bit form]
 		versionNumber = Grail_File_Version,
 		questsVersionNumber = 0,
@@ -3116,16 +3168,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			['ITEM_TEXT_BEGIN'] = function(self, frame, ...)
 				local currentMapAreaId = Grail.GetCurrentMapAreaID()
 				if self.zonesForLootingTreasure[currentMapAreaId] then
-					self.lootingGUID = GetLootSourceInfo(1)
-					-- UnitName() returns a regular (non-secret) string; avoids the secret-string
-					-- taint from GameTooltipTextLeft1:GetText() which is populated by protected code.
-					local rawName = UnitName("mouseover") or UnitName("npc") or UnitName("target")
-					self.lootingName = rawName or self.defaultUnfoundLootingName
-					self.lootingNameIsReal = rawName ~= nil
-					if not self.doneProcessingBackup then
-						self:_ProcessServerBackup(true)
-						self.doneProcessingBackup = true
-					end
+					self:_HandleEventLootOpened()
 				end
 			end,
 
@@ -3148,17 +3191,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			['LOOT_OPENED'] = function(self, frame, ...)
 				local currentMapAreaId = Grail.GetCurrentMapAreaID()
 				if self.zonesForLootingTreasure[currentMapAreaId] then
-					self.lootingGUID = GetLootSourceInfo(1)
-					-- UnitName() returns a regular (non-secret) string; avoids the secret-string
-					-- taint from GameTooltipTextLeft1:GetText() which is populated by protected code.
-					local rawName = UnitName("mouseover") or UnitName("npc") or UnitName("target")
-					self.lootingName = rawName or self.defaultUnfoundLootingName
-					self.lootingNameIsReal = rawName ~= nil
-					if not self.doneProcessingBackup then
-						self:_ProcessServerBackup(true)
-						self.doneProcessingBackup = true
+					self:_HandleEventLootOpened()
 --						frame:UnregisterEvent("LOOT_OPENED")
-					end
 				end
 			end,
 
@@ -4065,7 +4099,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			[9] = { 2407, 2410, 2413, 2432, 2439, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2462, 2463, 2464, 2465, 2469, 2470, 2472, 2478, },
 			[10] = { 2503, 2507, 2509, 2510, 2511, 2512, 2513, 2517, 2518, 2520, 2522, 2523, 2524, 2526, 2542, 2544, 2550, 2553, 2554, 2555, 2557, 2564, 2568, 2574, 2593, 2615, },
 			[11] = { 2569, 2570, 2590, 2594, 2600, 2601, 2605, 2607, 2640, 2644, 2645, 2653, 2658, 2663, 2664, 2665, 2666, 2669, 2671, 2673, 2675, 2677, 2683, 2685, 2688, 2693, 2722, 2736, 2739, 2766, 2767, }, -- TWW
-			[12] = { 2696, 2698, 2699, 2704, 2710, 2711, 2712, 2713, 2714, 2742, 2744, 2764, 2770, },	-- Midnight
+			[12] = { 2696, 2698, 2699, 2704, 2710, 2711, 2712, 2713, 2714, 2742, 2744, 2764, 2770, 2772, 2773, },	-- Midnight
 			},
 
 		-- These reputations use the friendship names instead of normal reputation names
@@ -4459,6 +4493,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
             ["ACE"] = "Brawl'gar Arena", -- 2766
             ["ACF"] = "Bizmo's Brawlpub", -- 2767
             ["AD2"] = "Slayer's Duellum", -- 2770
+            ["AD4"] = "Zul'jarra's Forces", -- 2772
+            ["AD5"] = "Captain Tokka", -- 2773
 			},
 
 		reputationMappingFaction = {
@@ -4795,6 +4831,8 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
             ["ACE"] = "Neutral", -- 2766
             ["ACF"] = "Neutral", -- 2767
             ["AD2"] = "Neutral", -- 2770
+            ["AD4"] = "Neutral", -- 2772
+            ["AD5"] = "Neutral", -- 2773
 			},
 
 		slashCommandOptions = {},
@@ -9275,28 +9313,10 @@ end
 				if nil ~= targetName then break end
 			end
 			if nil ~= targetName then
-				-- Dead units return a secret GUID that taints execution even inside pcall;
-				-- skip GUID processing entirely for dead units since they cannot give quests.
+				-- Dead units and some living NPCs in protected/instanced contexts (e.g. raid
+				-- encounter NPCs) return a secret GUID; _ParseNPCGuid handles those safely.
 				if not UnitIsDead(used) then
-					local ok, gid = pcall(UnitGUID, used)
-					if not ok then gid = nil end
-					if nil ~= gid then
-						local targetType = nil
-						--	Blizzard has changed the separator from : to - but we will try both if needed
-						local npcBits = { strsplit("-", gid) }
-						if #npcBits == 1 then
-							npcBits = { strsplit(":", gid) }
-						end
-						if #npcBits == 3 and npcBits[1] == "Player" then
-							npcId = Grail.GetCurrentMapAreaID() * -1
-							targetName = "Player: " .. targetName
-						end
-						if #npcBits > 5 then
-							npcId = npcBits[6]
-							targetType = (npcBits[1] == "GameObject") and 1 or nil
-						end
-						if 1 == targetType then npcId = npcId + 1000000 end		-- our representation of a world object
-					end
+					npcId, targetName = _ParseNPCGuid(used, targetName)
 				end
 			end
 			return npcId, targetName
@@ -9305,28 +9325,10 @@ end
 		GetNPCInformation = function(self, npcType)
 			local npcId = nil
 			local name = UnitName(npcType)
-			-- Dead units return a secret GUID that taints execution even inside pcall;
-			-- skip GUID processing entirely for dead units since they cannot give quests.
+			-- Dead units and some living NPCs in protected/instanced contexts (e.g. raid
+			-- encounter NPCs) return a secret GUID; _ParseNPCGuid handles those safely.
 			if not UnitIsDead(npcType) then
-				local ok, gid = pcall(UnitGUID, npcType)
-				if not ok then gid = nil end
-				if nil ~= gid then
-					local targetType = nil
-					--	Blizzard has changed the separator from : to - but we will try both if needed
-					local npcBits = { strsplit("-", gid) }
-					if #npcBits == 1 then
-						npcBits = { strsplit(":", gid) }
-					end
-					if #npcBits == 3 and npcBits[1] == "Player" then
-						npcId = Grail.GetCurrentMapAreaID() * -1
-						name = "Player: " .. name
-					end
-					if #npcBits > 5 then
-						npcId = npcBits[6]
-						targetType = (npcBits[1] == "GameObject") and 1 or nil
-					end
-					if 1 == targetType then npcId = npcId + 1000000 end		-- our representation of a world object
-				end
+				npcId, name = _ParseNPCGuid(npcType, name)
 			end
 			return npcId, name
 		end,
@@ -9445,16 +9447,16 @@ end
 			if self.GDE.debug then
 				print("Grail Achievment handled with number: ", achievementId)
 			end
-			self:_AddTrackingMessage("Achievement earned: ", achievementId)
-			self:_AddTrackingMessage("Coordinates earned: ", Grail:Coordinates())
+			self:_AddTrackingMessage("Achievement earned: " .. tostring(achievementId))
+			self:_AddTrackingMessage("Coordinates earned: " .. Grail:Coordinates())
 		end,
 
 		_HandleCriteriaComplete = function(self, criteriaID)
 			if self.GDE.debug then
 				print("Grail: Criteria earned with number: ", criteriaID)
 			end
-			self:_AddTrackingMessage("Criteria earned: ", criteriaID)
-			self:_AddTrackingMessage("Coordinates earned: ", Grail:Coordinates())
+			self:_AddTrackingMessage("Criteria earned: " .. tostring(criteriaID))
+			self:_AddTrackingMessage("Coordinates earned: " .. Grail:Coordinates())
 		end,
 
 		_HandleEventMajorFactionUnlocked = function(self, factionId)
@@ -9730,6 +9732,20 @@ end
 			end
 		end,
 
+		_HandleEventLootOpened = function(self)
+			self.lootingGUID = nil		-- reset before call so a stale GameObject GUID never persists if GetLootSourceInfo errors
+			self.lootingGUID = GetLootSourceInfo(1)
+			-- UnitName() returns a regular (non-secret) string; avoids the secret-string
+			-- taint from GameTooltipTextLeft1:GetText() which is populated by protected code.
+			local rawName = UnitName("mouseover") or UnitName("npc") or UnitName("target")
+			self.lootingName = rawName or self.defaultUnfoundLootingName
+			self.lootingNameIsReal = rawName ~= nil
+			if not self.doneProcessingBackup then
+				self:_ProcessServerBackup(true)
+				self.doneProcessingBackup = true
+			end
+		end,
+
 		_HandleEventLootClosed = function(self)
 			local silentValue, manualValue = self.GDE.silent, self.manuallyExecutingServerQuery
 			self.GDE.silent, self.manuallyExecutingServerQuery = true, false
@@ -9739,8 +9755,7 @@ end
 			-- we can skip the per-quest IsQuestFlaggedCompleted loop entirely for mob loot,
 			-- which is the common case and was causing lag in every treasure-tracked zone.
 			local guidParts = { strsplit('-', self.lootingGUID or "") }
-			local isGameObject = false
-			pcall(function() isGameObject = (guidParts[1] == "GameObject") end)
+			local isGameObject = _SafeEquals(guidParts[1], "GameObject")
 			if not isGameObject and not Grail.GDE.treasures and not Grail.GDE.debug then
 				self.GDE.silent, self.manuallyExecutingServerQuery = silentValue, manualValue
 				return
@@ -11616,7 +11631,12 @@ end
 						hyperlinkFormat = 'unit:Creature-0-0-0-0-' .. indexToUse .. '-0'
 					end
 					local name = _GetHyperlinkName(hyperlinkFormat, self.tooltipNPC, "com_mithrandir_grailTooltipNPCTextLeft1")
-					if name and name ~= self.retrievingString then
+					-- C_TooltipInfo.GetHyperlink can return a secret string when called while
+					-- execution is already tainted (e.g. by an earlier Grail cache read elsewhere
+					-- in this same securecallfunction-wrapped chain); comparing a secret value
+					-- raises a hard Lua error, so guard the comparison with the shared taint-safe wrapper.
+					local ok, isUsable = _Safe(function() return name and name ~= self.retrievingString end)
+					if ok and isUsable then
 						retval = name
 						self.npc.name[indexToUse] = name
 					end
@@ -14406,7 +14426,7 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 		--	@usage targetName, npcId, coordinates = Grail:TargetInformation()
 		TargetInformation = function(self)
 			local coordinates = nil
-			local ok, npcId, targetName = pcall(self.GetNPCId, self, true)
+			local ok, npcId, targetName = _Safe(self.GetNPCId, self, true)
 			if not ok then npcId = nil; targetName = nil end
 			if nil ~= npcId then
 				coordinates = self:Coordinates()

@@ -3110,12 +3110,10 @@ G[7788]='¡Expulsa al invasor!'
 G[7789]='Acaba con los usurpadores Ala de Plata'
 G[7790]='REUSE'
 G[7791]='Un donativo de lana'
-G[7792]='Un donativo de lana'
 G[7793]='Un donativo de seda'
 G[7794]='Un donativo de paño mágico'
 G[7795]='Un donativo de paño rúnico'
 G[7796]='Un donativo extra de paño rúnico'
-G[7798]='Un donativo de seda'
 G[7799]='Un donativo de paño mágico'
 G[7800]='Un donativo de paño rúnico'
 G[7801]='Un donativo extra de paño rúnico'
@@ -3815,4 +3813,9 @@ G[9481]='<UNUSED>Light Consumable'
 G[9482]='<UNUSED>Nature Resist Potion'
 G[9664]='Nuevas avanzadas'
 G[9665]='Fortalecimiento de nuestras defensas'
+
+if Grail.expansion < 1 then return end
+
+G[7792]='Un donativo de lana'
+G[7798]='Un donativo de seda'
 

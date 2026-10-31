@@ -270,4 +270,9 @@ G[1229314]='Appareil de contrôle mental gobelin'
 G[1244694]='Petit coffre au trésor'
 end
 
+if release >= 69299 then
+G[1572258]='Trésor enfoui'
+G[1641565]='Gemme légèrement luminescente'
+end
+
 --	End of localized NPC names

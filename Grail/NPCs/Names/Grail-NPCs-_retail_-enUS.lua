@@ -1768,10 +1768,6 @@ G[1385952]='Unusual Ring'
 G[1387520]='TICKET: Glimmerogg Games'
 end
 
-if release >= 47631 then
-G[197478]='NukeMe 197478'
-end
-
 if release >= 47936 then
 G[1376583]='Decay Covered Chest'
 end
@@ -2233,6 +2229,7 @@ end
 if release >= 66527 then
 G[1539207]='Hastily Packed Belongings'
 G[1555462]='Forgotten Amani Cache'
+G[1584752]='Mislaid Curiosity'
 G[1612242]='Twilight Crypts'
 G[1618495]='Nullaeus Cache'
 end
@@ -2483,6 +2480,13 @@ G[1589095]="Scavenger's Hoard"
 G[1605169]='Trigore Denguard'
 G[1609910]='Depleted Void Canister'
 G[1613324]='Knight Anais'
+end
+
+if release >= 70575 then
+G[1616804]='Befuddled Amani Mask'
+G[1617077]="Hex Master Soye'mal"
+G[1659940]='Candy Bucket'
+G[1660352]='Candy Bucket'
 end
 
 --	End of localized NPC names
