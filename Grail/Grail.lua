@@ -643,16 +643,21 @@ local floor, mod = math.floor, mod
 
 -- BEGIN Grail_SafeGetAuraDataByIndex wrapper
 -- As of 12.1, GetAuraDataByIndex() itself raises "Auras cannot be accessed when secret
--- while tainted by 'Grail'" for secret auras instead of just returning secret/odd data,
--- so the call must be pcall-protected rather than checked for secrecy only afterward.
+-- while tainted by 'Grail'" for secret auras instead of just returning secret/odd data.
+-- Checks the secrets API before calling (rather than pcall-catching after) so the error
+-- is avoided instead of merely caught -- pcall-caught errors still get logged as bug
+-- reports by BugGrabber/BugSack, which was generating 1300+ hits per session from the
+-- UNIT_AURA scan and tooltip path.  The call itself stays pcall-wrapped as defense in
+-- depth for any remaining secret case the secrets API doesn't catch.
+-- (incorporates github.com/smaitch/Grail PR #430 by Ironship)
 local function Grail_SafeGetAuraDataByIndex(unit, index, filter)
     if not (C_UnitAuras and C_UnitAuras.GetAuraDataByIndex) then return nil end
-    local ok, info = pcall(C_UnitAuras.GetAuraDataByIndex, unit, index, filter)
-    if not ok or info == nil then return nil end
     if C_Secrets and C_Secrets.ShouldUnitAuraIndexBeSecret then
-        local ok2, secret = pcall(C_Secrets.ShouldUnitAuraIndexBeSecret, unit, index, filter)
-        if not ok2 or secret then return nil end
+        local ok, secret = pcall(C_Secrets.ShouldUnitAuraIndexBeSecret, unit, index, filter)
+        if not ok or secret then return nil end
     end
+    local ok2, info = pcall(C_UnitAuras.GetAuraDataByIndex, unit, index, filter)
+    if not ok2 then return nil end
     return info
 end
 -- END Grail_SafeGetAuraDataByIndex wrapper
