@@ -1279,6 +1279,335 @@ if nil == Grail or Grail.versionNumber < Grail_File_Version then
 			securePrint(strformat("|cFFFF0000Grail|r tracing prerequisites for |cFFFF8C00Q%d|r:", questId))
 			_GrailTraceWalk(questId, 0, {})
 		end)
+
+		-- The following four diagnostic commands are ported from github.com/smaitch/Grail
+		-- PR #417.  They are pure
+		-- read-only dumps of live Blizzard map/quest-pin/vignette state for debugging --
+		-- none of them write to GrailDatabase or depend on the PR's other (unported)
+		-- experimental vignette-reputation-linking heuristics.
+		Grail:RegisterSlashOption("questhub", "|cFF00FF00questhub|r => dumps QuestHub dataProvider.questHubs and questOffers", function()
+			local p = WorldMapFrame and WorldMapFrame.pinPools and WorldMapFrame.pinPools['QuestHubPinTemplate']
+			if not p then print('QuestHubPinTemplate pool not found') return end
+			local pins = {}
+			pcall(function() for pin in p:EnumerateActive() do table.insert(pins, pin) end end)
+			if #pins == 0 then print('No active QuestHub pins') return end
+			for i, pin in ipairs(pins) do
+				local dp = pin.dataProvider
+				local poiID = pin.poiInfo and pin.poiInfo.areaPoiID
+				local hubName = pin.name or (pin.poiInfo and pin.poiInfo.name)
+				print(strformat('HUB #%d: name=%s areaPoiID=%s mapID=%s',
+					i, tostring(hubName), tostring(poiID), tostring(pin.lastOwningMapID)))
+				if dp and dp.questHubs then
+					print(strformat('  questHubs:'))
+					for hk, hv in pairs(dp.questHubs) do
+						if type(hv) == 'table' then
+							print(strformat('    [%s]:', tostring(hk)))
+							for k2, v2 in pairs(hv) do
+								if type(v2) ~= 'function' and type(v2) ~= 'table' then
+									print(strformat('      %s = %s', tostring(k2), tostring(v2)))
+								end
+							end
+						else
+							print(strformat('    [%s] = %s', tostring(hk), tostring(hv)))
+						end
+					end
+				end
+				if dp and dp.questOffers then
+					print(strformat('  questOffers:'))
+					for ok2, ov in pairs(dp.questOffers) do
+						if type(ov) == 'table' then
+							print(strformat('    [%s]:', tostring(ok2)))
+							for k3, v3 in pairs(ov) do
+								if type(v3) ~= 'function' and type(v3) ~= 'table' then
+									print(strformat('      %s = %s', tostring(k3), tostring(v3)))
+								end
+							end
+						else
+							print(strformat('    [%s] = %s', tostring(ok2), tostring(ov)))
+						end
+					end
+				end
+				if pin.relatedQuests and next(pin.relatedQuests) then
+					print('  relatedQuests:')
+					for rk, rv in pairs(pin.relatedQuests) do
+						print(strformat('    [%s] = %s', tostring(rk), tostring(rv)))
+					end
+				end
+			end
+		end)
+
+		Grail:RegisterSlashOption("taskquests", "|cFF00FF00taskquests|r => dumps C_TaskQuest data for current map", function()
+			local mapID = C_Map.GetBestMapForUnit('player')
+			local frame = ChatFrame1
+			local function p(s) frame:AddMessage(s) end
+			p(strformat('TASKQUEST_SCAN: mapID=%d', mapID))
+			if C_TaskQuest and C_TaskQuest.GetQuestsOnMap then
+				local tasks = C_TaskQuest.GetQuestsOnMap(mapID)
+				p(strformat('  GetQuestsOnMap: %d entries', tasks and #tasks or 0))
+				for _, q in ipairs(tasks or {}) do
+					p(strformat('  questID=%s x=%.2f y=%.2f inProgress=%s numObjectives=%s',
+						tostring(q.questID), (q.x or 0)*100, (q.y or 0)*100,
+						tostring(q.inProgress), tostring(q.numObjectives)))
+				end
+			end
+			if C_TaskQuest and C_TaskQuest.GetQuestsForPlayerByMapID then
+				local tasks2 = C_TaskQuest.GetQuestsForPlayerByMapID(mapID)
+				p(strformat('  GetQuestsForPlayerByMapID: %d entries', tasks2 and #tasks2 or 0))
+				for _, q in ipairs(tasks2 or {}) do
+					p(strformat('  questID=%s x=%.2f y=%.2f inProgress=%s',
+						tostring(q.questID), (q.x or 0)*100, (q.y or 0)*100, tostring(q.inProgress)))
+				end
+			end
+			if WorldMapFrame and WorldMapFrame.pinPools then
+				local pool = WorldMapFrame.pinPools['QuestBlobPinTemplate']
+				if pool then
+					local pins = {}
+					pcall(function() for pin in pool:EnumerateActive() do table.insert(pins, pin) end end)
+					if #pins == 0 and pool.activeObjects then
+						for pin in pairs(pool.activeObjects) do table.insert(pins, pin) end
+					end
+					p(strformat('  QuestBlobPinTemplate: %d active', #pins))
+					for _, pin in ipairs(pins) do
+						p(strformat('  pin: questID=%s', tostring(pin.questID)))
+						for k,v in pairs(pin) do
+							if type(v) ~= 'function' and type(v) ~= 'table' then
+								p(strformat('    %s=%s', tostring(k), tostring(v)))
+							end
+						end
+					end
+				end
+			end
+		end)
+
+		Grail:RegisterSlashOption("questpins", "|cFF00FF00questpins|r |cFFFF8C00[questID]|r => dumps all quest pins, or diagnoses a specific questID", function(msg)
+			local diagID = tonumber(strtrim(strsub(msg, 10)))
+			print(strformat('questpins: msg=%q diagID=%s', msg, tostring(diagID)))
+			if diagID then
+				print(strformat('QUESTPIN_DIAG: questID=%d', diagID))
+				print(strformat('  IsQuestFlaggedCompleted: %s', tostring(C_QuestLog.IsQuestFlaggedCompleted and C_QuestLog.IsQuestFlaggedCompleted(diagID))))
+				print(strformat('  IsOnQuest: %s', tostring(C_QuestLog.IsOnQuest and C_QuestLog.IsOnQuest(diagID))))
+				print(strformat('  IsComplete: %s', tostring(C_QuestLog.IsComplete and C_QuestLog.IsComplete(diagID))))
+				local info = C_QuestLog.GetQuestInfo and C_QuestLog.GetQuestInfo(diagID)
+				if info then
+					print(strformat('  GetQuestInfo: title=%s isCampaign=%s isHidden=%s',
+						tostring(info.title), tostring(info.isCampaign), tostring(info.isHidden)))
+				else print('  GetQuestInfo: nil') end
+				local details = C_QuestLog.GetQuestDetails and C_QuestLog.GetQuestDetails(diagID)
+				if details then
+					print(strformat('  GetQuestDetails: %s', tostring(details)))
+				else print('  GetQuestDetails: nil/not found') end
+				local mapID = C_Map.GetBestMapForUnit('player')
+				local waypointInfo = C_QuestLog.GetQuestObjectivesForPin and C_QuestLog.GetQuestObjectivesForPin(diagID, mapID)
+				if waypointInfo then
+					print(strformat('  GetQuestObjectivesForPin: %s', tostring(waypointInfo)))
+				else print('  GetQuestObjectivesForPin: nil') end
+				local mid = mapID
+				for d = 1, 5 do
+					if not mid then break end
+					local pins = C_QuestLog.GetQuestsOnMap and C_QuestLog.GetQuestsOnMap(mid)
+					if pins then
+						for _, pn in ipairs(pins) do
+							if pn.questID == diagID then
+								print(strformat('  FOUND in GetQuestsOnMap mapID=%d x=%.2f y=%.2f', mid, (pn.x or 0)*100, (pn.y or 0)*100))
+							end
+						end
+					end
+					local mi = C_Map.GetMapInfo(mid)
+					mid = mi and mi.parentMapID
+				end
+				if C_QuestLine then
+					local _mid = C_Map.GetBestMapForUnit('player')
+					if C_QuestLine.GetQuestLineInfo then
+						local qli = C_QuestLine.GetQuestLineInfo(diagID, _mid)
+						print(strformat('  C_QuestLine.GetQuestLineInfo: %s', qli and strformat('questLineID=%s name=%s', tostring(qli.questLineID), tostring(qli.questLineName)) or 'nil'))
+					end
+					if C_QuestLine.GetAvailableQuestLines then
+						local qlines = C_QuestLine.GetAvailableQuestLines(_mid)
+						if qlines then
+							for _, ql in ipairs(qlines) do
+								print(strformat('  QuestLine: id=%s name=%s', tostring(ql.questLineID), tostring(ql.questLineName)))
+							end
+						else print('  GetAvailableQuestLines: nil') end
+					end
+				end
+				if C_CampaignInfo and C_CampaignInfo.GetCampaignInfo then
+					local ok, ci = pcall(C_CampaignInfo.GetCampaignInfo, diagID)
+					print(strformat('  C_CampaignInfo.GetCampaignInfo: %s', (ok and ci) and tostring(ci) or 'nil'))
+				end
+				if C_QuestLog.RequestLoadQuestByID then
+					C_QuestLog.RequestLoadQuestByID(diagID)
+					print(strformat('  RequestLoadQuestByID(%d): called (check QUEST_DATA_LOAD_RESULT)', diagID))
+				end
+				local _ppos = C_Map.GetPlayerMapPosition(C_Map.GetBestMapForUnit('player'), 'player')
+				local _playerX = _ppos and _ppos.x*100 or 0
+				local _playerY = _ppos and _ppos.y*100 or 0
+				if WorldMapFrame and WorldMapFrame.pinPools then
+					print(strformat('  Player map pos: %.2f, %.2f isShown=%s', _playerX, _playerY, tostring(WorldMapFrame:IsShown())))
+					for poolKey, pool in pairs(WorldMapFrame.pinPools) do
+						local _pins = {}
+						if pool then
+							if pool.activeObjects then
+								for pin in pairs(pool.activeObjects) do table.insert(_pins, pin) end
+							elseif type(pool.EnumerateActive) == 'function' then
+								local ok2, err = pcall(function() for pin in pool:EnumerateActive() do table.insert(_pins, pin) end end)
+								if not ok2 then print(strformat('  pool=%s EnumerateActive err=%s', poolKey, tostring(err))) end
+							elseif type(pool.GetPins) == 'function' then
+								local okp, result = pcall(function() return pool:GetPins() end)
+								if okp and type(result) == 'table' then
+									for pin in pairs(result) do table.insert(_pins, pin) end
+								end
+							end
+						end
+						if #_pins > 0 then
+							print(strformat('  pool=%s count=%d', poolKey, #_pins))
+							for _, pin in ipairs(_pins) do
+								local qid = pin.questID or (pin.questInfo and pin.questInfo.questID)
+								local x, y
+								if pin.normalizedX then x=pin.normalizedX*100; y=pin.normalizedY*100
+								elseif pin.GetNormalizedPosition then local px,py=pin:GetNormalizedPosition(); x=px and px*100; y=py and py*100 end
+								if qid == diagID then
+									print(strformat('    MATCHED questID=%s x=%s y=%s', tostring(qid), tostring(x), tostring(y)))
+									for k,v in pairs(pin) do
+										if type(v) ~= 'function' and type(v) ~= 'table' then
+											print(strformat('      pin.%s=%s', tostring(k), tostring(v)))
+										end
+									end
+								else
+									print(strformat('    pin: questID=%s x=%s y=%s', tostring(qid), tostring(x), tostring(y)))
+								end
+							end
+						end
+					end
+					local _mapID = C_Map.GetBestMapForUnit('player')
+					if C_AreaPoiInfo and C_AreaPoiInfo.GetAreaPOIForMap then
+						local pois = C_AreaPoiInfo.GetAreaPOIForMap(_mapID)
+						if pois then
+							print(strformat('  ALL AreaPOIs mapID=%d count=%d', _mapID, #pois))
+							for _, poiID in ipairs(pois) do
+								local info2 = C_AreaPoiInfo.GetAreaPOIInfo(_mapID, poiID)
+								print(strformat('    POI: id=%s name=%s atlas=%s',
+									tostring(poiID), tostring(info2 and info2.name), tostring(info2 and info2.atlasName)))
+							end
+						end
+					end
+				end
+				return
+			end
+			local playerMapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit('player')
+			local snapSize = 0
+			if Grail._persistentPinSnapshot then for _ in pairs(Grail._persistentPinSnapshot) do snapSize=snapSize+1 end end
+			print(strformat('QUESTPIN_SCAN: player mapID=%s persistentSnapshot=%d entries', tostring(playerMapID), snapSize))
+			local recentList = {}
+			if Grail._recentlyCompletedQuestIds then
+				for q in pairs(Grail._recentlyCompletedQuestIds) do table.insert(recentList, tostring(q)) end
+			end
+			print(strformat('  recentlyCompleted: %s', #recentList>0 and table.concat(recentList,',') or 'none'))
+			local totalOffer, totalHub = 0, 0
+			local mapID = playerMapID
+			for depth = 1, 5 do
+				if not mapID then break end
+				local mapInfo = C_Map.GetMapInfo(mapID)
+				local offerCount, hubCount = 0, 0
+				if C_QuestLog and C_QuestLog.GetQuestsOnMap then
+					local pins = C_QuestLog.GetQuestsOnMap(mapID)
+					if pins then
+						for _, pin in ipairs(pins) do
+							local pinKey = strformat('offer:%d', pin.questID or 0)
+							local inSnap  = Grail._persistentPinSnapshot and Grail._persistentPinSnapshot[pinKey] ~= nil
+							local inLinks = false
+							if GrailDatabase.questPinLinks then
+								for k in pairs(GrailDatabase.questPinLinks) do
+									if strfind(k, pinKey, 1, true) then inLinks=true break end
+								end
+							end
+							print(strformat('    OFFER: questID=%s x=%.2f y=%.2f inSnapshot=%s linked=%s',
+								tostring(pin.questID), (pin.x or 0)*100, (pin.y or 0)*100, tostring(inSnap), tostring(inLinks)))
+							offerCount=offerCount+1; totalOffer=totalOffer+1
+						end
+					end
+				end
+				if C_AreaPoiInfo and C_AreaPoiInfo.GetAreaPOIForMap then
+					local pois = C_AreaPoiInfo.GetAreaPOIForMap(mapID)
+					if pois then
+						for _, poiID in ipairs(pois) do
+							local info3 = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
+							if info3 and info3.atlasName and strfind(string.lower(info3.atlasName), 'quest') then
+								local pinKey = strformat('hub:%d', poiID)
+								local inSnap  = Grail._persistentPinSnapshot and Grail._persistentPinSnapshot[pinKey] ~= nil
+								print(strformat('    HUB: poiID=%s name=%s atlas=%s inSnapshot=%s',
+									tostring(poiID), tostring(info3.name), tostring(info3.atlasName), tostring(inSnap)))
+								hubCount=hubCount+1; totalHub=totalHub+1
+							end
+						end
+					end
+				end
+				print(strformat('  mapID=%d name=%s: offer=%d hub=%d',
+					mapID, tostring(mapInfo and mapInfo.name), offerCount, hubCount))
+				mapID = mapInfo and mapInfo.parentMapID
+			end
+			print(strformat('QUESTPIN_SCAN: total offer=%d hub=%d', totalOffer, totalHub))
+			if WorldMapFrame and WorldMapFrame:IsShown() and WorldMapFrame.pinPools then
+				local targetPools = { QuestOfferPinTemplate='campaign_offer', QuestBlobPinTemplate='blob', QuestHubPinTemplate='hub', QuestPinTemplate='active' }
+				for poolKey, pinType in pairs(targetPools) do
+					local pool = WorldMapFrame.pinPools[poolKey]
+					if pool and pool.activeObjects then
+						for pin in pairs(pool.activeObjects) do
+							local qid = pin.questID or (pin.questInfo and pin.questInfo.questID)
+							local x, y
+							if pin.normalizedX then x=pin.normalizedX; y=pin.normalizedY
+							elseif pin.GetNormalizedPosition then x,y=pin:GetNormalizedPosition() end
+							local inSnap = Grail._persistentPinSnapshot and qid and Grail._persistentPinSnapshot[strformat('offer:%d',qid)] ~= nil
+							print(strformat('  POOL %s: questID=%s x=%s y=%s inSnapshot=%s',
+								pinType, tostring(qid),
+								x and strformat('%.2f',x*100) or '?',
+								y and strformat('%.2f',y*100) or '?',
+								tostring(inSnap)))
+						end
+					end
+				end
+			else
+				print('  WorldMap not open - open map and run /grail questpins for pool scan')
+			end
+		end)
+
+		Grail:RegisterSlashOption("vignettes", "|cFF00FF00vignettes|r => dumps all known vignettes on the current map with coordinates and distance to player", function()
+			local mapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit('player')
+			if not mapID then print('vignettes: no map') return end
+			local px, py = Grail.GetPlayerMapPosition('player', mapID)
+			if not px then print('vignettes: player position unavailable') return end
+			local vignettes = C_VignetteInfo and C_VignetteInfo.GetVignettes and C_VignetteInfo.GetVignettes()
+			if not vignettes or #vignettes == 0 then print('vignettes: none on this map') return end
+			print(strformat('|cFFFFFF00Grail vignettes|r on map %d (player %.4f,%.4f):', mapID, px, py))
+			for _, guid in ipairs(vignettes) do
+				local info = C_VignetteInfo.GetVignetteInfo(guid)
+				local pos  = C_VignetteInfo.GetVignettePosition and C_VignetteInfo.GetVignettePosition(guid, mapID)
+				local coordStr, distStr = 'no pos', 'n/a'
+				if pos then
+					coordStr = strformat('%d:%.2f,%.2f', mapID, pos.x * 100, pos.y * 100)
+					-- Map coords are 0-1 fractions. Convert delta to approximate yards
+					-- using UnitPosition world coords for accuracy.
+					local wx, wy = UnitPosition('player')
+					local vwx, vwy
+					if wx and C_Map.GetWorldPosFromMapPos then
+						local _, worldPos = C_Map.GetWorldPosFromMapPos(mapID, CreateVector2D(pos.x, pos.y))
+						if worldPos then vwx, vwy = worldPos.x, worldPos.y end
+					end
+					if vwx and wx then
+						local dx, dy = vwx - wx, vwy - wy
+						distStr = strformat('%.0f yds', math.sqrt(dx*dx + dy*dy))
+					else
+						local dx = (pos.x - px) * 533
+						local dy = (pos.y - py) * 533
+						distStr = strformat('~%.0f yds', math.sqrt(dx*dx + dy*dy))
+					end
+				end
+				local name    = info and info.name or '?'
+				local vigType = info and tostring(info.vignetteType) or '?'
+				local msg = strformat('  %s | %s | coords=%s | dist=%s | type=%s', guid, name, coordStr, distStr, vigType)
+				print(msg)
+				Grail:_AddTrackingMessage(msg)
+			end
+		end)
 	end
 
 	-- File-scope named functions for PLAYER_LOGIN securecallfunction blocks.
