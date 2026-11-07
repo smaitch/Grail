@@ -9,3 +9,4 @@
 
 Grail-Reputations-_retail_.lua
 Grail-Reputations-_classic_.lua
+Grail-Reputations-_forever_.lua

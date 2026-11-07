@@ -1631,6 +1631,8 @@ if nil == Grail or Grail.versionNumber < Grail_File_Version then
 			local baseEnvironment = "_unknown_"
 			if Grail.existsMainline then
 				baseEnvironment = "_retail_"                    -- "World of Warcraft"
+			elseif Grail.existsForever then
+				baseEnvironment = "_forever_"                   -- "WoW: Forever"
 			elseif Grail.existsClassic then
 				baseEnvironment = "_classic_"                   -- "Cataclysm Classic"
 			elseif Grail.existsClassicEra then
@@ -1650,7 +1652,7 @@ if nil == Grail or Grail.versionNumber < Grail_File_Version then
 	end
 
 	local function _GrailSetExistsClassic()
-		Grail.existsClassic = Grail.existsClassicBasic or Grail.existsClassicBurningCrusade or Grail.existsClassicWrathOfTheLichKing or Grail.existsClassicCataclysm or Grail.existsClassicPandaria
+		Grail.existsClassic = Grail.existsClassicBasic or Grail.existsClassicBurningCrusade or Grail.existsClassicWrathOfTheLichKing or Grail.existsClassicCataclysm or Grail.existsClassicPandaria or Grail.existsForever
 	end
 
 	local function _GrailSetGDE()
@@ -1666,7 +1668,7 @@ if nil == Grail or Grail.versionNumber < Grail_File_Version then
 		Grail.capabilities.usesArtifacts = false --Grail.existsMainline
 		Grail.capabilities.usesCampaignInfo = Grail.existsMainline
 		Grail.capabilities.usesCalendar = Grail.existsMainline
-		Grail.capabilities.usesAzerothAsCosmicMap = Grail.existsClassicEra
+		Grail.capabilities.usesAzerothAsCosmicMap = Grail.existsClassicEra or Grail.existsForever
 		Grail.capabilities.usesQuestHyperlink = Grail.existsMainline or Grail.existsClassicWrathOfTheLichKing or Grail.existsClassicCataclysm or Grail.existsClassicPandaria
 		Grail.capabilities.usesFollowers = Grail.existsMainline
 		Grail.capabilities.usesWorldEvents = Grail.existsMainline
@@ -1750,7 +1752,7 @@ if nil == Grail or Grail.versionNumber < Grail_File_Version then
 		if Grail.capabilities.usesAzerothAsCosmicMap then
 			cosmicMapInfo = { mapID = 947 }
 		end
-		local continents = C_Map.GetMapChildrenInfo(cosmicMapInfo.mapID, Enum.UIMapType.Continent, ALL_DESCENDANTS)
+		local continents = C_Map.GetMapChildrenInfo(cosmicMapInfo.mapID, Enum.UIMapType.Continent, ALL_DESCENDANTS) or {}
 		Grail.continentMapIds = {}
 		Grail.mapToContinentMapping = {}
 		for i, continentInfo in ipairs(continents) do
@@ -3968,6 +3970,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		--		World of Warcraft Classic			WOW_PROJECT_ID = 2	(WOW_PROJECT_CLASSIC)
 		--		Burning Crusade Anniversary			WOW_PROJECT_ID = 5	(WOW_PROJECT_BURNING_CRUSADE_CLASSIC)
 		--		Mists of Pandaria Classic			WOW_PROJECT_ID = 19	(WOW_PROJECT_MISTS_CLASSIC)
+		--		WoW: Forever						WOW_PROJECT_ID = 18	(WOW_PROJECT_CAMELOT) -- Blizzard's internal name for the Forever project
 		--	It appears we have the normal World of Warcraft, Wolrd of Warcraft Classic, the latest "Classic" version which marches through games, and then possible "Anniversary" editions.
 		--	Therefore, we should have
 		--		_retail_							WOW_PROJECT_ID = 1
@@ -3980,6 +3983,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		existsClassicCataclysm = (WOW_PROJECT_ID == WOW_PROJECT_CATACLYSM_CLASSIC),
 		existsClassicEra = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC),	-- _classic_era_	"World of Warcraft Classic"
 		existsClassicPandaria = (WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC),-- "Mist of Pandaria Classic"
+		existsForever = (WOW_PROJECT_ID == WOW_PROJECT_CAMELOT),	-- _forever_	"WoW: Forever"
 		existsClassic = (WOW_PROJECT_ID ~= WOW_PROJECT_MAINLINE and WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC),	-- _classic_	"Cataclysm Classic"
 		existsMainline = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE),	-- _retail_	"World of Warcraft"
 		existsMidnight = (LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_MIDNIGHT),
@@ -4403,7 +4407,14 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			['X'] = { 'EarthenDwarf',  'Earthen',   'Earthen',   0x00000800 },
 			['Y'] = { 'Dracthyr', 'Dracthyr',  'Dracthyr',	0x00001000 },
 			['Z'] = { 'ZandalariTroll', 'Zandalari Troll', 'Zandalari Troll', 0x10000000 },
-			['h'] = { 'Harronir', 'Haranir', 'Haranir', 0x00000010 }
+			['h'] = { 'Harronir', 'Haranir', 'Haranir', 0x00000010 },
+			-- Forever's new race: Blizzard's own UnitRace() API returns the identical
+			-- non-localized token "Skyborne" for both the Alliance variant ("High Order
+			-- Skyborne", raceID 95) and the Horde variant ("Windshaper Skyborne", raceID
+			-- 96) -- same shared-token-across-factions pattern as Dracthyr/Earthen/
+			-- Harronir above. One shared letter here, same as those; use an F:/f: code
+			-- alongside R:s/S:s wherever a quest cares which faction's Skyborne it is.
+			['s'] = { 'Skyborne', 'Skyborne', 'Skyborne', 0x00000020 }
 			},
 		receivedCalendarUpdateEventList = false,
 		receivedQuestLogUpdate = false,
@@ -5181,6 +5192,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		unnamedZones = {},
 		useAncestor = true,
 		usesClassicQuests = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC) or (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC),
+		usesForeverQuests = (WOW_PROJECT_ID == WOW_PROJECT_CAMELOT),
 		usesModernQuests = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE) or (WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC),
 		verifyTable = {},
 		verifyTableCount = 0,
@@ -5317,10 +5329,10 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 		end,
 
 		_customAchievementNames = {
-									[13997] = C_CampaignInfo and C_CampaignInfo.GetCampaignInfo(113).name or "",	-- Venthyr Campaign
-									[14234] = C_CampaignInfo and C_CampaignInfo.GetCampaignInfo(119).name or "",	-- Kyrian Campaign
-									[14279] = C_CampaignInfo and C_CampaignInfo.GetCampaignInfo(115).name or "",	-- The Art of War
-									[14282] = C_CampaignInfo and C_CampaignInfo.GetCampaignInfo(117).name or "",	-- Night Fae Campaign
+									[13997] = C_CampaignInfo and (C_CampaignInfo.GetCampaignInfo(113) or {}).name or "",	-- Venthyr Campaign
+									[14234] = C_CampaignInfo and (C_CampaignInfo.GetCampaignInfo(119) or {}).name or "",	-- Kyrian Campaign
+									[14279] = C_CampaignInfo and (C_CampaignInfo.GetCampaignInfo(115) or {}).name or "",	-- The Art of War
+									[14282] = C_CampaignInfo and (C_CampaignInfo.GetCampaignInfo(117) or {}).name or "",	-- Night Fae Campaign
 									},
 		-- The assumption is the value of each entry in the table would logically be considered a valid P:
 		_customAchievementPrerequisites = {
@@ -5388,7 +5400,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 			if self.capabilities.usesAzerothAsCosmicMap then
 				cosmicMapInfo = { mapID = 947 }
 			end
-			local continents = C_Map.GetMapChildrenInfo(cosmicMapInfo.mapID, Enum.UIMapType.Continent, ALL_DESCENDANTS)
+			local continents = C_Map.GetMapChildrenInfo(cosmicMapInfo.mapID, Enum.UIMapType.Continent, ALL_DESCENDANTS) or {}
 			self.continentMapIds = {}
 			self.mapToContinentMapping = {}		-- key is mapId, value is continent mapId
 			for i, continentInfo in ipairs(continents) do
