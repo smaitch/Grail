@@ -2428,7 +2428,9 @@ G[94335]="Craftsman's Writ: Green Lens"
 G[94336]="Craftsman's Writ: Lifelike Mechanical Toad"
 G[94414]='The Anchors of Zephras'
 G[96630]='The Adventurer'
+G[97003]="Chol'aruk the Ravener"
 G[97236]='Fang of Githyiss'
+G[97253]='Parts and Pieces'
 G[97977]="Nature's Call"
 G[97979]='The Goddess Provides'
 

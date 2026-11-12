@@ -1066,6 +1066,10 @@ if nil == Grail or Grail.versionNumber < Grail_File_Version then
 			Grail.GDE.acceptsTaint = not Grail.GDE.acceptsTaint
 			securePrint(strformat("Grail Accepts Taint now %s", Grail.GDE.acceptsTaint and "ON" or "OFF"))
 		end)
+		Grail:RegisterSlashOption("npcdebug", "|cFF00FF00npcdebug|r => toggles verbose NPC-resolution logging (raw target vs. resolved/alias NPC ID, and whether an A:/T: code was learned) into the tracking data, for diagnosing missing accept/turnin codes, printing new value", function()
+			Grail.GDE.debugNPCResolution = not Grail.GDE.debugNPCResolution
+			securePrint(strformat("Grail NPC Resolution Debug now %s", Grail.GDE.debugNPCResolution and "ON" or "OFF"))
+		end)
 		Grail:RegisterSlashOption("loot", "|cFF00FF00loot|r => toggles loot event processing on and off, printing new value", function()
 			Grail.GDE.notLoot = not Grail.GDE.notLoot
 			securePrint(strformat("Grail Loot Event Processing now %s", Grail.GDE.notLoot and "OFF" or "ON"))
@@ -6897,7 +6901,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						if 'A' == code and ':' == subcode then
 							local npcId = tonumber(strsub(questCode, 3)) or 0
 							if npcId >= 3000000 and npcId < 4000000 then
-								shouldAdd = (nil ~= self.npc.aliases[npcId])
+								shouldAdd = (nil ~= self.npc.locations[npcId])
 							elseif self:_GoodNPCAccept(questId, npcId) then
 								shouldAdd = false
 							else
@@ -6908,7 +6912,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 						elseif 'T' == code and ':' == subcode then
 							local npcId = tonumber(strsub(questCode, 3)) or 0
 							if npcId >= 3000000 and npcId < 4000000 then
-								shouldAdd = (nil ~= self.npc.aliases[npcId])
+								shouldAdd = (nil ~= self.npc.locations[npcId])
 							elseif self:_GoodNPCTurnin(questId, npcId) then
 								shouldAdd = false
 							else
@@ -12000,13 +12004,18 @@ end
 		--	@param npcLocationString The standard Grail string representing the location of the NPC.
 		--	@return The npcId one should use for this NPC.
 		_NPCToUse = function(self, npcId, npcLocationString)
+			local rawNpcId = npcId
 			npcId = tonumber(npcId)
 			local retval = npcId
+			local debugBranch = "nilOrNonPositiveNpcId"
 			if nil ~= npcId and npcId > 0 then
-				if not self:_LocationKnown(npcId, npcLocationString) then
+				if self:_LocationKnown(npcId, npcLocationString) then
+					debugBranch = "locationAlreadyKnown"
+				else
 					local aliasFound, aliasNPCId = self:_BestAliasNPCToUse(npcId, npcLocationString)
 					if aliasFound then
 						retval = aliasNPCId
+						debugBranch = "existingAliasMatched"
 					end
 --					local aliasFound = false
 --					local possibleAliases = self.npc.aliases[npcId]
@@ -12022,11 +12031,17 @@ end
 					if not aliasFound then
 						if nil ~= self.npc.locations[npcId] and 0 < #(self.npc.locations[npcId]) then
 							retval = self:_CreateAliasNPC(npcId, npcLocationString)
+							debugBranch = "newAliasCreated"
 						else
 							self:_LearnNPCLocation(npcId, npcLocationString)
+							debugBranch = "firstLocationForNewNPC"
 						end
 					end
 				end
+			end
+			if self.GDE.debugNPCResolution then
+				self:_AddTrackingMessage(strformat("NPCDEBUG NPCToUse raw=%s loc=%s branch=%s -> resolved=%s",
+					tostring(rawNpcId), tostring(npcLocationString), debugBranch, tostring(retval)))
 			end
 			return retval
 		end,
@@ -14868,7 +14883,13 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 		_UpdateQuestDatabase = function(self, questId, questTitle, npcId, isDaily, npcCode, version, kCode, lCode)
 			questId = tonumber(questId)
 			npcId = tonumber(npcId)
-			if nil == questId or nil == npcId then return end
+			if nil == questId or nil == npcId then
+				if self.GDE.debugNPCResolution then
+					self:_AddTrackingMessage(strformat("NPCDEBUG UpdateQuestDatabase ABORT q=%s code=%s npcId=%s (nil questId or npcId)",
+						tostring(questId), tostring(npcCode), tostring(npcId)))
+				end
+				return
+			end
 
 			self.quests[questId] = self.quests[questId] or {}
 			self.questCodes[questId] = self.questCodes[questId] or ''
@@ -14879,12 +14900,26 @@ if factionId == nil then print("Rep nil issue:", reputationName, reputationId, r
 				self:_LearnQuestName(questId, questTitle)
 			end
 
-			if 'A' == npcCode and not self:_GoodNPCAccept(questId, npcId) then
-				self:_LearnQuestCode(questId, 'A:' .. npcId)
+			if 'A' == npcCode then
+				local alreadyGood = self:_GoodNPCAccept(questId, npcId)
+				if self.GDE.debugNPCResolution then
+					self:_AddTrackingMessage(strformat("NPCDEBUG A q=%d npcId=%d alreadyGood=%s learning=%s",
+						questId, npcId, tostring(alreadyGood), tostring(not alreadyGood)))
+				end
+				if not alreadyGood then
+					self:_LearnQuestCode(questId, 'A:' .. npcId)
+				end
 			end
 
-			if 'T' == npcCode and not self:_GoodNPCTurnin(questId, npcId) then
-				self:_LearnQuestCode(questId, 'T:' .. npcId)
+			if 'T' == npcCode then
+				local alreadyGood = self:_GoodNPCTurnin(questId, npcId)
+				if self.GDE.debugNPCResolution then
+					self:_AddTrackingMessage(strformat("NPCDEBUG T q=%d npcId=%d alreadyGood=%s learning=%s",
+						questId, npcId, tostring(alreadyGood), tostring(not alreadyGood)))
+				end
+				if not alreadyGood then
+					self:_LearnQuestCode(questId, 'T:' .. npcId)
+				end
 			end
 
 			if kCode then

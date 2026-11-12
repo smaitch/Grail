@@ -13,4 +13,8 @@ interface = tonumber(interface)
 if release >= 0 then
 end
 
+if release >= 70009 then
+G[1660739]='Ritualfeuer'
+end
+
 --	End of localized NPC names
