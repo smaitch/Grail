@@ -1985,6 +1985,18 @@ if release >= 70862 then
 G[92464]={'ADA50'}
 end
 
+if release >= 70938 then
+G[92514]={'ADA50'}
+G[92515]={'ADA50'}
+G[92516]={'ADA50'}
+G[92517]={'ADA50'}
+G[92544]={'ADA50'}
+G[92595]={'ADA50'}
+G[93036]={'ADA50'}
+G[93319]={'ADA50'}
+G[93951]={'ADA50'}
+end
+
 --	Now the reputation data gets processed into its own table to save space
 
 for questId, reps in pairs(Grail.questReputations) do
