@@ -1992,9 +1992,29 @@ G[92516]={'ADA50'}
 G[92517]={'ADA50'}
 G[92544]={'ADA50'}
 G[92595]={'ADA50'}
+G[92700]={'ADA50'}
+G[92708]={'ADA10'}
 G[93036]={'ADA50'}
 G[93319]={'ADA50'}
+G[93735]={'ADA100'}
+G[93948]={'ADA50'}
 G[93951]={'ADA50'}
+end
+
+if release >= 70959 then
+G[94484]={'AC6100'}
+end
+
+if release >= 71037 then
+G[92703]={'ADA100'}
+G[93736]={'ADA50'}
+G[94006]={'261100'}
+G[94488]={'AC61000'}
+G[94489]={'AC6500'}
+G[94490]={'AC6500'}
+G[94491]={'AC6500'}
+G[94638]={'AC6100'}
+G[98512]={'ADA50'}
 end
 
 --	Now the reputation data gets processed into its own table to save space
