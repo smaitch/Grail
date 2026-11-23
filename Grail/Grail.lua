@@ -4511,6 +4511,12 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 
 		--	The keys are the actual faction values used by Blizzard converted into a 3-character hexidecimal value.
 		--	The values will be localized at runtime.
+		--	TODO: Classic quest P: prerequisites reference these reputation codes with no entry here yet
+		--	(falls back to showing the raw hex code -- see CreateIndexedQuestList):
+		--		154 -- Bloodsail-adjacent (G[1036], G[4621] "Avast Ye...", G[9259] "Traitor to the Bloodsail")
+		--		2F5 -- G[484] "Young Crocolisk Skins"
+		--		3B4, 3B5 -- likely Dark Iron Dwarves chain (G[7736]/G[7737] "Gaining Acceptance"/G[8241], NPC Master Smith Burninate)
+		--		574 -- possibly also Dark Iron Dwarves (G[9272] "Dressing the Part")
 		reputationMapping = {
 			["015"] = 'Booty Bay',
 			["02F"] = 'Ironforge',
@@ -8815,7 +8821,7 @@ if self.GDE.debug then print("GARRISON_BUILDING_UPDATE ", buildingId) end
 					local index, value
 					for i = 1, reputationCount do
 						index, value = self:ReputationDecode(strsub(reputationCodes, i * 4 - 3, i * 4))
-						self:AddQuestToMapArea(questId, self.mapAreaBaseReputation + tonumber(index, 16), REPUTATION .. " - " .. self.reputationMapping[index])
+						self:AddQuestToMapArea(questId, self.mapAreaBaseReputation + tonumber(index, 16), REPUTATION .. " - " .. (self.reputationMapping[index] or index))
 					end
 				end
 
