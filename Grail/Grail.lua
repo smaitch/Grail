@@ -1782,6 +1782,17 @@ if nil == Grail or Grail.versionNumber < Grail_File_Version then
 			Grail.continents[L.mapID] = L
 			tinsert(Grail.continentMapIds, L.mapID)
 		end
+		-- Some zones (e.g. Forever's Zephras Isle) are parented directly to the
+		-- cosmic/world map with no intervening Continent-type map, so the Continent
+		-- scan above never finds them.  Pick up any such zone and treat it as its
+		-- own single-zone continent so it is still selectable.
+		local orphanZones = C_Map.GetMapChildrenInfo(cosmicMapInfo.mapID, Enum.UIMapType.Zone, false) or {}
+		for i, zoneInfo in ipairs(orphanZones) do
+			local L = { name = zoneInfo.name, zones = {}, mapID = zoneInfo.mapID, dungeons = {} }
+			Grail:_AddMapId(L.zones, zoneInfo.name, zoneInfo.mapID, L.mapID)
+			Grail.continents[L.mapID] = L
+			tinsert(Grail.continentMapIds, L.mapID)
+		end
 		table.sort(Grail.continentMapIds)
 	end
 

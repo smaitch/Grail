@@ -2435,6 +2435,7 @@ G[94487]='Unwanted and Unworthy'
 G[94488]='The Ties That Bind'
 G[94489]='The Wounds of Betrayal'
 G[94491]='The Fate of the Den'
+G[94568]="The Cult's True Plans"
 G[94638]='Strength and Mercy'
 G[94896]='Aid For The Refugees'
 G[94897]='The Fate of a Loved One'
