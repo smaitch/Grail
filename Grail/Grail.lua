@@ -601,6 +601,7 @@
 --		127 Updates some Quest/NPC information.
 --			Adds the /grail trace slash command that shows why a quest cannot be obtained.
 --			Adds reputationMapping/reputationMappingFaction entries for Midnight factions Zul'jarra's Forces (2772) and Captain Tokka (2773).
+--			Adds initial support for Forever.
 --
 --	Known Issues
 --
